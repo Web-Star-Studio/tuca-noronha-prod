@@ -1,0 +1,162 @@
+"use client";
+
+import RestaurantCard from "@/components/cards/RestaurantCard";
+import { Restaurant, useRestaurantsStore } from "@/lib/store/restaurantsStore";
+import RestaurantFilter from "@/components/filters/RestaurantFilter";
+import { useEffect, useState } from "react";
+
+export default function RestaurantesPage() {
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>(
+    []
+  );
+  const { restaurants } = useRestaurantsStore();
+  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(
+    []
+  );
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Extrair todas as culinárias disponíveis (sem duplicatas)
+  const cuisines = Array.from(
+    new Set(restaurants.flatMap((restaurant) => restaurant.cuisine))
+  ).sort();
+
+  // Extrair todas as faixas de preço disponíveis
+  const priceRanges = ["$", "$$", "$$$", "$$$$"];
+
+  // Extrair todos os bairros disponíveis (sem duplicatas)
+  const neighborhoods = Array.from(
+    new Set(restaurants.map((restaurant) => restaurant.address.neighborhood))
+  ).sort();
+
+  const toggleCuisineFilter = (cuisine: string) => {
+    setSelectedCuisines((prev) => {
+      if (prev.includes(cuisine)) {
+        return prev.filter((c) => c !== cuisine);
+      } else {
+        return [...prev, cuisine];
+      }
+    });
+  };
+
+  const togglePriceFilter = (price: string) => {
+    setSelectedPriceRanges((prev) => {
+      if (prev.includes(price)) {
+        return prev.filter((p) => p !== price);
+      } else {
+        return [...prev, price];
+      }
+    });
+  };
+
+  const toggleNeighborhoodFilter = (neighborhood: string) => {
+    setSelectedNeighborhoods((prev) => {
+      if (prev.includes(neighborhood)) {
+        return prev.filter((n) => n !== neighborhood);
+      } else {
+        return [...prev, neighborhood];
+      }
+    });
+  };
+
+  const applyFilters = () => {
+    const filtered = restaurants.filter((restaurant: Restaurant) => {
+      // Filtragem por culinária
+      const cuisineMatch =
+        selectedCuisines.length === 0 ||
+        restaurant.cuisine.some((cuisine) =>
+          selectedCuisines.includes(cuisine)
+        );
+
+      // Filtragem por faixa de preço
+      const priceMatch =
+        selectedPriceRanges.length === 0 ||
+        selectedPriceRanges.includes(restaurant.priceRange);
+
+      // Filtragem por bairro
+      const neighborhoodMatch =
+        selectedNeighborhoods.length === 0 ||
+        selectedNeighborhoods.includes(restaurant.address.neighborhood);
+
+      return cuisineMatch && priceMatch && neighborhoodMatch;
+    });
+
+    setFilteredRestaurants(filtered);
+  };
+
+  const resetFilters = () => {
+    setSelectedCuisines([]);
+    setSelectedPriceRanges([]);
+    setSelectedNeighborhoods([]);
+    setFilteredRestaurants(restaurants);
+  };
+
+  // Inicialização dos filteredRestaurants quando o componente monta
+  useEffect(() => {
+    if (restaurants.length > 0) {
+      setFilteredRestaurants(restaurants);
+    }
+  }, [restaurants]);
+
+  return (
+    <>
+      <section className="relative mb-10">
+        <div>
+          <div
+            className="h-[60vh] bg-cover bg-center filter brightness-60"
+            style={{
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1515669097368-22e68427d265?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+            }}
+          ></div>
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="text-center text-white px-4">
+              <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+                Restaurantes em Fernando de Noronha
+              </h1>
+              <p className="text-xl max-w-2xl mx-auto">
+                Descubra os sabores da ilha com nossa seleção de restaurantes
+                exclusivos e gastronomia local.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className="flex flex-col md:flex-row max-w-screen-xl mx-auto px-4 py-12 gap-8 items-start">
+        <RestaurantFilter
+          cuisines={cuisines}
+          selectedCuisines={selectedCuisines}
+          toggleCuisineFilter={toggleCuisineFilter}
+          priceRanges={priceRanges}
+          selectedPriceRanges={selectedPriceRanges}
+          togglePriceFilter={togglePriceFilter}
+          neighborhoods={neighborhoods}
+          selectedNeighborhoods={selectedNeighborhoods}
+          toggleNeighborhoodFilter={toggleNeighborhoodFilter}
+          applyFilters={applyFilters}
+          resetFilters={resetFilters}
+          isFilterOpen={isFilterOpen}
+          setIsFilterOpen={setIsFilterOpen}
+        />
+        <div className="flex-1 md:w-2/3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredRestaurants && filteredRestaurants.length > 0 ? (
+              filteredRestaurants.map((restaurant: Restaurant) => (
+                <div key={restaurant.id} className="w-full h-full">
+                  <RestaurantCard restaurant={restaurant} />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-10">
+                <p className="text-lg text-gray-500">
+                  Nenhum restaurante encontrado
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

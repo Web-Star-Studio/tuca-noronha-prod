@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Hotel, Package, Calendar, Heart, Mail } from "lucide-react";
+import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface NavigationMenuProps {
@@ -19,6 +19,7 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
     { path: "/hospedagens", label: "Hospedagens", icon: Hotel },
     { path: "/pacotes", label: "Pacotes", icon: Package },
     { path: "/eventos", label: "Eventos", icon: Calendar },
+    { path: "/restaurantes", label: "Restaurantes", icon: UtensilsCrossed },
     { path: "/lista-de-desejos", label: "Lista de Desejos", icon: Heart },
   ];
 
