@@ -14,6 +14,14 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "www.viagenscinematograficas.com.br",
+      },
+      {
+        protocol: "https",
+        hostname: "source.unsplash.com"
+      },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com"
       }
     ]
   }

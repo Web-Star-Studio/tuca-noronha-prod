@@ -6,23 +6,19 @@ import AnimatedSection from "@/components/layout/AnimatedSection";
 import FeatureHighlights from "@/components/highlights/features/FeatureHighlights";
 import DestinationHighlights from "@/components/highlights/DestinationHighlights";
 import FeaturedActivities from "@/components/highlights/activities/FeaturedActivities";
+import FeaturedEvents from "@/components/highlights/events/FeaturedEvents";
+import BookingCTA from "@/components/cta/BookingCTA";
 
 export default function Home() {
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col">
       <Header />
       <HeroSection />
-      <AnimatedContainer>
-        <AnimatedSection>
-          <FeatureHighlights />
-        </AnimatedSection>
-        <AnimatedSection>
-          <DestinationHighlights />
-        </AnimatedSection>
-        <AnimatedSection>
-          <FeaturedActivities />
-        </AnimatedSection>
-      </AnimatedContainer>
+      <FeatureHighlights />
+      <DestinationHighlights />
+      <FeaturedEvents />
+      <FeaturedActivities />
+      <BookingCTA />
       <Footer />
     </main>
   )

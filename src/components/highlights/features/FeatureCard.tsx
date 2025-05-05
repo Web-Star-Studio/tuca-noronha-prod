@@ -11,31 +11,29 @@ interface FeatureCardProps {
 }
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.6,
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
+      delay: i * 0.1,
+      duration: 0.5,
+      ease: "easeOut"
     },
-  },
+  }),
 };
 
 export default function FeatureCard({
   icon,
   title,
   description,
+  index,
 }: FeatureCardProps) {
   return (
     <motion.div
       className="flex flex-col items-center text-center p-8 rounded-2xl transition-all bg-white hover:bg-gray-50 hover:shadow-md"
+      custom={index}
       variants={cardVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.3, margin: "-20px" }}
       whileHover={{
         y: -8,
         transition: { duration: 0.3 },

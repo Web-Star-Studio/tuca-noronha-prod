@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Hotel, Package, Calendar, Heart } from "lucide-react";
+import { Home, Compass, Hotel, Package, Calendar, Heart, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface NavigationMenuProps {
@@ -47,12 +47,13 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
   };
 
   return (
-    <nav className="flex mt-8 flex-col h-full bg-white text-gray-800 overflow-hidden scrollbar-hide">
+    <div className="h-full flex flex-col">
+      {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9 }}
-        className="px-4 mb-6"
+        className="px-6 mb-8"
       >
         <motion.h2 
           className="text-xl font-bold text-gray-900"
@@ -69,65 +70,86 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
           transition={{ delay: 0.4, duration: 0.9 }}
         />
       </motion.div>
-      <motion.div 
-        className="flex flex-col space-y-1 px-2 overflow-y-auto scrollbar-hide grow"
+      
+      {/* Navigation Items */}
+      <motion.nav 
+        className="flex-1 px-4 overflow-y-auto"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {navigationItems.map(({ path, label, icon: Icon }) => {
-          const isActive = path === "/" 
-            ? pathname === path 
-            : pathname.startsWith(path);
-            
-          return (
-            <motion.div 
-              key={path} 
-              variants={itemVariants}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="relative"
-            >
-              <div className="relative">
-                {isActive && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute inset-0 bg-blue-500 rounded-lg z-0"
-                    initial={{ borderRadius: 8 }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 500, 
-                      damping: 30 
-                    }}
-                  />
-                )}
-                
-                <Link
-                  href={path}
-                  onClick={onClose}
-                  className={`flex items-center px-4 py-3 rounded-lg transition-colors relative z-10 ${
-                    isActive
-                      ? "text-white font-medium"
-                      : "text-gray-700 hover:bg-blue-500 hover:text-white"
-                  }`}
-                >
-                  <motion.div
-                    className="mr-3"
-                    whileHover={{ 
-                      rotate: [0, -10, 10, -10, 0],
-                      transition: { duration: 0.5 }
-                    }}
+        <div className="flex flex-col space-y-2">
+          {navigationItems.map(({ path, label, icon: Icon }) => {
+            const isActive = path === "/" 
+              ? pathname === path 
+              : pathname.startsWith(path);
+              
+            return (
+              <motion.div 
+                key={path} 
+                variants={itemVariants}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="relative"
+              >
+                <div className="relative">
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute inset-0 bg-blue-500 rounded-lg z-10"
+                      initial={{ borderRadius: 8 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 500, 
+                        damping: 30 
+                      }}
+                    />
+                  )}
+                  
+                  <Link
+                    href={path}
+                    onClick={onClose}
+                    className={`flex items-center px-4 py-3 rounded-lg transition-colors relative z-20 ${
+                      isActive
+                        ? "text-white font-medium"
+                        : "text-gray-700 hover:bg-blue-500 hover:text-white"
+                    }`}
                   >
-                    <Icon className="h-5 w-5" />
-                  </motion.div>
-                  <span className="text-lg">{label}</span>
-                </Link>
-              </div>
-            </motion.div>
-          );
-        })}
+                    <motion.div
+                      className="mr-3"
+                      whileHover={{ 
+                        rotate: [0, -10, 10, -10, 0],
+                        transition: { duration: 0.5 }
+                      }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </motion.div>
+                    <span className="text-lg">{label}</span>
+                  </Link>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.nav>
+      
+      {/* Footer */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.9 }}
+        className="mt-8 px-6 py-6 border-t border-gray-100"
+      >
+        <p className="text-gray-500 text-sm mb-4">Entre em contato conosco</p>
+        <Link 
+          href="mailto:contato@tucanoronha.com" 
+          className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          <Mail className="h-4 w-4 mr-2" />
+          <span className="font-medium">contato@tucanoronha.com</span>
+        </Link>
       </motion.div>
-    </nav>
+    </div>
   );
 };
 
