@@ -4,8 +4,33 @@
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Ocultar scrollbar mas permitir rolagem */
+  .scrollbar-hide {
+    -ms-overflow-style: none !important;  /* IE e Edge */
+    scrollbar-width: none !important;  /* Firefox */
+  }
+  
+  /* Para Chrome, Safari e Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  /* Regra específica para o menu de navegação */
+  nav::-webkit-scrollbar,
+  nav *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  nav, nav * {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
 }
-
 
 
 @layer base {

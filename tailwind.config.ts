@@ -55,9 +55,35 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
+      },
+      // CSS personalizado para ocultar scrollbars mantendo funcionalidade
+      scrollbar: {
+        hide: {
+          scrollbarWidth: 'none',
+          '-ms-overflow-style': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }
       }
     }
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }: { addUtilities: any }) {
+      const newUtilities = {
+        '.scrollbar-hide': {
+          /* Firefox */
+          'scrollbar-width': 'none',
+          /* IE e Edge */
+          '-ms-overflow-style': 'none',
+          /* Chrome, Safari e Opera */
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 };
 export default config;
