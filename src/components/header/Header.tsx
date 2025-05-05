@@ -56,9 +56,9 @@ export default function Header() {
 
           {/* User Menu and Burger Menu Button */}
           <div className="flex items-center space-x-4">
-            <span className="hidden lg:block">
+            {/* <span className="hidden lg:block">
               <WishlistIcon isTransparent={isTransparent} />
-            </span>
+            </span> */}
             
             <UserMenu isTransparent={isTransparent} />
             

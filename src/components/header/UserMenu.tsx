@@ -1,13 +1,32 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { User, ShieldCheck, LogOut, Settings, Heart, ShoppingBag } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuItem } from '../ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '../ui/avatar';
-
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  User,
+  ShieldCheck,
+  LogOut,
+  Settings,
+  Heart,
+  ShoppingBag,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 
 interface UserMenuProps {
   isTransparent?: boolean;
@@ -20,33 +39,38 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
   const router = useRouter();
 
   const handleLogout = () => {
-    router.push('/login');
+    router.push("/login");
   };
 
   const getInitials = (name: string) =>
     name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
 
-  if (!user) {
-    return (
-      <Button
-        className={`hover:cursor-pointer ${isTransparent
-          ? 'bg-white text-black hover:bg-white/90'
-          : 'hover:bg-blue-500 bg-blue-700 text-white'}`}
-        variant="default"
-        onClick={() => router.push('/login')}
-      >
-        Login
-      </Button>
-    );
-  }
-
   return (
-    <DropdownMenu>
+    <>
+      <SignedOut>
+        <SignInButton>
+          <Button
+            className={`hover:cursor-pointer ${
+              isTransparent
+                ? "bg-white text-black hover:bg-white/90"
+                : "hover:bg-blue-500 bg-blue-700 text-white"
+            }`}
+            variant="default"
+            onClick={() => router.push("/login")}
+          >
+            Login
+          </Button>
+        </SignInButton>
+      </SignedOut>
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+      {/* <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           {isMaster && (
@@ -56,12 +80,13 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
           )}
           <Avatar className="h-9 w-9">
             <AvatarFallback
-              className={`text-black ${isMaster
-                  ? 'bg-yellow-600'
+              className={`text-black ${
+                isMaster
+                  ? "bg-yellow-600"
                   : isAdmin
-                    ? 'bg-tuca-ocean-blue'
-                    : 'bg-gray-600'
-                }`}
+                    ? "bg-tuca-ocean-blue"
+                    : "bg-gray-600"
+              }`}
             >
               <User />
             </AvatarFallback>
@@ -81,7 +106,9 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
               </p>
             )}
             {!isMaster && isAdmin && (
-              <p className="text-xs text-blue-600 font-semibold">Administrador</p>
+              <p className="text-xs text-blue-600 font-semibold">
+                Administrador
+              </p>
             )}
           </div>
         </div>
@@ -106,7 +133,8 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
           <LogOut className="mr-2 h-4 w-4" /> Sair
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+    </DropdownMenu> */}
+    </>
   );
 };
 

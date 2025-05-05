@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useActionState } from "react"
-import { login, signup } from "@/lib/actions"
 import Link from "next/link"
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
