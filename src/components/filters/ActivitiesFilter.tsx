@@ -109,7 +109,7 @@ export default function ActivitiesFilter({
                       setMinPrice(value[0]);
                       setMaxPrice(value[1]);
                     }}
-                    className="my-6"
+                    className="my-6 w-full text-blue-600"
                   />
                   <div className="flex justify-between text-sm font-medium mt-2">
                     <span className="text-gray-700">R$ {minPrice !== null ? minPrice.toLocaleString("pt-BR") : '0'}</span>

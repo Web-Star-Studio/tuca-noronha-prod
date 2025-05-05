@@ -9,6 +9,19 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      keyframes: {
+        'caret-blink': {
+          '0%,70%,100%': { opacity: '1' },
+          '20%,50%': { opacity: '0' },
+        },
+      },
+      animation: {
+        'caret-blink': 'caret-blink 1.25s ease-out infinite',
+      },
+      fontFamily: {
+        playfair: ['Playfair Display', 'serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
