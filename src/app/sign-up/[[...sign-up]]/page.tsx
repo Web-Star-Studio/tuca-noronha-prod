@@ -19,6 +19,8 @@ import {playfairDisplay} from '@/lib/fonts'
 import Link from "next/link";
 
 export default function SignUpPage() {
+
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-[url('/images/bg-pattern.png')] bg-cover bg-center bg-no-repeat bg-blend-overlay bg-white/80 backdrop-blur-sm relative">
       <motion.div 

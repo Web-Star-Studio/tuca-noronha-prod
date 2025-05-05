@@ -1,26 +1,29 @@
-import type { Metadata } from "next";
-import { ConvexClientProvider } from "./ConvexClientProvider";
+'use client'
+
 import { playfairDisplay, montserrat } from "@/lib/fonts";
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import {ConvexProviderWithClerk} from 'convex/react-clerk'
 import { ptBR } from '@clerk/localizations'
 import "./globals.css";
-export const metadata: Metadata = {
-  title: "Tuca Noronha",
-  description: "Tuca Noronha",
-};
+import { ConvexReactClient } from "convex/react";
+// export const metadata: Metadata = {
+//   title: "Tuca Noronha",
+//   description: "Tuca Noronha",
+// };
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
   return (
-    <ClerkProvider localization={ptBR}>
+    <ClerkProvider localization={ptBR} publishableKey='pk_test_aGFybWxlc3MtcG9sZWNhdC0yLmNsZXJrLmFjY291bnRzLmRldiQ'>
       <html lang="pt-BR">
         <body
           className={`${montserrat.className} ${playfairDisplay.className} antialiased`}
         >
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexProviderWithClerk client={convex} useAuth={useAuth}>{children}</ConvexProviderWithClerk>
         </body>
       </html>
     </ClerkProvider>

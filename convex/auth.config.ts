@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: process.env.CONVEX_SITE_URL,
+      domain: 'https://harmless-polecat-2.clerk.accounts.dev',
       applicationID: "convex",
     },
   ],

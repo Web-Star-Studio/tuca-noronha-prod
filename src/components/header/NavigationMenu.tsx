@@ -20,7 +20,7 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
     { path: "/pacotes", label: "Pacotes", icon: Package },
     { path: "/eventos", label: "Eventos", icon: Calendar },
     { path: "/restaurantes", label: "Restaurantes", icon: UtensilsCrossed },
-    { path: "/lista-de-desejos", label: "Lista de Desejos", icon: Heart },
+    { path: "/wishlist", label: "Lista de Desejos", icon: Heart },
   ];
 
   const containerVariants = {
