@@ -2,9 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import WishlistIcon from "./WishlistIcon"
 import UserMenu from "./UserMenu"
-import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "../ui/sheet"
 import { Menu, X } from "lucide-react"
 import NavigationMenu from "./NavigationMenu"
 import { motion, AnimatePresence } from "framer-motion"

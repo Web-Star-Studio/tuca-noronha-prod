@@ -1,28 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  User,
-  ShieldCheck,
-  LogOut,
-  Settings,
-  Heart,
-  ShoppingBag,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from "../ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import {
   SignInButton,
-  SignUpButton,
   SignedIn,
   SignedOut,
   UserButton,
@@ -33,22 +15,22 @@ interface UserMenuProps {
 }
 
 const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
-  const [isMaster, setIsMaster] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  // const [isMaster, setIsMaster] = useState(false);
+  // const [isAdmin, setIsAdmin] = useState(false);
+  // const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.push("/login");
-  };
+  // const handleLogout = () => {
+  //   router.push("/login");
+  // };
 
-  const getInitials = (name: string) =>
-    name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  // const getInitials = (name: string) =>
+  //   name
+  //     .split(" ")
+  //     .map((n) => n[0])
+  //     .join("")
+  //     .toUpperCase()
+  //     .slice(0, 2);
 
   return (
     <>
