@@ -81,7 +81,7 @@ const HeroContent = React.memo(({ currentImageIndex, scrollProgress }: HeroConte
             size="lg"
           >
             <div>
-              <span className="relative z-10 font-medium text-base">Explorar Passeios</span>
+              <span className="relative z-10 font-medium text-base">Explorar Hospedagens</span>
               <span className="absolute inset-0 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500" />
               <ArrowRight className="ml-2 h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
             </div>
