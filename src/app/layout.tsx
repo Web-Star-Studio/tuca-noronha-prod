@@ -6,10 +6,6 @@ import {ConvexProviderWithClerk} from 'convex/react-clerk'
 import { ptBR } from '@clerk/localizations'
 import "./globals.css";
 import { ConvexReactClient } from "convex/react";
-// export const metadata: Metadata = {
-//   title: "Tuca Noronha",
-//   description: "Tuca Noronha",
-// };
 
 export default function RootLayout({
   children,
