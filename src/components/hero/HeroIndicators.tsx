@@ -12,7 +12,7 @@ type HeroIndicatorsProps = {
 }
 
 function HeroIndicators({
-    currentImageIndex, setCurrentImageIndex, scrollProgress, scrollToNextSection,
+    currentImageIndex, setCurrentImageIndex, scrollProgress,
 }: HeroIndicatorsProps) {
     const indicators = useMemo(
         () => HERO_IMAGES.map((_, index) => (
