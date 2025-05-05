@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import WishlistIcon from "./WishListIcon"
+import WishlistIcon from "./WishlistIcon"
 import UserMenu from "./UserMenu"
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "../ui/sheet"
 import { Menu } from "lucide-react"
@@ -70,7 +70,7 @@ export default function Header() {
                   <Menu className={`h-6 w-6 ${isTransparent ? "text-white" : "text-gray-900"}`} />
                 </button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px] py-6 px-0">
+              <SheetContent side="right" className="w-[300px] sm:w-[400px] py-6 px-0 bg-white">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <NavigationMenu onClose={() => setIsOpen(false)} />
               </SheetContent>

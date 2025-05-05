@@ -18,43 +18,33 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
     { path: "/hospedagens", label: "Hospedagens", icon: Hotel },
     { path: "/pacotes", label: "Pacotes", icon: Package },
     { path: "/eventos", label: "Eventos", icon: Calendar },
+    { path: "/lista-de-desejos", label: "Lista de Desejos", icon: Heart },
   ];
 
   return (
-    <nav className="flex mt-8 flex-col h-full">
+    <nav className="flex mt-8 flex-col h-full bg-white text-gray-800">
       <div className="flex flex-col space-y-1 px-2 overflow-y-auto grow">
-        {navigationItems.map(({ path, label, icon: Icon }) => (
-          <Link
-            key={path}
-            href={path}
-            onClick={onClose}
-            className={`flex items-center size-8 px-4 py-3 rounded-lg transition-colors hover:bg-blue-500 hover:text-white`}
-          >
-            <Icon className="size-6 mr-3" />
-            <span className="text-lg">{label}</span>
-          </Link>
-        ))}
-        <Link
-          href="/lista-de-desejos"
-          onClick={onClose}
-          className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-            pathname.startsWith("/lista-de-desejos")
-              ? "bg-tuca-light-blue text-tuca-ocean-blue font-medium"
-              : "hover:bg-gray-100"
-          }`}
-        >
-          <Heart className="h-5 w-5 mr-3" />
-          <span>Lista de Desejos</span>
-        </Link>
-      </div>
-      <div className="mt-auto border-t pt-6 px-4 mb-4">
-        <Link
-          href="/reservar"
-          onClick={onClose}
-          className="w-full flex items-center justify-center px-4 py-3 bg-tuca-ocean-blue text-white rounded-lg hover:bg-tuca-deep-blue transition-colors"
-        >
-          Reservar
-        </Link>
+        {navigationItems.map(({ path, label, icon: Icon }) => {
+          const isActive = path === "/" 
+            ? pathname === path 
+            : pathname.startsWith(path);
+            
+          return (
+            <Link
+              key={path}
+              href={path}
+              onClick={onClose}
+              className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive
+                  ? "bg-blue-500 text-white font-medium"
+                  : "text-gray-700 hover:bg-blue-500 hover:text-white"
+              }`}
+            >
+              <Icon className="h-5 w-5 mr-3" />
+              <span className="text-lg">{label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

@@ -16,7 +16,7 @@ interface UserMenuProps {
 const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
   const [isMaster, setIsMaster] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   const handleLogout = () => {
@@ -36,7 +36,7 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
       <Button
         className={`hover:cursor-pointer ${isTransparent
           ? 'bg-white text-black hover:bg-white/90'
-          : 'hover:bg-blue-500 bg-blue-700 hover:text-white'}`}
+          : 'hover:bg-blue-500 bg-blue-700 text-white'}`}
         variant="default"
         onClick={() => router.push('/login')}
       >
@@ -63,7 +63,6 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
                     : 'bg-gray-600'
                 }`}
             >
-              {/* {user.user_metadata?.name ? getInitials(user.user_metadata.name) : <User />} */}
               <User />
             </AvatarFallback>
           </Avatar>
@@ -93,12 +92,12 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/wishlist" className="flex w-full items-center">
-            <Heart className="mr-2 h-4 w-4" /> Favoritos
+          <Link href="/lista-de-desejos" className="flex w-full items-center">
+            <Heart className="mr-2 h-4 w-4" /> Lista de Desejos
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/orders" className="flex w-full items-center">
+          <Link href="/pedidos" className="flex w-full items-center">
             <ShoppingBag className="mr-2 h-4 w-4" /> Pedidos
           </Link>
         </DropdownMenuItem>
