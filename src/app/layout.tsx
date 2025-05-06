@@ -1,6 +1,6 @@
 'use client'
 
-import { playfairDisplay, montserrat } from "@/lib/fonts";
+import { montserrat } from "@/lib/fonts";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import {ConvexProviderWithClerk} from 'convex/react-clerk'
 import { ptBR } from '@clerk/localizations'
