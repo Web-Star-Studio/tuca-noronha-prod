@@ -53,7 +53,7 @@ const HeroSection = () => {
   // Extract the current numeric value for scrollProgress for components that expect a number
   const [scrollProgressValue, setScrollProgressValue] = useState(0);
   useEffect(() => {
-    const unsubscribe = scrollProgress.onChange(setScrollProgressValue);
+    const unsubscribe = scrollProgress.on("change", (value) => setScrollProgressValue(value));
     return () => unsubscribe();
   }, [scrollProgress]);
 

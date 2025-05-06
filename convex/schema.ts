@@ -53,6 +53,7 @@ export default defineSchema({
     signature: v.optional(v.string()),
   }).index("signature", ["signature"]),
   users: defineTable({
+    clerkId: v.optional(v.string()),
     email: v.optional(v.string()),
     emailVerificationTime: v.optional(v.float64()),
     image: v.optional(v.string()),
@@ -62,5 +63,6 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.float64()),
   })
     .index("email", ["email"])
-    .index("phone", ["phone"]),
+    .index("phone", ["phone"])
+    .index("clerkId", ["clerkId"]),
 });

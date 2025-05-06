@@ -7,4 +7,4 @@ export const getUser = query(async (ctx) => {
     } 
 
     return user.email;
-})
+});
