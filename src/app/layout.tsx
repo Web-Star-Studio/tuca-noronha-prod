@@ -17,7 +17,7 @@ export default function RootLayout({
     <ClerkProvider localization={ptBR} publishableKey='pk_test_aGFybWxlc3MtcG9sZWNhdC0yLmNsZXJrLmFjY291bnRzLmRldiQ'>
       <html lang="pt-BR">
         <body
-          className={`${montserrat.className} ${playfairDisplay.className} antialiased`}
+          className={`${montserrat.className} antialiased`}
         >
           <ConvexProviderWithClerk client={convex} useAuth={useAuth}>{children}</ConvexProviderWithClerk>
         </body>

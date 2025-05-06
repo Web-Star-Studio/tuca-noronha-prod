@@ -6,6 +6,7 @@ import UserMenu from "./UserMenu"
 import { Menu, X } from "lucide-react"
 import NavigationMenu from "./NavigationMenu"
 import { motion, AnimatePresence } from "framer-motion"
+import { playfairDisplay } from "@/lib/fonts"
 
 export default function Header() {
     const [isOpen, setIsOpen] = useState(false)
@@ -62,9 +63,9 @@ export default function Header() {
               {/* Logo */}
               <Link
                 href="/"
-                className="text-2xl font-bold font-serif tracking-tighter"
+                className="text-2xl font-bold tracking-tighter"
               >
-                <span className={isTransparent ? "text-white" : "text-gray-900"}>Tuca Noronha</span>
+                <span className={`${isTransparent ? "text-white" : "text-gray-900"} ${playfairDisplay.className}`}>Tuca Noronha</span>
               </Link>
 
               {/* User Menu and Burger Menu Button */}
