@@ -4,7 +4,7 @@ import * as React from "react"
 import { useState } from "react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Users, Clock, Info, UtensilsCrossed, Heart, Share2, Phone, Globe, Plus, Minus } from "lucide-react"
+import { Calendar as CalendarIcon, Users, Clock, Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -17,7 +17,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -41,9 +40,7 @@ export type RestaurantReservationFormProps = {
 export function RestaurantReservationForm({
   restaurantId,
   restaurantName = "Sol & Mar Noronha",
-  restaurantLocation,
   maxGuests = 10,
-  pricePerPerson = 0,
   className,
   onReservationSubmit
 }: RestaurantReservationFormProps) {
@@ -58,13 +55,13 @@ export function RestaurantReservationForm({
     "20:00", "20:30", "21:00", "21:30", "22:00"
   ]
   
-  // Formatar preço para moeda brasileira
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value)
-  }
+  // // Formatar preço para moeda brasileira
+  // const formatCurrency = (value: number) => {
+  //   return new Intl.NumberFormat('pt-BR', {
+  //     style: 'currency',
+  //     currency: 'BRL'
+  //   }).format(value)
+  // }
   
   const handleSubmit = async () => {
     if (!date || !time) return
@@ -98,6 +95,7 @@ export function RestaurantReservationForm({
       toast.error("Erro ao reservar", {
         description: "Não foi possível completar sua reserva. Por favor, tente novamente."
       })
+      console.error("Erro ao reservar:", error)
     } finally {
       setIsSubmitting(false)
     }

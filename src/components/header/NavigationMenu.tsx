@@ -3,8 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed } from "lucide-react";
+import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@clerk/nextjs";
 
 interface NavigationMenuProps {
   onClose: () => void;
@@ -12,8 +13,10 @@ interface NavigationMenuProps {
 
 const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
 
   const navigationItems = [
+    { path: "/meu-painel", label: "Meu Painel", icon: User },
     { path: "/", label: "Home", icon: Home },
     { path: "/atividades", label: "Atividades", icon: Compass },
     { path: "/hospedagens", label: "Hospedagens", icon: Hotel },
@@ -21,6 +24,7 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
     { path: "/eventos", label: "Eventos", icon: Calendar },
     { path: "/restaurantes", label: "Restaurantes", icon: UtensilsCrossed },
     { path: "/wishlist", label: "Lista de Desejos", icon: Heart },
+    { path: "/reservas", label: "Reservas", icon: Calendar },
   ];
 
   const containerVariants = {
