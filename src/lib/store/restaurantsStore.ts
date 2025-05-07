@@ -8,6 +8,7 @@ export interface Restaurant {
   name: string; // Restaurant name
   description: string; // Detailed description
   slug: string; // URL-friendly version of name
+  maxGuests?: number;
 
   // Contact & Location
   address: {
@@ -31,6 +32,7 @@ export interface Restaurant {
   hours: {
     [day: string]: string[]; // Format: ["11:30 AM-3:00 PM", "5:00 PM-10:00 PM"]
   };
+  averagePrice?: number;
 
   // Features & Amenities
   features: string[]; // Bar Dining, Private Dining, etc.

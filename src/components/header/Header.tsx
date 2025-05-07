@@ -7,13 +7,24 @@ import { Menu, X } from "lucide-react"
 import NavigationMenu from "./NavigationMenu"
 import { motion, AnimatePresence } from "framer-motion"
 import { playfairDisplay } from "@/lib/fonts"
+import { usePathname } from "next/navigation"
 
 export default function Header() {
     const [isOpen, setIsOpen] = useState(false)
     const [isTransparent, setIsTransparent] = useState(true)
+    const pathname = usePathname()
+    
+    // Verifica se estamos em uma página de detalhe de hospedagem
+    const isDetailPage = /^\/hospedagens\/[^/]+$/.test(pathname)
 
     useEffect(() => {
       const handleScroll = () => {
+        // Se estiver em uma página de detalhes, nunca usar transparência
+        if (isDetailPage) {
+          setIsTransparent(false)
+          return
+        }
+        
         // Mudar o header para não transparente quando o scroll for maior que 50px
         const scrollPosition = window.scrollY
         setIsTransparent(scrollPosition <= 50)
@@ -29,7 +40,7 @@ export default function Header() {
       return () => {
         window.removeEventListener('scroll', handleScroll)
       }
-    }, [])
+    }, [isDetailPage])
     
     const handleOpenChange = (open: boolean) => {
       setIsOpen(open)

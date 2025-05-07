@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useScroll, useSpring, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 
 import HeroBackground from "./HeroBackground";
 import HeroContent from "./HeroContent";
@@ -67,9 +68,7 @@ const HeroSection = () => {
     () => ({ scrollProgress: scrollProgressValue, scrollToNextSection: scrollToNext }),
     [scrollProgressValue, scrollToNext]
   );
-
-
-
+  
   return (
     <section
       ref={containerRef}

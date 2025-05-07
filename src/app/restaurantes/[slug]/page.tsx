@@ -19,7 +19,7 @@ import {
   Info,
   CalendarRange
 } from "lucide-react";
-import { Restaurant, useRestaurantsStore } from "@/lib/store/restaurantsStore";
+import { type Restaurant, useRestaurantsStore } from "@/lib/store/restaurantsStore";
 import { cn } from "@/lib/utils";
 
 // Shadcn components
@@ -28,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RestaurantReservationForm } from "@/components/bookings/RestaurantReservationForm";
 
 export default function RestaurantPage({ params }: { params: { slug: string } }) {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -60,12 +61,12 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
       <div className="container mx-auto px-4 py-8 mt-20">
         <div className="animate-pulse space-y-8">
           {/* Loading skeleton */}
-          <div className="h-10 w-40 bg-gray-200 rounded"></div>
-          <div className="h-96 w-full bg-gray-200 rounded-xl"></div>
+          <div className="h-10 w-40 bg-gray-200 rounded" />
+          <div className="h-96 w-full bg-gray-200 rounded-xl" />
           <div className="space-y-4">
-            <div className="h-8 w-2/3 bg-gray-200 rounded"></div>
-            <div className="h-6 w-1/2 bg-gray-200 rounded"></div>
-            <div className="h-6 w-1/3 bg-gray-200 rounded"></div>
+            <div className="h-8 w-2/3 bg-gray-200 rounded" />
+            <div className="h-6 w-1/2 bg-gray-200 rounded" />
+            <div className="h-6 w-1/3 bg-gray-200 rounded" />
           </div>
         </div>
       </div>
@@ -187,7 +188,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                     <h3 className="text-xl font-semibold mb-4">Especialidades culinárias</h3>
                     <div className="flex flex-wrap gap-2 mb-6">
                       {restaurant.cuisine.map((type, index) => (
-                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 px-3 py-1">
+                        <Badge key={`${restaurant.id}-cuisine-${index}`} variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 px-3 py-1">
                           {type}
                         </Badge>
                       ))}
@@ -198,8 +199,8 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                     <h3 className="text-xl font-semibold mb-4">Comodidades e recursos</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                       {restaurant.features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-3 text-gray-700">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                        <div key={`${restaurant.id}-feature-${index}`} className="flex items-center gap-3 text-gray-700">
+                          <div className="h-2 w-2 rounded-full bg-blue-500" />
                           <span>{feature}</span>
                         </div>
                       ))}
@@ -278,7 +279,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                     {restaurant.menuImages.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {restaurant.menuImages.map((img, index) => (
-                          <div key={index} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-gray-200">
+                          <div key={`${restaurant.id}-menu-${index}`} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-gray-200">
                             <Image 
                               src={img} 
                               alt={`Menu do ${restaurant.name} - página ${index + 1}`} 
@@ -303,7 +304,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                     <h3 className="text-xl font-semibold mb-4">Galeria de fotos</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {[restaurant.mainImage, ...restaurant.galleryImages].map((img, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
+                        <div key={`${restaurant.id}-photo-${index}`} className="relative aspect-square rounded-lg overflow-hidden">
                           <Image 
                             src={img} 
                             alt={`${restaurant.name} - foto ${index + 1}`} 
@@ -324,76 +325,56 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                 {/* Reservation Card */}
                 <Card className="overflow-hidden border-gray-200">
                   <CardContent className="p-0">
-                    <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100/50">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        Faça sua reserva
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Garanta seu lugar em {restaurant.name}
-                      </p>
+                    <RestaurantReservationForm 
+                      maxGuests={restaurant.maxGuests || 10}
+                      pricePerPerson={restaurant.averagePrice}
+                      onReservationSubmit={(reservation) => {
+                        console.log("Reservation submitted:", reservation);
+                        alert(`Reserva para ${reservation.guests} pessoas em ${reservation.date.toLocaleDateString()} às ${reservation.time} realizada com sucesso!`);
+                      }}
+                    />
+                  </CardContent>
+                </Card>
 
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <CalendarRange className="h-5 w-5 text-blue-600" />
-                            <span className="text-gray-900">Data</span>
-                          </div>
-                          <span className="text-sm font-medium text-gray-500">Selecionar</span>
-                        </div>
-
-                        <div className="flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-blue-600" />
-                            <span className="text-gray-900">Horário</span>
-                          </div>
-                          <span className="text-sm font-medium text-gray-500">Selecionar</span>
-                        </div>
-
-                        <div className="flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-5 w-5 text-blue-600" />
-                            <span className="text-gray-900">Pessoas</span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <button 
-                              className="text-blue-600 font-medium h-6 w-6 rounded-full flex items-center justify-center border border-blue-600 disabled:opacity-50"
-                              disabled={true}
-                            >
-                              -
-                            </button>
-                            <span className="text-gray-900 font-medium">2</span>
-                            <button 
-                              className="text-blue-600 font-medium h-6 w-6 rounded-full flex items-center justify-center border border-blue-600"
-                            >
-                              +
-                            </button>
-                          </div>
+                {/* Contact Card */}
+                <Card className="bg-white border-none outline-none">
+                  <CardContent className="p-6 space-y-4 bg-blue-50">
+                    <h3 className="font-semibold text-lg">Informações de contato</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <Phone className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-sm text-gray-500">Telefone</h4>
+                          <p className="text-gray-900">{restaurant.phone}</p>
                         </div>
                       </div>
-
-                      <Button className="w-full text-white mt-6 bg-blue-600 hover:bg-blue-700">
-                        Verificar disponibilidade
-                      </Button>
-                    </div>
-
-                    <div className="px-6 py-4 border-t border-gray-200">
-                      <div className="flex items-center gap-2 text-gray-600 mb-2">
-                        <Phone className="h-4 w-4" />
-                        <span>{restaurant.phone}</span>
-                      </div>
-                      {restaurant.website && (
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Globe className="h-4 w-4" />
-                          <a 
-                            href={restaurant.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {restaurant.website.replace(/(^\w+:|^)\/\//, '')}
-                          </a>
+                      
+                      { restaurant.website && (
+                        <div className="flex items-start gap-3">
+                          <Globe className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-sm text-gray-500">Website</h4>
+                            <a 
+                              href={restaurant.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {restaurant.website.replace(/^https?:\/\//, '')}
+                            </a>
+                          </div>
                         </div>
                       )}
+                      
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-sm text-gray-500">Endereço</h4>
+                          <p className="text-gray-900">{restaurant.address.street}</p>
+                          <p className="text-gray-900">{restaurant.address.neighborhood}, {restaurant.address.city} - {restaurant.address.state}</p>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -458,7 +439,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                             style={{
                               width: `${(restaurant.rating.food / 5) * 100}%`,
                             }}
-                          ></div>
+                          />
                         </div>
                         <span className="text-sm font-medium">{restaurant.rating.food.toFixed(1)}</span>
                       </div>
@@ -470,7 +451,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                             style={{
                               width: `${(restaurant.rating.service / 5) * 100}%`,
                             }}
-                          ></div>
+                          />
                         </div>
                         <span className="text-sm font-medium">{restaurant.rating.service.toFixed(1)}</span>
                       </div>
@@ -482,7 +463,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                             style={{
                               width: `${(restaurant.rating.ambience / 5) * 100}%`,
                             }}
-                          ></div>
+                          />
                         </div>
                         <span className="text-sm font-medium">{restaurant.rating.ambience.toFixed(1)}</span>
                       </div>
@@ -494,7 +475,7 @@ export default function RestaurantPage({ params }: { params: { slug: string } })
                             style={{
                               width: `${(restaurant.rating.value / 5) * 100}%`,
                             }}
-                          ></div>
+                          />
                         </div>
                         <span className="text-sm font-medium">{restaurant.rating.value.toFixed(1)}</span>
                       </div>
