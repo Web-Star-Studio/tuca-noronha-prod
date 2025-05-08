@@ -13,8 +13,10 @@ import {
   Settings,
   ShoppingBag,
   Users,
-  Utensils
+  Utensils,
+  Bell
 } from "lucide-react"
+import { UserButton } from "@clerk/nextjs"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -29,7 +31,6 @@ import {
   SidebarTrigger 
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
 
@@ -153,14 +154,14 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-blue-100/60 transition-colors duration-200">
-              <Settings className="h-5 w-5 text-slate-700" />
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-blue-100/60 transition-colors duration-200 relative">
+              <Bell className="h-5 w-5 text-slate-700" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">3</span>
             </Button>
             
-            <Avatar className="border-2 border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
-              <AvatarImage src="/avatars/admin.jpg" alt="Admin" />
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-600 text-white">AD</AvatarFallback>
-            </Avatar>
+            <div className="overflow-hidden rounded-full transition-all duration-200 hover:ring-2 hover:ring-blue-200 hover:ring-offset-2 hover:ring-offset-white/10">
+              <UserButton afterSignOutUrl="/" />
+            </div>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-5 px-6 py-6 bg-gradient-to-br from-slate-50 to-white/80 min-h-screen animate-fadeIn">{children}</div>
