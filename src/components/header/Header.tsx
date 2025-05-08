@@ -17,11 +17,12 @@ export default function Header() {
     // Verifica se estamos em uma página de detalhe de hospedagem
     const isDetailPage = /^\/hospedagens\/[^/]+$/.test(pathname)
     const isProfilePage = /^\/meu-painel$/.test(pathname)
+    const isReservationPage = /^\/reservas\/[^/]+$/.test(pathname)
 
     useEffect(() => {
       const handleScroll = () => {
         // Se estiver em uma página de detalhes, nunca usar transparência
-        if (isDetailPage || isProfilePage) {
+        if (isDetailPage || isProfilePage || isReservationPage) {
           setIsTransparent(false)
           return
         }
@@ -41,7 +42,7 @@ export default function Header() {
       return () => {
         window.removeEventListener('scroll', handleScroll)
       }
-    }, [isDetailPage, isProfilePage])
+    }, [isDetailPage, isProfilePage, isReservationPage])
     
     const handleOpenChange = (open: boolean) => {
       setIsOpen(open)

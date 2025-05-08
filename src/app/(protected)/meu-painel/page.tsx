@@ -818,7 +818,7 @@ export default function Dashboard() {
                   <Input
                     type="text"
                     placeholder="Buscar reservas..."
-                    className="pl-9 h-10 bg-white"
+                    className="pl-9 h-10 bg-white border-gray-200 shadow-sm"
                     value={reservationFilters.search}
                     onChange={(e) => setReservationFilters(prev => ({
                       ...prev,
@@ -838,7 +838,7 @@ export default function Dashboard() {
                 {isMobile ? (
                   <Drawer open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                     <DrawerTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
+                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-white border-gray-200 shadow-sm hover:bg-gray-50">
                         <SlidersHorizontal className="h-4 w-4" />
                       </Button>
                     </DrawerTrigger>
@@ -856,10 +856,10 @@ export default function Dashboard() {
                             value={reservationFilters.type} 
                             onValueChange={(value) => setReservationFilters(prev => ({ ...prev, type: value }))}
                           >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full bg-white border-gray-200 shadow-sm">
                               <SelectValue placeholder="Selecione um tipo" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border-gray-200 shadow-md">
                               <SelectItem value="all">Todos os tipos</SelectItem>
                               <SelectItem value="restaurant">Restaurantes</SelectItem>
                               <SelectItem value="accommodation">Hospedagens</SelectItem>
@@ -873,10 +873,10 @@ export default function Dashboard() {
                             value={reservationFilters.status} 
                             onValueChange={(value) => setReservationFilters(prev => ({ ...prev, status: value }))}
                           >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full bg-white border-gray-200 shadow-sm">
                               <SelectValue placeholder="Selecione um status" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border-gray-200 shadow-md">
                               <SelectItem value="all">Todos os status</SelectItem>
                               <SelectItem value="confirmed">Confirmadas</SelectItem>
                               <SelectItem value="pending">Pendentes</SelectItem>
@@ -904,10 +904,10 @@ export default function Dashboard() {
                       value={reservationFilters.type} 
                       onValueChange={(value) => setReservationFilters(prev => ({ ...prev, type: value }))}
                     >
-                      <SelectTrigger className="w-[160px] h-10">
+                       <SelectTrigger className="w-[160px] h-10 bg-white border-gray-200 shadow-sm">
                         <SelectValue placeholder="Tipo" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200 shadow-md">
                         <SelectItem value="all">Todos os tipos</SelectItem>
                         <SelectItem value="restaurant">Restaurantes</SelectItem>
                         <SelectItem value="accommodation">Hospedagens</SelectItem>
@@ -919,10 +919,10 @@ export default function Dashboard() {
                       value={reservationFilters.status} 
                       onValueChange={(value) => setReservationFilters(prev => ({ ...prev, status: value }))}
                     >
-                      <SelectTrigger className="w-[160px] h-10">
+                       <SelectTrigger className="w-[160px] h-10 bg-white border-gray-200 shadow-sm">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200 shadow-md">
                         <SelectItem value="all">Todos os status</SelectItem>
                         <SelectItem value="confirmed">Confirmadas</SelectItem>
                         <SelectItem value="pending">Pendentes</SelectItem>
@@ -932,8 +932,9 @@ export default function Dashboard() {
                     
                     {(reservationFilters.type !== 'all' || reservationFilters.status !== 'all' || reservationFilters.search) && (
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
+                        className="bg-white border-gray-200 shadow-sm hover:bg-gray-50"
                         onClick={() => setReservationFilters({ type: 'all', status: 'all', search: '' })}
                       >
                         Limpar
@@ -945,7 +946,7 @@ export default function Dashboard() {
             </motion.div>
 
             {filteredReservations.length === 0 ? (
-              <Card className="bg-white/90 backdrop-blur-sm shadow-md">
+              <Card className="bg-white shadow-md">
                 <CardContent className="py-10 text-center">
                   <p className="text-gray-500">Você ainda não possui reservas</p>
                   <Button className="mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-md hover:shadow-lg transition-all duration-300" asChild>
@@ -967,7 +968,7 @@ export default function Dashboard() {
 
                   return (
                     <motion.div key={reservation.id} variants={itemVariants} custom={index}>
-                      <Card className="overflow-hidden border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white/95 backdrop-blur-sm">
+                      <Card className="overflow-hidden border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white">
                       <div className="flex flex-col md:flex-row">
                         <div className="md:w-1/4 h-40 md:h-auto bg-gray-100 relative overflow-hidden">
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
