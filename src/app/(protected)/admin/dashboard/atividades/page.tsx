@@ -1,6 +1,6 @@
 "use client"
 
-import activitiesStore, { Activity } from "@/lib/store/activitiesStore"
+import activitiesStore, { type Activity } from "@/lib/store/activitiesStore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -32,7 +32,7 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured }: {
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60" />
         {activity.isFeatured && (
           <div className="absolute top-2 right-2">
             <Badge variant="secondary" className="bg-gradient-to-r from-amber-400 to-yellow-500 shadow-md hover:shadow-lg border-none text-black">
@@ -325,7 +325,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <div>
             <Label>Destaques</Label>
             {formData.highlights.map((highlight, index) => (
-              <div key={index} className="flex items-center gap-2 mt-2">
+              <div key={`${highlight}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+index}`} className="flex items-center gap-2 mt-2">
                 <Input
                   value={highlight}
                   onChange={(e) => handleArrayItemChange(index, e.target.value, "highlights")}
@@ -355,7 +356,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <div>
             <Label>Inclui</Label>
             {formData.includes.map((include, index) => (
-              <div key={index} className="flex items-center gap-2 mt-2">
+              <div key={`${include}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+index}`} className="flex items-center gap-2 mt-2">
                 <Input
                   value={include}
                   onChange={(e) => handleArrayItemChange(index, e.target.value, "includes")}
@@ -385,7 +387,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <div>
             <Label>Não Inclui</Label>
             {formData.excludes.map((exclude, index) => (
-              <div key={index} className="flex items-center gap-2 mt-2">
+              <div key={`${exclude}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+index}`} className="flex items-center gap-2 mt-2">
                 <Input
                   value={exclude}
                   onChange={(e) => handleArrayItemChange(index, e.target.value, "excludes")}
@@ -417,7 +420,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <div>
             <Label>Itinerário</Label>
             {formData.itineraries.map((item, index) => (
-              <div key={index} className="flex items-center gap-2 mt-2">
+              <div key={`${item}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+index}`} className="flex items-center gap-2 mt-2">
                 <Input
                   value={item}
                   onChange={(e) => handleArrayItemChange(index, e.target.value, "itineraries")}
@@ -447,7 +451,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <div>
             <Label>Informações Adicionais</Label>
             {formData.additionalInfo.map((info, index) => (
-              <div key={index} className="flex items-center gap-2 mt-2">
+              <div key={`${info}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+index}`} className="flex items-center gap-2 mt-2">
                 <Input
                   value={info}
                   onChange={(e) => handleArrayItemChange(index, e.target.value, "additionalInfo")}
@@ -477,7 +482,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <div>
             <Label>Política de Cancelamento</Label>
             {formData.cancelationPolicy.map((policy, index) => (
-              <div key={index} className="flex items-center gap-2 mt-2">
+              <div key={`${policy}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+index}`} className="flex items-center gap-2 mt-2">
                 <Input
                   value={policy}
                   onChange={(e) => handleArrayItemChange(index, e.target.value, "cancelationPolicy")}
@@ -579,7 +585,7 @@ export default function ActivitiesPage() {
         
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none">
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none text-white">
               <Plus className="mr-2 h-4 w-4" /> Nova Atividade
             </Button>
           </DialogTrigger>

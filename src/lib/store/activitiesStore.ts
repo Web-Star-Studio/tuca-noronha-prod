@@ -11,7 +11,7 @@ export interface Activity {
   duration: string;
   maxParticipants: number;
   minParticipants: number;
-  difficulty: string;
+  difficulty: string; 
   rating: number;
   imageUrl: string;
   galleryImages: string[];
@@ -23,8 +23,7 @@ export interface Activity {
   cancelationPolicy: string[];
   isFeatured: boolean;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
 }
 
 type ActivitiesStore = {

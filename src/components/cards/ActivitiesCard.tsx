@@ -18,7 +18,7 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                     />
                     {/* Badge de preço */}
                     <div className="absolute bottom-3 right-3 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-sm">
-                        R$ {activity.price.toFixed(2)}
+                        $ {activity.price.toFixed(2)}
                     </div>
                     {/* Badge de categoria */}
                     <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">

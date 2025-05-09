@@ -134,27 +134,27 @@ export default function HostingFilter({
                 </div>
               </div>
 
-              {/* Guest count filter */}
+              {/* Guest count filter - Mobile */}
               <div>
                 <h3 className="text-base font-semibold mb-4 text-gray-800">Hóspedes</h3>
-                <div className="flex items-center">
+                <div className="flex items-center shadow-sm rounded-lg overflow-hidden bg-white">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                    className="h-10 w-10 rounded-l-lg"
+                    className="h-10 w-10 rounded-l-lg border-gray-200 text-blue-600 hover:bg-blue-50"
                     disabled={guestCount <= 1}
                   >
                     -
                   </Button>
-                  <div className="h-10 px-4 flex items-center justify-center border-y border-input">
+                  <div className="h-10 px-4 flex items-center justify-center border-y border-gray-200 bg-white text-gray-700 font-medium">
                     {guestCount} {guestCount === 1 ? 'hóspede' : 'hóspedes'}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setGuestCount(guestCount + 1)}
-                    className="h-10 w-10 rounded-r-lg"
+                    className="h-10 w-10 rounded-r-lg border-gray-200 text-blue-600 hover:bg-blue-50"
                   >
                     +
                   </Button>
@@ -269,27 +269,27 @@ export default function HostingFilter({
             </div>
           </div>
 
-          {/* Guest count filter */}
+          {/* Guest count filter - Desktop */}
           <div className="mb-8">
             <h3 className="text-base font-semibold mb-4 text-gray-800">Hóspedes</h3>
-            <div className="flex items-center">
+            <div className="flex items-center shadow-sm rounded-lg overflow-hidden bg-white">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                className="h-10 w-10 rounded-l-lg"
+                className="h-10 w-10 rounded-l-lg border-gray-200 text-blue-600 hover:bg-blue-50"
                 disabled={guestCount <= 1}
               >
                 -
               </Button>
-              <div className="h-10 px-4 flex items-center justify-center border-y border-input">
+              <div className="h-10 px-4 flex items-center justify-center border-y border-gray-200 bg-white text-gray-700 font-medium">
                 {guestCount} {guestCount === 1 ? 'hóspede' : 'hóspedes'}
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setGuestCount(guestCount + 1)}
-                className="h-10 w-10 rounded-r-lg"
+                className="h-10 w-10 rounded-r-lg border-gray-200 text-blue-600 hover:bg-blue-50"
               >
                 +
               </Button>

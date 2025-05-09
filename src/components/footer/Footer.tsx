@@ -91,6 +91,11 @@ const Footer = () => {
                   Termos
                 </Link>
               </li>
+              <li>
+                <Link href="/admin/dashboard" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
+                  Admin
+                </Link>
+              </li>
             </ul>
           </div>
 
