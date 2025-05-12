@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/../convex/_generated/api";
 import { useQuery as useConvexQuery } from "convex/react";
 import { mapConvexActivity, type ActivityFromConvex } from "@/lib/services/activityService";
-import { Activity } from "@/lib/store/activitiesStore";
 import { Id } from "@/../convex/_generated/dataModel";
 
 // A wrapper hook that combines TanStack Query with Convex

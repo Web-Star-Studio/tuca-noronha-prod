@@ -12,7 +12,6 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -101,7 +100,7 @@ export function EventForm({
         }));
       }
     }
-  }, [dbTickets, event?.id]);
+  }, [dbTickets, event?.id, formData.hasMultipleTickets]);
 
   // Form tabs
   const [activeTab, setActiveTab] = useState("basic");
@@ -230,7 +229,7 @@ export function EventForm({
     setTickets([...tickets, newTicket]);
   };
 
-  const updateTicket = (index: number, field: keyof EventTicket, value: any) => {
+  const updateTicket = (index: number, field: keyof EventTicket, value: unknown) => {
     const updatedTickets = [...tickets];
     updatedTickets[index] = {
       ...updatedTickets[index],

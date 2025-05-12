@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser } from "@clerk/nextjs"
 import { 
   Search, 
   X, 
@@ -163,7 +162,6 @@ function useMediaQuery(query: string) {
 
 // Página principal
 export default function ReservasPage() {
-  const { user } = useUser()
   const router = useRouter()
   const [filters, setFilters] = useState({
     type: 'all',

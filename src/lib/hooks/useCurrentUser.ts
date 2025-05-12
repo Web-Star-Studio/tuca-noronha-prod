@@ -3,7 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 
 export const useCurrentUser = () => {
-  const { isAuthenticated, userId } = useAuth();
+  const { isAuthenticated } = useAuth();
   const convexUser = useQuery(api.auth.getUser, isAuthenticated ? {} : "skip");
   
   return {

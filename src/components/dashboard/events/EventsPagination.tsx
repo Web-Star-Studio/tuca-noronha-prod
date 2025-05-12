@@ -83,7 +83,7 @@ export function EventsPagination({
         <ChevronLeft className="h-4 w-4" />
       </Button>
       
-      {getPageNumbers().map((page, index) => 
+      {getPageNumbers().map((page) => 
         typeof page === 'number' ? (
           <Button
             key={`page-${page}`}

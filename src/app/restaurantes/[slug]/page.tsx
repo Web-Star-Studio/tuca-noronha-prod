@@ -15,9 +15,7 @@ import {
   Star,
   UtensilsCrossed,
   BookOpen,
-  Users,
   Info,
-  CalendarRange
 } from "lucide-react";
 import { type Restaurant, useRestaurantsStore } from "@/lib/store/restaurantsStore";
 import { cn } from "@/lib/utils";

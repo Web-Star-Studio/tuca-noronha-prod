@@ -4,19 +4,16 @@ import activitiesStore, { type Activity } from "@/lib/store/activitiesStore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Edit, MoreHorizontal, Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink } from "lucide-react"
+import { Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useState, useMemo } from "react"
 import Image from "next/image"
-import { v4 as uuidv4 } from "uuid"
 import { useCreateActivity, useActivities, useUpdateActivity, useDeleteActivity, useToggleFeatured, useToggleActive } from "@/lib/services/activityService"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { toast } from "sonner";
@@ -128,10 +125,12 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
             <div className="text-xs text-blue-500 font-medium mt-0.5 flex items-center">
               {activity.creatorImage && (
                 <div className="w-4 h-4 rounded-full overflow-hidden mr-1">
-                  <img 
+                  <Image 
                     src={activity.creatorImage} 
                     alt={activity.creatorName} 
                     className="w-full h-full object-cover"
+                    width={20}
+                    height={20}
                   />
                 </div>
               )}
@@ -151,37 +150,12 @@ function ActivityForm({ activity, onSave, onCancel }: {
 }) {
   const categories = activitiesStore(state => state.categories);
   const { user, isAuthenticated } = useCurrentUser();
-  const createActivity = useCreateActivity();
   
   const [activeTab, setActiveTab] = useState("basic");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState<Activity>(
-    activity || {
-      id: uuidv4(),
-      title: "",
-      description: "",
-      shortDescription: "",
-      price: 0,
-      category: categories[0],
-      duration: "2 horas",
-      maxParticipants: 10,
-      minParticipants: 1,
-      difficulty: "Fácil",
-      rating: 4.5,
-      imageUrl: "https://source.unsplash.com/random/800x600/?activity",
-      galleryImages: [],
-      highlights: [],
-      includes: [],
-      itineraries: [],
-      excludes: [],
-      additionalInfo: [],
-      cancelationPolicy: [],
-      isFeatured: false,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
+    activity || {} as Activity
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -817,7 +791,7 @@ export default function ActivitiesPage() {
   const { user, isAuthenticated } = useCurrentUser();
   
   // Fetch activities from Convex - use useMemo to avoid unnecessary re-renders
-  const { activities: activitiesData, isLoading } = useActivities();
+  const { activities: activitiesData } = useActivities();
   const createActivity = useCreateActivity();
   const updateActivity = useUpdateActivity();
   const deleteActivity = useDeleteActivity();

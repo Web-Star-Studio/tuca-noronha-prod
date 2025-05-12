@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  BarChart3,
   Building2,
   CalendarClock,
   Home,
@@ -17,21 +16,17 @@ import {
   Check,
   Image,
   FileText,
-  LogOut,
   ChevronLeft,
   Search,
   LayoutPanelLeft
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { UserButton } from "@clerk/nextjs"
-import { Separator } from "@/components/ui/separator"
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,

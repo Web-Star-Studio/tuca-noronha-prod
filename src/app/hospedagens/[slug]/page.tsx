@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useHostingDetailStore, useHostingsStore } from "@/lib/store/hostingsStore";
-import { ChevronLeft, Users, Bath, Home, BedDouble, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, Users, Bath, Home, BedDouble, Check, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import type { DateRange } from "react-day-picker";
-import { addDays, differenceInCalendarDays, format } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AccommodationBookingForm } from "@/components/bookings/AccommodationBookingForm";
 
@@ -28,23 +27,19 @@ export default function HostingDetailPage({ params }: { params: { slug: string }
   const [allImages, setAllImages] = useState<string[]>([]);
   
   // Estado para as datas de check-in e check-out
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), 1),
-    to: addDays(new Date(), 6)
-  });
+  // const [dateRange] = useState<DateRange | undefined>({
+  //  from: addDays(new Date(), 1),
+  //  to: addDays(new Date(), 6)
+  // });
   
-  // Estado para quantidade de hóspedes
-  const [guestCount, setGuestCount] = useState(2);
-  const [adultCount, setAdultCount] = useState(2);
-  const [childCount, setChildCount] = useState(0);
+  // Estado para quantidade de hóspedes (variáveis comentadas são usadas em funcionalidades futuras)
+  // const [guestCount, setGuestCount] = useState(2);
+  // const [adultCount, setAdultCount] = useState(2);
+  // const [childCount, setChildCount] = useState(0);
   
-  // Estado para controlar o popover de hóspedes
-  const [guestPopoverOpen, setGuestPopoverOpen] = useState(false);
-  
-  // Número de noites
-  const nightCount = dateRange?.from && dateRange?.to 
-    ? differenceInCalendarDays(dateRange.to, dateRange.from) 
-    : 0;
+  // const nightCount = dateRange?.from && dateRange?.to 
+  //  ? differenceInCalendarDays(dateRange.to, dateRange.from) 
+  //  : 0;
 
   useEffect(() => {
     const currentHosting = hostings.find((h) => h.slug === params.slug);
@@ -60,54 +55,13 @@ export default function HostingDetailPage({ params }: { params: { slug: string }
     setLoading(false);
   }, [hostings, params.slug, setHosting, setLoading]);
 
-  // Formatação do preço para moeda brasileira
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-  
-  // Incrementar/decrementar contadores de hóspedes
-  const incrementAdults = () => {
-    if (adultCount + childCount < (hosting?.maxGuests || 10)) {
-      setAdultCount(prev => prev + 1);
-      setGuestCount(prev => prev + 1);
-    }
-  };
-  
-  const decrementAdults = () => {
-    if (adultCount > 1) {
-      setAdultCount(prev => prev - 1);
-      setGuestCount(prev => prev - 1);
-    }
-  };
-  
-  const incrementChildren = () => {
-    if (adultCount + childCount < (hosting?.maxGuests || 10)) {
-      setChildCount(prev => prev + 1);
-      setGuestCount(prev => prev + 1);
-    }
-  };
-  
-  const decrementChildren = () => {
-    if (childCount > 0) {
-      setChildCount(prev => prev - 1);
-      setGuestCount(prev => prev - 1);
-    }
-  };
-  
-  // Calcular o total da reserva
-  const calculateTotal = () => {
-    if (!hosting || !dateRange?.from || !dateRange?.to) return 0;
-    
-    const nightlyRate = hosting.pricePerNight;
-    const subtotal = nightlyRate * nightCount;
-    const cleaningFee = hosting.cleaningFee || 0;
-    const taxes = hosting.taxes || 0;
-    
-    return subtotal + cleaningFee + taxes;
-  };
+  // Formatação do preço para moeda brasileira (função será usada em implementação futura)
+  // const formatCurrency = (value: number) => {
+  //   return new Intl.NumberFormat('pt-BR', {
+  //     style: 'currency',
+  //     currency: 'BRL'
+  //   }).format(value);
+  // };
 
   // Manipulador de eventos para a submissão de reserva
   const handleBookingSubmit = (booking: BookingData) => {

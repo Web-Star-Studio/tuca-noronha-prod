@@ -25,8 +25,8 @@ export default function EventsPagination({
     pages.push(1);
     
     // Criar um array de páginas ao redor da página atual
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    const startPage = Math.max(2, currentPage - 1);
+    const endPage = Math.min(totalPages - 1, currentPage + 1);
     
     // Adicionar ellipsis se necessário entre 1 e startPage
     if (startPage > 2) pages.push("...");

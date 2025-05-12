@@ -17,7 +17,6 @@ import {
 
 import {
   Card,
-  CardContent,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -48,7 +47,7 @@ export type Reservation = {
   imageUrl: string
   price: number
   confirmationCode: string
-  details: any
+  details: Record<string, unknown>
 }
 
 interface ReservationCardProps {

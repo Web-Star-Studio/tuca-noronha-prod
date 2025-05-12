@@ -1,7 +1,6 @@
 "use client";
 
 import { notFound } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { usePublicEvent } from "@/lib/services/eventService";
 import EventDetails from "@/components/cards/EventDetails";
 
