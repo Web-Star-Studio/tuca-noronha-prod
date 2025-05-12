@@ -105,7 +105,7 @@ export default function ActivitiesFilter({
                     value={[minPrice ?? 0, maxPrice ?? 700]}
                     max={700}
                     step={50}
-                    onValueChange={(value) => {
+                    onValueCommit={(value) => {
                       setMinPrice(value[0]);
                       setMaxPrice(value[1]);
                     }}
@@ -206,7 +206,7 @@ export default function ActivitiesFilter({
               value={[minPrice ?? 0, maxPrice ?? 700]}
               max={700}
               step={50}
-              onValueChange={(value) => {
+              onValueCommit={(value) => {
                 setMinPrice(value[0]);
                 setMaxPrice(value[1]);
               }}

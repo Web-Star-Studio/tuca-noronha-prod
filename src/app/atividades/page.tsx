@@ -1,19 +1,26 @@
 "use client";
 
 import ActivitiesCard from "@/components/cards/ActivitiesCard";
-import activitiesStore from "@/lib/store/activitiesStore";
 import ActivitiesFilter from "@/components/filters/ActivitiesFilter";
 import { Activity } from "@/lib/store/activitiesStore";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
+import { usePublicActivitiesQuery } from "@/lib/hooks/useActivityQueries";
 
 export default function AtividadesPage() {
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [durationFilter, setDurationFilter] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const { categories, activities, filteredActivities, setFilteredActivities } =
-    activitiesStore();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  
+  // Get activities using TanStack Query
+  const { data: activities = [], isLoading } = usePublicActivitiesQuery();
+  
+  // Calculate categories only when activities change - memoized
+  const categories = useMemo(() => {
+    if (activities.length === 0) return [];
+    return [...new Set(activities.map(activity => activity.category))];
+  }, [activities]);
 
   const toggleCategoryFilter = (category: string) => {
     setSelectedCategories((prev) => {
@@ -59,8 +66,11 @@ export default function AtividadesPage() {
     return parseInt(match[1]) * 60; // Assume horas como padrão
   };
 
-  const applyFilters = () => {
-    const filtered = activities.filter((activity: Activity) => {
+  // Filter activities - memoized to prevent unnecessary calculations
+  const filteredActivities = useMemo(() => {
+    if (isLoading || activities.length === 0) return [];
+    
+    return activities.filter((activity: Activity) => {
       // Filtragem por preço
       const priceRange =
         minPrice !== null && maxPrice !== null
@@ -99,24 +109,23 @@ export default function AtividadesPage() {
 
       return priceRange && categoryRange && durationRange;
     });
-
-    setFilteredActivities(filtered);
-  };
+  }, [activities, minPrice, maxPrice, selectedCategories, durationFilter, isLoading]);
 
   const resetFilters = () => {
     setMinPrice(null);
     setMaxPrice(null);
     setDurationFilter([]);
     setSelectedCategories([]);
-    setFilteredActivities(activities);
+    setIsFilterOpen(false); // Fechar o filtro após aplicar
   };
 
-  // Inicialização dos filteredActivities quando o componente monta
-  useEffect(() => {
-    if (activities.length > 0) {
-      setFilteredActivities(activities);
-    }
-  }, [activities, setFilteredActivities]);
+  // Handler for applying filters - now just closes the filter UI
+  const applyFilters = () => {
+    setIsFilterOpen(false);
+  };
+
+  // No need for the useEffect to set initial filtered activities anymore
+  // as we're now using useMemo for filteredActivities
 
   return (
     <>

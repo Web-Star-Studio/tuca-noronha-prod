@@ -83,5 +83,7 @@ export default defineSchema({
     isFeatured: v.boolean(),
     isActive: v.boolean(),
     partnerId: v.id("users"),
-  }),
+  })
+    .index("by_partner", ["partnerId"])
+    .index("featured_activities", ["isFeatured", "isActive"]),
 });

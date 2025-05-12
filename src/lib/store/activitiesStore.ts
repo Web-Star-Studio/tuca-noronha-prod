@@ -24,6 +24,11 @@ export interface Activity {
   isFeatured: boolean;
   isActive: boolean;
   createdAt: Date;
+  updatedAt?: Date;
+  partnerId?: string; // Reference to the user who created the activity
+  creatorName?: string; // Name of the user who created the activity
+  creatorEmail?: string; // Email of the user who created the activity
+  creatorImage?: string; // Profile image URL of the creator
 }
 
 type ActivitiesStore = {

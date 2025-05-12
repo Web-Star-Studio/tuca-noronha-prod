@@ -12,23 +12,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Edit, MoreHorizontal, Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { Edit, MoreHorizontal, Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink } from "lucide-react"
+import Link from "next/link"
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import { v4 as uuidv4 } from "uuid"
 import { useCreateActivity, useActivities, useUpdateActivity, useDeleteActivity, useToggleFeatured, useToggleActive } from "@/lib/services/activityService"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { toast } from "sonner";
 
-function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured }: { 
+function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleActive }: { 
   activity: Activity; 
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
   onToggleFeatured: (id: string, featured: boolean) => void;
+  onToggleActive: (id: string, active: boolean) => void;
 }) {
   return (
-    <Card className="overflow-hidden bg-white/90 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:translate-y-[-3px]">
-      <div className="relative h-48 w-full group">
+    <Card 
+      className="overflow-hidden bg-white/90 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:translate-y-[-3px] cursor-pointer relative"
+      onClick={() => onEdit(activity)}
+    >
+      <div className="relative h-52 w-full group overflow-hidden rounded-t-lg">
         <Image 
           src={activity.imageUrl}
           alt={activity.title}
@@ -47,28 +52,43 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured }: {
       <CardHeader className="pb-2 pt-3">
         <CardTitle className="flex justify-between items-center">
           <span className="line-clamp-1 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">{activity.title}</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-blue-100/80 transition-colors duration-200">
-                <MoreHorizontal className="h-4 w-4 text-slate-600" />
-                <span className="sr-only">Ações</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white/95 backdrop-blur-sm border-slate-200 shadow-lg">
-              <DropdownMenuItem onClick={() => onEdit(activity)} className="hover:bg-blue-50 focus:bg-blue-50 transition-colors">
-                <Edit className="mr-2 h-4 w-4 text-blue-600" /> Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onToggleFeatured(activity.id, !activity.isFeatured)} className="hover:bg-amber-50 focus:bg-amber-50 transition-colors">
-                <Star className="mr-2 h-4 w-4 text-amber-500" /> {activity.isFeatured ? "Remover destaque" : "Destacar"}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onDelete(activity.id)} className="text-red-600 hover:bg-red-50 focus:bg-red-50 transition-colors">
-                <Trash2 className="mr-2 h-4 w-4" /> Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-amber-100/80 transition-colors duration-200"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click event
+                onToggleFeatured(activity.id, !activity.isFeatured);
+              }}
+            >
+              <Star className={`h-4 w-4 ${activity.isFeatured ? "fill-amber-500 text-amber-500" : "text-slate-400"}`} />
+              <span className="sr-only">{activity.isFeatured ? "Remover destaque" : "Destacar"}</span>
+            </Button>
+            <Link 
+              href={`/atividades/${activity.id}`} 
+              target="_blank"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-blue-100/80 transition-colors duration-200"
+            >
+              <ExternalLink className="h-4 w-4 text-blue-500" />
+              <span className="sr-only">Ver página</span>
+            </Link>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-red-100/80 transition-colors duration-200"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click event
+                onDelete(activity.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4 text-red-500" />
+              <span className="sr-only">Excluir</span>
+            </Button>
+          </div>
         </CardTitle>
-        <CardDescription className="line-clamp-2 mt-1">{activity.shortDescription}</CardDescription>
+        <CardDescription className="line-clamp-2 mt-1 text-slate-600">{activity.shortDescription}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 pb-2">
         <div className="flex items-center justify-between">
@@ -80,11 +100,44 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured }: {
       </CardContent>
       <CardFooter className="flex justify-between pt-2 pb-2 border-t border-slate-100">
         <div className="flex items-center space-x-2">
-          <Label htmlFor={`published-${activity.id}`} className="text-sm font-normal">Ativo</Label>
-          <Switch id={`published-${activity.id}`} checked={activity.isActive} className="data-[state=checked]:bg-green-600" />
+          <Button 
+            variant="outline" 
+            size="sm"
+            className={`px-3 py-1 text-xs font-medium ${activity.isActive ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click event
+              onToggleActive(activity.id, !activity.isActive);
+            }}
+          >
+            {activity.isActive ? (
+              <>
+                <div className="h-2 w-2 rounded-full bg-green-500 mr-2" /> Ativo
+              </>
+            ) : (
+              <>
+                <div className="h-2 w-2 rounded-full bg-gray-400 mr-2" /> Inativo
+              </>
+            )}
+          </Button>
         </div>
-        <div className="text-xs text-muted-foreground">
-          Criado em {new Date(activity.createdAt).toLocaleDateString('pt-BR')}
+        <div className="flex flex-col items-end">
+          <div className="text-xs text-muted-foreground">
+            Criado em {new Date(activity.createdAt).toLocaleDateString('pt-BR')}
+          </div>
+          {activity.creatorName && (
+            <div className="text-xs text-blue-500 font-medium mt-0.5 flex items-center">
+              {activity.creatorImage && (
+                <div className="w-4 h-4 rounded-full overflow-hidden mr-1">
+                  <img 
+                    src={activity.creatorImage} 
+                    alt={activity.creatorName} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              Criado por: {activity.creatorName}
+            </div>
+          )}
         </div>
       </CardFooter>
     </Card>
@@ -205,19 +258,9 @@ function ActivityForm({ activity, onSave, onCancel }: {
     try {
       setIsSubmitting(true);
       
-      if (activity) {
-        // Will be implemented in the onSave callback
-        onSave(formData);
-      } else {
-        // Create new activity in Convex
-        const clerkId = user.id;
-        const activityId = await createActivity(formData, clerkId);
-        
-        if (activityId) {
-          toast.success("Atividade criada com sucesso");
-          onSave({ ...formData, id: String(activityId) });
-        }
-      }
+      // Pass the form data to the parent component which will handle the API calls
+      // This prevents duplicate activity creation
+      onSave(formData);
     } catch (error) {
       console.error("Error creating activity:", error);
       toast.error("Ocorreu um erro ao criar a atividade");
@@ -229,7 +272,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6 bg-white/80 backdrop-blur-sm border-none shadow-sm w-full flex overflow-x-auto">
+        <TabsList className="mb-6 bg-white/80 backdrop-blur-sm border-none shadow-sm w-full flex overflow-x-auto sticky top-0 z-10">
           <TabsTrigger value="basic" className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
             1. Básicas
           </TabsTrigger>
@@ -372,42 +415,47 @@ function ActivityForm({ activity, onSave, onCancel }: {
           </div>
             
           <div className="grid grid-cols-2 gap-6 p-4 bg-blue-50/50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="isActive" 
-                name="isActive"
-                checked={formData.isActive} 
-                onCheckedChange={(checked) => {
-                  setFormData({ ...formData, isActive: checked });
-                  toast.success(checked ? "Atividade ativada" : "Atividade desativada");
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant={formData.isActive ? "default" : "outline"}
+                size="sm"
+                className={formData.isActive ? "bg-green-600 hover:bg-green-700" : "border-gray-300 text-gray-700"}
+                onClick={() => {
+                  const newState = !formData.isActive;
+                  setFormData({ ...formData, isActive: newState });
+                  toast.success(newState ? "Atividade ativada" : "Atividade desativada");
                 }}
-                className="data-[state=checked]:bg-green-500"
-              />
-              <Label htmlFor="isActive" className="font-medium">
-                {formData.isActive ? "Ativo" : "Inativo"}
-              </Label>
-              <Badge variant={formData.isActive ? "success" : "destructive"} className="ml-2">
-                {formData.isActive ? "Disponível" : "Indisponível"}
-              </Badge>
+              >
+                {formData.isActive ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-white mr-2" /> 
+                    Atividade Disponível
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-gray-400 mr-2" />
+                    Atividade Indisponível
+                  </>
+                )}
+              </Button>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="isFeatured" 
-                name="isFeatured"
-                checked={formData.isFeatured} 
-                onCheckedChange={(checked) => {
-                  setFormData({ ...formData, isFeatured: checked });
-                  toast.success(checked ? "Atividade destacada" : "Destaque removido");
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant={formData.isFeatured ? "default" : "outline"}
+                size="sm"
+                className={formData.isFeatured ? "bg-amber-500 hover:bg-amber-600" : "border-gray-300 text-gray-700"}
+                onClick={() => {
+                  const newState = !formData.isFeatured;
+                  setFormData({ ...formData, isFeatured: newState });
+                  toast.success(newState ? "Atividade destacada" : "Destaque removido");
                 }}
-                className="data-[state=checked]:bg-amber-500"
-              />
-              <Label htmlFor="isFeatured" className="font-medium">
-                {formData.isFeatured ? "Destacado" : "Sem destaque"}
-              </Label>
-              <Badge variant={formData.isFeatured ? "default" : "outline"} className={formData.isFeatured ? "bg-amber-400 hover:bg-amber-500 text-black" : "text-slate-500"}>
-                {formData.isFeatured ? "Destaque" : "Normal"}
-              </Badge>
+              >
+                <Star className={`h-4 w-4 mr-2 ${formData.isFeatured ? 'fill-white text-white' : ''}`} />
+                {formData.isFeatured ? "Em destaque" : "Adicionar aos destaques"}
+              </Button>
             </div>
           </div>
         </TabsContent>
@@ -743,7 +791,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none"
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none text-white"
         >
           {isSubmitting ? (
             <>
@@ -768,13 +816,16 @@ function ActivityForm({ activity, onSave, onCancel }: {
 export default function ActivitiesPage() {
   const { user, isAuthenticated } = useCurrentUser();
   
-  // Fetch activities from Convex
-  const { activities: allActivities, isLoading } = useActivities();
+  // Fetch activities from Convex - use useMemo to avoid unnecessary re-renders
+  const { activities: activitiesData, isLoading } = useActivities();
   const createActivity = useCreateActivity();
   const updateActivity = useUpdateActivity();
   const deleteActivity = useDeleteActivity();
   const toggleFeatured = useToggleFeatured();
   const toggleActive = useToggleActive();
+  
+  // Store activities in a memoized value to prevent unnecessary re-renders
+  const allActivities = useMemo(() => activitiesData || [], [activitiesData]);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -785,15 +836,17 @@ export default function ActivitiesPage() {
   
   const categories = activitiesStore(state => state.categories);
   
-  // Filtered activities based on search and filters
-  const filteredActivities = allActivities.filter(activity => {
-    const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        activity.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = filterCategory === "all" || activity.category === filterCategory;
-    const matchesFeatured = !showFeaturedOnly || activity.isFeatured;
-    
-    return matchesSearch && matchesCategory && matchesFeatured;
-  });
+  // Filtered activities based on search and filters - memoize to prevent re-renders
+  const filteredActivities = useMemo(() => {
+    return allActivities.filter(activity => {
+      const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         activity.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = filterCategory === "all" || activity.category === filterCategory;
+      const matchesFeatured = !showFeaturedOnly || activity.isFeatured;
+      
+      return matchesSearch && matchesCategory && matchesFeatured;
+    });
+  }, [allActivities, searchQuery, filterCategory, showFeaturedOnly]);
   
   // Handle CRUD operations
   const handleCreateActivity = async (newActivity: Activity) => {
@@ -805,7 +858,12 @@ export default function ActivitiesPage() {
     try {
       // Use the clerk ID for user identification
       const clerkId = user.id;
+      
+      // Save the creator information
       await createActivity(newActivity, clerkId);
+      
+      // Log the creation for audit purposes
+      console.log(`Activity created by user ${user.id} at ${new Date().toISOString()}`);
       toast.success("Atividade criada com sucesso");
       setAddDialogOpen(false);
     } catch (error) {
@@ -872,7 +930,7 @@ export default function ActivitiesPage() {
               <Plus className="mr-2 h-4 w-4" /> Nova Atividade
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px] bg-white/95 backdrop-blur-md border-none shadow-xl">
+          <DialogContent className="sm:max-w-[850px] bg-white/95 backdrop-blur-md border-none shadow-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-bold">Adicionar Nova Atividade</DialogTitle>
               <DialogDescription>
@@ -914,13 +972,16 @@ export default function ActivitiesPage() {
             </Select>
           </div>
           
-          <div className="flex items-center space-x-2 md:pt-8">
-            <Switch
-              id="featured"
-              checked={showFeaturedOnly}
-              onCheckedChange={setShowFeaturedOnly}
-            />
-            <Label htmlFor="featured">Apenas destaques</Label>
+          <div className="flex items-center space-x-2 md:pt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              className={`flex items-center gap-2 ${showFeaturedOnly ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}
+              onClick={() => setShowFeaturedOnly(!showFeaturedOnly)}
+            >
+              <Star className={`h-4 w-4 ${showFeaturedOnly ? 'fill-amber-400 text-amber-400' : ''}`} />
+              {showFeaturedOnly ? 'Apenas destaques' : 'Todos os itens'}
+            </Button>
           </div>
         </div>
       </div>
@@ -943,6 +1004,7 @@ export default function ActivitiesPage() {
             onEdit={setEditingActivity}
             onDelete={(id) => setConfirmDeleteId(id)}
             onToggleFeatured={handleToggleFeatured}
+            onToggleActive={handleToggleActive}
           />
         ))}
         
@@ -967,7 +1029,7 @@ export default function ActivitiesPage() {
       {/* Edit Activity Dialog */}
       {editingActivity && (
         <Dialog open={!!editingActivity} onOpenChange={(open) => !open && setEditingActivity(null)}>
-          <DialogContent className="sm:max-w-[800px] bg-white/95 backdrop-blur-md border-none shadow-xl">
+          <DialogContent className="sm:max-w-[850px] bg-white/95 backdrop-blur-md border-none shadow-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-bold">Editar Atividade</DialogTitle>
               <DialogDescription>
@@ -986,11 +1048,16 @@ export default function ActivitiesPage() {
       {/* Confirm Delete Dialog */}
       {confirmDeleteId && (
         <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
-          <DialogContent className="bg-white/95 backdrop-blur-md border-none shadow-xl">
+          <DialogContent className="bg-white/95 backdrop-blur-md border-none shadow-xl max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-red-600">Confirmar Exclusão</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" /> Confirmar Exclusão
+              </DialogTitle>
               <DialogDescription>
                 Esta ação não pode ser desfeita. Tem certeza que deseja excluir esta atividade?
+                <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200 text-red-700 text-sm">
+                  Ao excluir esta atividade, todos os dados associados também serão removidos.
+                </div>
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2">

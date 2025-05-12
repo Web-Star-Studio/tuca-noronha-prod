@@ -19,7 +19,8 @@ import {
   Compass,
   Gauge,
 } from "lucide-react";
-import activitiesStore, { Activity } from "@/lib/store/activitiesStore";
+import { Activity } from "@/lib/store/activitiesStore";
+import { usePublicActivity } from "@/lib/services/activityService";
 import { cn } from "@/lib/utils";
 
 // Shadcn components
@@ -30,25 +31,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ActivityPage({ params }: { params: { id: string } }) {
-  const [activity, setActivity] = useState<Activity | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { activity, isLoading } = usePublicActivity(params.id);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
-  const { activities } = activitiesStore();
-
-  useEffect(() => {
-    // Simular chamada de API com dados mockados
-    setIsLoading(true);
-    
-    // Encontrar atividade nos dados mockados
-    setTimeout(() => {
-      const foundActivity = activities.find((a) => a.id === params.id);
-      if (foundActivity) {
-        setActivity(foundActivity);
-      }
-      setIsLoading(false);
-    }, 500);
-  }, [params.id, activities]);
 
   // Lidar com caso 404
   if (!isLoading && !activity) {

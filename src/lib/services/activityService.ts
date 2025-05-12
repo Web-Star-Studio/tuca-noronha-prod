@@ -1,7 +1,9 @@
 import { api } from "@/../convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import { useState, useEffect } from "react";
 import type { Activity } from "@/lib/store/activitiesStore";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 // Type for the activity data coming from Convex
 export type ActivityFromConvex = {
@@ -27,7 +29,13 @@ export type ActivityFromConvex = {
   cancelationPolicy: string[];
   isFeatured: boolean;
   isActive: boolean;
-  partnerId: string;
+  partnerId: string; // Reference to the user who created the activity
+  creator?: {
+    id: string;
+    name?: string;
+    email?: string;
+    image?: string;
+  } | null; // Creator information when available
 };
 
 // Convert from Convex activity to our frontend Activity type
@@ -56,11 +64,18 @@ export const mapConvexActivity = (activity: ActivityFromConvex): Activity => {
     isActive: activity.isActive,
     createdAt: new Date(activity._creationTime),
     updatedAt: new Date(activity._creationTime),
+    partnerId: activity.partnerId, // Keep the reference to the creator
+    creatorName: activity.creator?.name || 'Usuário', // Use creator name or default
+    creatorEmail: activity.creator?.email,
+    creatorImage: activity.creator?.image,
   };
 };
 
 // Convert from our frontend Activity type to Convex input
-export const mapActivityToConvex = (activity: Activity, convexUserId: Id<"users">) => {
+export const mapActivityToConvex = (activity: Activity, convexUserId: Id<"users"> | null) => {
+  if (!convexUserId) {
+    throw new Error("User ID is required to create or update an activity");
+  }
   return {
     title: activity.title,
     description: activity.description,
@@ -103,7 +118,7 @@ export const useGetConvexUserId = () => {
 
 // Hooks for accessing Convex API
 export const useActivities = () => {
-  const activities = useQuery(api.activities.getAll);
+  const activities = useQuery(api.activities.getActivitiesWithCreators);
   
   return {
     activities: activities?.map(mapConvexActivity) || [],
@@ -116,6 +131,31 @@ export const useFeaturedActivities = () => {
   
   return {
     activities: activities?.map(mapConvexActivity) || [],
+    isLoading: activities === undefined,
+  };
+};
+
+// Get a single activity by ID for public display
+export const usePublicActivity = (id: string | null) => {
+  const idAsConvexId = id ? id as Id<"activities"> : null;
+  const activity = useQuery(
+    api.activities.getById, 
+    idAsConvexId ? { id: idAsConvexId } : "skip"
+  );
+  
+  return {
+    activity: activity ? mapConvexActivity(activity) : null,
+    isLoading: id ? activity === undefined : false,
+  };
+};
+
+// Get all active activities for public display
+export const usePublicActivities = () => {
+  const activities = useQuery(api.activities.getActivitiesWithCreators);
+  
+  // Only return active activities for public display
+  return {
+    activities: activities?.filter(a => a.isActive).map(mapConvexActivity) || [],
     isLoading: activities === undefined,
   };
 };
@@ -180,4 +220,48 @@ export const useToggleActive = () => {
   return async (id: string, isActive: boolean) => {
     return await toggleActiveMutation({ id: id as Id<"activities">, isActive });
   };
-}; 
+};
+
+// Get activities by the current user
+export const useUserActivities = () => {
+  const getUserByClerkId = useMutation(api.auth.getUserByClerkId);
+  const { user } = useCurrentUser();
+  
+  const [convexUserId, setConvexUserId] = useState<Id<"users"> | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // First get the Convex user ID from Clerk ID
+  useEffect(() => {
+    const getConvexId = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const userId = await getUserByClerkId({ clerkId: user.id });
+        if (userId) {
+          setConvexUserId(userId as Id<"users">);
+        }
+      } catch (error) {
+        console.error("Error fetching Convex user ID:", error);
+      }
+    };
+    
+    getConvexId();
+  }, [user?.id, getUserByClerkId]);
+  
+  // Then use the Convex user ID to fetch user activities
+  const userActivities = useQuery(
+    api.activities.getByUser, 
+    convexUserId ? { userId: convexUserId } : "skip"
+  );
+  
+  // Update activities when the query result changes
+  useEffect(() => {
+    if (userActivities) {
+      setActivities(userActivities.map(mapConvexActivity));
+      setIsLoading(false);
+    }
+  }, [userActivities]);
+  
+  return { activities, isLoading };
+};
