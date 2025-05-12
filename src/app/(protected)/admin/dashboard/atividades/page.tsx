@@ -12,10 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Edit, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react"
+import { Edit, MoreHorizontal, Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
 import { v4 as uuidv4 } from "uuid"
+import { useCreateActivity, useActivities, useUpdateActivity, useDeleteActivity, useToggleFeatured, useToggleActive } from "@/lib/services/activityService"
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { toast } from "sonner";
 
 function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured }: { 
   activity: Activity; 
@@ -94,6 +97,11 @@ function ActivityForm({ activity, onSave, onCancel }: {
   onCancel: () => void;
 }) {
   const categories = activitiesStore(state => state.categories);
+  const { user, isAuthenticated } = useCurrentUser();
+  const createActivity = useCreateActivity();
+  
+  const [activeTab, setActiveTab] = useState("basic");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState<Activity>(
     activity || {
@@ -154,63 +162,124 @@ function ActivityForm({ activity, onSave, onCancel }: {
     setFormData({ ...formData, [fieldName]: newArray });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const goToNextTab = () => {
+    if (activeTab === "basic") {
+      setActiveTab("details");
+    } else if (activeTab === "details") {
+      setActiveTab("highlights");
+    } else if (activeTab === "highlights") {
+      setActiveTab("includes");
+    } else if (activeTab === "includes") {
+      setActiveTab("itinerary");
+    }
+  };
+
+  const goToPreviousTab = () => {
+    if (activeTab === "details") {
+      setActiveTab("basic");
+    } else if (activeTab === "highlights") {
+      setActiveTab("details");
+    } else if (activeTab === "includes") {
+      setActiveTab("highlights");
+    } else if (activeTab === "itinerary") {
+      setActiveTab("includes");
+    }
+  };
+
+  const isLastTab = activeTab === "itinerary";
+  const isFirstTab = activeTab === "basic";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedActivity = {
-      ...formData,
-      updatedAt: new Date().toISOString()
-    };
-    onSave(updatedActivity);
+    
+    if (!isLastTab) {
+      goToNextTab();
+      return;
+    }
+    
+    if (!isAuthenticated || !user) {
+      toast.error("Você precisa estar logado para criar uma atividade");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      if (activity) {
+        // Will be implemented in the onSave callback
+        onSave(formData);
+      } else {
+        // Create new activity in Convex
+        const clerkId = user.id;
+        const activityId = await createActivity(formData, clerkId);
+        
+        if (activityId) {
+          toast.success("Atividade criada com sucesso");
+          onSave({ ...formData, id: String(activityId) });
+        }
+      }
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      toast.error("Ocorreu um erro ao criar a atividade");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="mb-4 bg-white/80 backdrop-blur-sm border-none shadow-sm">
-          <TabsTrigger value="basic" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Informações Básicas</TabsTrigger>
-          <TabsTrigger value="details" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Detalhes</TabsTrigger>
-          <TabsTrigger value="features" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Características</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6 bg-white/80 backdrop-blur-sm border-none shadow-sm w-full flex overflow-x-auto">
+          <TabsTrigger value="basic" className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            1. Básicas
+          </TabsTrigger>
+          <TabsTrigger value="details" className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            2. Detalhes
+          </TabsTrigger>
+          <TabsTrigger value="highlights" className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            3. Destaques
+          </TabsTrigger>
+          <TabsTrigger value="includes" className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            4. Inclui/Não Inclui
+          </TabsTrigger>
+          <TabsTrigger value="itinerary" className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            5. Itinerário/Políticas
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="basic" className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <TabsContent value="basic" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
-              <Label htmlFor="title">Título</Label>
+              <Label htmlFor="title" className="text-sm font-medium">Título</Label>
               <Input 
                 id="title" 
                 name="title" 
                 value={formData.title} 
                 onChange={handleInputChange} 
+                className="mt-1.5 bg-white shadow-sm"
+                placeholder="Nome da atividade"
                 required 
               />
             </div>
             
             <div className="col-span-2">
-              <Label htmlFor="shortDescription">Descrição Curta</Label>
+              <Label htmlFor="shortDescription" className="text-sm font-medium">Descrição Curta</Label>
               <Textarea 
                 id="shortDescription" 
                 name="shortDescription" 
                 value={formData.shortDescription} 
                 onChange={handleInputChange} 
                 rows={2} 
+                className="mt-1.5 bg-white shadow-sm" 
+                placeholder="Breve descrição para cartões e listagens"
                 required 
               />
             </div>
+          </div>
             
-            <div className="col-span-2">
-              <Label htmlFor="description">Descrição Completa</Label>
-              <Textarea 
-                id="description" 
-                name="description" 
-                value={formData.description} 
-                onChange={handleInputChange} 
-                rows={4} 
-                required 
-              />
-            </div>
-            
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="price">Preço (R$)</Label>
+              <Label htmlFor="price" className="text-sm font-medium">Preço (R$)</Label>
               <Input 
                 id="price" 
                 name="price" 
@@ -219,17 +288,19 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 onChange={handleNumberChange} 
                 min="0" 
                 step="0.01" 
+                className="mt-1.5 bg-white shadow-sm"
+                placeholder="0.00"
                 required 
               />
             </div>
             
             <div>
-              <Label htmlFor="category">Categoria</Label>
+              <Label htmlFor="category" className="text-sm font-medium">Categoria</Label>
               <Select 
                 value={formData.category} 
                 onValueChange={(value) => handleSelectChange("category", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -241,23 +312,25 @@ function ActivityForm({ activity, onSave, onCancel }: {
             </div>
             
             <div>
-              <Label htmlFor="duration">Duração</Label>
+              <Label htmlFor="duration" className="text-sm font-medium">Duração</Label>
               <Input 
                 id="duration" 
                 name="duration" 
                 value={formData.duration} 
                 onChange={handleInputChange} 
+                className="mt-1.5 bg-white shadow-sm"
+                placeholder="Ex: 2 horas"
                 required 
               />
             </div>
             
             <div>
-              <Label htmlFor="difficulty">Dificuldade</Label>
+              <Label htmlFor="difficulty" className="text-sm font-medium">Dificuldade</Label>
               <Select 
                 value={formData.difficulty} 
                 onValueChange={(value) => handleSelectChange("difficulty", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
                   <SelectValue placeholder="Selecione a dificuldade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,11 +341,9 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-            
-          <div className="grid grid-cols-2 gap-4">
+
             <div>
-              <Label htmlFor="minParticipants">Mínimo de Participantes</Label>
+              <Label htmlFor="minParticipants" className="text-sm font-medium">Mínimo de Participantes</Label>
               <Input 
                 id="minParticipants" 
                 name="minParticipants" 
@@ -280,12 +351,13 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 value={formData.minParticipants} 
                 onChange={handleNumberChange} 
                 min="1" 
+                className="mt-1.5 bg-white shadow-sm"
                 required 
               />
             </div>
             
             <div>
-              <Label htmlFor="maxParticipants">Máximo de Participantes</Label>
+              <Label htmlFor="maxParticipants" className="text-sm font-medium">Máximo de Participantes</Label>
               <Input 
                 id="maxParticipants" 
                 name="maxParticipants" 
@@ -293,20 +365,30 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 value={formData.maxParticipants} 
                 onChange={handleNumberChange} 
                 min="1" 
+                className="mt-1.5 bg-white shadow-sm"
                 required 
               />
             </div>
           </div>
             
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6 p-4 bg-blue-50/50 rounded-lg">
             <div className="flex items-center space-x-2">
               <Switch 
                 id="isActive" 
                 name="isActive"
                 checked={formData.isActive} 
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })} 
+                onCheckedChange={(checked) => {
+                  setFormData({ ...formData, isActive: checked });
+                  toast.success(checked ? "Atividade ativada" : "Atividade desativada");
+                }}
+                className="data-[state=checked]:bg-green-500"
               />
-              <Label htmlFor="isActive">Ativar Atividade</Label>
+              <Label htmlFor="isActive" className="font-medium">
+                {formData.isActive ? "Ativo" : "Inativo"}
+              </Label>
+              <Badge variant={formData.isActive ? "success" : "destructive"} className="ml-2">
+                {formData.isActive ? "Disponível" : "Indisponível"}
+              </Badge>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -314,217 +396,385 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 id="isFeatured" 
                 name="isFeatured"
                 checked={formData.isFeatured} 
-                onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })} 
+                onCheckedChange={(checked) => {
+                  setFormData({ ...formData, isFeatured: checked });
+                  toast.success(checked ? "Atividade destacada" : "Destaque removido");
+                }}
+                className="data-[state=checked]:bg-amber-500"
               />
-              <Label htmlFor="isFeatured">Destacar Atividade</Label>
+              <Label htmlFor="isFeatured" className="font-medium">
+                {formData.isFeatured ? "Destacado" : "Sem destaque"}
+              </Label>
+              <Badge variant={formData.isFeatured ? "default" : "outline"} className={formData.isFeatured ? "bg-amber-400 hover:bg-amber-500 text-black" : "text-slate-500"}>
+                {formData.isFeatured ? "Destaque" : "Normal"}
+              </Badge>
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="details" className="space-y-4">
-          <div>
-            <Label>Destaques</Label>
-            {formData.highlights.map((highlight, index) => (
-              <div key={`${highlight}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-index}`} className="flex items-center gap-2 mt-2">
-                <Input
-                  value={highlight}
-                  onChange={(e) => handleArrayItemChange(index, e.target.value, "highlights")}
-                  placeholder="Destaque"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveArrayItem(index, "highlights")}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleAddArrayItem("highlights")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Destaque
-            </Button>
+        <TabsContent value="details" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="col-span-2">
+            <Label htmlFor="description" className="text-sm font-medium">Descrição Completa</Label>
+            <Textarea 
+              id="description" 
+              name="description" 
+              value={formData.description} 
+              onChange={handleInputChange} 
+              rows={6} 
+              className="mt-1.5 bg-white shadow-sm"
+              placeholder="Descrição detalhada da atividade" 
+              required 
+            />
           </div>
-
-          <div>
-            <Label>Inclui</Label>
-            {formData.includes.map((include, index) => (
-              <div key={`${include}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-index}`} className="flex items-center gap-2 mt-2">
-                <Input
-                  value={include}
-                  onChange={(e) => handleArrayItemChange(index, e.target.value, "includes")}
-                  placeholder="Item incluído"
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="imageUrl" className="text-sm font-medium">URL da Imagem Principal</Label>
+              <Input 
+                id="imageUrl" 
+                name="imageUrl" 
+                value={formData.imageUrl} 
+                onChange={handleInputChange} 
+                className="mt-1.5 bg-white shadow-sm"
+                placeholder="https://..."
+                required 
+              />
+            </div>
+            
+            {formData.imageUrl && (
+              <div className="mt-4 relative h-40 rounded-md overflow-hidden">
+                <Image 
+                  src={formData.imageUrl}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveArrayItem(index, "includes")}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleAddArrayItem("includes")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Item Incluso
-            </Button>
-          </div>
-
-          <div>
-            <Label>Não Inclui</Label>
-            {formData.excludes.map((exclude, index) => (
-              <div key={`${exclude}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-index}`} className="flex items-center gap-2 mt-2">
-                <Input
-                  value={exclude}
-                  onChange={(e) => handleArrayItemChange(index, e.target.value, "excludes")}
-                  placeholder="Item não incluído"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveArrayItem(index, "excludes")}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleAddArrayItem("excludes")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Item Não Incluso
-            </Button>
+            )}
           </div>
         </TabsContent>
 
-        <TabsContent value="features" className="space-y-4">
-          <div>
-            <Label>Itinerário</Label>
-            {formData.itineraries.map((item, index) => (
-              <div key={`${item}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-index}`} className="flex items-center gap-2 mt-2">
-                <Input
-                  value={item}
-                  onChange={(e) => handleArrayItemChange(index, e.target.value, "itineraries")}
-                  placeholder="Etapa do itinerário"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveArrayItem(index, "itineraries")}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleAddArrayItem("itineraries")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Etapa
-            </Button>
+        <TabsContent value="highlights" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Destaques da Atividade</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-0 bg-white/80"
+                onClick={() => handleAddArrayItem("highlights")}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Destaque
+              </Button>
+            </div>
+            
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+              {formData.highlights.map((highlight, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: intentionally using index as key to maintain input focus
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={highlight}
+                    onChange={(e) => handleArrayItemChange(index, e.target.value, "highlights")}
+                    placeholder="Destaque"
+                    className="bg-white shadow-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveArrayItem(index, "highlights")}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              
+              {formData.highlights.length === 0 && (
+                <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
+                  Adicione os principais destaques da atividade
+                </div>
+              )}
+            </div>
           </div>
+        </TabsContent>
 
-          <div>
-            <Label>Informações Adicionais</Label>
-            {formData.additionalInfo.map((info, index) => (
-              <div key={`${info}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-index}`} className="flex items-center gap-2 mt-2">
-                <Input
-                  value={info}
-                  onChange={(e) => handleArrayItemChange(index, e.target.value, "additionalInfo")}
-                  placeholder="Informação adicional"
-                />
+        <TabsContent value="includes" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Inclui</Label>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveArrayItem(index, "additionalInfo")}
+                  variant="outline"
+                  size="sm"
+                  className="mt-0 bg-white/80"
+                  onClick={() => handleAddArrayItem("includes")}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Item
                 </Button>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleAddArrayItem("additionalInfo")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Informação
-            </Button>
+              
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
+                {formData.includes.map((include, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: intentionally using index as key to maintain input focus
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={include}
+                      onChange={(e) => handleArrayItemChange(index, e.target.value, "includes")}
+                      placeholder="Item incluído"
+                      className="bg-white shadow-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem(index, "includes")}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {formData.includes.length === 0 && (
+                  <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
+                    Adicione o que está incluído na atividade
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Não Inclui</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-0 bg-white/80"
+                  onClick={() => handleAddArrayItem("excludes")}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Item
+                </Button>
+              </div>
+              
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
+                {formData.excludes.map((exclude, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: intentionally using index as key to maintain input focus
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={exclude}
+                      onChange={(e) => handleArrayItemChange(index, e.target.value, "excludes")}
+                      placeholder="Item não incluído"
+                      className="bg-white shadow-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem(index, "excludes")}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {formData.excludes.length === 0 && (
+                  <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
+                    Adicione o que não está incluído na atividade
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+        </TabsContent>
 
-          <div>
-            <Label>Política de Cancelamento</Label>
-            {formData.cancelationPolicy.map((policy, index) => (
-              <div key={`${policy}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-index}`} className="flex items-center gap-2 mt-2">
-                <Input
-                  value={policy}
-                  onChange={(e) => handleArrayItemChange(index, e.target.value, "cancelationPolicy")}
-                  placeholder="Regra de cancelamento"
-                />
+        <TabsContent value="itinerary" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Itinerário</Label>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveArrayItem(index, "cancelationPolicy")}
+                  variant="outline"
+                  size="sm"
+                  className="mt-0 bg-white/80"
+                  onClick={() => handleAddArrayItem("itineraries")}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Etapa
                 </Button>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleAddArrayItem("cancelationPolicy")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Regra
-            </Button>
+              
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
+                {formData.itineraries.map((item, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: intentionally using index as key to maintain input focus
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={item}
+                      onChange={(e) => handleArrayItemChange(index, e.target.value, "itineraries")}
+                      placeholder="Etapa do itinerário"
+                      className="bg-white shadow-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem(index, "itineraries")}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {formData.itineraries.length === 0 && (
+                  <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
+                    Adicione as etapas do itinerário
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Política de Cancelamento</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-0 bg-white/80"
+                  onClick={() => handleAddArrayItem("cancelationPolicy")}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Regra
+                </Button>
+              </div>
+              
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
+                {formData.cancelationPolicy.map((policy, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: intentionally using index as key to maintain input focus
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={policy}
+                      onChange={(e) => handleArrayItemChange(index, e.target.value, "cancelationPolicy")}
+                      placeholder="Regra de cancelamento"
+                      className="bg-white shadow-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveArrayItem(index, "cancelationPolicy")}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {formData.cancelationPolicy.length === 0 && (
+                  <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
+                    Adicione as regras de cancelamento
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Informações Adicionais</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-0 bg-white/80"
+                onClick={() => handleAddArrayItem("additionalInfo")}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Informação
+              </Button>
+            </div>
+            
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
+              {formData.additionalInfo.map((info, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: intentionally using index as key to maintain input focus
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={info}
+                    onChange={(e) => handleArrayItemChange(index, e.target.value, "additionalInfo")}
+                    placeholder="Informação adicional"
+                    className="bg-white shadow-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveArrayItem(index, "additionalInfo")}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              
+              {formData.additionalInfo.length === 0 && (
+                <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
+                  Adicione informações adicionais sobre a atividade
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
       </Tabs>
 
-      <DialogFooter className="gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} className="border-slate-200 hover:bg-slate-100 transition-colors">Cancelar</Button>
-        <Button type="submit" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none">
-          {activity ? "Atualizar" : "Criar"} Atividade
+      <div className="flex justify-between gap-2 pt-4 border-t border-gray-100">
+        {!isFirstTab ? (
+          <Button type="button" variant="outline" onClick={goToPreviousTab} className="border-slate-200 hover:bg-slate-100 transition-colors">
+            <ChevronLeft className="mr-2 h-4 w-4" /> Voltar
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" onClick={onCancel} className="border-slate-200 hover:bg-slate-100 transition-colors">
+            Cancelar
+          </Button>
+        )}
+        
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+              Processando...
+            </>
+          ) : isLastTab ? (
+            <>
+              {activity ? "Atualizar" : "Criar"} Atividade
+            </>
+          ) : (
+            <>
+              Continuar <ChevronRight className="ml-2 h-4 w-4" />
+            </>
+          )}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
   )
 }
 
 export default function ActivitiesPage() {
-  const allActivities = activitiesStore(state => state.activities);
-  const setActivities = activitiesStore(state => state.setActivities);
+  const { user, isAuthenticated } = useCurrentUser();
+  
+  // Fetch activities from Convex
+  const { activities: allActivities, isLoading } = useActivities();
+  const createActivity = useCreateActivity();
+  const updateActivity = useUpdateActivity();
+  const deleteActivity = useDeleteActivity();
+  const toggleFeatured = useToggleFeatured();
+  const toggleActive = useToggleActive();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -546,31 +796,64 @@ export default function ActivitiesPage() {
   });
   
   // Handle CRUD operations
-  const handleCreateActivity = (newActivity: Activity) => {
-    const updatedActivities = [...allActivities, newActivity];
-    setActivities(updatedActivities);
-    setAddDialogOpen(false);
+  const handleCreateActivity = async (newActivity: Activity) => {
+    if (!isAuthenticated || !user) {
+      toast.error("Você precisa estar logado para criar uma atividade");
+      return;
+    }
+    
+    try {
+      // Use the clerk ID for user identification
+      const clerkId = user.id;
+      await createActivity(newActivity, clerkId);
+      toast.success("Atividade criada com sucesso");
+      setAddDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      toast.error("Ocorreu um erro ao criar a atividade");
+    }
   };
   
-  const handleUpdateActivity = (updatedActivity: Activity) => {
-    const updatedActivities = allActivities.map(activity => 
-      activity.id === updatedActivity.id ? updatedActivity : activity
-    );
-    setActivities(updatedActivities);
-    setEditingActivity(null);
+  const handleUpdateActivity = async (updatedActivity: Activity) => {
+    try {
+      await updateActivity(updatedActivity);
+      toast.success("Atividade atualizada com sucesso");
+      setEditingActivity(null);
+    } catch (error) {
+      console.error("Error updating activity:", error);
+      toast.error("Ocorreu um erro ao atualizar a atividade");
+    }
   };
   
-  const handleDeleteActivity = (id: string) => {
-    const updatedActivities = allActivities.filter(activity => activity.id !== id);
-    setActivities(updatedActivities);
-    setConfirmDeleteId(null);
+  const handleDeleteActivity = async (id: string) => {
+    try {
+      await deleteActivity(id);
+      toast.success("Atividade excluída com sucesso");
+      setConfirmDeleteId(null);
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      toast.error("Ocorreu um erro ao excluir a atividade");
+    }
   };
   
-  const handleToggleFeatured = (id: string, featured: boolean) => {
-    const updatedActivities = allActivities.map(activity => 
-      activity.id === id ? { ...activity, isFeatured: featured } : activity
-    );
-    setActivities(updatedActivities);
+  const handleToggleFeatured = async (id: string, featured: boolean) => {
+    try {
+      await toggleFeatured(id, featured);
+      toast.success(`Atividade ${featured ? "destacada" : "removida dos destaques"} com sucesso`);
+    } catch (error) {
+      console.error("Error toggling featured status:", error);
+      toast.error("Ocorreu um erro ao alterar o status de destaque");
+    }
+  };
+  
+  const handleToggleActive = async (id: string, active: boolean) => {
+    try {
+      await toggleActive(id, active);
+      toast.success(`Atividade ${active ? "ativada" : "desativada"} com sucesso`);
+    } catch (error) {
+      console.error("Error toggling active status:", error);
+      toast.error("Ocorreu um erro ao alterar o status da atividade");
+    }
   };
 
   return (

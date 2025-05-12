@@ -82,5 +82,6 @@ export default defineSchema({
     cancelationPolicy: v.array(v.string()),
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    partnerId: v.id("users"),
   }),
 });

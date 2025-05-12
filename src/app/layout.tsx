@@ -1,9 +1,14 @@
-'use client'
-
-import { montserrat } from "@/lib/fonts";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { ConvexClientProvider } from "./ConvexClientProvider";
-import { Toaster } from "@/components/ui/sonner";
+import { Providers } from "./providers";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "TripNative",
+  description: "Experiências turísticas únicas e autênticas",
+};
 
 export default function RootLayout({
   children,
@@ -12,11 +17,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body
-        className={`${montserrat.className} antialiased`}
-      >
-        <ConvexClientProvider>{children}</ConvexClientProvider>
-        <Toaster />
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

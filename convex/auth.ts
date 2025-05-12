@@ -1,5 +1,8 @@
-import { query } from "./_generated/server";
-import { AuthContextWithClerk, ClerkUserIdentity, User, isAuthenticated } from "./types";
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+import type { AuthContextWithClerk, ClerkUserIdentity, User } from "./types";
+import { isAuthenticated } from "./types";
+import type { Id } from "./_generated/dataModel";
 
 // Função auxiliar para obter o usuário a partir do contexto de autenticação
 export const getUserFromContext = async (ctx: AuthContextWithClerk): Promise<User> => {
@@ -29,6 +32,27 @@ export const getUser = query({
       email: identity.email,
       image: identity.pictureUrl
     };
+  },
+});
+
+// Get Convex user ID by Clerk ID
+export const getUserByClerkId = mutation({
+  args: {
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args): Promise<Id<"users"> | null> => {
+    // Find user by clerkId
+    const users = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .collect();
+    
+    if (users.length > 0) {
+      return users[0]._id;
+    }
+    
+    // If no user found, return null
+    return null;
   },
 });
 
