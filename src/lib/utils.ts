@@ -19,3 +19,15 @@ export function formatDate(date: Date): string {
   // Return formatted date in PT-BR (Portuguese Brazil) format
   return date.toLocaleDateString('pt-BR', options);
 }
+
+/**
+ * Format a number as currency in Brazilian Real (R$) format
+ */
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}

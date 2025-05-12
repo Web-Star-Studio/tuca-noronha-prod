@@ -1,7 +1,7 @@
 "use client";
 
 import HostingCard from "@/components/cards/HostingCard";
-import { Hosting, useHostingsStore } from "@/lib/store/hostingsStore";
+import { type Hosting, useHostingsStore } from "@/lib/store/hostingsStore";
 import HostingFilter from "@/components/filters/HostingFilter";
 import { useEffect, useState } from "react";
 
@@ -31,9 +31,8 @@ export default function HospedagensPage() {
     setSelectedTypes((prev) => {
       if (prev.includes(type)) {
         return prev.filter((t) => t !== type);
-      } else {
-        return [...prev, type];
       }
+        return [...prev, type];
     });
   };
 
@@ -41,9 +40,8 @@ export default function HospedagensPage() {
     setSelectedAmenities((prev) => {
       if (prev.includes(amenity)) {
         return prev.filter((a) => a !== amenity);
-      } else {
-        return [...prev, amenity];
       }
+        return [...prev, amenity];
     });
   };
 
@@ -101,7 +99,7 @@ export default function HospedagensPage() {
               backgroundImage:
                 "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
             }}
-          ></div>
+          />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <div className="text-center text-white px-4">
               <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">

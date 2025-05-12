@@ -82,8 +82,64 @@ export default defineSchema({
     cancelationPolicy: v.array(v.string()),
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
   })
     .index("by_partner", ["partnerId"])
     .index("featured_activities", ["isFeatured", "isActive"]),
+    
+  activityTickets: defineTable({
+    activityId: v.id("activities"),           // Referência à atividade
+    name: v.string(),                         // Nome do ingresso
+    description: v.string(),                  // Descrição do ingresso
+    price: v.float64(),                       // Preço do ingresso
+    availableQuantity: v.int64(),             // Quantidade disponível
+    maxPerOrder: v.int64(),                   // Quantidade máxima por pedido
+    type: v.string(),                         // Tipo (ex: "regular", "vip", "discount", "free")
+    benefits: v.array(v.string()),            // Benefícios incluídos neste ticket
+    isActive: v.boolean(),                    // Se o ingresso está ativo/disponível
+  })
+    .index("by_activity", ["activityId"])
+    .index("by_activity_and_active", ["activityId", "isActive"]),
+  events: defineTable({
+    title: v.string(),
+    description: v.string(),
+    shortDescription: v.string(),
+    date: v.string(),        // ISO date string for the event date
+    time: v.string(),        // Time string for the event
+    location: v.string(),    // Location name
+    address: v.string(),     // Full address
+    price: v.float64(),      // Base price (pode ser o ingresso mais barato) 
+    category: v.string(),
+    maxParticipants: v.int64(),
+    imageUrl: v.string(),
+    galleryImages: v.array(v.string()),
+    highlights: v.array(v.string()),
+    includes: v.array(v.string()),
+    additionalInfo: v.array(v.string()),
+    speaker: v.optional(v.string()),     // Optional speaker/host name
+    speakerBio: v.optional(v.string()),  // Optional speaker bio
+    isFeatured: v.boolean(),
+    isActive: v.boolean(),
+    hasMultipleTickets: v.boolean(),     // Flag indicando se tem múltiplos ingressos
+    partnerId: v.id("users"),
+  })
+    .index("by_partner", ["partnerId"])
+    .index("by_date", ["date"])
+    .index("featured_events", ["isFeatured", "isActive"])
+    .index("active_events", ["isActive"]),
+    
+  eventTickets: defineTable({
+    eventId: v.id("events"),              // Referência ao evento
+    name: v.string(),                     // Nome do ingresso (ex: "VIP", "Standard")
+    description: v.string(),              // Descrição do ingresso
+    price: v.float64(),                   // Preço do ingresso
+    availableQuantity: v.int64(),         // Quantidade disponível
+    maxPerOrder: v.int64(),               // Quantidade máxima por pedido
+    type: v.string(),                     // Tipo (ex: "regular", "vip", "discount", "free")
+    benefits: v.array(v.string()),        // Benefícios incluídos neste ticket
+    isActive: v.boolean(),                // Se o ingresso está ativo/disponível
+  })
+    .index("by_event", ["eventId"])
+    .index("by_event_and_active", ["eventId", "isActive"]),
 });

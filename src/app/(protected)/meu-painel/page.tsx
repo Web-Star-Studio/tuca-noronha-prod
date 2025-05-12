@@ -400,7 +400,7 @@ const RecommendationCard = ({ item }: { item: RecommendationItem }) => {
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null; // Previne loop de erro
-              target.src = `https://placehold.co/600x400/E2E8F0/A0AEC0?text=Imagem+Indisponível`;
+              target.src = "https://placehold.co/600x400/E2E8F0/A0AEC0?text=Imagem+Indisponível";
             }}
           />
           <div className="absolute top-2 left-2">
@@ -439,7 +439,8 @@ const RecommendationCard = ({ item }: { item: RecommendationItem }) => {
           <p className="text-sm text-gray-500 mb-3 flex-1">{description}</p>
           <div className="flex flex-wrap gap-1 mt-auto">
             {tags.map((tag, idx) => (
-              <div key={`${name}-${tag}-${idx}`} className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
+              <div key={`${name}-${tag}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+idx}`} className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
                 {tag}
               </div>
             ))}
@@ -961,7 +962,7 @@ export default function Dashboard() {
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.onerror = null; 
-                              target.src = `https://placehold.co/400x300/E2E8F0/A0AEC0?text=Erro`;
+                              target.src = "https://placehold.co/400x300/E2E8F0/A0AEC0?text=Erro";
                             }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
@@ -990,6 +991,7 @@ export default function Dashboard() {
                         </div>
                         <div className="p-5 md:p-6 md:w-2/3 lg:w-3/4 space-y-3">
                           <div>
+                            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                             <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer" onClick={() => toggleEditingReservation(reservation.id, true)}>{reservation.name}</h3>
                             <div className="mt-1 flex items-center text-sm text-gray-500">
                               <MapPin className="h-4 w-4 text-gray-400 mr-1.5 flex-shrink-0" />

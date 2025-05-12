@@ -1,4 +1,4 @@
-import React from "react"
+import type React from "react"
 import { SignedIn } from "@clerk/nextjs"
 
 import Header from "@/components/header/Header"

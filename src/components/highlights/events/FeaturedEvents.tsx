@@ -1,19 +1,17 @@
 'use client'
 
-import { Event, useEventsStore } from "@/lib/store/eventsStore";
+import { Event, useFeaturedEvents } from "@/lib/services/eventService";
 import EventCard from "@/components/cards/EventCard";
-import { ArrowRight, CalendarDays } from "lucide-react";
+import { ArrowRight, CalendarDays, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 export default function FeaturedEvents() {
-  const { events } = useEventsStore();
+  // Use Convex hook to get featured events
+  const { events: featuredEvents, isLoading } = useFeaturedEvents();
   
-  // Filter featured events
-  const featuredEvents = events.filter(event => event.featured).slice(0, 5);
-
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background design elements */}
@@ -68,8 +66,13 @@ export default function FeaturedEvents() {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          {featuredEvents && featuredEvents.length > 0 ? (
-            featuredEvents.map((event: Event, index: number) => (
+          {isLoading ? (
+            <div className="col-span-full flex justify-center items-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+              <span className="ml-3 text-gray-600">Carregando eventos em destaque...</span>
+            </div>
+          ) : featuredEvents && featuredEvents.length > 0 ? (
+            featuredEvents.slice(0, 5).map((event: Event, index: number) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 20 }}

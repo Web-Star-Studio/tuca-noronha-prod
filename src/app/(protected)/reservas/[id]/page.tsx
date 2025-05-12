@@ -38,7 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Reservation } from "@/components/cards/ReservationCard"
+import type { Reservation } from "@/components/cards/ReservationCard"
 import Image from 'next/image'
 
 // Dados de exemplo para as reservas (eventualmente virá de uma API ou banco de dados)
@@ -182,9 +182,9 @@ export default function ReservationDetailPage({ params }: { params: { id: string
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Carregando detalhes da reserva...</h2>
           <div className="animate-pulse mt-4 space-y-4">
-            <div className="h-64 bg-gray-200 rounded-lg"></div>
-            <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            <div className="h-64 bg-gray-200 rounded-lg" />
+            <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto" />
+            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto" />
           </div>
         </div>
       </div>
@@ -277,7 +277,7 @@ export default function ReservationDetailPage({ params }: { params: { id: string
               fill
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent/30" />
             <div className="absolute bottom-4 left-4 right-4 text-white">
               <div className="flex items-center justify-between">
                 <Badge className={`px-2 py-1 font-medium ${

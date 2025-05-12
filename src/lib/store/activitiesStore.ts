@@ -1,6 +1,20 @@
 import { create } from "zustand";
 import { mockedActivities } from "../mocked/activitiesMockedData";
 
+export interface ActivityTicket {
+  id: string;
+  activityId: string;
+  name: string;
+  description: string;
+  price: number;
+  availableQuantity: number;
+  maxPerOrder: number;
+  type: string;
+  benefits: string[];
+  isActive: boolean;
+  createdAt: Date;
+}
+
 export interface Activity {
   id: string;
   title: string;
@@ -23,12 +37,15 @@ export interface Activity {
   cancelationPolicy: string[];
   isFeatured: boolean;
   isActive: boolean;
+  hasMultipleTickets?: boolean;
+  tickets?: ActivityTicket[];
   createdAt: Date;
   updatedAt?: Date;
   partnerId?: string; // Reference to the user who created the activity
   creatorName?: string; // Name of the user who created the activity
   creatorEmail?: string; // Email of the user who created the activity
   creatorImage?: string; // Profile image URL of the creator
+  _loadTickets?: () => Promise<ActivityTicket[]>; // Function to load tickets data when needed
 }
 
 type ActivitiesStore = {

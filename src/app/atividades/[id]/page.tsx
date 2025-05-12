@@ -19,9 +19,8 @@ import {
   Compass,
   Gauge,
 } from "lucide-react";
-import { Activity } from "@/lib/store/activitiesStore";
 import { usePublicActivity } from "@/lib/services/activityService";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -29,11 +28,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 
 export default function ActivityPage({ params }: { params: { id: string } }) {
   const { activity, isLoading } = usePublicActivity(params.id);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+
+  // Initialize ticket quantities when activity is loaded
+  useEffect(() => {
+    if (activity?.tickets && activity.tickets.length > 0) {
+      const initialQuantities: Record<string, number> = {};
+      activity.tickets.forEach(ticket => {
+        initialQuantities[ticket.id] = 1;
+      });
+      setTicketQuantities(initialQuantities);
+    } else {
+      // Default ticket (single ticket case)
+      setTicketQuantities({ "default": 1 });
+    }
+  }, [activity?.tickets]);
+  
+  const updateTicketQuantity = (ticketId: string, amount: number) => {
+    setTicketQuantities(prev => ({
+      ...prev,
+      [ticketId]: Math.max(1, (prev[ticketId] || 1) + amount)
+    }));
+  };
 
   // Lidar com caso 404
   if (!isLoading && !activity) {
@@ -45,12 +68,12 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
       <div className="container mx-auto px-4 py-8 mt-20">
         <div className="animate-pulse space-y-8">
           {/* Loading skeleton */}
-          <div className="h-10 w-40 bg-gray-200 rounded"></div>
-          <div className="h-96 w-full bg-gray-200 rounded-xl"></div>
+          <div className="h-10 w-40 bg-gray-200 rounded" />
+          <div className="h-96 w-full bg-gray-200 rounded-xl" />
           <div className="space-y-4">
-            <div className="h-8 w-2/3 bg-gray-200 rounded"></div>
-            <div className="h-6 w-1/2 bg-gray-200 rounded"></div>
-            <div className="h-6 w-1/3 bg-gray-200 rounded"></div>
+            <div className="h-8 w-2/3 bg-gray-200 rounded" />
+            <div className="h-6 w-1/2 bg-gray-200 rounded" />
+            <div className="h-6 w-1/3 bg-gray-200 rounded" />
           </div>
         </div>
       </div>
@@ -132,22 +155,30 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="mb-6 w-full justify-start bg-transparent border-b rounded-none p-0 h-auto">
+                <TabsList className="mb-6 w-full justify-start bg-transparent rounded-none p-3 h-auto">
                   <TabsTrigger
                     value="info"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
                   >
                     Detalhes
                   </TabsTrigger>
                   <TabsTrigger
                     value="itinerary"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
                   >
                     Itinerário
                   </TabsTrigger>
+                  {activity.hasMultipleTickets && (
+                    <TabsTrigger
+                      value="tickets"
+                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
+                    >
+                      Ingressos
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger
                     value="policies"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
                   >
                     Políticas
                   </TabsTrigger>
@@ -170,6 +201,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {activity.highlights.map((highlight, index) => (
                         <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                           key={index}
                           className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg"
                         >
@@ -186,6 +218,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {activity.includes.map((item, index) => (
                         <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                           key={index}
                           className="flex items-start gap-2"
                         >
@@ -202,6 +235,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {activity.excludes.map((item, index) => (
                         <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                           key={index}
                           className="flex items-start gap-2"
                         >
@@ -218,6 +252,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {activity.additionalInfo.map((info, index) => (
                         <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                           key={index}
                           className="flex items-start gap-2"
                         >
@@ -234,6 +269,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {activity.galleryImages.map((image, index) => (
                         <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                           key={index}
                           className="relative aspect-video rounded-lg overflow-hidden"
                         >
@@ -253,16 +289,17 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                 <TabsContent value="itinerary" className="space-y-8 mt-2">
                   <div>
                     <h2 className="text-2xl font-serif font-semibold mb-6 text-gray-800 flex items-center">
-                      <span className="bg-gradient-to-r from-blue-600 to-blue-400 h-8 w-1.5 rounded-full mr-3"></span>
+                      <span className="bg-gradient-to-r from-blue-600 to-blue-400 h-8 w-1.5 rounded-full mr-3" />
                       Itinerário
                     </h2>
                     <div className="relative py-2">
                       {/* Linha de fundo decorativa */}
-                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-100 via-blue-200 to-blue-100 rounded-full"></div>
+                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-100 via-blue-200 to-blue-100 rounded-full" />
                       
                       <div className="space-y-8">
                         {activity.itineraries.map((step, index) => (
                           <div 
+                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                             key={index} 
                             className="relative pl-16 group transition-all duration-300 hover:translate-x-1"
                           >
@@ -274,7 +311,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                             {/* Conteúdo */}
                             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
                               <div className="flex items-center mb-2">
-                                <div className="h-1.5 w-10 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full mr-2"></div>
+                                <div className="h-1.5 w-10 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full mr-2" />
                                 <h3 className="font-medium text-blue-700">Etapa {index + 1}</h3>
                               </div>
                               <p className="text-gray-700 leading-relaxed">{step}</p>
@@ -282,7 +319,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                             
                             {/* Linha conectora decorativa */}
                             {index < activity.itineraries.length - 1 && (
-                              <div className="absolute left-6 top-12 h-8 w-0.5 bg-gradient-to-b from-blue-400 to-blue-200"></div>
+                              <div className="absolute left-6 top-12 h-8 w-0.5 bg-gradient-to-b from-blue-400 to-blue-200" />
                             )}
                           </div>
                         ))}
@@ -300,6 +337,125 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                   </div>
                 </TabsContent>
 
+                {/* Tickets tab */}
+                {activity.hasMultipleTickets && (
+                  <TabsContent value="tickets" className="space-y-6 mt-2">
+                    <h2 className="text-2xl font-semibold mb-4">
+                      Ingressos Disponíveis
+                    </h2>
+                    
+                    <div className="space-y-4">
+                      {/* Multiple tickets case */}
+                      {activity.tickets && activity.tickets.length > 0 ? (
+                        activity.tickets.map((ticket) => (
+                          <Card
+                            key={ticket.id}
+                            className={`transition-all border-gray-200 hover:border-blue-300 ${
+                              selectedTicketId === ticket.id
+                                ? "ring-2 ring-blue-500 border-blue-300 shadow-md"
+                                : "shadow-sm"
+                            }`}
+                            onClick={() => setSelectedTicketId(ticket.id)}
+                          >
+                            <CardContent className="p-6">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between">
+                                <div className="mb-4 md:mb-0">
+                                  <div className="flex items-center">
+                                    <h3 className="text-lg font-semibold">
+                                      {ticket.name}
+                                    </h3>
+                                    {ticket.type === "vip" && (
+                                      <Badge className="ml-2 bg-amber-500">
+                                        VIP
+                                      </Badge>
+                                    )}
+                                    {ticket.type === "discount" && (
+                                      <Badge className="ml-2 bg-green-500">
+                                        Promocional
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-gray-600 text-sm mt-1">
+                                    {ticket.description}
+                                  </p>
+
+                                  {ticket.benefits && ticket.benefits.length > 0 && (
+                                    <div className="mt-3">
+                                      <h4 className="text-sm font-medium text-gray-800">
+                                        Inclui:
+                                      </h4>
+                                      <ul className="text-sm text-gray-600 mt-1 space-y-1">
+                                        {ticket.benefits.map((item, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="flex items-start"
+                                          >
+                                            <span className="text-blue-500 mr-1.5">
+                                              ✓
+                                            </span>{" "}
+                                            {item}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-col items-end">
+                                  <div className="text-xl font-bold text-gray-900 mb-2">
+                                    {ticket.price > 0 ? formatCurrency(ticket.price) : 'Gratuito'}
+                                  </div>
+                                  <div className="text-sm text-gray-500 mb-3">
+                                    {ticket.availableQuantity > 0 ? `${ticket.availableQuantity} vagas disponíveis` : 'Vagas ilimitadas'}
+                                  </div>
+
+                                  <div className="flex items-center">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateTicketQuantity(ticket.id, -1);
+                                      }}
+                                      className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-md bg-gray-50 hover:bg-gray-100"
+                                      disabled={(ticketQuantities[ticket.id] || 1) <= 1}
+                                    >
+                                      -
+                                    </button>
+                                    <div className="w-10 h-8 flex items-center justify-center border-t border-b border-gray-300 bg-white">
+                                      {ticketQuantities[ticket.id] || 1}
+                                    </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateTicketQuantity(ticket.id, 1);
+                                      }}
+                                      className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100"
+                                      disabled={ticket.availableQuantity > 0 && (ticketQuantities[ticket.id] || 1) >= Math.min(ticket.availableQuantity, ticket.maxPerOrder)}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+
+                                  <Button
+                                    className="mt-4 w-full md:w-auto"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedTicketId(ticket.id);
+                                    }}
+                                  >
+                                    Selecionar
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        <p className="text-gray-600">Nenhum ingresso disponível no momento.</p>
+                      )}
+                    </div>
+                  </TabsContent>
+                )}
+
                 {/* Policies tab */}
                 <TabsContent value="policies" className="space-y-8 mt-2">
                   <div>
@@ -314,7 +470,11 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                     
                     <div className="mt-6 space-y-4">
                       {activity.cancelationPolicy.map((policy, index) => (
-                        <div key={index} className="flex items-start gap-3">
+                        <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                          key={index}
+                          className="flex items-start gap-3"
+                        >
                           <Info className="h-5 w-5 text-blue-600 mt-0.5" />
                           <p className="text-gray-700">{policy}</p>
                         </div>
@@ -343,25 +503,25 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
 
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <Label className="block text-sm font-medium text-gray-700 mb-1">
                             Quantidade
-                          </label>
+                          </Label>
                           <div className="flex items-center border border-gray-300 rounded-md">
-                            <button
+                            <Button 
                               onClick={() => setQuantity(Math.max(1, quantity - 1))}
                               className="px-3 py-2 text-gray-500 hover:bg-gray-100"
                               disabled={quantity <= 1}
                             >
                               -
-                            </button>
+                            </Button>
                             <div className="flex-1 text-center">{quantity}</div>
-                            <button
+                            <Button
                               onClick={() => setQuantity(Math.min(activity.maxParticipants, quantity + 1))}
                               className="px-3 py-2 text-gray-500 hover:bg-gray-100"
                               disabled={quantity >= activity.maxParticipants}
                             >
                               +
-                            </button>
+                            </Button>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
                             Máximo: {activity.maxParticipants} pessoas
@@ -369,14 +529,52 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
                         </div>
 
                         <div className="pt-4 border-t border-gray-100">
-                          <div className="flex justify-between mb-2">
-                            <span>Subtotal</span>
-                            <span>R$ {(activity.price * quantity).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between font-semibold text-lg">
-                            <span>Total</span>
-                            <span>R$ {totalPrice.toFixed(2)}</span>
-                          </div>
+                          {activity.hasMultipleTickets && activity.tickets && selectedTicketId ? (
+                            <>
+                              {activity.tickets.find(t => t.id === selectedTicketId) && (
+                                <>
+                                  <div className="flex justify-between mb-1">
+                                    <span>Ingresso:</span>
+                                    <span className="font-medium text-gray-800">
+                                      {activity.tickets.find(t => t.id === selectedTicketId)?.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between mb-1">
+                                    <span>Preço unitário:</span>
+                                    <span className="font-medium text-gray-800">
+                                      {formatCurrency(activity.tickets.find(t => t.id === selectedTicketId)?.price || 0)}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between mb-2">
+                                    <span>Quantidade:</span>
+                                    <span className="font-medium text-gray-800">
+                                      {ticketQuantities[selectedTicketId] || 1}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between font-semibold text-lg border-t border-dashed border-gray-200 pt-2 mt-2">
+                                    <span>Total:</span>
+                                    <span>
+                                      {formatCurrency(
+                                        (activity.tickets.find(t => t.id === selectedTicketId)?.price || 0) * 
+                                        (ticketQuantities[selectedTicketId] || 1)
+                                      )}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex justify-between mb-2">
+                                <span>Subtotal</span>
+                                <span>R$ {(activity.price * quantity).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between font-semibold text-lg">
+                                <span>Total</span>
+                                <span>R$ {totalPrice.toFixed(2)}</span>
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">

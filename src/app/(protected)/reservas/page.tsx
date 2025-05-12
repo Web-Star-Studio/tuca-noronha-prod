@@ -33,7 +33,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import ReservationCard, { Reservation } from "@/components/cards/ReservationCard"
+import ReservationCard, { type Reservation } from "@/components/cards/ReservationCard"
+import { Label } from '@/components/ui/label'
 
 // Dados de exemplo para as reservas
 const mockReservations = [
@@ -230,12 +231,12 @@ export default function ReservasPage() {
                 }))}
               />
               {filters.search && (
-                <button
+                <Button
                   className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
                   onClick={() => setFilters(prev => ({ ...prev, search: '' }))}
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </div>
             
@@ -255,7 +256,7 @@ export default function ReservasPage() {
                   </DrawerHeader>
                   <div className="p-4 space-y-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Tipo</label>
+                      <Label className="text-sm font-medium">Tipo</Label>
                       <Select 
                         value={filters.type} 
                         onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
@@ -272,7 +273,7 @@ export default function ReservasPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Status</label>
+                      <Label className="text-sm font-medium">Status</Label>
                       <Select 
                         value={filters.status} 
                         onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}

@@ -2,7 +2,7 @@
 
 import ActivitiesCard from "@/components/cards/ActivitiesCard";
 import ActivitiesFilter from "@/components/filters/ActivitiesFilter";
-import { Activity } from "@/lib/store/activitiesStore";
+import type { Activity } from "@/lib/store/activitiesStore";
 import { useState, useMemo } from "react";
 import { usePublicActivitiesQuery } from "@/lib/hooks/useActivityQueries";
 
@@ -26,9 +26,8 @@ export default function AtividadesPage() {
     setSelectedCategories((prev) => {
       if (prev.includes(category)) {
         return prev.filter((c) => c !== category);
-      } else {
-        return [...prev, category];
       }
+        return [...prev, category];
     });
   };
 
@@ -36,9 +35,8 @@ export default function AtividadesPage() {
     setDurationFilter((prev) => {
       if (prev.includes(duration)) {
         return prev.filter((d) => d !== duration);
-      } else {
-        return [...prev, duration];
       }
+        return [...prev, duration];
     });
   };
 
@@ -50,24 +48,25 @@ export default function AtividadesPage() {
 
     // Se tiver formato "X-Y horas", pega o valor médio
     if (match[2]) {
-      return ((parseInt(match[1]) + parseInt(match[2])) / 2) * 60;
+      return ((Number.parseInt(match[1]) + Number.parseInt(match[2])) / 2) * 60;
     }
 
     // Se tiver formato "X horas" ou "X hora"
     if (duration.includes("hora")) {
-      return parseInt(match[1]) * 60;
+      return Number.parseInt(match[1]) * 60;
     }
 
     // Se tiver formato "X minutos" ou "X minuto"
     if (duration.includes("minuto")) {
-      return parseInt(match[1]);
+      return Number.parseInt(match[1]);
     }
 
-    return parseInt(match[1]) * 60; // Assume horas como padrão
+    return Number.parseInt(match[1]) * 60; // Assume horas como padrão
   };
 
   // Filter activities - memoized to prevent unnecessary calculations
-  const filteredActivities = useMemo(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+    const filteredActivities = useMemo(() => {
     if (isLoading || activities.length === 0) return [];
     
     return activities.filter((activity: Activity) => {
@@ -95,12 +94,12 @@ export default function AtividadesPage() {
               activityDurationInMinutes >= 60 &&
               activityDurationInMinutes <= 120
             );
-          } else if (filterOption === "2-4 horas") {
+          }if (filterOption === "2-4 horas") {
             return (
               activityDurationInMinutes > 120 &&
               activityDurationInMinutes <= 240
             );
-          } else if (filterOption === "4+ horas") {
+          }if (filterOption === "4+ horas") {
             return activityDurationInMinutes > 240;
           }
           return false;
@@ -137,7 +136,7 @@ export default function AtividadesPage() {
               backgroundImage:
                 "url('https://images.unsplash.com/photo-1559357711-e442ab604fdc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGZlcm5hbmRvJTIwZGUlMjBub3JvbmhhfGVufDB8fDB8fHww')",
             }}
-          ></div>
+          />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <div className="text-center text-white px-4">
               <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">

@@ -22,7 +22,6 @@ interface EventFiltersProps {
   endDate: string;
   setStartDate: Dispatch<SetStateAction<string>>;
   setEndDate: Dispatch<SetStateAction<string>>;
-  applyFilters: () => void;
   resetFilters: () => void;
   isFilterOpen: boolean;
   setIsFilterOpen: Dispatch<SetStateAction<boolean>>;
@@ -40,7 +39,6 @@ export default function EventFilter({
   endDate,
   setStartDate,
   setEndDate,
-  applyFilters,
   resetFilters,
   isFilterOpen,
   setIsFilterOpen,
@@ -155,10 +153,11 @@ export default function EventFilter({
               {/* Filter actions */}
               <div className="flex gap-3 pt-2">
                 <Button
-                  onClick={applyFilters}
+                  type="button"
+                  onClick={() => setIsFilterOpen(false)}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
                 >
-                  Aplicar
+                  Aplicar filtros
                 </Button>
                 <Button
                   onClick={resetFilters}
@@ -261,10 +260,11 @@ export default function EventFilter({
           {/* Filter actions */}
           <div className="flex gap-3">
             <Button
-              onClick={applyFilters}
+              type="button"
+              onClick={() => setIsFilterOpen(false)}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
             >
-              Aplicar
+              Aplicar filtros
             </Button>
             <Button
               onClick={resetFilters}
