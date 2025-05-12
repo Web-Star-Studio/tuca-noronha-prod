@@ -19,8 +19,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - File-based routing in `src/app` directory
 - Import React components using absolute imports with `@/*` alias
 - Use TailwindCSS for styling
-- Convex functions in `/convex` directory
+- Convex functions in `/convex` directory follow patterns in convex_rules.md
 - ESLint with Next.js core web vitals and TypeScript rules
 - Explicit type annotations for props using React.ReactNode
 - Non-nullable assertion (!) only when value is guaranteed
 - Client components marked with "use client" directive
+- Follow Clerk authentication patterns for user management
+- Zustand for state management and TanStack Query for data fetching
