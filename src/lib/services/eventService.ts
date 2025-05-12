@@ -552,6 +552,33 @@ export const useEventTickets = (eventId: string | null) => {
   };
 };
 
+// Get all tickets for an event using TanStack Query to prevent maximum depth issues
+export const useEventTicketsQuery = (eventId: string | null) => {
+  const idAsConvexId = eventId ? eventId as Id<"events"> : null;
+  
+  // Use standard Convex query first
+  const ticketsData = useQuery(
+    api.events.getEventTickets, 
+    idAsConvexId ? { eventId: idAsConvexId } : "skip"
+  );
+  
+  // Then use TanStack Query as a wrapper to prevent max depth issues
+  return useTanstackQuery({
+    queryKey: ['eventTickets', eventId],
+    queryFn: async () => {
+      // Return empty array if no eventId or not ready
+      if (!eventId || ticketsData === undefined) {
+        return [];
+      }
+      
+      // Convert Convex tickets to our frontend type
+      return ticketsData?.map(mapConvexTicket) || [];
+    },
+    enabled: !!eventId && ticketsData !== undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
 // Get active tickets for an event
 export const useActiveEventTickets = (eventId: string | null) => {
   const idAsConvexId = eventId ? eventId as Id<"events"> : null;
@@ -565,6 +592,33 @@ export const useActiveEventTickets = (eventId: string | null) => {
     tickets: ticketsData?.map(mapConvexTicket) || [],
     isLoading: eventId ? ticketsData === undefined : false,
   };
+};
+
+// Get active tickets for an event using TanStack Query to prevent maximum depth issues
+export const useActiveEventTicketsQuery = (eventId: string | null) => {
+  const idAsConvexId = eventId ? eventId as Id<"events"> : null;
+  
+  // Use standard Convex query first
+  const ticketsData = useQuery(
+    api.events.getActiveEventTickets, 
+    idAsConvexId ? { eventId: idAsConvexId } : "skip"
+  );
+  
+  // Then use TanStack Query as a wrapper to prevent max depth issues
+  return useTanstackQuery({
+    queryKey: ['activeEventTickets', eventId],
+    queryFn: async () => {
+      // Return empty array if no eventId or not ready
+      if (!eventId || ticketsData === undefined) {
+        return [];
+      }
+      
+      // Convert Convex tickets to our frontend type
+      return ticketsData?.map(mapConvexTicket) || [];
+    },
+    enabled: !!eventId && ticketsData !== undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 };
 
 // Create a new ticket for an event

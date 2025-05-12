@@ -1,19 +1,20 @@
 "use client";
 
-import { Event, EventTicket } from "@/lib/services/eventService";
+import { Event, EventTicket, useEventTicketsQuery } from "@/lib/services/eventService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2, X, Ticket } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2, X, Ticket, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type EventFormProps = {
   event: Event | null;
@@ -60,7 +61,10 @@ export function EventForm({
     }
   );
 
-  // Default ticket for new events
+  // Use TanStack Query to fetch tickets from database when editing an event
+  const { data: dbTickets, isLoading: ticketsLoading, isError: ticketsError } = useEventTicketsQuery(event?.id || null);
+  
+  // Default tickets state
   const [tickets, setTickets] = useState<EventTicket[]>(() => {
     if (event?.tickets && event.tickets.length > 0) {
       // Usar tickets do evento existente
@@ -84,6 +88,20 @@ export function EventForm({
     // Caso contrário, retorna array vazio
     return [];
   });
+  
+  // Update tickets state when database tickets are loaded
+  useEffect(() => {
+    if (dbTickets && dbTickets.length > 0 && event?.id) {
+      setTickets(dbTickets);
+      // Also enable multiple tickets if there are tickets in database
+      if (!formData.hasMultipleTickets && dbTickets.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          hasMultipleTickets: true
+        }));
+      }
+    }
+  }, [dbTickets, event?.id]);
 
   // Form tabs
   const [activeTab, setActiveTab] = useState("basic");
@@ -623,6 +641,23 @@ export function EventForm({
         
         {/* Tickets Tab */}
         <TabsContent value="tickets" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          {ticketsLoading && event?.id && (
+            <div className="flex items-center justify-center p-6 bg-blue-50/30 rounded-lg">
+              <Loader2 className="h-6 w-6 text-blue-600 animate-spin mr-2" />
+              <span className="text-blue-800">Carregando ingressos...</span>
+            </div>
+          )}
+          
+          {ticketsError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erro ao carregar ingressos</AlertTitle>
+              <AlertDescription>
+                Não foi possível carregar os ingressos do banco de dados. Por favor, tente novamente mais tarde.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-4">
             <div className="flex items-center gap-4 justify-between">
               <div className="flex items-center gap-4">
