@@ -39,8 +39,8 @@ export interface Activity {
   isActive: boolean;
   hasMultipleTickets?: boolean;
   tickets?: ActivityTicket[];
-  createdAt: Date;
-  updatedAt?: Date;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
   partnerId?: string; // Reference to the user who created the activity
   creatorName?: string; // Name of the user who created the activity
   creatorEmail?: string; // Email of the user who created the activity

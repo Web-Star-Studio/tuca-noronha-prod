@@ -419,14 +419,14 @@ export const useUpdateActivity = () => {
         // In a production app, we'd need to restructure this to avoid using hooks in callbacks
         const existingTicketsData: Array<Record<string, unknown>> = [];
         
-        const existingTickets = existingTicketsData || [];
+        const existingTickets: any[] = existingTicketsData || [];
         
         if (existingTickets && existingTickets.length > 0) {
           // Create a map of existing ticket IDs
-          const existingTicketIds = new Map(existingTickets.map(ticket => [ticket._id.toString(), ticket._id]));
+          const existingTicketIds = new Map(existingTickets.map((ticket: any) => [ticket._id.toString(), ticket._id]));
           
           // Create a map of current ticket IDs - store strings for comparison
-          const currentTicketIds = new Set(activity.tickets.map(ticket => ticket.id.toString()));
+          const currentTicketIds = new Set(activity.tickets.map((ticket: any) => ticket.id.toString()));
           
           // Update or create tickets
           for (const ticket of activity.tickets) {
