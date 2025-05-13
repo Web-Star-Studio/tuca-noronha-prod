@@ -657,3 +657,10 @@ export const useDeleteActivityTicket = () => {
     return await deleteMutation({ id: ticketId as Id<"activityTickets"> });
   };
 };
+
+function queryTickets(id: string): Promise<ActivityTicket[]> {
+  // Esta é uma implementação temporária que retorna um array vazio
+  // Em um app real, você buscaria os tickets do banco de dados
+  console.warn(`Buscando tickets para atividade ${id} - implementação mock`);
+  return Promise.resolve([]);
+}
