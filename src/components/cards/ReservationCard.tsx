@@ -47,7 +47,8 @@ export type Reservation = {
   imageUrl: string
   price: number
   confirmationCode: string
-  details: Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  details: Record<string, any>
 }
 
 interface ReservationCardProps {
