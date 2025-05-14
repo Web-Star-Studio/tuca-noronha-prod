@@ -19,6 +19,7 @@ import type * as clerk from "../clerk.js";
 import type * as events from "../events.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
+import type * as restaurants from "../restaurants.js";
 import type * as types from "../types.js";
 
 /**
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   functions: typeof functions;
   http: typeof http;
+  restaurants: typeof restaurants;
   types: typeof types;
 }>;
 export declare const api: FilterApi<

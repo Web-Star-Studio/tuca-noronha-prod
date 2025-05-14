@@ -142,4 +142,82 @@ export default defineSchema({
   })
     .index("by_event", ["eventId"])
     .index("by_event_and_active", ["eventId", "isActive"]),
+    
+  restaurants: defineTable({
+    name: v.string(),                                   // Nome do restaurante
+    slug: v.string(),                                   // Slug para URL
+    description: v.string(),                            // Descrição curta
+    description_long: v.string(),                       // Descrição longa
+    address: v.object({                                 // Objeto com informações de endereço
+      street: v.string(),                               // Rua
+      city: v.string(),                                 // Cidade
+      state: v.string(),                                // Estado
+      zipCode: v.string(),                              // CEP
+      neighborhood: v.string(),                         // Bairro
+      coordinates: v.object({                           // Coordenadas geográficas
+        latitude: v.float64(),                          // Latitude
+        longitude: v.float64(),                         // Longitude
+      }),
+    }),
+    phone: v.string(),                                  // Telefone de contato
+    website: v.optional(v.string()),                    // Website (opcional)
+    cuisine: v.array(v.string()),                       // Array com tipos de cozinha
+    priceRange: v.string(),                             // Faixa de preço (ex: "$", "$$", "$$$")
+    diningStyle: v.string(),                            // Estilo (ex: "Casual", "Fine Dining")
+    hours: v.object({                                   // Horário de funcionamento por dia
+      Monday: v.array(v.string()),                      // Array com horários - pode ser vazio
+      Tuesday: v.array(v.string()),
+      Wednesday: v.array(v.string()),
+      Thursday: v.array(v.string()),
+      Friday: v.array(v.string()),
+      Saturday: v.array(v.string()),
+      Sunday: v.array(v.string()),
+    }),
+    features: v.array(v.string()),                      // Características especiais
+    dressCode: v.optional(v.string()),                  // Código de vestimenta (opcional)
+    paymentOptions: v.array(v.string()),                // Opções de pagamento
+    parkingDetails: v.optional(v.string()),             // Informações sobre estacionamento (opcional)
+    mainImage: v.string(),                              // Imagem principal
+    galleryImages: v.array(v.string()),                 // Imagens da galeria
+    menuImages: v.optional(v.array(v.string())),        // Imagens do menu (opcional)
+    rating: v.object({                                  // Objeto com avaliações
+      overall: v.float64(),                             // Nota geral
+      food: v.float64(),                                // Nota para comida
+      service: v.float64(),                             // Nota para serviço
+      ambience: v.float64(),                            // Nota para ambiente
+      value: v.float64(),                               // Nota para custo-benefício
+      noiseLevel: v.string(),                           // Nível de barulho
+      totalReviews: v.int64(),                          // Total de avaliações
+    }),
+    acceptsReservations: v.boolean(),                   // Aceita reservas
+    maximumPartySize: v.int64(),                        // Tamanho máximo de grupo
+    tags: v.array(v.string()),                          // Tags para busca
+    executiveChef: v.optional(v.string()),              // Chef executivo (opcional)
+    privatePartyInfo: v.optional(v.string()),           // Informações para eventos privados (opcional)
+    isActive: v.boolean(),                              // Status ativo/inativo
+    isFeatured: v.boolean(),                            // Status destacado
+    partnerId: v.id("users"),                           // ID do parceiro/proprietário
+  })
+    .index("by_slug", ["slug"])                         // Índice por slug (URL)
+    .index("by_partner", ["partnerId"])                 // Índice por parceiro
+    .index("featured_restaurants", ["isFeatured", "isActive"])  // Índice para restaurantes destacados
+    .index("active_restaurants", ["isActive"]),         // Índice para restaurantes ativos
+    
+  restaurantReservations: defineTable({
+    restaurantId: v.id("restaurants"),                  // Referência ao restaurante
+    userId: v.id("users"),                              // Usuário que fez a reserva
+    date: v.string(),                                   // Data da reserva (YYYY-MM-DD)
+    time: v.string(),                                   // Horário da reserva (HH:MM)
+    partySize: v.int64(),                               // Número de pessoas
+    name: v.string(),                                   // Nome do responsável pela reserva
+    email: v.string(),                                  // Email de contato
+    phone: v.string(),                                  // Telefone de contato
+    specialRequests: v.optional(v.string()),            // Solicitações especiais (opcional)
+    status: v.string(),                                 // Status (ex: "pending", "confirmed", "canceled")
+    confirmationCode: v.string(),                       // Código de confirmação
+  })
+    .index("by_restaurant", ["restaurantId"])           // Índice por restaurante
+    .index("by_user", ["userId"])                       // Índice por usuário
+    .index("by_restaurant_date", ["restaurantId", "date"]) // Índice por restaurante e data
+    .index("by_status", ["status"]),                    // Índice por status
 });

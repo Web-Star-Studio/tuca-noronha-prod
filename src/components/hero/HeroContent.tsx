@@ -74,7 +74,7 @@ const HeroContent = React.memo(({ currentImageIndex, scrollProgress }: HeroConte
         className="flex flex-col sm:flex-row gap-5 justify-center items-center"
         style={fadeStyle}
       >
-        <Link href="/passeios" passHref>
+        <Link href="/hospedagens" passHref>
           <Button
             asChild
             className="rounded-full px-7 py-6 sm:px-8 sm:py-7 bg-white text-foreground hover:bg-white/90 transition-all duration-300 group relative overflow-hidden w-full sm:w-auto min-w-[200px]"
