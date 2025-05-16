@@ -220,4 +220,38 @@ export default defineSchema({
     .index("by_user", ["userId"])                       // Índice por usuário
     .index("by_restaurant_date", ["restaurantId", "date"]) // Índice por restaurante e data
     .index("by_status", ["status"]),                    // Índice por status
+  media: defineTable({
+    storageId: v.string(),          // Convex Storage ID
+    fileName: v.string(),          // Original file name
+    fileType: v.string(),          // MIME type (e.g., image/jpeg)
+    fileSize: v.int64(),           // File size in bytes
+    description: v.optional(v.string()), // Optional description
+    category: v.optional(v.string()),   // Optional category for organization
+    height: v.optional(v.int64()),      // Image height if applicable
+    width: v.optional(v.int64()),       // Image width if applicable
+    uploadedBy: v.id("users"),         // User who uploaded the file
+    isPublic: v.boolean(),           // Is the file publicly accessible
+    tags: v.optional(v.array(v.string())), // Optional tags for filtering
+    url: v.string(),                 // URL to access the file
+  })
+    .index("by_uploadedBy", ["uploadedBy"])
+    .index("by_category", ["category"])
+    .index("by_isPublic", ["isPublic"])
+    .index("by_storageId", ["storageId"]),
+  userPreferences: defineTable({
+    userId: v.id("users"),                          // ID do usuário
+    tripDuration: v.string(),                       // Duração da viagem
+    tripDate: v.string(),                           // Período da viagem
+    companions: v.string(),                         // Acompanhantes
+    interests: v.array(v.string()),                 // Interesses (praias, mergulho, etc)
+    budget: v.number(),                             // Orçamento por pessoa
+    preferences: v.object({                         // Preferências específicas
+      accommodation: v.string(),                    // Tipo de hospedagem
+      dining: v.array(v.string()),                  // Preferências gastronômicas
+      activities: v.array(v.string()),              // Atividades preferidas
+    }),
+    specialRequirements: v.optional(v.string()),    // Requisitos especiais (opcional)
+    updatedAt: v.number(),                          // Timestamp da última atualização
+  })
+    .index("by_user", ["userId"]),                  // Índice por usuário
 });

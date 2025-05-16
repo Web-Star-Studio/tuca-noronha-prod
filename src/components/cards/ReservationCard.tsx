@@ -108,7 +108,7 @@ export default function ReservationCard({ reservation, onClick }: ReservationCar
       <Card className="overflow-hidden border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white">
         <div className="flex flex-col md:flex-row">
           <div className="md:w-1/4 h-40 md:h-auto bg-gray-100 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
             <div className="absolute top-2 left-2 z-20">
               <Badge className={`px-2 py-1 font-medium ${
                 isRestaurant ? 'bg-orange-100 text-orange-700 border-orange-200' :

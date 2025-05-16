@@ -2,21 +2,21 @@
 
 import activitiesStore, { type Activity } from "@/lib/store/activitiesStore"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink } from "lucide-react"
+import { Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink, Clock } from "lucide-react"
 import Link from "next/link"
 import { useState, useMemo } from "react"
 import Image from "next/image"
 import { useCreateActivity, useActivities, useUpdateActivity, useDeleteActivity, useToggleFeatured, useToggleActive } from "@/lib/services/activityService"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleActive }: { 
   activity: Activity; 
@@ -26,121 +26,140 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
   onToggleActive: (id: string, active: boolean) => void;
 }) {
   return (
-    <Card 
-      className="overflow-hidden bg-white/90 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:translate-y-[-3px] cursor-pointer relative"
-      onClick={() => onEdit(activity)}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="h-full"
     >
-      <div className="relative h-52 w-full group overflow-hidden rounded-t-lg">
-        <Image 
-          src={activity.imageUrl}
-          alt={activity.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60" />
-        {activity.isFeatured && (
-          <div className="absolute top-2 right-2">
-            <Badge variant="secondary" className="bg-gradient-to-r from-amber-400 to-yellow-500 shadow-md hover:shadow-lg border-none text-black">
-              <Star className="h-3 w-3 mr-1 fill-black" /> Destaque
-            </Badge>
-          </div>
+      <div
+        className={cn(
+          "group overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col",
+          !activity.isActive && "opacity-75 hover:opacity-90"
         )}
-      </div>
-      <CardHeader className="pb-2 pt-3">
-        <CardTitle className="flex justify-between items-center">
-          <span className="line-clamp-1 bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">{activity.title}</span>
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-amber-100/80 transition-colors duration-200"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent card click event
-                onToggleFeatured(activity.id, !activity.isFeatured);
-              }}
-            >
-              <Star className={`h-4 w-4 ${activity.isFeatured ? "fill-amber-500 text-amber-500" : "text-slate-400"}`} />
-              <span className="sr-only">{activity.isFeatured ? "Remover destaque" : "Destacar"}</span>
-            </Button>
-            <Link 
-              href={`/atividades/${activity.id}`} 
-              target="_blank"
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-blue-100/80 transition-colors duration-200"
-            >
-              <ExternalLink className="h-4 w-4 text-blue-500" />
-              <span className="sr-only">Ver página</span>
-            </Link>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-red-100/80 transition-colors duration-200"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent card click event
-                onDelete(activity.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4 text-red-500" />
-              <span className="sr-only">Excluir</span>
-            </Button>
+        onClick={() => onEdit(activity)}
+      >
+        <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
+          <Image
+            src={activity.imageUrl}
+            alt={activity.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          
+          {/* Badge de categoria */}
+          <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-md">
+            {activity.category}
           </div>
-        </CardTitle>
-        <CardDescription className="line-clamp-2 mt-1 text-slate-600">{activity.shortDescription}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2 pb-2">
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="bg-blue-50/80 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors">{activity.category}</Badge>
-          <div className="text-sm font-medium px-2 py-1 rounded-md bg-green-50/80 text-green-700">
+          
+          {/* Badge de preço */}
+          <div className="absolute bottom-3 right-3 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md">
             R$ {activity.price.toFixed(2)}
           </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between pt-2 pb-2 border-t border-slate-100">
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={`px-3 py-1 text-xs font-medium ${activity.isActive ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent card click event
-              onToggleActive(activity.id, !activity.isActive);
-            }}
-          >
-            {activity.isActive ? (
-              <>
-                <div className="h-2 w-2 rounded-full bg-green-500 mr-2" /> Ativo
-              </>
-            ) : (
-              <>
-                <div className="h-2 w-2 rounded-full bg-gray-400 mr-2" /> Inativo
-              </>
-            )}
-          </Button>
-        </div>
-        <div className="flex flex-col items-end">
-          <div className="text-xs text-muted-foreground">
-            Criado em {new Date(activity.createdAt).toLocaleDateString('pt-BR')}
-          </div>
-          {activity.creatorName && (
-            <div className="text-xs text-blue-500 font-medium mt-0.5 flex items-center">
-              {activity.creatorImage && (
-                <div className="w-4 h-4 rounded-full overflow-hidden mr-1">
-                  <Image 
-                    src={activity.creatorImage} 
-                    alt={activity.creatorName} 
-                    className="w-full h-full object-cover"
-                    width={20}
-                    height={20}
-                  />
-                </div>
-              )}
-              Criado por: {activity.creatorName}
+          
+          {activity.isFeatured && (
+            <div className="absolute top-3 right-3">
+              <div className="bg-gradient-to-r from-amber-400 to-yellow-500 shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-black flex items-center gap-1">
+                <Star className="h-3 w-3 fill-black" /> Destaque
+              </div>
             </div>
           )}
         </div>
-      </CardFooter>
-    </Card>
-  )
+        
+        <div className="flex flex-col grow p-5">
+          <div className="mb-2 flex justify-between items-start">
+            <h3 className="text-lg font-medium line-clamp-1">{activity.title}</h3>
+            <div className="flex gap-1.5">
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-50 hover:bg-amber-100 transition-colors duration-200 shadow-sm"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onToggleFeatured(activity.id, !activity.isFeatured);
+                }}
+              >
+                <Star className={`h-4 w-4 ${activity.isFeatured ? "fill-amber-500 text-amber-500" : "text-amber-400"}`} />
+                <span className="sr-only">{activity.isFeatured ? "Remover destaque" : "Destacar"}</span>
+              </motion.button>
+              
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link 
+                  href={`/atividades/${activity.id}`} 
+                  target="_blank"
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors duration-200 shadow-sm"
+                >
+                  <ExternalLink className="h-4 w-4 text-blue-500" />
+                  <span className="sr-only">Ver página</span>
+                </Link>
+              </motion.div>
+              
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-red-50 hover:bg-red-100 transition-colors duration-200 shadow-sm"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onDelete(activity.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+                <span className="sr-only">Excluir</span>
+              </motion.button>
+            </div>
+          </div>
+          
+          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+            {activity.shortDescription}
+          </p>
+          
+          <div className="mt-auto space-y-3">
+            <div className="flex gap-4 text-sm text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-gray-400" />
+                <span>{activity.duration}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center">
+                  <span className="text-yellow-500 mr-1">★</span>
+                  <span>{activity.rating.toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                <span className="line-clamp-1">Dificuldade: {activity.difficulty}</span>
+              </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm transition-all ${
+                  activity.isActive 
+                  ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
+                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                }`}
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onToggleActive(activity.id, !activity.isActive);
+                }}
+              >
+                {activity.isActive ? "Ativo" : "Inativo"}
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 function ActivityForm({ activity, onSave, onCancel }: { 

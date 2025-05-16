@@ -36,7 +36,7 @@ export const getUser = query({
 });
 
 // Get Convex user ID by Clerk ID
-export const getUserByClerkId = mutation({
+export const getUserByClerkId = query({
   args: {
     clerkId: v.string(),
   },

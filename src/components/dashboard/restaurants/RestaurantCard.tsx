@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
+import { imageEffects } from "@/lib/ui-config";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -40,7 +41,7 @@ export function RestaurantCard({
       transition={{ duration: 0.3 }}
       layout
     >
-      <Card className="overflow-hidden h-full border-gray-100 shadow-sm hover:shadow-md transition-all relative group">
+      <Card variant="interactive" className="h-full relative group">
         {/* Card header with image */}
         <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
           <Image
@@ -48,20 +49,19 @@ export function RestaurantCard({
             alt={restaurant.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover transition-transform group-hover:scale-105 duration-300"
+            className={`object-cover ${imageEffects.hover.scale}`}
           />
 
           {/* Badges overlay */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
             <Badge 
-              variant={restaurant.isActive ? "default" : "outline"}
-              className={restaurant.isActive ? "bg-green-600 hover:bg-green-700" : "text-gray-500 border-gray-300"}
+              variant={restaurant.isActive ? "success" : "outline"}
             >
               {restaurant.isActive ? "Ativo" : "Inativo"}
             </Badge>
             
             {restaurant.isFeatured && (
-              <Badge className="bg-amber-500 hover:bg-amber-600">
+              <Badge variant="warning">
                 Destacado
               </Badge>
             )}
@@ -69,7 +69,7 @@ export function RestaurantCard({
 
           {/* Price range badge */}
           <div className="absolute top-2 right-2">
-            <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-gray-900 border-0 font-bold">
+            <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-gray-900 font-bold">
               {restaurant.priceRange}
             </Badge>
           </div>
@@ -103,10 +103,12 @@ export function RestaurantCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          
+          <div className={imageEffects.overlay.dark}></div>
         </div>
 
         {/* Card content */}
-        <CardContent className="p-4">
+        <CardContent>
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">{restaurant.name}</h3>
             
@@ -118,14 +120,14 @@ export function RestaurantCard({
 
             <div className="flex flex-wrap gap-1 pt-2">
               {restaurant.cuisine.slice(0, 3).map((type, index) => (
-                <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
+                <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700">
                   {type}
                 </Badge>
               ))}
               {restaurant.cuisine.length > 3 && (
                 <Tooltip>
                   <TooltipTrigger>
-                    <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-100 cursor-help">
+                    <Badge variant="outline" className="bg-gray-50 text-gray-600 cursor-help">
                       +{restaurant.cuisine.length - 3}
                     </Badge>
                   </TooltipTrigger>
@@ -138,7 +140,7 @@ export function RestaurantCard({
           </div>
         </CardContent>
 
-        <CardFooter className="p-4 pt-0 flex justify-between items-center border-t border-gray-50 mt-2">
+        <CardFooter separator={true}>
           <div className="flex items-center space-x-1">
             <span className="text-yellow-500">★</span>
             <span className="font-medium">{restaurant.rating?.overall.toFixed(1)}</span>
@@ -149,7 +151,7 @@ export function RestaurantCard({
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-8 text-xs border-blue-100 text-blue-700 hover:bg-blue-50"
+              className="h-8 text-xs text-blue-700 hover:bg-blue-50"
               onClick={() => onEdit(restaurant)}
             >
               Gerenciar
