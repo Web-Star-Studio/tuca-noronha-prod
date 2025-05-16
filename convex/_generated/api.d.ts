@@ -20,6 +20,7 @@ import type * as events from "../events.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
 import type * as media from "../media.js";
+import type * as rbac from "../rbac.js";
 import type * as restaurants from "../restaurants.js";
 import type * as types from "../types.js";
 import type * as userPreferences from "../userPreferences.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   functions: typeof functions;
   http: typeof http;
   media: typeof media;
+  rbac: typeof rbac;
   restaurants: typeof restaurants;
   types: typeof types;
   userPreferences: typeof userPreferences;

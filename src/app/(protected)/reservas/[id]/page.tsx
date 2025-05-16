@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react';
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { motion } from "framer-motion"
@@ -136,11 +136,12 @@ const mockReservations = [
   }
 ]
 
-export default function ReservationDetailPage({ params }: { params: { id: string } }) {
+export default function ReservationDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [reservation, setReservation] = useState<Reservation | null>(null)
-  
+
   useEffect(() => {
     // Simulando uma chamada para API com um pequeno delay
     const fetchReservation = async () => {
@@ -171,11 +172,11 @@ export default function ReservationDetailPage({ params }: { params: { id: string
     
     fetchReservation()
   }, [params.id, router])
-  
+
   const handleGoBack = () => {
     router.back()
   }
-  
+
   if (loading) {
     return (
       <div className="container mx-auto py-10 px-4 min-h-screen flex items-center justify-center">
@@ -190,7 +191,7 @@ export default function ReservationDetailPage({ params }: { params: { id: string
       </div>
     )
   }
-  
+
   if (!reservation) {
     return (
       <div className="container mx-auto py-10 px-4 min-h-screen flex items-center justify-center">
@@ -201,16 +202,16 @@ export default function ReservationDetailPage({ params }: { params: { id: string
       </div>
     )
   }
-  
+
   const isRestaurant = reservation.type === 'restaurant'
   const isAccommodation = reservation.type === 'accommodation'
   const isActivity = reservation.type === 'activity'
-  
+
   // Formatar data para exibição
   const formatDate = (date: Date) => {
     return format(date, "dd 'de' MMMM 'de' yyyy', às' HH:mm", { locale: ptBR })
   }
-  
+
   // Determinar cores baseadas no status
   const getStatusColors = (status: string) => {
     switch (status) {
@@ -244,10 +245,10 @@ export default function ReservationDetailPage({ params }: { params: { id: string
         }
     }
   }
-  
+
   const statusColors = getStatusColors(reservation.status)
   const StatusIcon = statusColors.icon
-  
+
   return (
     <div className="container mx-auto py-10 px-4">
       <motion.div

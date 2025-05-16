@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { requireRole } from "./rbac";
 
 /**
  * Create a user in the Convex database from the API
@@ -60,7 +61,7 @@ export const createUser = mutation({
       phone: args.phone,
       emailVerificationTime: args.createdAt,
       isAnonymous: false,
-      role: "user", // Papel padrão para novos usuários
+      role: "traveler", // Papel padrão para novos usuários
     });
     
     console.log("New user created:", userId);
@@ -97,7 +98,7 @@ export const getCurrentUser = query({
       email: user.email,
       name: user.name,
       image: user.image,
-      role: user.role || "user",
+      role: user.role || "traveler",
     };
   },
 });
@@ -120,5 +121,26 @@ export const getUserByClerkId = query({
     }
     
     return users[0];
+  },
+});
+
+/**
+ * Atualiza o papel (role) de um usuário. Somente disponível para Masters.
+ */
+export const setRole = mutation({
+  args: {
+    userId: v.id("users"),
+    role: v.union(
+      v.literal("traveler"),
+      v.literal("partner"),
+      v.literal("employee"),
+      v.literal("master"),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["master"]);
+    await ctx.db.patch(args.userId, { role: args.role });
+    return null;
   },
 }); 

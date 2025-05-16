@@ -11,6 +11,8 @@ export const syncUser = internalMutation({
     phone: v.optional(v.string()),
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
+    // Papel global do usuário; ex: "traveler", "partner", "employee", "master"
+    role: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Primeiro, verificar se usuário já existe pelo clerkId
@@ -26,6 +28,8 @@ export const syncUser = internalMutation({
         image: args.image,
         phone: args.phone,
         emailVerificationTime: args.updatedAt,
+        // Atualizar papel se fornecido
+        ...(args.role ? { role: args.role } : {}),
       });
     }
     
@@ -45,6 +49,8 @@ export const syncUser = internalMutation({
           image: args.image,
           phone: args.phone,
           emailVerificationTime: args.updatedAt,
+          // Atualizar papel se fornecido
+          ...(args.role ? { role: args.role } : {}),
         });
       }
     }
@@ -58,6 +64,7 @@ export const syncUser = internalMutation({
       phone: args.phone,
       emailVerificationTime: args.createdAt,
       isAnonymous: false,
+      role: args.role ?? "traveler",
     });
   },
 });

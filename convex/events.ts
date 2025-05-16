@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
+import { mutationWithRole } from "./rbac";
+import { getCurrentUserRole, getCurrentUserConvexId } from "./rbac";
 
 /**
  * Get all events
@@ -61,7 +63,7 @@ export const getById = query({
 /**
  * Create a new event
  */
-export const create = mutation({
+export const create = mutationWithRole(["partner", "master"])({
   args: {
     title: v.string(),
     description: v.string(),
@@ -86,6 +88,13 @@ export const create = mutation({
     partnerId: v.id("users"),
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (role === "partner") {
+      if (!currentUserId || currentUserId.toString() !== args.partnerId.toString()) {
+        throw new Error("Unauthorized: partners can only create events for themselves");
+      }
+    }
     // Convert number to BigInt for the database
     const maxParticipants = BigInt(args.maxParticipants);
     
@@ -103,7 +112,7 @@ export const create = mutation({
 /**
  * Update an existing event
  */
-export const update = mutation({
+export const update = mutationWithRole(["partner", "master"])({
   args: {
     id: v.id("events"),
     title: v.optional(v.string()),
@@ -129,6 +138,14 @@ export const update = mutation({
     partnerId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const event = await ctx.db.get(args.id);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     const { id, maxParticipants, ...otherFields } = args;
     
     // Define a more specific type for the updates
@@ -174,9 +191,17 @@ export const update = mutation({
 /**
  * Delete an event
  */
-export const remove = mutation({
+export const remove = mutationWithRole(["partner", "master"])({
   args: { id: v.id("events") },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const event = await ctx.db.get(args.id);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     await ctx.db.delete(args.id);
   },
 });
@@ -184,12 +209,20 @@ export const remove = mutation({
 /**
  * Toggle the featured status of an event
  */
-export const toggleFeatured = mutation({
+export const toggleFeatured = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("events"),
     isFeatured: v.boolean()
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const event = await ctx.db.get(args.id);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     await ctx.db.patch(args.id, { isFeatured: args.isFeatured });
     return args.id;
   },
@@ -198,13 +231,21 @@ export const toggleFeatured = mutation({
 /**
  * Toggle the active status of an event
  */
-export const toggleActive = mutation({
+export const toggleActive = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("events"),
     isActive: v.boolean()
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const event = await ctx.db.get(args.id);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     await ctx.db.patch(args.id, { isActive: args.isActive });
     return null;
   },
@@ -305,7 +346,7 @@ export const getActiveEventTickets = query({
 /**
  * Create a new ticket for an event
  */
-export const createEventTicket = mutation({
+export const createEventTicket = mutationWithRole(["partner", "master"])({
   args: {
     eventId: v.id("events"),
     name: v.string(),
@@ -319,6 +360,14 @@ export const createEventTicket = mutation({
   },
   returns: v.id("eventTickets"),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const event = await ctx.db.get(args.eventId);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     // Primeiro, atualizamos o evento para indicar que tem múltiplos ingressos
     await ctx.db.patch(args.eventId, { hasMultipleTickets: true });
     
@@ -342,7 +391,7 @@ export const createEventTicket = mutation({
 /**
  * Update an existing ticket
  */
-export const updateEventTicket = mutation({
+export const updateEventTicket = mutationWithRole(["partner", "master"])({
   args: {
     id: v.id("eventTickets"),
     name: v.optional(v.string()),
@@ -355,6 +404,16 @@ export const updateEventTicket = mutation({
     isActive: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const ticket = await ctx.db.get(args.id);
+      if (!ticket) throw new Error("Ticket not found");
+      const event = await ctx.db.get(ticket.eventId);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     const { id, availableQuantity, maxPerOrder, ...otherFields } = args;
     
     // Define um tipo mais específico para as atualizações
@@ -391,31 +450,21 @@ export const updateEventTicket = mutation({
 /**
  * Delete a ticket
  */
-export const removeEventTicket = mutation({
+export const removeEventTicket = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("eventTickets") 
   },
   handler: async (ctx, args) => {
-    // Obter o ingresso para identificar o evento
-    const ticket = await ctx.db.get(args.id);
-    
-    // Verificar se o ticket existe
-    if (!ticket) {
-      throw new Error("Ticket not found");
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const ticket = await ctx.db.get(args.id);
+      if (!ticket) throw new Error("Ticket not found");
+      const event = await ctx.db.get(ticket.eventId);
+      if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
     }
-    
-    // Verificar se é o último ingresso deste evento
-    const remainingTickets = await ctx.db
-      .query("eventTickets")
-      .withIndex("by_event", (q) => q.eq("eventId", ticket.eventId))
-      .collect();
-    
-    // Se for o último (ou seja, se só restar 1 que é o que vamos excluir)
-    if (remainingTickets.length <= 1) {
-      // Atualizar o evento para indicar que não tem mais ingressos múltiplos
-      await ctx.db.patch(ticket.eventId, { hasMultipleTickets: false });
-    }
-    
     // Excluir o ingresso
     await ctx.db.delete(args.id);
   },

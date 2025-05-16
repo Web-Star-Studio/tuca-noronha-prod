@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
+import { mutationWithRole } from "./rbac";
+import { getCurrentUserRole, getCurrentUserConvexId } from "./rbac";
 
 /**
  * Get all restaurants
@@ -73,7 +75,7 @@ export const getBySlug = query({
 /**
  * Create a new restaurant
  */
-export const create = mutation({
+export const create = mutationWithRole(["partner", "master"])({
   args: {
     name: v.string(),
     slug: v.string(),
@@ -130,6 +132,14 @@ export const create = mutation({
     partnerId: v.id("users"),
   },
   handler: async (ctx, args) => {
+    // Verificar se o parceiro que está criando é o próprio usuário (a menos que seja master)
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (role === "partner") {
+      if (!currentUserId || currentUserId.toString() !== args.partnerId.toString()) {
+        throw new Error("Unauthorized: partners can only create restaurants for themselves");
+      }
+    }
     // Convert numbers to appropriate types for the database
     const maximumPartySize = BigInt(args.maximumPartySize);
     const totalReviews = BigInt(args.rating.totalReviews);
@@ -163,7 +173,7 @@ export const create = mutation({
 /**
  * Update an existing restaurant
  */
-export const update = mutation({
+export const update = mutationWithRole(["partner", "master"])({
   args: {
     id: v.id("restaurants"),
     name: v.optional(v.string()),
@@ -221,6 +231,14 @@ export const update = mutation({
     partnerId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const restaurant = await ctx.db.get(args.id);
+      if (!restaurant || restaurant.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized: cannot update restaurant not owned by user");
+      }
+    }
     const { id, maximumPartySize, rating, address, ...otherFields } = args;
     
     // Define a more specific type for the updates
@@ -322,10 +340,18 @@ export const update = mutation({
 /**
  * Delete a restaurant
  */
-export const remove = mutation({
+export const remove = mutationWithRole(["partner", "master"])({
   args: { id: v.id("restaurants") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const restaurant = await ctx.db.get(args.id);
+      if (!restaurant || restaurant.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized: cannot delete restaurant not owned by user");
+      }
+    }
     await ctx.db.delete(args.id);
     return null;
   },
@@ -334,13 +360,21 @@ export const remove = mutation({
 /**
  * Toggle the featured status of a restaurant
  */
-export const toggleFeatured = mutation({
+export const toggleFeatured = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("restaurants"),
     isFeatured: v.boolean()
   },
   returns: v.id("restaurants"),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const restaurant = await ctx.db.get(args.id);
+      if (!restaurant || restaurant.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized: cannot modify restaurant not owned by user");
+      }
+    }
     await ctx.db.patch(args.id, { isFeatured: args.isFeatured });
     return args.id;
   },
@@ -349,13 +383,21 @@ export const toggleFeatured = mutation({
 /**
  * Toggle the active status of a restaurant
  */
-export const toggleActive = mutation({
+export const toggleActive = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("restaurants"),
     isActive: v.boolean()
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const restaurant = await ctx.db.get(args.id);
+      if (!restaurant || restaurant.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized: cannot modify restaurant not owned by user");
+      }
+    }
     await ctx.db.patch(args.id, { isActive: args.isActive });
     return null;
   },

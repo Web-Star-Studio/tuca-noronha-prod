@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useHostingDetailStore, useHostingsStore } from "@/lib/store/hostingsStore";
 import { ChevronLeft, Users, Bath, Home, BedDouble, Check, X } from "lucide-react";
 import Link from "next/link";
@@ -20,23 +20,24 @@ type BookingData = {
   guests: number;
 };
 
-export default function HostingDetailPage({ params }: { params: { slug: string } }) {
+export default function HostingDetailPage(props: { params: Promise<{ slug: string }> }) {
+  const params = use(props.params);
   const { hostings } = useHostingsStore();
   const { hosting, setHosting, isLoading, setLoading } = useHostingDetailStore();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [allImages, setAllImages] = useState<string[]>([]);
-  
+
   // Estado para as datas de check-in e check-out
   // const [dateRange] = useState<DateRange | undefined>({
   //  from: addDays(new Date(), 1),
   //  to: addDays(new Date(), 6)
   // });
-  
+
   // Estado para quantidade de hóspedes (variáveis comentadas são usadas em funcionalidades futuras)
   // const [guestCount, setGuestCount] = useState(2);
   // const [adultCount, setAdultCount] = useState(2);
   // const [childCount, setChildCount] = useState(0);
-  
+
   // const nightCount = dateRange?.from && dateRange?.to 
   //  ? differenceInCalendarDays(dateRange.to, dateRange.from) 
   //  : 0;

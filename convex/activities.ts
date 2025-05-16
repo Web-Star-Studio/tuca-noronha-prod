@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
+import { mutationWithRole } from "./rbac";
+import { getCurrentUserRole, getCurrentUserConvexId } from "./rbac";
 
 /**
  * Get all activities
@@ -43,7 +45,7 @@ export const getById = query({
 /**
  * Create a new activity
  */
-export const create = mutation({
+export const create = mutationWithRole(["partner", "master"])({
   args: {
     title: v.string(),
     description: v.string(),
@@ -69,6 +71,13 @@ export const create = mutation({
     partnerId: v.id("users"),
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (role === "partner") {
+      if (!currentUserId || currentUserId.toString() !== args.partnerId.toString()) {
+        throw new Error("Unauthorized: partners can only create activities for themselves");
+      }
+    }
     // Convert numbers to correct types for the database
     const maxParticipants = BigInt(args.maxParticipants);
     const minParticipants = BigInt(args.minParticipants);
@@ -88,7 +97,7 @@ export const create = mutation({
 /**
  * Update an existing activity
  */
-export const update = mutation({
+export const update = mutationWithRole(["partner", "master"])({
   args: {
     id: v.id("activities"),
     title: v.optional(v.string()),
@@ -115,6 +124,14 @@ export const update = mutation({
     partnerId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const activity = await ctx.db.get(args.id);
+      if (!activity || activity.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     const { id, maxParticipants, minParticipants, ...otherFields } = args;
     
     // Definir um tipo mais específico para as atualizações
@@ -165,9 +182,17 @@ export const update = mutation({
 /**
  * Delete an activity
  */
-export const remove = mutation({
+export const remove = mutationWithRole(["partner", "master"])({
   args: { id: v.id("activities") },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const activity = await ctx.db.get(args.id);
+      if (!activity || activity.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     await ctx.db.delete(args.id);
   },
 });
@@ -175,12 +200,20 @@ export const remove = mutation({
 /**
  * Toggle the featured status of an activity
  */
-export const toggleFeatured = mutation({
+export const toggleFeatured = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("activities"),
     isFeatured: v.boolean()
   },
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const activity = await ctx.db.get(args.id);
+      if (!activity || activity.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     await ctx.db.patch(args.id, { isFeatured: args.isFeatured });
     return args.id;
   },
@@ -189,13 +222,21 @@ export const toggleFeatured = mutation({
 /**
  * Toggle the active status of an activity
  */
-export const toggleActive = mutation({
+export const toggleActive = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("activities"),
     isActive: v.boolean()
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const activity = await ctx.db.get(args.id);
+      if (!activity || activity.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     await ctx.db.patch(args.id, { isActive: args.isActive });
     return null;
   },
@@ -301,7 +342,7 @@ export const getActiveActivityTickets = query({
 /**
  * Create a new ticket for an activity
  */
-export const createActivityTicket = mutation({
+export const createActivityTicket = mutationWithRole(["partner", "master"])({
   args: {
     activityId: v.id("activities"),
     name: v.string(),
@@ -315,6 +356,14 @@ export const createActivityTicket = mutation({
   },
   returns: v.id("activityTickets"),
   handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role === "partner") {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const activity = await ctx.db.get(args.activityId);
+      if (!activity || activity.partnerId.toString() !== currentUserId?.toString()) {
+        throw new Error("Unauthorized");
+      }
+    }
     // Primeiro, atualizamos a atividade para indicar que tem múltiplos ingressos
     await ctx.db.patch(args.activityId, { hasMultipleTickets: true });
     
@@ -338,7 +387,7 @@ export const createActivityTicket = mutation({
 /**
  * Update an existing ticket
  */
-export const updateActivityTicket = mutation({
+export const updateActivityTicket = mutationWithRole(["partner", "master"])({
   args: {
     id: v.id("activityTickets"),
     name: v.optional(v.string()),
@@ -387,7 +436,7 @@ export const updateActivityTicket = mutation({
 /**
  * Delete a ticket
  */
-export const removeActivityTicket = mutation({
+export const removeActivityTicket = mutationWithRole(["partner", "master"])({
   args: { 
     id: v.id("activityTickets") 
   },

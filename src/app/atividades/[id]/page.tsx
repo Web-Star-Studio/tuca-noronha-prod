@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,7 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 
-export default function ActivityPage({ params }: { params: { id: string } }) {
+export default function ActivityPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { activity, isLoading } = usePublicActivity(params.id);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -50,7 +51,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
       setTicketQuantities({ "default": 1 });
     }
   }, [activity?.tickets]);
-  
+
   const updateTicketQuantity = (ticketId: string, amount: number) => {
     setTicketQuantities(prev => ({
       ...prev,

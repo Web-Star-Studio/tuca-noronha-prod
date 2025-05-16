@@ -1,10 +1,12 @@
-"use client";
+"use client";;
+import { use } from "react";
 
 import { notFound } from "next/navigation";
 import { usePublicEvent } from "@/lib/services/eventService";
 import EventDetails from "@/components/cards/EventDetails";
 
-export default function EventPage({ params }: { params: { id: string } }) {
+export default function EventPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   // Usar diretamente o hook usePublicEvent (mesmo padrão das atividades)
   const { event, isLoading } = usePublicEvent(params.id);
 
