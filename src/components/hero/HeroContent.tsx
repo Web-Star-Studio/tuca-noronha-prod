@@ -49,7 +49,7 @@ const HeroContent = React.memo(({ currentImageIndex, scrollProgress }: HeroConte
         initial="hidden"
         animate="visible"
         variants={textVariants}
-        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight mb-6 text-white text-shadow-lg"
+        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight mb-6 text-white text-shadow-lg"
         style={fadeStyle}
       >
         {title}

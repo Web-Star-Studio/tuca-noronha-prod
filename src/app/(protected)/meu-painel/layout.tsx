@@ -1,6 +1,5 @@
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
 import Header from "@/components/header/Header";
-import Footer from "@/components/footer/Footer";
 import { decorativeBackgrounds } from "@/lib/ui-config";
 
 export default function DashboardLayout({
@@ -25,7 +24,6 @@ export default function DashboardLayout({
             />
             {children}
           </div>
-          <Footer />
         </main>
       </SignedIn>
       <SignedOut>

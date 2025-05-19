@@ -1,7 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-# UI Guidelines
-- Sempre dê preferência a usar componentes ShadcnUI caso existam disponíveis, no lugar de componentes HTML comuns 

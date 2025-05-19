@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
-import { CalendarDays, Clock, MapPin, Users, User, ListChecks, BedDouble, Utensils, Activity, Bell, Star, CreditCard, Award, Sparkles, BookCheckIcon, Gift, HomeIcon, CheckCircle2, Heart, Search, X, SlidersHorizontal, MessageCircle, HelpCircle, Plus, Circle, Eye, Info } from "lucide-react"
+import { CalendarDays, Clock, MapPin, Users, User, ListChecks, BedDouble, Utensils, Activity, Bell, Star, CreditCard, Award, Sparkles, BookCheckIcon, Gift, HomeIcon, CheckCircle2, Heart, Search, X, SlidersHorizontal, MessageCircle, HelpCircle, Plus, Circle, Eye, Info, Settings, Bookmark, LogOut } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { motion, AnimatePresence } from "framer-motion"
 import { useConvexPreferences } from "@/lib/hooks/useConvexPreferences"
-
+import * as React from 'react'
 import {
   Card,
   CardContent,
@@ -46,12 +46,32 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { toast } from "sonner"
 import { Label } from '@/components/ui/label'
 import { Switch } from "@/components/ui/switch"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cardStyles, badgeStyles, buttonStyles, transitionEffects, imageEffects, formStyles } from "@/lib/ui-config"
 import { Textarea } from "@/components/ui/textarea"
 import NoronhaTravelChatbot from "@/components/NoronhaTravelChatbot"
+import PreferencesSection from "./PreferencesSection"
 
 // Dados de exemplo para as reservas
 const mockReservations = [
@@ -198,6 +218,195 @@ const tabVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
   exit: { opacity: 0, x: 20, transition: { duration: 0.3 } }
 };
+
+// ****** START: ADDED/MOVED HELPER FUNCTIONS AND INTERFACES ******
+interface Reservation {
+  id: string;
+  type: string;
+  name: string;
+  date?: Date;
+  checkIn?: Date;
+  checkOut?: Date;
+  guests: number;
+  status: string;
+  location: string;
+  imageUrl: string;
+}
+
+const getReservationIcon = (type: string) => {
+  switch (type) {
+    case 'restaurant':
+      return <Utensils className="h-5 w-5 text-white" />;
+    case 'accommodation':
+      return <BedDouble className="h-5 w-5 text-white" />;
+    case 'activity':
+      return <Activity className="h-5 w-5 text-white" />;
+    default:
+      return <ListChecks className="h-5 w-5 text-white" />;
+  }
+};
+
+const getReservationColor = (type: string) => {
+  switch (type) {
+    case 'restaurant':
+      return 'bg-orange-500';
+    case 'accommodation':
+      return 'bg-blue-500';
+    case 'activity':
+      return 'bg-green-500';
+    default:
+      return 'bg-gray-500';
+  }
+};
+
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
+  switch (status) {
+    case 'confirmed':
+      return 'success';
+    case 'pending':
+      return 'warning';
+    case 'cancelled':
+      return 'destructive';
+    default:
+      return 'secondary';
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'confirmed':
+      return 'Confirmada';
+    case 'pending':
+      return 'Pendente';
+    case 'cancelled':
+      return 'Cancelada';
+    default:
+      return 'Desconhecido';
+  }
+};
+
+interface ReservationsSectionProps {
+  reservations: Reservation[];
+  getReservationIcon: (type: string) => React.ReactNode;
+  getReservationColor: (type: string) => string;
+  getStatusVariant: (status: string) => "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
+  getStatusLabel: (status: string) => string;
+  onNewReservation: () => void;
+  onViewDetails: (reservationId: string) => void;
+  onCancelReservation: (reservationId: string) => void;
+}
+
+const ReservationsSection: React.FC<ReservationsSectionProps> = ({
+  reservations,
+  getReservationIcon,
+  getReservationColor,
+  getStatusVariant,
+  getStatusLabel,
+  onNewReservation,
+  onViewDetails,
+  onCancelReservation
+}) => {
+  return (
+    <motion.div
+      className={`${cardStyles.content.default} space-y-6 p-4 sm:p-6 bg-white rounded-xl shadow-lg`} // Enhanced padding, bg, shadow, rounded-xl
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h2 className="text-2xl font-semibold text-gray-800">Suas Reservas</h2>
+        <Button
+          className={`${buttonStyles.variant.default} shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto`}
+          onClick={onNewReservation}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Reserva
+        </Button>
+      </div>
+
+      {reservations.length > 0 ? (
+        <motion.div className="grid gap-6" variants={containerVariants}>
+          {reservations.map((reservation) => (
+            <motion.div key={reservation.id} variants={itemVariants}>
+              <Card className={`${cardStyles.base} ${cardStyles.hover.lift} overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 rounded-lg`}>
+                <CardContent className={`${cardStyles.content.default} !pt-5 !pb-4 px-5`}>
+                  <div className="flex flex-col md:flex-row items-start gap-4">
+                    <div className={`p-3 rounded-lg ${getReservationColor(reservation.type)} flex-shrink-0 self-center md:self-start`}>
+                      {getReservationIcon(reservation.type)}
+                    </div>
+                    <div className="flex-1 w-full">
+                      <div className="flex flex-col sm:flex-row justify-between items-start mb-1">
+                        <h3 className="font-semibold text-lg text-gray-800">{reservation.name}</h3>
+                        <Badge variant={getStatusVariant(reservation.status)} className="mt-1 sm:mt-0 self-start sm:self-center whitespace-nowrap shadow-sm">
+                          {getStatusLabel(reservation.status)}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <CalendarDays className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                          {reservation.type === 'accommodation' ? (
+                            <span>
+                              {reservation.checkIn && format(reservation.checkIn, "dd MMM", { locale: ptBR })} - {reservation.checkOut && format(reservation.checkOut, "dd MMM", { locale: ptBR })}
+                            </span>
+                          ) : (
+                            <span>{reservation.date && format(reservation.date, "dd MMM, yyyy", { locale: ptBR })}</span>
+                          )}
+                        </div>
+
+                        {reservation.type === 'restaurant' && reservation.date && (
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                            <span>{format(reservation.date, "HH:mm", { locale: ptBR })}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                          <span>{reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}</span>
+                        </div>
+
+                        <div className="flex items-center col-span-1 sm:col-span-2">
+                          <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                          <span className="truncate">{reservation.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className={`${cardStyles.footer.default} bg-slate-50 border-t px-5 py-3`}>
+                  <div className="flex justify-end w-full gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => onViewDetails(reservation.id)} className="text-primary hover:bg-primary/10 font-medium">
+                      Detalhes
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => onCancelReservation(reservation.id)} className="text-red-600 hover:text-red-700 hover:bg-red-500/10 font-medium">
+                      Cancelar
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div
+          className="text-center py-16 bg-slate-50 rounded-lg shadow-sm border border-slate-200"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 150 }}
+        >
+          <CalendarDays className="h-16 w-16 mx-auto text-slate-400 mb-5" />
+          <h3 className="text-xl font-semibold text-slate-700 mb-2">Sem reservas ativas</h3>
+          <p className="text-slate-500 mb-6 max-w-xs mx-auto">Você não possui nenhuma reserva no momento. Que tal explorar algumas opções?</p>
+          <Button className={`${buttonStyles.variant.default} shadow-md hover:shadow-lg transition-shadow`} onClick={onNewReservation}>
+             Explorar e Reservar
+          </Button>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
+// ****** END: ADDED/MOVED HELPER FUNCTIONS AND INTERFACES ******
 
 // Componente para o card de estatísticas
 const StatCard = ({ icon: Icon, title, value, color, bgColor, children }: {
@@ -682,392 +891,609 @@ const FloatingSupportButton = () => {
   );
 };
 
+// ****** SIDEBAR COMPONENT ******
+interface SidebarNavProps {
+  activeSection: string;
+  onSectionChange: (section: string) => void;
+  user: {
+    firstName?: string;
+    imageUrl?: string;
+    emailAddresses?: Array<{ emailAddress: string }>;
+  } | null;
+  unreadNotifications: number;
+}
+
+const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, onSectionChange, user, unreadNotifications }) => {
+  // Navigation links with icons
+  const navItems = [
+    { id: 'overview', label: 'Visão Geral', icon: HomeIcon, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { id: 'reservas', label: 'Minhas Reservas', icon: BookCheckIcon, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+    { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { id: 'favoritos', label: 'Favoritos', icon: Heart, color: 'text-pink-600', bgColor: 'bg-pink-50' },
+    { id: 'personalizacao', label: 'Preferências', icon: User, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+    { id: 'ajuda', label: 'Ajuda e Suporte', icon: HelpCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  ];
+  
+  return (
+    <div className="w-full lg:w-64 flex flex-col h-full">
+      {/* Avatar and Edit Profile section removed */}
+      
+      {/* Navigation List */}
+      <nav className="flex-1 px-3 space-y-1 pt-4">
+        {navItems.map((item) => {
+          const isActive = activeSection === item.id;
+          return (
+            <Button
+              key={item.id}
+              variant={isActive ? "default" : "ghost"}
+              className={`w-full justify-start mb-1 ${
+                isActive 
+                  ? `bg-${item.color.split('-')[1]}-100 text-${item.color.split('-')[1]}-700 hover:bg-${item.color.split('-')[1]}-200 hover:text-${item.color.split('-')[1]}-800 border-l-4 border-${item.color.split('-')[1]}-600` 
+                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+              onClick={() => onSectionChange(item.id)}
+            >
+              <item.icon className={`mr-2 h-4 w-4 ${isActive ? item.color : 'text-gray-500'}`} />
+              {item.label}
+              {item.id === 'overview' && unreadNotifications > 0 && (
+                <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                  {unreadNotifications}
+                </Badge>
+              )}
+            </Button>
+          );
+        })}
+      </nav>
+      
+      <Separator className="mt-4 mb-4" />
+      
+      {/* Logout Button */}
+      <div className="px-3 pb-4">
+        <Button variant="ghost" className="w-full justify-start text-gray-700 hover:text-gray-900">
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// ****** END SIDEBAR COMPONENT ******
+
 export default function Dashboard() {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState('reservas');
+  const [activeSection, setActiveSection] = useState('overview');
   const [notifications, setNotifications] = useState(mockNotifications);
-  const [notificationCount, setNotificationCount] = useState(mockNotifications.length);
-  const [viewAllNotifications, setViewAllNotifications] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 1024px)');
+  const unreadNotifications = notifications.filter(n => !n.read).length;
   const { saveUserPreferences, isLoading, error, preferences } = useConvexPreferences();
 
-  const renderReservas = () => {
-    return (
-      <div className={`${cardStyles.content.default} space-y-4`}>
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Suas Reservas</h2>
-          <Button className={buttonStyles.variant.default}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Reserva
-          </Button>
-        </div>
-        
-        <div className="grid gap-4">
-          {mockReservations.length > 0 ? (
-            mockReservations.map((reservation) => (
-              <Card key={reservation.id} className={`${cardStyles.base} ${cardStyles.hover.lift}`}>
-                <CardContent className={`${cardStyles.content.default} !pt-4`}>
-                  <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-full ${getReservationColor(reservation.type)}`}>
-                      {getReservationIcon(reservation.type)}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{reservation.name}</h3>
-                      
-                      <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <CalendarDays className="h-4 w-4 mr-2 text-gray-500" />
-                          {reservation.type === 'accommodation' ? (
-                            <span>
-                              {format(reservation.checkIn, "dd MMM", { locale: ptBR })} - {format(reservation.checkOut, "dd MMM", { locale: ptBR })}
-                            </span>
-                          ) : (
-                            <span>{format(reservation.date, "dd MMM, yyyy", { locale: ptBR })}</span>
-                          )}
-                        </div>
-                        
-                        {reservation.type === 'restaurant' && (
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                            <span>{format(reservation.date, "HH:mm", { locale: ptBR })}</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-2 text-gray-500" />
-                          <span>{reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}</span>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                          <span>{reservation.location}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Badge variant={getStatusVariant(reservation.status)}>
-                      {getStatusLabel(reservation.status)}
-                    </Badge>
-                  </div>
-                </CardContent>
-                <CardFooter className={cardStyles.footer.default}>
-                  <div className="flex justify-end w-full gap-2">
-                    <Button variant="outline" size="sm">Detalhes</Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">Cancelar</Button>
-                  </div>
-                </CardFooter>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <CalendarDays className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-800 mb-1">Sem reservas ativas</h3>
-              <p className="text-gray-500 mb-6">Você não possui nenhuma reserva no momento</p>
-              <Button>Fazer uma reserva</Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+  // Handlers for ReservationsSection actions
+  const handleNewReservation = () => {
+    toast.info("Abrindo opções para nova reserva...");
   };
 
-  const renderRecomendacoes = () => {
-    return (
-      <div className={`${cardStyles.content.default} space-y-4`}>
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-xl font-semibold">Recomendações Personalizadas</h2>
-          <Button variant="outline" className={buttonStyles.variant.soft}>
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
-            Filtrar
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockRecommendations.map((recommendation) => (
-            <RecommendationCard key={recommendation.id} item={recommendation} />
-          ))}
-        </div>
-        
-        {mockRecommendations.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <Sparkles className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma recomendação</h3>
-            <p className="text-gray-500 mb-6">Preencha o formulário de personalização para receber recomendações</p>
-            <Button onClick={() => setActiveTab("personalizacao")}>Personalizar Preferências</Button>
-          </div>
-        )}
-      </div>
-    );
+  const handleViewReservationDetails = (reservationId: string) => {
+    toast.info(`Carregando detalhes da reserva #${reservationId.substring(0,5)}...`);
   };
 
-  const renderPersonalizacao = () => {
-    return (
-      <div className="flex justify-center w-full py-6">
-        <div className="w-full max-w-4xl">
-          <NoronhaTravelChatbot 
-            userName={user?.firstName || "Visitante"}
-            onComplete={(data) => {
-              toast.success("Preferências salvas com sucesso!");
-              console.log("Dados do chatbot:", data);
-              
-              // Aqui poderia chamar uma mutação Convex para salvar dados
-              // e gerar recomendações
-              
-              setTimeout(() => {
-                // Simular tempo para processar as recomendações
-                setActiveTab("recomendacoes");
-                toast.success("Suas recomendações estão prontas!", {
-                  description: "Criamos sugestões personalizadas com base nas suas preferências."
-                });
-              }, 1500);
-            }}
+  const handleCancelReservation = (reservationId: string) => {
+    toast(`Cancelar reserva #${reservationId.substring(0,5)}?`, {
+      action: {
+        label: "Confirmar Cancelamento",
+        onClick: () => {
+          console.log(`Reservation ${reservationId} cancellation confirmed.`);
+          toast.success(`Reserva #${reservationId.substring(0,5)} cancelada.`);
+        },
+      },
+      cancel: {
+        label: "Manter Reserva",
+        onClick: () => console.log("Cancellation aborted"),
+      },
+      duration: 10000,
+    });
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(notifications.map(notif => 
+      notif.id === id ? { ...notif, read: true } : notif
+    ));
+    toast.success("Notificação marcada como lida");
+  };
+
+  const renderPageContent = () => {
+    switch (activeSection) {
+      case 'overview':
+        return (
+          <OverviewSection 
+            reservations={mockReservations} 
+            notifications={notifications}
+            onMarkAsRead={markNotificationAsRead}
+            onSectionChange={setActiveSection}
           />
-        </div>
-      </div>
-    );
-  };
-
-
-  return (
-    <div className="container mx-auto py-8 px-4 md:px-6 max-w-7xl">
-      <motion.header
-        className="mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Painel de Controle</h1>
-        <p className="text-gray-600 mt-1 text-sm md:text-base">
-          Bem-vindo de volta, <span className="font-medium text-blue-600">{user?.firstName || 'Visitante'}</span>!
-        </p>
-      </motion.header>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          icon={BookCheckIcon}
-          title="Reservas Ativas"
-          value={mockReservations.filter(r => r.status === 'confirmed').length}
-          color="bg-blue-600"
-          bgColor="bg-white"
-        >
-          <p className="text-xs text-gray-500">Suas próximas reservas confirmadas.</p>
-        </StatCard>
-        <StatCard
-          icon={Award}
-          title="Pontos"
-          value="2.350"
-          color="bg-purple-500"
-          bgColor="bg-purple-50"
-        >
-          <span className="text-sm text-gray-500">Programa de fidelidade</span>
-        </StatCard>
-        <StatCard
-          icon={Star}
-          title="Avaliações"
-          value="4,8"
-          color="bg-amber-500"
-          bgColor="bg-amber-50"
-        >
-          <span className="text-sm text-gray-500">Média de 12 avaliações</span>
-        </StatCard>
-        <StatCard
-          icon={CreditCard}
-          title="Economia"
-          value="R$ 523"
-          color="bg-green-500"
-          bgColor="bg-green-50"
-        >
-          <span className="text-sm text-gray-500">Economizados em descontos</span>
-        </StatCard>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6 pb-24">
-        <motion.div
-          className="flex-1 rounded-xl overflow-hidden shadow-lg bg-white"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <Tabs
-            defaultValue="reservas"
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full flex items-center justify-between"
-          >
-            <TabsList className="grid grid-cols-4 mb-8">
-              <TabsTrigger
-                value="reservas"
-                className={`${transitionEffects.appear.fadeIn}`}
-                onClick={() => setActiveTab("reservas")}
-              >
-                <ListChecks className="h-4 w-4 mr-2" />
-                Reservas
-              </TabsTrigger>
-              <TabsTrigger
-                value="recomendacoes"
-                className={`${transitionEffects.appear.fadeIn}`}
-                onClick={() => setActiveTab("recomendacoes")}
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Recomendações
-              </TabsTrigger>
-              <TabsTrigger
-                value="personalizacao"
-                className={`${transitionEffects.appear.fadeIn}`}
-                onClick={() => setActiveTab("personalizacao")}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Personalização
-              </TabsTrigger>
-            </TabsList>
-
-            <AnimatePresence mode="wait">
-              {activeTab === "reservas" && (
-                <motion.div
-                  key="reservas"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className={transitionEffects.appear.fadeInUp}
-                >
-                  {renderReservas()}
-                </motion.div>
-              )}
-              {activeTab === "recomendacoes" && (
-                <motion.div
-                  key="recomendacoes"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className={transitionEffects.appear.fadeInUp}
-                >
-                  {renderRecomendacoes()}
-                </motion.div>
-              )}
-              {activeTab === "personalizacao" && (
-                <motion.div
-                  key="personalizacao"
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className={transitionEffects.appear.fadeInUp}
-                >
-                  {renderPersonalizacao()}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Tabs>
-        </motion.div>
-
-        <motion.div
-          className="lg:w-96 rounded-xl overflow-hidden shadow-lg bg-white"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          <div className="p-4 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-t-xl">
+        );
+      case 'reservas':
+        return (
+          <ReservationsSection 
+            reservations={mockReservations}
+            getReservationIcon={getReservationIcon}
+            getReservationColor={getReservationColor}
+            getStatusVariant={getStatusVariant}
+            getStatusLabel={getStatusLabel}
+            onNewReservation={handleNewReservation}
+            onViewDetails={handleViewReservationDetails}
+            onCancelReservation={handleCancelReservation}
+          />
+        );
+      case 'recomendacoes':
+        return (
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold flex items-center text-base">
-                <Bell className="h-5 w-5 mr-2" />
-                Notificações
-              </h3>
-              {notificationCount > 0 && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {notificationCount} nova{notificationCount > 1 ? 's' : ''}
-                </span>
-              )}
+              <h2 className="text-xl font-semibold">Recomendações Personalizadas</h2>
+              <Button variant="outline" size="sm" className="text-xs">
+                <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
+                Filtrar
+              </Button>
             </div>
-          </div>
-
-          <div className="max-h-[500px] overflow-y-auto divide-y divide-gray-100">
-            {notifications.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-sm">
-                <Bell className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                Nenhuma notificação no momento.
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {mockRecommendations.map((recommendation) => (
+                <RecommendationCard key={recommendation.id} item={recommendation} />
+              ))}
+            </div>
+            
+            {mockRecommendations.length === 0 && (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <Sparkles className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma recomendação</h3>
+                <p className="text-gray-500 mb-6">Preencha suas preferências para receber recomendações personalizadas</p>
+                <Button onClick={() => setActiveSection("personalizacao")}>Definir Preferências</Button>
               </div>
-            ) : (
-              <>
-                {notifications.map(notification => (
-                  <NotificationItem
-                    key={notification.id}
-                    notification={notification}
-                    onClick={() => toast.info(`Notificação: ${notification.title}`)}
-                  />
-                ))}
-                {mockNotifications.length > 3 && (
-                    <div className="p-3 flex justify-center bg-gray-50 rounded-b-xl border-t border-gray-100">
-                    <Button
-                        variant="link"
-                        className="text-sm text-blue-600 font-medium hover:text-blue-800"
-                        onClick={() => setViewAllNotifications(!viewAllNotifications)}
-                    >
-                        {viewAllNotifications ? 'Ver menos notificações' : `Ver todas (${mockNotifications.length})`}
-                    </Button>
-                    </div>
-                )}
-              </>
             )}
           </div>
-        </motion.div>
+        );
+      case 'personalizacao':
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <PreferencesSection />
+          </div>
+        );
+      case 'favoritos':
+        return (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+            <Bookmark className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Nenhum favorito salvo</h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              Adicione lugares, restaurantes e atividades aos favoritos para encontrá-los facilmente depois.
+            </p>
+            <Button onClick={() => setActiveSection("recomendacoes")}>
+              Explorar Recomendações
+            </Button>
+          </div>
+        );
+      case 'ajuda':
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold mb-4">Central de Ajuda</h2>
+            <div className="space-y-6 max-w-3xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center">
+                      <CalendarDays className="h-4 w-4 mr-2 text-primary" />
+                      Reservas e Cancelamentos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 text-sm">
+                    <p>Aprenda como fazer, alterar ou cancelar reservas.</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="ghost" size="sm" className="w-full text-primary">Ver detalhes</Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center">
+                      <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                      Pagamentos e Reembolsos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 text-sm">
+                    <p>Informações sobre formas de pagamento e política de reembolso.</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="ghost" size="sm" className="w-full text-primary">Ver detalhes</Button>
+                  </CardFooter>
+                </Card>
+                
+                {/* Additional help topics can be added here */}
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="font-medium mb-3">Contato direto</h3>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button variant="outline" className="flex-1">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Chat de Suporte
+                  </Button>
+                  <Button variant="outline" className="flex-1">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Enviar Email
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return <div>Conteúdo não disponível</div>;
+    }
+  };
+
+  // Add a new interface for the overview section props
+  interface OverviewSectionProps {
+    reservations: typeof mockReservations;
+    notifications: Notification[];
+    onMarkAsRead: (id: string) => void;
+    onSectionChange: (section: string) => void;
+  }
+
+  // Update the overview section component to use the interface
+  const OverviewSection: React.FC<OverviewSectionProps> = ({ 
+    reservations, 
+    notifications, 
+    onMarkAsRead, 
+    onSectionChange 
+  }) => {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex justify-between">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                  <BookCheckIcon className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-2xl font-bold text-blue-700">{reservations.filter(r => r.status === 'confirmed').length}</div>
+              </div>
+              <h3 className="text-sm font-medium mt-2 text-blue-800">Reservas Ativas</h3>
+              <p className="text-xs text-blue-600 mt-1">Suas próximas reservas</p>
+            </CardContent>
+            <CardFooter className="pt-0 pb-3">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs w-full p-0 h-7 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                onClick={() => onSectionChange('reservas')}
+              >
+                Ver Reservas
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex justify-between">
+                <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                  <Award className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-2xl font-bold text-indigo-700">2.350</div>
+              </div>
+              <h3 className="text-sm font-medium mt-2 text-indigo-800">Pontos Acumulados</h3>
+              <p className="text-xs text-indigo-600 mt-1">Programa de fidelidade</p>
+            </CardContent>
+            <CardFooter className="pt-0 pb-3">
+              <Button variant="ghost" size="sm" className="text-xs w-full p-0 h-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100">
+                Ver Benefícios
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex justify-between">
+                <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                  <Star className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-2xl font-bold text-amber-700">4,8</div>
+              </div>
+              <h3 className="text-sm font-medium mt-2 text-amber-800">Avaliações</h3>
+              <p className="text-xs text-amber-600 mt-1">Média de 12 avaliações</p>
+            </CardContent>
+            <CardFooter className="pt-0 pb-3">
+              <Button variant="ghost" size="sm" className="text-xs w-full p-0 h-7 text-amber-600 hover:text-amber-700 hover:bg-amber-100">
+                Ver Detalhes
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex justify-between">
+                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-2xl font-bold text-green-700">R$ 523</div>
+              </div>
+              <h3 className="text-sm font-medium mt-2 text-green-800">Economias</h3>
+              <p className="text-xs text-green-600 mt-1">Em descontos exclusivos</p>
+            </CardContent>
+            <CardFooter className="pt-0 pb-3">
+              <Button variant="ghost" size="sm" className="text-xs w-full p-0 h-7 text-green-600 hover:text-green-700 hover:bg-green-100">
+                Ver Histórico
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+        
+        {/* Quick Links */}
+        <Card className="bg-white shadow-sm border-t-4 border-blue-500">
+          <CardHeader>
+            <CardTitle className="text-lg text-blue-700">Ações Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent className="px-6 pb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button 
+                onClick={() => onSectionChange('reservas')} 
+                variant="outline" 
+                className="h-auto flex flex-col items-center justify-center py-4 px-2 gap-2 text-center border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-800"
+              >
+                <CalendarDays className="h-6 w-6 text-blue-500" />
+                <span className="text-sm font-medium">Nova Reserva</span>
+              </Button>
+              
+              <Button 
+                onClick={() => onSectionChange('recomendacoes')} 
+                variant="outline" 
+                className="h-auto flex flex-col items-center justify-center py-4 px-2 gap-2 text-center border-purple-200 bg-purple-50 hover:bg-purple-100 hover:text-purple-800"
+              >
+                <Sparkles className="h-6 w-6 text-purple-500" />
+                <span className="text-sm font-medium">Recomendações</span>
+              </Button>
+              
+              <Button 
+                onClick={() => onSectionChange('personalizacao')} 
+                variant="outline" 
+                className="h-auto flex flex-col items-center justify-center py-4 px-2 gap-2 text-center border-cyan-200 bg-cyan-50 hover:bg-cyan-100 hover:text-cyan-800"
+              >
+                <User className="h-6 w-6 text-cyan-500" />
+                <span className="text-sm font-medium">Preferências</span>
+              </Button>
+              
+              <Button 
+                onClick={() => onSectionChange('ajuda')} 
+                variant="outline" 
+                className="h-auto flex flex-col items-center justify-center py-4 px-2 gap-2 text-center border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800"
+              >
+                <HelpCircle className="h-6 w-6 text-emerald-500" />
+                <span className="text-sm font-medium">Ajuda</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Latest Reservations Preview */}
+        <Card className="bg-white shadow-sm border-l-4 border-indigo-500">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg text-indigo-700">Próximas Reservas</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+              onClick={() => onSectionChange('reservas')}
+            >
+              Ver Todas
+            </Button>
+          </CardHeader>
+          <CardContent className="pb-2">
+            {reservations.length > 0 ? (
+              <div className="space-y-3">
+                {reservations.slice(0, 2).map((reservation) => (
+                  <div key={reservation.id} className="flex items-start p-2 hover:bg-gray-50 rounded-md transition-colors">
+                    <div className={`p-2 rounded-md ${getReservationColor(reservation.type)} mr-3`}>
+                      {getReservationIcon(reservation.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium truncate">{reservation.name}</h4>
+                        <Badge variant={getStatusVariant(reservation.status)} className="ml-2">
+                          {getStatusLabel(reservation.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap text-sm text-gray-500 mt-1">
+                        <span className="flex items-center mr-4">
+                          <CalendarDays className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                          {reservation.type === 'accommodation' && reservation.checkIn && reservation.checkOut
+                            ? `${format(reservation.checkIn, "dd MMM", { locale: ptBR })} - ${format(reservation.checkOut, "dd MMM", { locale: ptBR })}`
+                            : reservation.date
+                              ? format(reservation.date, "dd MMM, yyyy", { locale: ptBR })
+                              : "Data não definida"}
+                        </span>
+                        <span className="flex items-center">
+                          <Users className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                          {reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500">Você não possui reservas futuras</p>
+                <Button 
+                  variant="link" 
+                  className="mt-2 text-primary"
+                  onClick={() => onSectionChange('reservas')}
+                >
+                  Explorar opções
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Notifications */}
+        <Card className="bg-white shadow-sm border-r-4 border-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center">
+              <CardTitle className="text-lg text-blue-700">Notificações</CardTitle>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <Badge className="ml-2 bg-red-500">{notifications.filter(n => !n.read).length}</Badge>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              onClick={() => {}}
+            >
+              Ver Todas
+            </Button>
+          </CardHeader>
+          <CardContent className="pb-2">
+            {notifications.length > 0 ? (
+              <div className="space-y-1">
+                {notifications.slice(0, 3).map((notification) => (
+                  <button 
+                    key={notification.id} 
+                    type="button"
+                    className={`p-3 w-full text-left ${!notification.read ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'} rounded-md transition-colors cursor-pointer`}
+                    onClick={() => onMarkAsRead(notification.id)}
+                    aria-label={`Notificação: ${notification.title}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className={`text-sm ${!notification.read ? 'font-medium' : ''}`}>{notification.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{notification.description}</p>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {format(notification.date, "dd/MM", { locale: ptBR })}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500">Nenhuma notificação</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  return (
+    <div className="container mx-auto py-6 px-4 md:px-6 max-w-screen-2xl">
+      {/* Mobile Header with Menu Button */}
+      <div className="lg:hidden flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold">Meu Painel</h1>
+        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0">
+            <SidebarNav 
+              activeSection={activeSection}
+              onSectionChange={(section) => {
+                setActiveSection(section);
+                setIsMobileSidebarOpen(false);
+              }}
+              user={{
+                firstName: user?.firstName || undefined,
+                imageUrl: user?.imageUrl || undefined,
+                emailAddresses: user?.emailAddresses || undefined
+              }}
+              unreadNotifications={unreadNotifications}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
+      
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar - hidden on mobile, shown on desktop */}
+        <div className="hidden lg:block lg:w-64 bg-white rounded-lg shadow-sm h-[calc(100vh-7rem)] sticky top-24 overflow-y-auto">
+          <SidebarNav 
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+            user={{
+              firstName: user?.firstName || undefined,
+              imageUrl: user?.imageUrl || undefined,
+              emailAddresses: user?.emailAddresses || undefined
+            }}
+            unreadNotifications={unreadNotifications}
+          />
+        </div>
+        
+        {/* Main Content Area */}
+        <div className="flex-1">
+          <div className={`
+            bg-gradient-to-r 
+            ${activeSection === 'overview' ? 'from-blue-500 to-blue-600' : 
+              activeSection === 'reservas' ? 'from-indigo-500 to-indigo-600' : 
+              activeSection === 'recomendacoes' ? 'from-purple-500 to-purple-600' : 
+              activeSection === 'favoritos' ? 'from-pink-500 to-pink-600' : 
+              activeSection === 'personalizacao' ? 'from-cyan-500 to-cyan-600' : 
+              activeSection === 'ajuda' ? 'from-emerald-500 to-emerald-600' : 
+              'from-gray-700 to-gray-800'
+            }
+            rounded-lg shadow-md p-4 mb-6 text-white
+          `}>
+            <h1 className="text-2xl font-bold">
+              {activeSection === 'overview' ? 'Meu Painel' : 
+              activeSection === 'reservas' ? 'Minhas Reservas' : 
+              activeSection === 'recomendacoes' ? 'Recomendações' :
+              activeSection === 'personalizacao' ? 'Preferências' :
+              activeSection === 'favoritos' ? 'Meus Favoritos' :
+              activeSection === 'ajuda' ? 'Ajuda e Suporte' : 'Meu Painel'}
+            </h1>
+          </div>
+          
+          <div className="space-y-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSection}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderPageContent()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// Função auxiliar para obter o ícone com base no tipo de reserva
-const getReservationIcon = (type: string) => {
-  switch (type) {
-    case 'restaurant':
-      return <Utensils className="h-5 w-5 text-white" />;
-    case 'accommodation':
-      return <BedDouble className="h-5 w-5 text-white" />;
-    case 'activity':
-      return <Activity className="h-5 w-5 text-white" />;
-    default:
-      return <CalendarDays className="h-5 w-5 text-white" />;
-  }
-};
+// Helper component for missing icons
+interface IconProps extends React.SVGProps<SVGSVGElement> {
+  size?: number | string;
+}
 
-// Função auxiliar para obter a cor com base no tipo de reserva
-const getReservationColor = (type: string) => {
-  switch (type) {
-    case 'restaurant':
-      return 'bg-orange-500';
-    case 'accommodation':
-      return 'bg-blue-500';
-    case 'activity':
-      return 'bg-green-500';
-    default:
-      return 'bg-gray-500';
-  }
-};
+const Mail = (props: IconProps) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <title>Email Icon</title>
+    <rect width="20" height="16" x="2" y="4" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
 
-// Função auxiliar para obter a variante do badge com base no status
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case 'confirmed':
-      return 'success';
-    case 'pending':
-      return 'warning';
-    case 'cancelled':
-      return 'destructive';
-    default:
-      return 'default';
-  }
-};
-
-// Função auxiliar para obter o label com base no status
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'confirmed':
-      return 'Confirmado';
-    case 'pending':
-      return 'Pendente';
-    case 'cancelled':
-      return 'Cancelado';
-    default:
-      return status;
-  }
-};
+const Menu = (props: IconProps) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <title>Menu Icon</title>
+    <line x1="4" x2="20" y1="12" y2="12" />
+    <line x1="4" x2="20" y1="6" y2="6" />
+    <line x1="4" x2="20" y1="18" y2="18" />
+  </svg>
+);
