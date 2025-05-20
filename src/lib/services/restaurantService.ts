@@ -70,7 +70,7 @@ export type Restaurant = {
 
 // Hook para obter todos os restaurantes
 export function useRestaurants() {
-  const restaurants = useQuery(api.restaurants.getAll);
+  const restaurants = useQuery(api.domains.restaurants.queries.getAll);
   return {
     restaurants: restaurants as Restaurant[] | undefined,
     isLoading: restaurants === undefined
@@ -79,7 +79,7 @@ export function useRestaurants() {
 
 // Hook para obter restaurantes destacados
 export function useFeaturedRestaurants() {
-  const restaurants = useQuery(api.restaurants.getFeatured);
+  const restaurants = useQuery(api.domains.restaurants.queries.getFeaturedRestaurants);
   return {
     restaurants: restaurants as Restaurant[] | undefined,
     isLoading: restaurants === undefined
@@ -88,7 +88,7 @@ export function useFeaturedRestaurants() {
 
 // Hook para obter restaurantes ativos
 export function useActiveRestaurants() {
-  const restaurants = useQuery(api.restaurants.getActive);
+  const restaurants = useQuery(api.domains.restaurants.queries.getActive);
   return {
     restaurants: restaurants as Restaurant[] | undefined,
     isLoading: restaurants === undefined
@@ -97,7 +97,7 @@ export function useActiveRestaurants() {
 
 // Hook para obter restaurante por ID
 export function useRestaurantById(id: string) {
-  const restaurant = useQuery(api.restaurants.getById, { id: id as Id<"restaurants"> });
+  const restaurant = useQuery(api.domains.restaurants.queries.getById, { id: id as Id<"restaurants"> });
   return {
     restaurant: restaurant as Restaurant | undefined,
     isLoading: restaurant === undefined
@@ -106,7 +106,7 @@ export function useRestaurantById(id: string) {
 
 // Hook para obter restaurante por slug
 export function useRestaurantBySlug(slug: string) {
-  const restaurant = useQuery(api.restaurants.getBySlug, { slug });
+  const restaurant = useQuery(api.domains.restaurants.queries.getBySlug, { slug });
   return {
     restaurant: restaurant as Restaurant | undefined,
     isLoading: restaurant === undefined
@@ -115,7 +115,7 @@ export function useRestaurantBySlug(slug: string) {
 
 // Hook para criar um novo restaurante
 export function useCreateRestaurant() {
-  const createMutation = useMutation(api.restaurants.create);
+  const createMutation = useMutation(api.domains.restaurants.mutations.create);
   
   return async (restaurantData: Restaurant, partnerId: Id<"users">) => {
     // Garantir que o restaurante tenha o partnerId
@@ -131,7 +131,7 @@ export function useCreateRestaurant() {
 
 // Hook para atualizar um restaurante existente
 export function useUpdateRestaurant() {
-  const updateMutation = useMutation(api.restaurants.update);
+  const updateMutation = useMutation(api.domains.restaurants.mutations.update);
   
   return async (restaurantData: Restaurant) => {
     if (!restaurantData._id) {
@@ -149,7 +149,7 @@ export function useUpdateRestaurant() {
 
 // Hook para excluir um restaurante
 export function useDeleteRestaurant() {
-  const deleteMutation = useMutation(api.restaurants.remove);
+  const deleteMutation = useMutation(api.domains.restaurants.mutations.remove);
   
   return async (id: string) => {
     await deleteMutation({ id: id as Id<"restaurants"> });
@@ -158,7 +158,7 @@ export function useDeleteRestaurant() {
 
 // Hook para alternar o status de destaque de um restaurante
 export function useToggleFeatured() {
-  const toggleFeaturedMutation = useMutation(api.restaurants.toggleFeatured);
+  const toggleFeaturedMutation = useMutation(api.domains.restaurants.mutations.toggleFeatured);
   
   return async (id: string, isFeatured: boolean) => {
     await toggleFeaturedMutation({ 
@@ -170,7 +170,7 @@ export function useToggleFeatured() {
 
 // Hook para alternar o status ativo de um restaurante
 export function useToggleActive() {
-  const toggleActiveMutation = useMutation(api.restaurants.toggleActive);
+  const toggleActiveMutation = useMutation(api.domains.restaurants.mutations.toggleActive);
   
   return async (id: string, isActive: boolean) => {
     await toggleActiveMutation({ 
@@ -182,7 +182,7 @@ export function useToggleActive() {
 
 // Hook para obter restaurantes de um usuário específico
 export function useRestaurantsByUser(userId: Id<"users">) {
-  const restaurants = useQuery(api.restaurants.getByUser, { userId });
+  const restaurants = useQuery(api.domains.restaurants.queries.getByPartnerId, { partnerId: userId });
   return {
     restaurants: restaurants as Restaurant[] | undefined,
     isLoading: restaurants === undefined
@@ -191,7 +191,7 @@ export function useRestaurantsByUser(userId: Id<"users">) {
 
 // Hook para obter restaurantes com informações do criador
 export function useRestaurantsWithCreators() {
-  const restaurants = useQuery(api.restaurants.getRestaurantsWithCreators);
+  const restaurants = useQuery(api.domains.restaurants.queries.getWithCreator);
   return {
     restaurants: restaurants as Restaurant[] | undefined,
     isLoading: restaurants === undefined
@@ -224,7 +224,7 @@ export type RestaurantReservation = {
 
 // Hook para criar uma nova reserva
 export function useCreateReservation() {
-  const createReservationMutation = useMutation(api.restaurants.createReservation);
+  const createReservationMutation = useMutation(api.domains.restaurants.mutations.createReservation);
   
   return async (reservationData: Omit<RestaurantReservation, "status" | "confirmationCode">) => {
     const reservationId = await createReservationMutation(reservationData as any);
@@ -234,7 +234,7 @@ export function useCreateReservation() {
 
 // Hook para atualizar o status de uma reserva
 export function useUpdateReservationStatus() {
-  const updateStatusMutation = useMutation(api.restaurants.updateReservationStatus);
+  const updateStatusMutation = useMutation(api.domains.restaurants.mutations.updateReservationStatus);
   
   return async (id: string, status: string) => {
     await updateStatusMutation({ 
@@ -246,7 +246,7 @@ export function useUpdateReservationStatus() {
 
 // Hook para obter reservas de um restaurante
 export function useReservationsByRestaurant(restaurantId: Id<"restaurants">) {
-  const reservations = useQuery(api.restaurants.getReservationsByRestaurant, { restaurantId });
+  const reservations = useQuery(api.domains.restaurants.queries.getReservationsByRestaurant, { restaurantId });
   return {
     reservations: reservations as RestaurantReservation[] | undefined,
     isLoading: reservations === undefined
@@ -255,16 +255,16 @@ export function useReservationsByRestaurant(restaurantId: Id<"restaurants">) {
 
 // Hook para obter reservas de um usuário
 export function useReservationsByUser(userId: Id<"users">) {
-  const reservations = useQuery(api.restaurants.getReservationsByUser, { userId });
+  const reservations = useQuery(api.domains.restaurants.queries.getReservationsByUser, { userId });
   return {
     reservations: reservations as RestaurantReservation[] | undefined,
     isLoading: reservations === undefined
   };
 }
 
-// Hook para obter reservas para uma data específica em um restaurante
+// Hook para obter reservas de um restaurante por data
 export function useReservationsByDate(restaurantId: Id<"restaurants">, date: string) {
-  const reservations = useQuery(api.restaurants.getReservationsByDate, { restaurantId, date });
+  const reservations = useQuery(api.domains.restaurants.queries.getReservationsByDate, { restaurantId, date });
   return {
     reservations: reservations as RestaurantReservation[] | undefined,
     isLoading: reservations === undefined

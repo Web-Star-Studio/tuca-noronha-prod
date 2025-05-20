@@ -1,76 +1,8 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
-import { mutationWithRole } from "./rbac";
-import { getCurrentUserRole, getCurrentUserConvexId } from "./rbac";
-
-/**
- * Get all restaurants
- */
-export const getAll = query({
-  args: {},
-  returns: v.array(v.any()),
-  handler: async (ctx) => {
-    return await ctx.db.query("restaurants").collect();
-  },
-});
-
-/**
- * Get featured restaurants
- */
-export const getFeatured = query({
-  args: {},
-  returns: v.array(v.any()),
-  handler: async (ctx) => {
-    return await ctx.db
-      .query("restaurants")
-      .withIndex("featured_restaurants", (q) => 
-        q.eq("isFeatured", true).eq("isActive", true)
-      )
-      .collect();
-  },
-});
-
-/**
- * Get active restaurants
- */
-export const getActive = query({
-  args: {},
-  returns: v.array(v.any()),
-  handler: async (ctx) => {
-    return await ctx.db
-      .query("restaurants")
-      .withIndex("active_restaurants", (q) => q.eq("isActive", true))
-      .collect();
-  },
-});
-
-/**
- * Get a restaurant by ID
- */
-export const getById = query({
-  args: { id: v.id("restaurants") },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
-  },
-});
-
-/**
- * Get a restaurant by slug
- */
-export const getBySlug = query({
-  args: { slug: v.string() },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    const restaurant = await ctx.db
-      .query("restaurants")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-      .unique();
-    
-    return restaurant;
-  },
-});
+import type { Id } from "../../_generated/dataModel";
+import { mutationWithRole } from "../../domains/rbac";
+import { getCurrentUserRole, getCurrentUserConvexId } from "../../domains/rbac";
+import type { RestaurantUpdateInput } from "./types";
 
 /**
  * Create a new restaurant
@@ -132,7 +64,7 @@ export const create = mutationWithRole(["partner", "master"])({
     partnerId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    // Verificar se o parceiro que está criando é o próprio usuário (a menos que seja master)
+    // Verify that the partner creating the restaurant is the logged in user (unless master)
     const role = await getCurrentUserRole(ctx);
     const currentUserId = await getCurrentUserConvexId(ctx);
     if (role === "partner") {
@@ -303,32 +235,22 @@ export const update = mutationWithRole(["partner", "master"])({
       ...otherFields
     };
     
-    // Convert numbers to appropriate types if provided
+    // Handle address updates if provided
+    if (address) {
+      updates.address = {
+        ...address
+      };
+    }
+    
+    // Convert number values to appropriate types if provided
     if (maximumPartySize !== undefined) {
       updates.maximumPartySize = BigInt(maximumPartySize);
     }
     
-    // Handle address update if provided
-    if (address) {
-      updates.address = {
-        ...address,
-        coordinates: {
-          latitude: address.coordinates.latitude,
-          longitude: address.coordinates.longitude,
-        },
-      };
-    }
-    
-    // Handle rating update if provided
-    if (rating) {
+    if (rating !== undefined) {
       updates.rating = {
         ...rating,
-        overall: rating.overall,
-        food: rating.food,
-        service: rating.service,
-        ambience: rating.ambience,
-        value: rating.value,
-        totalReviews: BigInt(rating.totalReviews),
+        totalReviews: BigInt(rating.totalReviews)
       };
     }
     
@@ -362,8 +284,8 @@ export const remove = mutationWithRole(["partner", "master"])({
  */
 export const toggleFeatured = mutationWithRole(["partner", "master"])({
   args: { 
-    id: v.id("restaurants"),
-    isFeatured: v.boolean()
+    id: v.id("restaurants"), 
+    isFeatured: v.boolean() 
   },
   returns: v.id("restaurants"),
   handler: async (ctx, args) => {
@@ -372,7 +294,7 @@ export const toggleFeatured = mutationWithRole(["partner", "master"])({
       const currentUserId = await getCurrentUserConvexId(ctx);
       const restaurant = await ctx.db.get(args.id);
       if (!restaurant || restaurant.partnerId.toString() !== currentUserId?.toString()) {
-        throw new Error("Unauthorized: cannot modify restaurant not owned by user");
+        throw new Error("Unauthorized: cannot update restaurant not owned by user");
       }
     }
     await ctx.db.patch(args.id, { isFeatured: args.isFeatured });
@@ -385,210 +307,20 @@ export const toggleFeatured = mutationWithRole(["partner", "master"])({
  */
 export const toggleActive = mutationWithRole(["partner", "master"])({
   args: { 
-    id: v.id("restaurants"),
-    isActive: v.boolean()
+    id: v.id("restaurants"), 
+    isActive: v.boolean() 
   },
-  returns: v.null(),
+  returns: v.id("restaurants"),
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
     if (role === "partner") {
       const currentUserId = await getCurrentUserConvexId(ctx);
       const restaurant = await ctx.db.get(args.id);
       if (!restaurant || restaurant.partnerId.toString() !== currentUserId?.toString()) {
-        throw new Error("Unauthorized: cannot modify restaurant not owned by user");
+        throw new Error("Unauthorized: cannot update restaurant not owned by user");
       }
     }
     await ctx.db.patch(args.id, { isActive: args.isActive });
-    return null;
+    return args.id;
   },
-});
-
-/**
- * Get restaurants created by a specific user
- */
-export const getByUser = query({
-  args: {
-    userId: v.id("users"),
-  },
-  returns: v.array(v.any()),
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("restaurants")
-      .withIndex("by_partner", (q) => q.eq("partnerId", args.userId))
-      .collect();
-  },
-});
-
-/**
- * Get user information by ID - for displaying creator information
- */
-export const getUserById = query({
-  args: { 
-    userId: v.id("users")
-  },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.userId);
-  },
-});
-
-/**
- * Get restaurants with creator information
- */
-export const getRestaurantsWithCreators = query({
-  args: {},
-  returns: v.array(v.any()),
-  handler: async (ctx) => {
-    const restaurants = await ctx.db.query("restaurants").collect();
-    const restaurantsWithCreators = await Promise.all(
-      restaurants.map(async (restaurant) => {
-        let creatorInfo = null;
-        if (restaurant.partnerId) {
-          creatorInfo = await ctx.db.get(restaurant.partnerId);
-        }
-        return {
-          ...restaurant,
-          creator: creatorInfo ? {
-            id: creatorInfo._id,
-            name: creatorInfo.name,
-            email: creatorInfo.email,
-            image: creatorInfo.image
-          } : null
-        };
-      })
-    );
-    return restaurantsWithCreators;
-  },
-});
-
-/**
- * Create a new reservation
- */
-export const createReservation = mutation({
-  args: {
-    restaurantId: v.id("restaurants"),
-    userId: v.id("users"),
-    date: v.string(),
-    time: v.string(),
-    partySize: v.number(),
-    name: v.string(),
-    email: v.string(),
-    phone: v.string(),
-    specialRequests: v.optional(v.string()),
-  },
-  returns: v.id("restaurantReservations"),
-  handler: async (ctx, args) => {
-    const { partySize, ...otherArgs } = args;
-    
-    // Gerar código de confirmação único
-    const confirmationCode = generateConfirmationCode();
-    
-    // Criar a reserva
-    const reservationId = await ctx.db.insert("restaurantReservations", {
-      ...otherArgs,
-      partySize: BigInt(partySize),
-      status: "pending",
-      confirmationCode,
-    });
-    
-    return reservationId;
-  },
-});
-
-/**
- * Update reservation status
- */
-export const updateReservationStatus = mutation({
-  args: {
-    id: v.id("restaurantReservations"),
-    status: v.string(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, { status: args.status });
-    return null;
-  },
-});
-
-/**
- * Get reservations for a restaurant
- */
-export const getReservationsByRestaurant = query({
-  args: {
-    restaurantId: v.id("restaurants"),
-  },
-  returns: v.array(v.any()),
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("restaurantReservations")
-      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId))
-      .collect();
-  },
-});
-
-/**
- * Get reservations for a user
- */
-export const getReservationsByUser = query({
-  args: {
-    userId: v.id("users"),
-  },
-  returns: v.array(v.any()),
-  handler: async (ctx, args) => {
-    const reservations = await ctx.db
-      .query("restaurantReservations")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-    
-    // Get restaurant details for each reservation
-    const reservationsWithDetails = await Promise.all(
-      reservations.map(async (reservation) => {
-        const restaurant = await ctx.db.get(reservation.restaurantId);
-        return {
-          ...reservation,
-          restaurant: restaurant ? {
-            id: restaurant._id,
-            name: restaurant.name,
-            address: restaurant.address,
-            mainImage: restaurant.mainImage,
-          } : null
-        };
-      })
-    );
-    
-    return reservationsWithDetails;
-  },
-});
-
-/**
- * Get reservations for a specific date at a restaurant
- */
-export const getReservationsByDate = query({
-  args: {
-    restaurantId: v.id("restaurants"),
-    date: v.string(),
-  },
-  returns: v.array(v.any()),
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("restaurantReservations")
-      .withIndex("by_restaurant_date", (q) => 
-        q.eq("restaurantId", args.restaurantId).eq("date", args.date)
-      )
-      .collect();
-  },
-});
-
-// Função utilitária para gerar códigos de confirmação
-function generateConfirmationCode(): string {
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Sem caracteres ambíguos
-  let code = '';
-  
-  // Gerar 6 caracteres aleatórios
-  for (let i = 0; i < 6; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    code += characters.charAt(randomIndex);
-  }
-  
-  return code;
-}
+}); 

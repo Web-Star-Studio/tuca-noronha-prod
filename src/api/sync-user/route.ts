@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../convex/_generated/api';
-import { internal } from '../../../convex/_generated/api';
 
 // Create a Convex client for server-side API calls
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL || '');
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
     console.log("API: Manual sync request for user:", userData.clerkId);
     
     // Check if the user already exists in Convex
-    const existingUser = await convex.query(api.auth.getUserByClerkId, { 
+    const existingUser = await convex.query(api.domains.users.queries.getUserByClerkId, { 
       clerkId: userData.clerkId 
     });
     
@@ -51,12 +50,9 @@ export async function POST(request: NextRequest) {
     
     console.log("API: Creating user in Convex with data:", syncArgs);
     
-    // Create the user in Convex using the internal mutation
+    // Create the user in Convex using the domain mutation
     try {
-      // Note: You might need to use a different approach since internal functions
-      // can only be called from other Convex functions, not from the client
-      // This is just for illustration
-      const newUserId = await convex.mutation(api.users.createUser, syncArgs);
+      const newUserId = await convex.mutation(api.domains.users.mutations.createUser, syncArgs);
       
       console.log("API: User successfully created in Convex:", newUserId);
       

@@ -15,20 +15,19 @@
     animation-delay: 4s;
   }
 
-  /* Ocultar scrollbar mas permitir rolagem */
+  /* Hide scrollbar but allow scrolling */
   .scrollbar-hide {
-    -ms-overflow-style: none !important;  /* IE e Edge */
-    scrollbar-width: none !important;  /* Firefox */
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
   }
 
-  /* Para Chrome, Safari e Opera */
   .scrollbar-hide::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
   }
 
-  /* Regra específica para o menu de navegação */
+  /* Navigation menu specific rule */
   nav::-webkit-scrollbar,
   nav *::-webkit-scrollbar {
     display: none !important;
@@ -40,121 +39,161 @@
     -ms-overflow-style: none !important;
     scrollbar-width: none !important;
   }
+  
+  /* Modern transitions */
+  .transition-all-ease {
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  .transition-transform-ease {
+    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  /* Smooth hover effects */
+  .hover-lift {
+    transform: translateY(0);
+    transition: transform 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-3px);
+  }
 }
 
 @layer base {
   :root {
-    /* Base colors - light mode */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Base colors - light mode with enhanced contrast */
+    --background: #ffffff;
+    --foreground: #0a1430;
     
     /* Surface colors */
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --card: #f8fafd;
+    --card-foreground: #0a1430;
+    --popover: #ffffff;
+    --popover-foreground: #0a1430;
     
-    /* Primary UI colors */
-    --primary: 222 47% 31%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary UI colors - stronger blue */
+    --primary: #1a3a85;
+    --primary-foreground: #ffffff;
     
-    /* Secondary UI colors */
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    /* Secondary UI colors - enhanced contrast */
+    --secondary: #eef3f9;
+    --secondary-foreground: #0a1430;
     
-    /* Muted UI colors */
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted UI colors - better contrast */
+    --muted: #e5ebf5;
+    --muted-foreground: #536283;
     
-    /* Accent UI colors */
-    --accent: 210 40% 94%;
-    --accent-foreground: 222 47% 11%;
+    /* Accent UI colors - more vibrant */
+    --accent: #3561cf;
+    --accent-foreground: #ffffff;
     
-    /* Destructive UI colors */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Success UI colors */
+    --success: #10803d;
+    --success-foreground: #ffffff;
+    
+    /* Warning UI colors */
+    --warning: #c5560a;
+    --warning-foreground: #ffffff;
+    
+    /* Destructive UI colors - enhanced contrast */
+    --destructive: #d42a2a;
+    --destructive-foreground: #ffffff;
     
     /* Border and input colors */
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222 47% 31%;
+    --border: #d8e1f0;
+    --input: #f0f5fc;
+    --ring: #3561cf;
     
-    /* Chart colors */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Chart colors - more accessible */
+    --chart-1: #3561cf;
+    --chart-2: #10803d;
+    --chart-3: #c5560a;
+    --chart-4: #7935cf;
+    --chart-5: #cf3566;
     
     /* Radius */
     --radius: 0.5rem;
   }
+  
   .dark {
-    /* Base colors - dark mode */
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
+    /* Base colors - dark mode with enhanced contrast */
+    --background: #0a1121;
+    --foreground: #f0f6ff;
     
     /* Surface colors */
-    --card: 222 47% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --card: #111a2e;
+    --card-foreground: #f0f6ff;
+    --popover: #111a2e;
+    --popover-foreground: #f0f6ff;
     
     /* Primary UI colors */
-    --primary: 210 40% 72%;
-    --primary-foreground: 222 47% 11%;
+    --primary: #4f7de2;
+    --primary-foreground: #0a1121;
     
     /* Secondary UI colors */
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: #1d2a47;
+    --secondary-foreground: #f0f6ff;
     
     /* Muted UI colors */
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: #1d2a47;
+    --muted-foreground: #a6bbdf;
     
-    /* Accent UI colors */
-    --accent: 217.2 32.6% 20%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent UI colors - more vibrant */
+    --accent: #5980e6;
+    --accent-foreground: #ffffff;
+    
+    /* Success UI colors */
+    --success: #2aaa59;
+    --success-foreground: #ffffff;
+    
+    /* Warning UI colors */
+    --warning: #e67321;
+    --warning-foreground: #0a1121;
     
     /* Destructive UI colors */
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: #e24c4c;
+    --destructive-foreground: #ffffff;
     
     /* Border and input colors */
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 222.2 84% 66.1%;
+    --border: #263452;
+    --input: #1d2a47;
+    --ring: #5980e6;
     
-    /* Chart colors */
-    --chart-1: 220 70% 60%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Chart colors - more accessible */
+    --chart-1: #5980e6;
+    --chart-2: #2aaa59;
+    --chart-3: #e67321;
+    --chart-4: #9c6be6;
+    --chart-5: #e65b87;
   }
 }
 
-/* Sidebar theme with clear visual distinction */
+/* Sidebar theme with enhanced contrast */
 :root {
-  --sidebar: 222 47% 35%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-primary: 210 40% 98%;
-  --sidebar-primary-foreground: 222 47% 35%;
-  --sidebar-accent: 222 30% 41%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 222 47% 30%;
-  --sidebar-ring: 222 47% 98%;
+  --sidebar: #f8fafd;
+  --sidebar-foreground: #0a1430;
+  --sidebar-primary: #1a3a85;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3561cf;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-muted: #eef3f9;
+  --sidebar-muted-foreground: #536283;
+  --sidebar-border: #d8e1f0;
+  --sidebar-ring: #3561cf;
 }
 
 .dark {
-  --sidebar: 222 47% 15%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-primary: 210 40% 82%;
-  --sidebar-primary-foreground: 222 47% 10%;
-  --sidebar-accent: 222 30% 20%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 222 47% 22%;
-  --sidebar-ring: 222 47% 98%;
+  --sidebar: #111a2e;
+  --sidebar-foreground: #f0f6ff;
+  --sidebar-primary: #4f7de2;
+  --sidebar-primary-foreground: #0a1121;
+  --sidebar-accent: #5980e6;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-muted: #1d2a47;
+  --sidebar-muted-foreground: #a6bbdf;
+  --sidebar-border: #263452;
+  --sidebar-ring: #5980e6;
 }
 
 @theme inline {
@@ -164,25 +203,38 @@
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@keyframes blob {
+/* Modern, subtle animations */
+@keyframes float {
   0% {
-    transform: translate(0px, 0px) scale(1);
+    transform: translateY(0) translateX(0);
   }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
+  50% {
+    transform: translateY(-10px) translateX(5px);
   }
   100% {
-    transform: translate(0px, 0px) scale(1);
+    transform: translateY(0) translateX(0);
   }
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
  */
 export function UserDebug() {
   const { user: clerkUser, isSignedIn, isLoaded } = useUser();
-  const convexUser = useQuery(api.users.getCurrentUser);
+  const convexUser = useQuery(api.domains.users.queries.getCurrentUser);
   
   const [status, setStatus] = useState<"loading" | "success" | "error" | "fixing">("loading");
   const [message, setMessage] = useState("");

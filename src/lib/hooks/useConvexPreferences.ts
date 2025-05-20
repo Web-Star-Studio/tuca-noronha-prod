@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@/../convex/_generated/api';
 import { useUser } from '@clerk/nextjs';
-import type { Id } from '../../../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 
 export type TravelPreferences = {
   tripDuration: string;
@@ -27,7 +27,7 @@ export function useConvexPreferences() {
   
   // Primeiro, obter o usuário do Convex usando o clerkId
   const convexUser = useQuery(
-    api.users.getUserByClerkId,
+    api.domains.users.queries.getUserByClerkId,
     clerkId ? { clerkId } : "skip"
   );
   

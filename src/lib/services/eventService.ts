@@ -66,6 +66,21 @@ export type EventFromConvex = {
     email?: string;
     image?: string;
   } | null; // Creator information when available
+  symplaUrl?: string; // Link para o evento no Sympla
+  symplaId?: string; // ID do evento no Sympla
+  symplaHost?: {
+    name: string;
+    description: string;
+  }; // Informações do organizador do evento no Sympla
+  sympla_private_event?: boolean; // Se o evento é privado no Sympla
+  sympla_published?: boolean; // Se o evento está publicado no Sympla
+  sympla_cancelled?: boolean; // Se o evento foi cancelado no Sympla
+  external_id?: string; // ID externo do evento (reference_id do Sympla)
+  sympla_categories?: {
+    primary?: string;
+    secondary?: string;
+  }; // Categorias do evento no Sympla
+  whatsappContact?: string; // Contato de WhatsApp para reservas
 };
 
 // Our frontend Event type
@@ -98,6 +113,21 @@ export type Event = {
   creatorEmail?: string;
   creatorImage?: string;
   tickets?: EventTicket[];
+  symplaUrl?: string; // Link para o evento no Sympla
+  symplaId?: string; // ID do evento no Sympla
+  symplaHost?: {
+    name: string;
+    description: string;
+  }; // Informações do organizador do evento no Sympla
+  sympla_private_event?: boolean; // Se o evento é privado no Sympla
+  sympla_published?: boolean; // Se o evento está publicado no Sympla
+  sympla_cancelled?: boolean; // Se o evento foi cancelado no Sympla
+  external_id?: string; // ID externo do evento (reference_id do Sympla)
+  sympla_categories?: {
+    primary?: string;
+    secondary?: string;
+  }; // Categorias do evento no Sympla
+  whatsappContact?: string; // Contato de WhatsApp para reservas
 };
 
 // Convert from Convex event to our frontend Event type
@@ -130,6 +160,15 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     creatorName: event.creator?.name || 'Usuário', // Use creator name or default
     creatorEmail: event.creator?.email,
     creatorImage: event.creator?.image,
+    symplaUrl: event.symplaUrl,
+    symplaId: event.symplaId,
+    symplaHost: event.symplaHost,
+    sympla_private_event: event.sympla_private_event,
+    sympla_published: event.sympla_published,
+    sympla_cancelled: event.sympla_cancelled,
+    external_id: event.external_id,
+    sympla_categories: event.sympla_categories,
+    whatsappContact: event.whatsappContact,
   };
 };
 
@@ -177,12 +216,21 @@ export const mapEventToConvex = (event: Event, convexUserId: Id<"users"> | null)
     isActive: event.isActive,
     hasMultipleTickets: event.hasMultipleTickets || false,
     partnerId: convexUserId,
+    symplaUrl: event.symplaUrl,
+    symplaId: event.symplaId,
+    symplaHost: event.symplaHost,
+    sympla_private_event: event.sympla_private_event,
+    sympla_published: event.sympla_published,
+    sympla_cancelled: event.sympla_cancelled,
+    external_id: event.external_id,
+    sympla_categories: event.sympla_categories,
+    whatsappContact: event.whatsappContact,
   };
 };
 
 // Hooks for accessing Convex API
 export const useEvents = () => {
-  const events = useQuery(api.events.getEventsWithCreators);
+  const events = useQuery(api.domains.events.queries.getPublicEventsWithCreators);
   
   // For each event with hasMultipleTickets, fetch its tickets
   const eventsWithTickets = useMemo(() => {
@@ -211,13 +259,23 @@ export const useEvents = () => {
   }, [events]);
   
   return {
-    events: eventsWithTickets || [],
+    events: eventsWithTickets,
+    isLoading: events === undefined,
+  };
+};
+
+// Admin access to all events regardless of state
+export const useAdminEvents = () => {
+  const events = useQuery(api.domains.events.queries.getAll);
+  
+  return {
+    events: events?.map(mapConvexEvent) || [],
     isLoading: events === undefined,
   };
 };
 
 export const useFeaturedEvents = () => {
-  const events = useQuery(api.events.getFeatured);
+  const events = useQuery(api.domains.events.queries.getFeaturedEvents);
   
   return {
     events: events?.map(mapConvexEvent) || [],
@@ -226,7 +284,7 @@ export const useFeaturedEvents = () => {
 };
 
 export const useUpcomingEvents = () => {
-  const events = useQuery(api.events.getUpcoming);
+  const events = useQuery(api.domains.events.queries.getUpcoming);
   
   return {
     events: events?.map(mapConvexEvent) || [],
@@ -234,77 +292,42 @@ export const useUpcomingEvents = () => {
   };
 };
 
-// Get a single event by ID for public display
+// For getting a single event with creator info
 export const usePublicEvent = (id: string | null) => {
-  // Convert ID to Convex ID
-  const idAsConvexId = id ? id as Id<"events"> : null;
-  
-  // Query for the event
   const event = useQuery(
-    api.events.getById, 
-    idAsConvexId ? { id: idAsConvexId } : "skip"
+    api.domains.events.queries.getById, 
+    id ? { id: id as Id<"events"> } : "skip"
   );
   
-  // Get tickets if the event has multiple tickets
-  const eventObj = event ? mapConvexEvent(event as EventFromConvex) : null;
-  const hasMultipleTickets = eventObj?.hasMultipleTickets;
-  
-  // Only fetch tickets if the event exists and has multiple tickets
-  const { tickets, isLoading: isLoadingTickets } = useActiveEventTickets(
-    (eventObj && hasMultipleTickets) ? eventObj.id : null
-  );
-  
-  // Add tickets to the event object
-  const eventWithTickets = eventObj && {
-    ...eventObj,
-    tickets: hasMultipleTickets ? tickets : undefined
-  };
+  const isLoading = id !== null && event === undefined;
   
   return {
-    event: eventWithTickets,
-    isLoading: (id ? event === undefined : false) || (hasMultipleTickets && isLoadingTickets),
+    event: event ? mapConvexEvent(event as EventFromConvex) : null,
+    isLoading,
   };
 };
 
-// Using TanStack Query
+// TanStack Query version for better caching
 export const usePublicEventQuery = (id: string | null) => {
-  console.log('usePublicEventQuery chamado com ID:', id);
+  const eventQuery = useQuery(
+    api.domains.events.queries.getById,
+    id ? { id: id as Id<"events"> } : "skip"
+  );
   
-  // Definir query key
-  const queryKey = ['event', id];
-  
-  // Usar React Query para gerenciar estado e cache
+  // Then wrap it with TanStack Query for better cache management
   return useTanstackQuery({
-    queryKey,
-    queryFn: async () => {
-      if (!id) return null;
-      
-      try {
-        // Simular chamada API - em produção isso seria uma chamada real para
-        // seu backend Convex ou outra fonte de dados
-        console.log('Buscando evento com ID:', id);
-        
-        // Resposta mock - substituir com implementação real
-        // Isso evita a violação das regras de React Hooks
-        const response = await fetch(`/api/events/${id}`);
-        if (!response.ok) {
-          throw new Error(`Falha ao buscar evento com ID: ${id}`);
-        }
-        
-        const data = await response.json();
-        return data.event ? mapConvexEvent(data.event as EventFromConvex) : null;
-      } catch (error) {
-        console.error('Erro ao buscar evento:', error);
-        return null;
-      }
+    queryKey: ['event', id],
+    queryFn: () => {
+      if (!eventQuery) return null;
+      return mapConvexEvent(eventQuery as EventFromConvex);
     },
-    enabled: !!id
+    enabled: id !== null && eventQuery !== undefined,
   });
 };
 
 // Get all active events for public display
 export const usePublicEvents = () => {
-  const events = useQuery(api.events.getEventsWithCreators);
+  const events = useQuery(api.domains.events.queries.getPublicEventsWithCreators);
   
   // Only return active events for public display
   return {
@@ -313,58 +336,48 @@ export const usePublicEvents = () => {
   };
 };
 
-// Using TanStack Query
+// TanStack Query version for better caching
 export const usePublicEventsQuery = () => {
-  const convexQuery = useQuery(api.events.getEventsWithCreators);
+  const events = useQuery(api.domains.events.queries.getPublicEventsWithCreators);
   
   return useTanstackQuery({
-    queryKey: ['publicEvents'],
+    queryKey: ['public-events'],
     queryFn: () => {
-      if (!convexQuery) return [];
-      return (convexQuery as EventFromConvex[])
-        .filter(event => event.isActive)
-        .map(mapConvexEvent);
+      if (!events) return [];
+      return events.filter(e => e.isActive).map(mapConvexEvent);
     },
-    enabled: convexQuery !== undefined,
+    enabled: events !== undefined,
   });
 };
 
 export const useCreateEvent = () => {
-  const createMutation = useMutation(api.events.create);
-  const createTicketMutation = useMutation(api.events.createEventTicket);
-  const getUserByClerkId = useMutation(api.auth.getUserByClerkId);
+  const createEventMutation = useMutation(api.domains.events.mutations.create);
+  const getCurrentUser = useCurrentUser();
   
-  return async (event: Event, clerkId: string) => {
+  return async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!getCurrentUser.user) {
+      throw new Error("You must be logged in to create events");
+    }
+    
+    // Get the current Convex user ID
+    const userInfo = getCurrentUser.user;
+    
+    // Ensure we have a valid Convex user ID
+    if (!userInfo._id) {
+      throw new Error("User has no Convex ID. Please try again later.");
+    }
+    
+    // Map event data to Convex input
+    const convexData = mapEventToConvex({
+      ...eventData,
+      id: '', // Will be generated by Convex
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }, userInfo._id as Id<"users">);
+    
     try {
-      // First get the Convex user ID from the Clerk ID
-      const convexUserId = await getUserByClerkId({ clerkId });
-      
-      if (!convexUserId) {
-        throw new Error("Could not find Convex user ID for the current user");
-      }
-      
-      // Then create the event with the proper Convex user ID
-      const eventData = mapEventToConvex(event, convexUserId as Id<"users">);
-      const eventId = await createMutation(eventData);
-      
-      // If the event has multiple tickets, create them
-      if (event.hasMultipleTickets && event.tickets && event.tickets.length > 0) {
-        // Create each ticket
-        for (const ticket of event.tickets) {
-          await createTicketMutation({
-            eventId: eventId as Id<"events">,
-            name: ticket.name,
-            description: ticket.description,
-            price: ticket.price,
-            availableQuantity: ticket.availableQuantity,
-            maxPerOrder: ticket.maxPerOrder,
-            type: ticket.type,
-            benefits: ticket.benefits,
-            isActive: ticket.isActive
-          });
-        }
-      }
-      
+      // Create the event in Convex
+      const eventId = await createEventMutation(convexData);
       return eventId;
     } catch (error) {
       console.error("Error creating event:", error);
@@ -374,94 +387,44 @@ export const useCreateEvent = () => {
 };
 
 export const useUpdateEvent = () => {
-  const updateMutation = useMutation(api.events.update);
-  const createTicketMutation = useMutation(api.events.createEventTicket);
-  const updateTicketMutation = useMutation(api.events.updateEventTicket);
-  const deleteTicketMutation = useMutation(api.events.removeEventTicket);
+  const updateEventMutation = useMutation(api.domains.events.mutations.update);
+  const getCurrentUser = useCurrentUser();
   
-  return async (event: Event) => {
+  return async (eventData: Event) => {
+    if (!getCurrentUser.user) {
+      throw new Error("You must be logged in to update events");
+    }
+    
+    // Get the current Convex user ID
+    const userInfo = getCurrentUser.user;
+    
+    // Ensure we have a valid Convex user ID
+    if (!userInfo._id) {
+      throw new Error("User has no Convex ID. Please try again later.");
+    }
+    
     try {
-      const { id } = event;
+      // We need to exclude some fields that are not in the update input
+      const { 
+        id,
+        createdAt,
+        updatedAt,
+        creatorName,
+        creatorEmail,
+        creatorImage,
+        tickets,
+        ...updateData
+      } = eventData;
       
-      // Convert id from string to Convex ID type
-      const updateData = {
+      // Update the event in Convex
+      const result = await updateEventMutation({
         id: id as Id<"events">,
-        ...mapEventToConvex(event, event.partnerId as Id<"users"> || null),
-      };
+        ...updateData,
+        // Convert numbers to bigints as expected by the backend
+        maxParticipants: updateData.maxParticipants,
+      });
       
-      // Update the event information
-      await updateMutation(updateData);
-      
-      // Handle tickets if multiple tickets is enabled
-      if (event.hasMultipleTickets && event.tickets && event.tickets.length > 0) {
-        // We'll set existingTickets to an empty array to simplify the approach
-        // In a real-world scenario, we would fetch the existing tickets
-        // For now, this will mean always creating new tickets, which is acceptable
-        const existingTickets: Array<Record<string, unknown>> = [];
-        
-        if (existingTickets && existingTickets.length > 0) {
-          // Create a map of existing ticket IDs
-          const existingTicketIds = new Set(existingTickets.map(ticket => ticket._id));
-          
-          // Create a map of current ticket IDs
-          const currentTicketIds = new Set(event.tickets.map(ticket => ticket.id));
-          
-          // Update or create tickets
-          for (const ticket of event.tickets) {
-            if (existingTicketIds.has(ticket.id)) {
-              // Update existing ticket
-              await updateTicketMutation({
-                id: ticket.id as Id<"eventTickets">,
-                name: ticket.name,
-                description: ticket.description,
-                price: ticket.price,
-                availableQuantity: ticket.availableQuantity,
-                maxPerOrder: ticket.maxPerOrder,
-                type: ticket.type,
-                benefits: ticket.benefits,
-                isActive: ticket.isActive
-              });
-            } else {
-              // Create new ticket
-              await createTicketMutation({
-                eventId: id as Id<"events">,
-                name: ticket.name,
-                description: ticket.description,
-                price: ticket.price,
-                availableQuantity: ticket.availableQuantity,
-                maxPerOrder: ticket.maxPerOrder,
-                type: ticket.type,
-                benefits: ticket.benefits,
-                isActive: ticket.isActive
-              });
-            }
-          }
-          
-          // Delete tickets that no longer exist
-          for (const existingTicket of existingTickets) {
-            if (!currentTicketIds.has(existingTicket._id as string)) {
-              await deleteTicketMutation({ id: existingTicket._id as Id<"eventTickets"> });
-            }
-          }
-        } else {
-          // If no existing tickets, create all
-          for (const ticket of event.tickets) {
-            await createTicketMutation({
-              eventId: id as Id<"events">,
-              name: ticket.name,
-              description: ticket.description,
-              price: ticket.price,
-              availableQuantity: ticket.availableQuantity,
-              maxPerOrder: ticket.maxPerOrder,
-              type: ticket.type,
-              benefits: ticket.benefits,
-              isActive: ticket.isActive
-            });
-          }
-        }
-      }
-      
-      return id;
+      return result;
     } catch (error) {
       console.error("Error updating event:", error);
       throw error;
@@ -470,15 +433,15 @@ export const useUpdateEvent = () => {
 };
 
 export const useDeleteEvent = () => {
-  const deleteMutation = useMutation(api.events.remove);
+  const deleteEventMutation = useMutation(api.domains.events.mutations.remove);
   
   return async (id: string) => {
-    return await deleteMutation({ id: id as Id<"events"> });
+    return await deleteEventMutation({ id: id as Id<"events"> });
   };
 };
 
 export const useToggleFeatured = () => {
-  const toggleFeaturedMutation = useMutation(api.events.toggleFeatured);
+  const toggleFeaturedMutation = useMutation(api.domains.events.mutations.toggleFeatured);
   
   return async (id: string, isFeatured: boolean) => {
     return await toggleFeaturedMutation({ id: id as Id<"events">, isFeatured });
@@ -486,173 +449,146 @@ export const useToggleFeatured = () => {
 };
 
 export const useToggleActive = () => {
-  const toggleActiveMutation = useMutation(api.events.toggleActive);
+  const toggleActiveMutation = useMutation(api.domains.events.mutations.toggleActive);
   
   return async (id: string, isActive: boolean) => {
     return await toggleActiveMutation({ id: id as Id<"events">, isActive });
   };
 };
 
-// Get events by the current user - simplified implementation
 export const useUserEvents = () => {
-  const { user, isAuthenticated } = useCurrentUser();
-  const getUserByClerkId = useMutation(api.auth.getUserByClerkId);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useCurrentUser();
   
-  // State for storing the Convex user ID
-  const [convexUserId, setConvexUserId] = useState<Id<"users"> | null>(null);
-  
-  // First effect to get the user ID
   useEffect(() => {
     const getConvexUserId = async () => {
-      if (!isAuthenticated || !user) {
+      if (!user || !user.convexId) {
+        setIsLoading(false);
         return;
       }
       
       try {
-        const userId = await getUserByClerkId({ clerkId: user.id });
-        if (userId) {
-          setConvexUserId(userId as Id<"users">);
-        }
+        const convexUserId = user.convexId as Id<"users">;
+        
+        // Query events for this user
+        const userEventsQuery = api.domains.events.queries.getByPartnerId;
+        const userEvents = await userEventsQuery({ partnerId: convexUserId });
+        
+        // Map to frontend events
+        const mappedEvents = userEvents.map(mapConvexEvent);
+        setEvents(mappedEvents);
       } catch (error) {
-        console.error("Error getting Convex user ID:", error);
+        console.error("Error fetching user events:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
     getConvexUserId();
-  }, [isAuthenticated, user, getUserByClerkId]);
+  }, [user]);
   
-  // Use Convex query to get user events once we have the user ID
-  const userEventsResult = useQuery(
-    api.events.getByUser, 
-    convexUserId ? { userId: convexUserId } : "skip"
-  );
-  
-  const events = userEventsResult ? userEventsResult.map(mapConvexEvent) : [];
-  const isLoading = isAuthenticated && !userEventsResult;
-  
-  return { events, isLoading, userId: convexUserId };
+  return { events, isLoading };
 };
 
-// Get all tickets for an event
+// Helper for getting tickets for an event
 export const useEventTickets = (eventId: string | null) => {
-  const idAsConvexId = eventId ? eventId as Id<"events"> : null;
-  
-  const ticketsData = useQuery(
-    api.events.getEventTickets, 
-    idAsConvexId ? { eventId: idAsConvexId } : "skip"
+  const tickets = useQuery(
+    api.domains.events.queries.getTicketsByEvent,
+    eventId ? { eventId: eventId as Id<"events"> } : "skip"
   );
   
   return {
-    tickets: ticketsData?.map(mapConvexTicket) || [],
-    isLoading: eventId ? ticketsData === undefined : false,
+    tickets: tickets?.map(mapConvexTicket) || [],
+    isLoading: eventId !== null && tickets === undefined,
   };
 };
 
-// Get all tickets for an event using TanStack Query to prevent maximum depth issues
+// TanStack Query version
 export const useEventTicketsQuery = (eventId: string | null) => {
-  const idAsConvexId = eventId ? eventId as Id<"events"> : null;
-  
-  // Use standard Convex query first
-  const ticketsData = useQuery(
-    api.events.getEventTickets, 
-    idAsConvexId ? { eventId: idAsConvexId } : "skip"
+  const ticketsQuery = useQuery(
+    api.domains.events.queries.getTicketsByEvent,
+    eventId ? { eventId: eventId as Id<"events"> } : "skip"
   );
   
-  // Then use TanStack Query as a wrapper to prevent max depth issues
   return useTanstackQuery({
-    queryKey: ['eventTickets', eventId],
-    queryFn: async () => {
-      // Return empty array if no eventId or not ready
-      if (!eventId || ticketsData === undefined) {
-        return [];
-      }
-      
-      // Convert Convex tickets to our frontend type
-      return ticketsData?.map(mapConvexTicket) || [];
+    queryKey: ['event-tickets', eventId],
+    queryFn: () => {
+      if (!ticketsQuery) return [];
+      return ticketsQuery.map(mapConvexTicket);
     },
-    enabled: !!eventId && ticketsData !== undefined,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: eventId !== null && ticketsQuery !== undefined,
   });
 };
 
-// Get active tickets for an event
+// Helper for getting active tickets for an event
 export const useActiveEventTickets = (eventId: string | null) => {
-  const idAsConvexId = eventId ? eventId as Id<"events"> : null;
-  
-  const ticketsData = useQuery(
-    api.events.getActiveEventTickets, 
-    idAsConvexId ? { eventId: idAsConvexId } : "skip"
+  const tickets = useQuery(
+    api.domains.events.queries.getActiveTicketsByEvent,
+    eventId ? { eventId: eventId as Id<"events"> } : "skip"
   );
   
   return {
-    tickets: ticketsData?.map(mapConvexTicket) || [],
-    isLoading: eventId ? ticketsData === undefined : false,
+    tickets: tickets?.map(mapConvexTicket) || [],
+    isLoading: eventId !== null && tickets === undefined,
   };
 };
 
-// Get active tickets for an event using TanStack Query to prevent maximum depth issues
+// TanStack Query version
 export const useActiveEventTicketsQuery = (eventId: string | null) => {
-  const idAsConvexId = eventId ? eventId as Id<"events"> : null;
-  
-  // Use standard Convex query first
-  const ticketsData = useQuery(
-    api.events.getActiveEventTickets, 
-    idAsConvexId ? { eventId: idAsConvexId } : "skip"
+  const ticketsQuery = useQuery(
+    api.domains.events.queries.getActiveTicketsByEvent,
+    eventId ? { eventId: eventId as Id<"events"> } : "skip"
   );
   
-  // Then use TanStack Query as a wrapper to prevent max depth issues
   return useTanstackQuery({
-    queryKey: ['activeEventTickets', eventId],
-    queryFn: async () => {
-      // Return empty array if no eventId or not ready
-      if (!eventId || ticketsData === undefined) {
-        return [];
-      }
-      
-      // Convert Convex tickets to our frontend type
-      return ticketsData?.map(mapConvexTicket) || [];
+    queryKey: ['active-event-tickets', eventId],
+    queryFn: () => {
+      if (!ticketsQuery) return [];
+      return ticketsQuery.map(mapConvexTicket);
     },
-    enabled: !!eventId && ticketsData !== undefined,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: eventId !== null && ticketsQuery !== undefined,
   });
 };
 
-// Create a new ticket for an event
 export const useCreateEventTicket = () => {
-  const createMutation = useMutation(api.events.createEventTicket);
+  const createTicketMutation = useMutation(api.domains.events.createTicket);
   
-  return async (ticket: Omit<EventTicket, "id" | "createdAt">) => {
-    return await createMutation({
-      eventId: ticket.eventId as Id<"events">,
-      name: ticket.name,
-      description: ticket.description,
-      price: ticket.price,
-      availableQuantity: ticket.availableQuantity,
-      maxPerOrder: ticket.maxPerOrder,
-      type: ticket.type,
-      benefits: ticket.benefits,
-      isActive: ticket.isActive
-    });
+  return async (ticketData: Omit<EventTicket, 'id' | 'createdAt'>) => {
+    // Convert number fields to bigint for Convex
+    const convexData = {
+      ...ticketData,
+      availableQuantity: ticketData.availableQuantity,
+      maxPerOrder: ticketData.maxPerOrder,
+    };
+    
+    try {
+      const ticketId = await createTicketMutation(convexData as any);
+      return ticketId;
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      throw error;
+    }
   };
 };
 
-// Update an existing ticket
 export const useUpdateEventTicket = () => {
-  const updateMutation = useMutation(api.events.updateEventTicket);
+  const updateTicketMutation = useMutation(api.domains.events.updateTicket);
   
-  return async (ticketId: string, updates: Partial<Omit<EventTicket, "id" | "eventId" | "createdAt">>) => {
-    return await updateMutation({
-      id: ticketId as Id<"eventTickets">,
-      ...updates
-    });
+  return async (ticketData: EventTicket) => {
+    const { id, createdAt, ...updateData } = ticketData;
+    
+    return await updateTicketMutation({
+      id: id as Id<"eventTickets">,
+      ...updateData,
+    } as any);
   };
 };
 
-// Delete a ticket
 export const useDeleteEventTicket = () => {
-  const deleteMutation = useMutation(api.events.removeEventTicket);
+  const deleteTicketMutation = useMutation(api.domains.events.removeTicket);
   
-  return async (ticketId: string) => {
-    return await deleteMutation({ id: ticketId as Id<"eventTickets"> });
+  return async (id: string) => {
+    return await deleteTicketMutation({ id: id as Id<"eventTickets"> });
   };
 };

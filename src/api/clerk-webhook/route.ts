@@ -1,0 +1,182 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { WebhookEvent } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../../../convex/_generated/api';
+import { internal } from '../../../convex/_generated/api';
+import { Webhook } from 'svix';
+
+// Create a Convex client for server-side API calls
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL || '');
+
+/**
+ * Clerk webhook handler
+ * Docs: https://clerk.com/docs/users/sync-data-to-your-backend
+ */
+export async function POST(request: NextRequest) {
+  // Get the webhook signature from the headers
+  const headerPayload = request.headers;
+  const svixId = headerPayload.get('svix-id');
+  const svixTimestamp = headerPayload.get('svix-timestamp');
+  const svixSignature = headerPayload.get('svix-signature');
+  
+  // If there's no signature, return 400
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    console.error('Missing Svix headers');
+    return NextResponse.json({ error: 'Missing Svix headers' }, { status: 400 });
+  }
+  
+  // Get the webhook secret from the environment
+  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('Missing CLERK_WEBHOOK_SECRET');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+  
+  // Get the raw body
+  let payload;
+  try {
+    payload = await request.text();
+    
+    // Create a new Svix instance with the webhook secret
+    const wh = new Webhook(webhookSecret);
+    
+    // Verify the webhook payload
+    const evt = wh.verify(payload, {
+      'svix-id': svixId,
+      'svix-timestamp': svixTimestamp,
+      'svix-signature': svixSignature,
+    }) as WebhookEvent;
+    
+    // Handle the webhook event
+    await handleWebhookEvent(evt);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    return NextResponse.json(
+      { error: 'Invalid webhook payload' },
+      { status: 400 }
+    );
+  }
+}
+
+/**
+ * Handle Clerk webhook events
+ */
+async function handleWebhookEvent(evt: WebhookEvent) {
+  const eventType = evt.type;
+  console.log(`Processing webhook event: ${eventType}`);
+  
+  try {
+    switch (eventType) {
+      case 'user.created':
+        await handleUserCreated(evt.data);
+        break;
+      case 'user.updated':
+        await handleUserUpdated(evt.data);
+        break;
+      case 'user.deleted':
+        await handleUserDeleted(evt.data);
+        break;
+      default:
+        console.log(`Unhandled webhook event type: ${eventType}`);
+    }
+  } catch (error) {
+    console.error(`Error handling ${eventType}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Handle user.created event
+ */
+async function handleUserCreated(data: any) {
+  const { id, email_addresses, first_name, last_name, profile_image_url, phone_numbers, created_at } = data;
+  
+  // Extract the primary email if available
+  const primaryEmail = email_addresses?.find((email: any) => email.id === data.primary_email_address_id)?.email_address;
+  
+  // Extract the primary phone if available
+  const primaryPhone = phone_numbers?.find((phone: any) => phone.id === data.primary_phone_number_id)?.phone_number;
+  
+  // Generate the full name if available
+  const name = first_name && last_name 
+    ? `${first_name} ${last_name}` 
+    : first_name || last_name || undefined;
+  
+  try {
+    // Sync the user to Convex
+    const result = await convex.mutation(internal.domains.users.mutations.syncUserFromClerk, {
+      clerkId: id,
+      email: primaryEmail,
+      name,
+      image: profile_image_url,
+      phone: primaryPhone,
+      createdAt: created_at ? Date.parse(created_at) : Date.now(),
+      updatedAt: Date.now(),
+    });
+    
+    console.log('User created in Convex:', result);
+  } catch (error) {
+    console.error('Error syncing user to Convex:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle user.updated event
+ */
+async function handleUserUpdated(data: any) {
+  const { id, email_addresses, first_name, last_name, profile_image_url, phone_numbers, updated_at } = data;
+  
+  // Extract the primary email if available
+  const primaryEmail = email_addresses?.find((email: any) => email.id === data.primary_email_address_id)?.email_address;
+  
+  // Extract the primary phone if available
+  const primaryPhone = phone_numbers?.find((phone: any) => phone.id === data.primary_phone_number_id)?.phone_number;
+  
+  // Generate the full name if available
+  const name = first_name && last_name 
+    ? `${first_name} ${last_name}` 
+    : first_name || last_name || undefined;
+  
+  try {
+    // Update the user in Convex
+    const result = await convex.mutation(internal.domains.users.mutations.syncUserFromClerk, {
+      clerkId: id,
+      email: primaryEmail,
+      name,
+      image: profile_image_url,
+      phone: primaryPhone,
+      updatedAt: updated_at ? Date.parse(updated_at) : Date.now(),
+    });
+    
+    console.log('User updated in Convex:', result);
+  } catch (error) {
+    console.error('Error updating user in Convex:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle user.deleted event
+ */
+async function handleUserDeleted(data: any) {
+  const { id, email_addresses } = data;
+  
+  // Extract the primary email if available
+  const primaryEmail = email_addresses?.find((email: any) => email.id === data.primary_email_address_id)?.email_address;
+  
+  try {
+    // Delete the user from Convex
+    const result = await convex.mutation(internal.domains.users.mutations.deleteUserFromClerk, {
+      clerkId: id,
+      email: primaryEmail,
+    });
+    
+    console.log('User deleted from Convex:', result);
+  } catch (error) {
+    console.error('Error deleting user from Convex:', error);
+    throw error;
+  }
+} 

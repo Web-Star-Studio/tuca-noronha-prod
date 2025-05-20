@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "../../_generated/dataModel";
-import { mutationWithRole } from "../../shared/rbac";
-import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../shared/rbac";
+import { mutationWithRole } from "../../domains/rbac";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
 import type { 
   ActivityCreateInput,
   ActivityUpdateInput,

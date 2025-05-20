@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent, useToggleFeatured, useToggleActive, type Event } from "@/lib/services/eventService"
+import { useAdminEvents, useCreateEvent, useUpdateEvent, useDeleteEvent, useToggleFeatured, useToggleActive, type Event } from "@/lib/services/eventService"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { EventsHeader, EventsFilter, EventsGrid, EventsPagination, EventForm } from "@/components/dashboard/events"
 import { AnimatePresence, motion } from "framer-motion"
+import { decorativeBackgrounds, transitionEffects, cardStyles } from "@/lib/ui-config"
 
 export default function EventsPage() {
-  const { events, isLoading } = useEvents()
+  const { events, isLoading } = useAdminEvents()
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
@@ -85,9 +86,14 @@ export default function EventsPage() {
       return
     }
     
+    console.log("DEBUG - Creating event with user:", user);
+    console.log("DEBUG - User clerkId:", user.id);
+    console.log("DEBUG - User convexId:", user._id || "not available");
+    console.log("DEBUG - User role:", user.role);
+    
     try {
       setIsSubmitting(true)
-      await createEvent(eventData, user.id)
+      await createEvent(eventData, user.id, user)
       toast.success("Evento criado com sucesso!")
       setDialogOpen(false)
       setSelectedEvent(null)
@@ -115,38 +121,40 @@ export default function EventsPage() {
   }
   
   const handleDeleteEvent = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este evento?")) {
-      try {
-        await deleteEvent(id)
-        toast.success("Evento excluído com sucesso!")
-      } catch (error) {
-        console.error("Erro ao excluir evento:", error)
-        toast.error("Erro ao excluir evento")
-      }
+    if (!confirm("Tem certeza que deseja excluir este evento?")) {
+      return
     }
-  }
-  
-  const handleToggleFeatured = async (id: string, featured: boolean) => {
+    
     try {
-      await toggleFeatured(id, featured)
-      toast.success(featured ? "Evento destacado!" : "Destaque removido!")
+      await deleteEvent(id)
+      toast.success("Evento excluído com sucesso!")
     } catch (error) {
-      console.error("Erro ao alterar destaque do evento:", error)
-      toast.error("Erro ao alterar destaque")
+      console.error("Erro ao excluir evento:", error)
+      toast.error("Erro ao excluir evento")
     }
   }
   
-  const handleToggleActive = async (id: string, active: boolean) => {
+  const handleToggleFeatured = async (id: string, isFeatured: boolean) => {
     try {
-      await toggleActive(id, active)
-      toast.success(active ? "Evento ativado!" : "Evento desativado!")
+      await toggleFeatured(id, isFeatured)
+      toast.success(isFeatured ? "Evento destacado!" : "Evento removido dos destaques")
     } catch (error) {
-      console.error("Erro ao alterar status do evento:", error)
-      toast.error("Erro ao alterar status")
+      console.error("Erro ao destacar evento:", error)
+      toast.error("Erro ao destacar evento")
     }
   }
   
-  // Dialog handlers
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    try {
+      await toggleActive(id, isActive)
+      toast.success(isActive ? "Evento ativado!" : "Evento desativado")
+    } catch (error) {
+      console.error("Erro ao ativar/desativar evento:", error)
+      toast.error("Erro ao ativar/desativar evento")
+    }
+  }
+  
+  // Open dialog for creating or editing an event
   const openCreateDialog = () => {
     setSelectedEvent(null)
     setDialogOpen(true)
@@ -157,14 +165,8 @@ export default function EventsPage() {
     setDialogOpen(true)
   }
   
-  const closeDialog = () => {
-    setDialogOpen(false)
-    setSelectedEvent(null)
-  }
-  
-  // Reset to first page when filter changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-      useEffect(() => {
+  // Reset pagination when filter or search changes
+  useEffect(() => {
     setCurrentPage(1)
   }, [filter, searchQuery])
   
@@ -176,15 +178,15 @@ export default function EventsPage() {
       transition={{ duration: 0.3 }}
     >
       {/* Background elements */}
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50 pointer-events-none -z-10" />
-      <div className="fixed top-1/4 right-1/3 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000 pointer-events-none -z-10" />
-      <div className="fixed bottom-1/4 left-1/3 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000 pointer-events-none -z-10" />
+      <div className={`fixed inset-0 ${decorativeBackgrounds.gradient.accent} opacity-50 pointer-events-none -z-10`} />
+      <div className={`fixed top-1/4 right-1/3 w-96 h-96 bg-blue-200 rounded-full ${decorativeBackgrounds.decorative.blob} animation-delay-2000 pointer-events-none -z-10`} />
+      <div className={`fixed bottom-1/4 left-1/3 w-96 h-96 bg-purple-200 rounded-full ${decorativeBackgrounds.decorative.blob} animation-delay-4000 pointer-events-none -z-10`} />
 
       {/* Page content */}
       <EventsHeader openCreateDialog={openCreateDialog} />
 
       {/* Filters and actions */}
-      <div className="bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-gray-100 shadow-sm">
+      <div className={`${cardStyles.base} p-4`}>
         <EventsFilter 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -209,35 +211,39 @@ export default function EventsPage() {
           />
         </AnimatePresence>
       </div>
-      
-      {/* Pagination */}
-      <EventsPagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        handlePageChange={handlePageChange} 
-      />
 
-      {/* Create/Edit Event Dialog */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-8">
+          <EventsPagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
+      
+      {/* Event dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[850px] bg-white/95 backdrop-blur-md border-none shadow-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`max-w-3xl ${cardStyles.base} max-h-[80vh] overflow-y-auto ${transitionEffects.appear.fadeIn}`}>
           <DialogHeader>
-            <DialogTitle className="text-xl bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-bold">
-              {selectedEvent ? "Editar Evento" : "Adicionar Novo Evento"}
+            <DialogTitle>
+              {selectedEvent ? "Editar Evento" : "Criar Novo Evento"}
             </DialogTitle>
             <DialogDescription>
               {selectedEvent 
-                ? "Atualize as informações do evento conforme necessário." 
-                : "Preencha as informações do novo evento. Clique em Criar Evento quando finalizar."}
+                ? "Edite os detalhes do evento existente" 
+                : "Preencha os detalhes para criar um novo evento"}
             </DialogDescription>
           </DialogHeader>
+          
           <EventForm 
-            event={selectedEvent} 
+            event={selectedEvent}
             onSubmit={selectedEvent ? handleUpdateEvent : handleCreateEvent}
-            onCancel={closeDialog}
-            loading={isSubmitting}
+            isSubmitting={isSubmitting}
           />
         </DialogContent>
       </Dialog>
     </motion.div>
-  )
+  );
 }

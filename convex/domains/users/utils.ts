@@ -1,47 +1,28 @@
 import type { QueryCtx, MutationCtx } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
-import type { User, UserRole } from "./types";
+import type { User } from "./types";
+import { 
+  getCurrentUserRole as getRBACUserRole, 
+  getCurrentUserConvexId 
+} from "../rbac/utils";
+import { UserRole } from "../rbac/types";
 
 type Ctx = QueryCtx | MutationCtx;
 
 /**
  * Gets the current authenticated user's Convex ID
+ * @deprecated Use getCurrentUserConvexId from RBAC domain instead
  */
 export async function getCurrentUserId(ctx: Ctx): Promise<Id<"users"> | null> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
-  
-  const users = await ctx.db
-    .query("users")
-    .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-    .collect();
-  
-  if (users.length === 0) return null;
-  return users[0]._id as Id<"users">;
+  return await getCurrentUserConvexId(ctx);
 }
 
 /**
  * Gets the current authenticated user's role
+ * @deprecated Use getCurrentUserRole from RBAC domain instead
  */
 export async function getCurrentUserRole(ctx: Ctx): Promise<UserRole> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    // Not authenticated, consider as "traveler" (anonymous visitor)
-    return "traveler";
-  }
-  
-  // Try to find user by clerkId
-  const users = await ctx.db
-    .query("users")
-    .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-    .collect();
-
-  if (users.length === 0) {
-    // Authenticated but not yet synced to Convex
-    return "traveler";
-  }
-  
-  return (users[0].role as UserRole) ?? "traveler";
+  return await getRBACUserRole(ctx);
 }
 
 /**

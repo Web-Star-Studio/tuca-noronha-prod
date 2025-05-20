@@ -14,6 +14,7 @@ import {
   Heart,
   Share2,
   Star,
+  MessageCircle,
 } from "lucide-react";
 import { formatDate, cn, formatCurrency } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
@@ -28,32 +29,16 @@ interface EventDetailsProps {
   event: Event;
 }
 
+// Helper function to generate WhatsApp link
+const generateWhatsAppLink = (phoneNumber: string, eventTitle: string) => {
+  const message = encodeURIComponent(`Olá! Gostaria de reservar para o evento "${eventTitle}".`);
+  return `https://wa.me/${phoneNumber}?text=${message}`;
+};
+
 export default function EventDetails({ event }: EventDetailsProps) {
-  const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  
-  // Initialize ticket quantities
-  useEffect(() => {
-    if (event.tickets && event.tickets.length > 0) {
-      const initialQuantities: Record<string, number> = {};
-      event.tickets.forEach(ticket => {
-        initialQuantities[ticket.id] = 1;
-      });
-      setTicketQuantities(initialQuantities);
-    } else {
-      // Default ticket (single ticket case)
-      setTicketQuantities({ "default": 1 });
-    }
-  }, [event.tickets]);
-  
-  const updateTicketQuantity = (ticketId: string, amount: number) => {
-    setTicketQuantities(prev => ({
-      ...prev,
-      [ticketId]: Math.max(1, (prev[ticketId] || 1) + amount)
-    }));
-  };
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   
   // Format date for display
   const eventDate = new Date(event.date);
@@ -147,12 +132,14 @@ export default function EventDetails({ event }: EventDetailsProps) {
                 >
                   Detalhes
                 </TabsTrigger>
-                <TabsTrigger
-                  value="tickets"
-                  className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
-                >
-                  Ingressos
-                </TabsTrigger>
+                {event.symplaUrl && (
+                  <TabsTrigger
+                    value="tickets"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
+                  >
+                    Ingressos
+                  </TabsTrigger>
+                )}
                 <TabsTrigger
                   value="policies"
                   className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
@@ -167,10 +154,39 @@ export default function EventDetails({ event }: EventDetailsProps) {
                   <h2 className="text-2xl font-semibold mb-4">
                     Sobre o evento
                   </h2>
-                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                    {event.description}
-                  </p>
+                  {event.symplaUrl ? (
+                    <div 
+                      className="text-gray-700 leading-relaxed prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: event.description }}
+                    />
+                  ) : (
+                    <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+                      {event.description}
+                    </p>
+                  )}
                 </div>
+
+                {event.additionalInfo && event.additionalInfo.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">
+                      Informações Adicionais
+                    </h3>
+                    <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                      <div className="space-y-3">
+                        {event.additionalInfo.map((info, idx) => (
+                          <div key={idx} className="flex items-start">
+                            <div className="bg-blue-100 p-1.5 rounded-full mt-0.5 mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-700">{info}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <h3 className="text-xl font-semibold mb-5">
@@ -279,212 +295,39 @@ export default function EventDetails({ event }: EventDetailsProps) {
               {/* Tickets tab */}
               <TabsContent value="tickets" className="space-y-6 mt-2">
                 <h2 className="text-2xl font-semibold mb-4">
-                  Ingressos Disponíveis
+                  Comprar Ingressos
                 </h2>
                 
-                <div className="space-y-4">
-                  {/* Multiple tickets case */}
-                  {event.hasMultipleTickets && event.tickets && event.tickets.length > 0 ? (
-                    event.tickets.map((ticket) => (
-                      <Card
-                        key={ticket.id}
-                        className={`transition-all border-gray-200 hover:border-blue-300 ${
-                          selectedTicketId === ticket.id
-                            ? "ring-2 ring-blue-500 border-blue-300 shadow-md"
-                            : "shadow-sm"
-                        }`}
-                        onClick={() => setSelectedTicketId(ticket.id)}
-                      >
-                        <CardContent className="p-6">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between">
-                            <div className="mb-4 md:mb-0">
-                              <div className="flex items-center">
-                                <h3 className="text-lg font-semibold">
-                                  {ticket.name}
-                                </h3>
-                                {ticket.type === "vip" && (
-                                  <Badge className="ml-2 bg-amber-500">
-                                    VIP
-                                  </Badge>
-                                )}
-                                {ticket.type === "discount" && (
-                                  <Badge className="ml-2 bg-green-500">
-                                    Promocional
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-gray-600 text-sm mt-1">
-                                {ticket.description}
-                              </p>
-
-                              {ticket.benefits && ticket.benefits.length > 0 && (
-                                <div className="mt-3">
-                                  <h4 className="text-sm font-medium text-gray-800">
-                                    Inclui:
-                                  </h4>
-                                  <ul className="text-sm text-gray-600 mt-1 space-y-1">
-                                    {ticket.benefits.map((item, idx) => (
-                                      <li
-                                        key={idx}
-                                        className="flex items-start"
-                                      >
-                                        <span className="text-blue-500 mr-1.5">
-                                          ✓
-                                        </span>{" "}
-                                        {item}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex flex-col items-end">
-                              <div className="text-xl font-bold text-gray-900 mb-2">
-                                {ticket.price > 0 ? formatCurrency(ticket.price) : 'Gratuito'}
-                              </div>
-                              <div className="text-sm text-gray-500 mb-3">
-                                {ticket.availableQuantity > 0 ? `${ticket.availableQuantity} vagas disponíveis` : 'Vagas ilimitadas'}
-                              </div>
-
-                              <div className="flex items-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateTicketQuantity(ticket.id, -1);
-                                  }}
-                                  className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-md bg-gray-50 hover:bg-gray-100"
-                                  disabled={(ticketQuantities[ticket.id] || 1) <= 1}
-                                >
-                                  -
-                                </button>
-                                <div className="w-10 h-8 flex items-center justify-center border-t border-b border-gray-300 bg-white">
-                                  {ticketQuantities[ticket.id] || 1}
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateTicketQuantity(ticket.id, 1);
-                                  }}
-                                  className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100"
-                                  disabled={ticket.availableQuantity > 0 && (ticketQuantities[ticket.id] || 1) >= Math.min(ticket.availableQuantity, ticket.maxPerOrder)}
-                                >
-                                  +
-                                </button>
-                              </div>
-
-                              <Button
-                                className="mt-4 w-full md:w-auto"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTicketId(ticket.id);
-                                }}
-                              >
-                                Selecionar
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    // Single ticket case (default)
-                    <Card
-                      className={`transition-all border-gray-200 hover:border-blue-300 ${
-                        selectedTicketId === "default"
-                          ? "ring-2 ring-blue-500 border-blue-300 shadow-md"
-                          : "shadow-sm"
-                      }`}
-                      onClick={() => setSelectedTicketId("default")}
+                {event.symplaUrl ? (
+                  <div className="p-4 bg-blue-50/80 rounded-lg mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-blue-800 font-medium">Comprar Ingressos</h3>
+                      <div className="text-xs text-gray-500 flex items-center">
+                        via 
+                        <img 
+                          src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
+                          alt="Sympla" 
+                          className="ml-1 h-4"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Os ingressos para este evento são vendidos através da plataforma Sympla.
+                    </p>
+                    <a
+                      href={event.symplaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
                     >
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between">
-                          <div className="mb-4 md:mb-0">
-                            <div className="flex items-center">
-                              <h3 className="text-lg font-semibold">
-                                Ingresso Padrão
-                              </h3>
-                              {event.isFeatured && (
-                                <Badge className="ml-2 bg-amber-500">
-                                  Destaque
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-gray-600 text-sm mt-1">
-                              Acesso completo ao evento
-                            </p>
-
-                            {event.includes && event.includes.length > 0 && (
-                              <div className="mt-3">
-                                <h4 className="text-sm font-medium text-gray-800">
-                                  Inclui:
-                                </h4>
-                                <ul className="text-sm text-gray-600 mt-1 space-y-1">
-                                  {event.includes.map((item, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="flex items-start"
-                                    >
-                                      <span className="text-blue-500 mr-1.5">
-                                        ✓
-                                      </span>{" "}
-                                      {item}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col items-end">
-                            <div className="text-xl font-bold text-gray-900 mb-2">
-                              {event.price > 0 ? formatCurrency(event.price) : 'Gratuito'}
-                            </div>
-                            <div className="text-sm text-gray-500 mb-3">
-                              {event.maxParticipants > 0 ? `${event.maxParticipants} vagas disponíveis` : 'Vagas ilimitadas'}
-                            </div>
-
-                            <div className="flex items-center">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateTicketQuantity("default", -1);
-                                }}
-                                className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-md bg-gray-50 hover:bg-gray-100"
-                                disabled={(ticketQuantities["default"] || 1) <= 1}
-                              >
-                                -
-                              </button>
-                              <div className="w-10 h-8 flex items-center justify-center border-t border-b border-gray-300 bg-white">
-                                {ticketQuantities["default"] || 1}
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateTicketQuantity("default", 1);
-                                }}
-                                className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100"
-                                disabled={event.maxParticipants > 0 && (ticketQuantities["default"] || 1) >= event.maxParticipants}
-                              >
-                                +
-                              </button>
-                            </div>
-
-                            <Button
-                              className="mt-4 w-full md:w-auto"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTicketId("default");
-                              }}
-                            >
-                              Selecionar
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+                      Comprar Ingressos
+                    </a>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gray-50 rounded-lg text-center text-gray-500">
+                    Não há ingressos disponíveis para este evento no momento.
+                  </div>
+                )}
               </TabsContent>
 
               {/* Policies tab */}
@@ -540,81 +383,59 @@ export default function EventDetails({ event }: EventDetailsProps) {
                       <span className="font-medium text-gray-800">{event.location}</span>
                     </div>
                     
-                    {/* Show selected ticket info if available */}
-                    {event.hasMultipleTickets && event.tickets && selectedTicketId ? (
-                      <>
-                        {event.tickets.find(t => t.id === selectedTicketId) && (
-                          <>
-                            <div className="flex justify-between">
-                              <span>Ingresso:</span>
-                              <span className="font-medium text-gray-800">
-                                {event.tickets.find(t => t.id === selectedTicketId)?.name}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Preço unitário:</span>
-                              <span className="font-medium text-gray-800">
-                                {formatCurrency(event.tickets.find(t => t.id === selectedTicketId)?.price || 0)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Quantidade:</span>
-                              <span className="font-medium text-gray-800">
-                                {ticketQuantities[selectedTicketId] || 1}
-                              </span>
-                            </div>
-                            <div className="flex justify-between pt-2 border-t border-dashed border-gray-200 mt-2">
-                              <span>Total:</span>
-                              <span className="font-medium text-gray-800">
-                                {formatCurrency(
-                                  (event.tickets.find(t => t.id === selectedTicketId)?.price || 0) * 
-                                  (ticketQuantities[selectedTicketId] || 1)
-                                )}
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {/* Default ticket info */}
-                        <div className="flex justify-between">
-                          <span>Ingresso:</span>
-                          <span className="font-medium text-gray-800">Padrão</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Preço unitário:</span>
-                          <span className="font-medium text-gray-800">
-                            {event.price > 0 ? formatCurrency(event.price) : 'Gratuito'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Quantidade:</span>
-                          <span className="font-medium text-gray-800">
-                            {ticketQuantities["default"] || 1}
-                          </span>
-                        </div>
-                        {event.price > 0 && (
-                          <div className="flex justify-between pt-2 border-t border-dashed border-gray-200 mt-2">
-                            <span>Total:</span>
-                            <span className="font-medium text-gray-800">
-                              {formatCurrency(event.price * (ticketQuantities["default"] || 1))}
-                            </span>
+                    {event.whatsappContact && !event.symplaUrl && (
+                      <div className="p-4 bg-green-50/80 rounded-lg mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-green-800 font-medium">Reservas</h3>
+                          <div className="text-xs text-gray-500 flex items-center">
+                            via WhatsApp
                           </div>
-                        )}
-                      </>
+                        </div>
+                        <p className="text-sm text-green-700 mb-3">
+                          Para reservar sua vaga neste evento, entre em contato via WhatsApp.
+                        </p>
+                        <a
+                          href={generateWhatsAppLink(event.whatsappContact, event.title)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Reservar via WhatsApp
+                        </a>
+                      </div>
+                    )}
+
+                    {event.symplaUrl && (
+                      <div className="p-4 bg-blue-50/80 rounded-lg mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-blue-800 font-medium">Comprar Ingressos</h3>
+                          <div className="text-xs text-gray-500 flex items-center">
+                            via 
+                            <img 
+                              src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
+                              alt="Sympla" 
+                              className="ml-1 h-4"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-sm text-blue-700 mb-3">
+                          Os ingressos para este evento são vendidos através da plataforma Sympla.
+                        </p>
+                        <a
+                          href={event.symplaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex w-full items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          Comprar Ingressos
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 <div className="p-6">
-                  <Button 
-                    className="w-full mb-3 bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={!selectedTicketId}
-                  >
-                    Reservar agora
-                  </Button>
-                  
                   <div className="flex justify-between gap-2">
                     <Button 
                       variant="outline" 

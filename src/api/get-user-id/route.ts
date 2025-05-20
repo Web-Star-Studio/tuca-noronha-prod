@@ -24,29 +24,17 @@ export async function GET(request: NextRequest) {
     console.log("API: Fetching user with clerkId", clerkId);
     
     // Query Convex to find the user with the given clerkId
-    const convexUserId = await convex.query(api.auth.getUserByClerkId, { clerkId });
+    const convexUserId = await convex.query(api.domains.users.queries.getUserByClerkId, { clerkId });
     console.log("API: Convex response:", convexUserId);
     
     if (!convexUserId) {
-      console.log("API: User not found, trying to trigger user sync");
+      console.log("API: User not found, suggesting manual sync");
       
-      // Se o usuário não for encontrado, tenta forçar uma sincronização com o Clerk
-      try {
-        // Testar apenas a consulta para verificar se a conexão com o Convex está funcionando
-        const testResponse = await convex.query(api.auth.getUser, {});
-        console.log("API: Test query response:", testResponse);
-        
-        return NextResponse.json(
-          { error: 'User not found', details: 'Convex connection is working but user ID not found' },
-          { status: 404 }
-        );
-      } catch (testError) {
-        console.error("API: Error during test query:", testError);
-        return NextResponse.json(
-          { error: 'Connection test failed', details: String(testError) },
-          { status: 500 }
-        );
-      }
+      // If user not found, suggest client to perform a manual sync
+      return NextResponse.json(
+        { error: 'User not found', needsSync: true },
+        { status: 404 }
+      );
     }
     
     // Return the Convex user ID

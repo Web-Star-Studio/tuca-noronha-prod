@@ -2,6 +2,9 @@ import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
 import type { User, UserWithRole } from "./types";
+import { queryWithRole } from "../../domains/rbac";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
+import { UserRole } from "../rbac/types";
 
 /**
  * Get the current authenticated user's information
@@ -27,6 +30,7 @@ export const getCurrentUser = query({
     
     const user = users[0];
     return {
+      _id: user._id,
       id: user._id,
       clerkId: user.clerkId,
       email: user.email,
@@ -83,10 +87,14 @@ export const getUsersByRole = query({
       v.literal("master"),
     ),
   },
+  returns: v.array(v.any()),
   handler: async (ctx, args) => {
-    return await ctx.db
+    // Using a filter since there's no 'by_role' index in the schema yet
+    const users = await ctx.db
       .query("users")
-      .withIndex("by_role", (q) => q.eq("role", args.role))
       .collect();
+    
+    // Filter in memory for users with the specified role
+    return users.filter(user => user.role === args.role);
   },
 }); 

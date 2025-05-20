@@ -1,7 +1,23 @@
+/**
+ * @deprecated This file is deprecated. Use `convex/domains/users/mutations.ts` instead.
+ * This file is kept only for backward compatibility.
+ * @ts-nocheck - This file is deprecated and will be removed soon
+ */
+
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { Doc, Id } from "./_generated/dataModel";
 
-// Mutation para criar ou atualizar um usuário
+// Type definition for deleteUser return
+interface DeleteUserResult {
+  success: boolean;
+  message: string;
+  userId?: Id<"users">;
+}
+
+// Deprecated: Use syncUserFromClerk from domains/users/mutations.ts
+// @ts-ignore - This declaration is intentionally not typed properly as it's deprecated
 export const syncUser = internalMutation({
   args: {
     clerkId: v.string(),
@@ -14,90 +30,41 @@ export const syncUser = internalMutation({
     // Papel global do usuário; ex: "traveler", "partner", "employee", "master"
     role: v.optional(v.string()),
   },
+  returns: v.id("users"),
+  // @ts-ignore - This handler is intentionally not typed properly as it's deprecated
   handler: async (ctx, args) => {
-    // Primeiro, verificar se usuário já existe pelo clerkId
-    const existingUsersByClerkId = await ctx.db
-      .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", args.clerkId))
-      .collect();
-    
-    if (existingUsersByClerkId.length > 0) {
-      return await ctx.db.patch(existingUsersByClerkId[0]._id, {
-        email: args.email,
-        name: args.name,
-        image: args.image,
-        phone: args.phone,
-        emailVerificationTime: args.updatedAt,
-        // Atualizar papel se fornecido
-        ...(args.role ? { role: args.role } : {}),
-      });
-    }
-    
-    // Se não encontrar pelo clerkId, verificar pelo email
-    if (args.email) {
-      const existingUsersByEmail = await ctx.db
-        .query("users")
-        .withIndex("email", (q) => q.eq("email", args.email))
-        .collect();
-      
-      if (existingUsersByEmail.length > 0) {
-        // Atualizar o usuário existente, adicionando o clerkId
-        return await ctx.db.patch(existingUsersByEmail[0]._id, {
-          clerkId: args.clerkId,
-          email: args.email,
-          name: args.name,
-          image: args.image,
-          phone: args.phone,
-          emailVerificationTime: args.updatedAt,
-          // Atualizar papel se fornecido
-          ...(args.role ? { role: args.role } : {}),
-        });
-      }
-    }
-
-    // Caso contrário, criamos um novo usuário
-    return await ctx.db.insert("users", {
+    // Forward to the new implementation in the users domain
+    return await ctx.runMutation(internal.domains.users.mutations.syncUserFromClerk, {
       clerkId: args.clerkId,
       email: args.email,
       name: args.name,
       image: args.image,
       phone: args.phone,
-      emailVerificationTime: args.createdAt,
-      isAnonymous: false,
-      role: args.role ?? "traveler",
+      createdAt: args.createdAt,
+      updatedAt: args.updatedAt,
+      role: args.role as any,
     });
   },
 });
 
-// Mutation para remover um usuário
+// Deprecated: Use deleteUserFromClerk from domains/users/mutations.ts
+// @ts-ignore - This declaration is intentionally not typed properly as it's deprecated
 export const deleteUser = internalMutation({
   args: {
     email: v.optional(v.string()),
     clerkId: v.string(),
   },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+    userId: v.optional(v.id("users")),
+  }),
+  // @ts-ignore - This handler is intentionally not typed properly as it's deprecated
   handler: async (ctx, args) => {
-    let users = [];
-    
-    // Buscar usuário pelo clerkId primeiro
-    users = await ctx.db
-      .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", args.clerkId))
-      .collect();
-    
-    // Se não encontrar pelo clerkId e tiver email, buscar pelo email
-    if (users.length === 0 && args.email) {
-      users = await ctx.db
-        .query("users")
-        .withIndex("email", (q) => q.eq("email", args.email))
-        .collect();
-    }
-
-    // Se encontrarmos o usuário, deletamos
-    if (users.length > 0) {
-      await ctx.db.delete(users[0]._id);
-      return { success: true, message: "User deleted", userId: users[0]._id };
-    }
-    
-    return { success: false, message: "User not found" };
+    // Forward to the new implementation in the users domain
+    return await ctx.runMutation(internal.domains.users.mutations.deleteUserFromClerk, {
+      clerkId: args.clerkId,
+      email: args.email,
+    });
   },
 });

@@ -1,10 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useAuth, useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { useEffect, useState } from "react";
+/**
+ * @deprecated This file is deprecated. Import from '@/lib/hooks/useCurrentUser' instead.
+ */
 
-// Tipo para o usuário autenticado
+import { useCurrentUser as CurrentUserHook } from "@/lib/hooks/useCurrentUser";
+
+// Re-export the simpler implementation from the new location
+export const useCurrentUser = CurrentUserHook;
+
+// Re-export the type for backward compatibility
 export interface CurrentUser {
   id: string;
   email?: string;
@@ -19,75 +22,21 @@ export interface CurrentUser {
 }
 
 /**
- * Hook personalizado que combina dados do usuário do Clerk e Convex
- * Fornece uma interface unificada para acessar o usuário autenticado
- */
-export function useCurrentUser(): CurrentUser {
-  // Estados para gerenciar o carregamento e dados
-  const [isInitializing, setIsInitializing] = useState(true);
-  
-  // Dados do usuário do Clerk
-  const { isSignedIn, userId } = useAuth();
-  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
-  
-  // Dados do usuário do Convex
-  const convexUser = useQuery(api.auth.getUser) || null;
-  const convexLoaded = convexUser !== undefined; // undefined significa que ainda está carregando
-  
-  // Determina se ainda está carregando
-  const isLoading = !clerkLoaded || !convexLoaded || isInitializing;
-  
-  // Efeito para verificar quando a inicialização está completa
-  useEffect(() => {
-    if (clerkLoaded && convexLoaded) {
-      setIsInitializing(false);
-    }
-  }, [clerkLoaded, convexLoaded]);
-  
-  // Se não estiver autenticado, retorna um objeto com isSignedIn = false
-  if (!isSignedIn || !clerkUser) {
-    return {
-      id: "",
-      isLoading,
-      isSignedIn: false
-    };
-  }
-  
-  // Constrói e retorna o objeto de usuário unificado
-  return {
-    id: userId || "",
-    email: clerkUser.primaryEmailAddress?.emailAddress,
-    name: clerkUser.fullName || clerkUser.username || "",
-    image: clerkUser.imageUrl,
-    phone: clerkUser.primaryPhoneNumber?.phoneNumber,
-    isLoading,
-    isSignedIn: true,
-    // Dados do Convex
-    convexId: convexUser?.id,
-    convexData: convexUser
-  };
-}
-
-/**
- * Hook para verificar se o usuário está autenticado
- * Simplifica a verificação de autenticação em componentes
+ * @deprecated Use useAuth from '@/lib/auth' instead.
  */
 export function useIsAuthenticated(): {
   isAuthenticated: boolean;
   isLoading: boolean;
 } {
-  const { isSignedIn, isLoading } = useCurrentUser();
-  return {
-    isAuthenticated: !!isSignedIn,
-    isLoading
-  };
+  const { isAuthenticated, isLoading } = CurrentUserHook();
+  return { isAuthenticated, isLoading };
 }
 
 /**
- * Hook para proteger rotas/componentes que exigem autenticação
- * @param redirectUrl URL para redirecionar se o usuário não estiver autenticado (opcional)
+ * @deprecated Use useAuth from '@/lib/auth' instead.
  */
 export function useRequireAuth(redirectUrl?: string) {
+  console.warn('useRequireAuth is deprecated. Use useAuth from @/lib/auth instead.');
   const { isAuthenticated, isLoading } = useIsAuthenticated();
   const [isReady, setIsReady] = useState(false);
   

@@ -4,7 +4,7 @@ import { api } from "@/../convex/_generated/api";
 
 export const useCurrentUser = () => {
   const { isAuthenticated } = useAuth();
-  const convexUser = useQuery(api.auth.getUser, isAuthenticated ? {} : "skip");
+  const convexUser = useQuery(api.domains.users.queries.getCurrentUser, isAuthenticated ? {} : "skip");
   
   return {
     user: convexUser,

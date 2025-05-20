@@ -14,7 +14,7 @@ const Card = React.forwardRef<
     default: cardStyles.base,
     interactive: `${cardStyles.base} ${cardStyles.hover.default} cursor-pointer`,
     solid: "bg-secondary rounded-xl shadow transition-all duration-300 overflow-hidden",
-    outline: "bg-transparent rounded-xl shadow-sm transition-all duration-300 overflow-hidden",
+    outline: "bg-white rounded-xl shadow-sm transition-all duration-300 overflow-hidden",
   }
   
   // Tamanhos do card

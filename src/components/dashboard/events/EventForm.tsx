@@ -56,7 +56,8 @@ export function EventForm({
       partnerId: "",
       speaker: "",
       speakerBio: "",
-      tickets: []
+      tickets: [],
+      whatsappContact: ""
     }
   );
 
@@ -523,6 +524,20 @@ export function EventForm({
                 required 
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="whatsappContact" className="text-sm font-medium">Contato WhatsApp (opcional)</Label>
+            <Input 
+              id="whatsappContact" 
+              name="whatsappContact" 
+              value={formData.whatsappContact || ""} 
+              onChange={handleInputChange} 
+              className="mt-1.5 bg-white shadow-sm"
+              placeholder="ex: 5511999999999 (apenas números)"
+              type="tel"
+            />
+            <p className="text-xs text-gray-500 mt-1">Informe o número no formato internacional (ex: 5511999999999) para que o botão de reserva leve para o chat do WhatsApp</p>
           </div>
 
           <div>

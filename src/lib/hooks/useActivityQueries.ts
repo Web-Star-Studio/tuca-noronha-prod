@@ -7,7 +7,7 @@ import { Id } from "@/../convex/_generated/dataModel";
 // A wrapper hook that combines TanStack Query with Convex
 export function useActivitiesQuery() {
   // Use Convex's own query hook directly
-  const convexQuery = useConvexQuery(api.activities.getActivitiesWithCreators);
+  const convexQuery = useConvexQuery(api.domains.activities.queries.getActivitiesWithCreators);
   
   // Then wrap it with TanStack Query for better cache management
   return useQuery({
@@ -23,7 +23,7 @@ export function useActivitiesQuery() {
 
 export function usePublicActivitiesQuery() {
   // Use Convex's own query hook directly
-  const convexQuery = useConvexQuery(api.activities.getActivitiesWithCreators);
+  const convexQuery = useConvexQuery(api.domains.activities.queries.getActivitiesWithCreators);
   
   // Then wrap it with TanStack Query for better cache management
   return useQuery({
@@ -41,7 +41,7 @@ export function usePublicActivitiesQuery() {
 export function useActivityQuery(id: string | null) {
   // Use Convex's own query hook directly, with skip if no ID
   const convexQuery = useConvexQuery(
-    api.activities.getById, 
+    api.domains.activities.queries.getById, 
     id ? { id: id as Id<"activities"> } : "skip"
   );
   
@@ -58,7 +58,7 @@ export function useActivityQuery(id: string | null) {
 
 export function useFeaturedActivitiesQuery() {
   // Use Convex's own query hook directly
-  const convexQuery = useConvexQuery(api.activities.getFeatured);
+  const convexQuery = useConvexQuery(api.domains.activities.queries.getFeatured);
   
   // Then wrap it with TanStack Query for better cache management
   return useQuery({

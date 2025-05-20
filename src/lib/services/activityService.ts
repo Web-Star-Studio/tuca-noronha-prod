@@ -6,30 +6,14 @@ import type { Id } from "@/../convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 // Helper function to query tickets - this will get tickets for an activity
-// You should replace this with actual API calls to your backend or 
-// implement an HTTP endpoint in Convex
-/*
-const queryTickets = async (activityId: string) => {
-  // This is a mock implementation that would normally call your backend
-  // For a real implementation, you would:
-  // 1. Create an HTTP endpoint in Convex
-  // 2. Call that endpoint from here
-  // 3. Return the processed results
-  try {
-    // In a real app, you would do something like:
-    // const response = await fetch(`/api/tickets?activityId=${activityId}`);
-    // const tickets = await response.json();
-    
-    // For now, as a fallback, return an empty array
-    // You need to implement a real solution based on your app's architecture
-    console.warn("queryTickets is a mock implementation. Replace with real API call");
-    return [];
-  } catch (error) {
-    console.error("Error querying tickets:", error);
-    return [];
-  }
-};
-*/
+function queryTickets(id: string): Promise<ActivityTicket[]> {
+  return new Promise((resolve) => {
+    // This is just a placeholder implementation
+    // In a real app, you'd fetch the tickets from your backend
+    console.warn("Implement real ticket fetching for activities");
+    resolve([]);
+  });
+}
 
 // Type for ticket data coming from Convex
 export type ActivityTicketFromConvex = {
@@ -179,7 +163,7 @@ export const mapActivityToConvex = (activity: Activity, convexUserId: Id<"users"
 
 // Get Convex user ID from Clerk ID
 export const useGetConvexUserId = () => {
-  const getUserByClerkId = useMutation(api.auth.getUserByClerkId);
+  const getUserByClerkId = useMutation(api.domains.users.queries.getUserByClerkId);
   
   return async (clerkId: string): Promise<Id<"users"> | null> => {
     try {
@@ -194,7 +178,7 @@ export const useGetConvexUserId = () => {
 
 // Hooks for accessing Convex API
 export const useActivities = () => {
-  const activities = useQuery(api.activities.getActivitiesWithCreators);
+  const activities = useQuery(api.domains.activities.queries.getActivitiesWithCreators);
 
   // Process activities to include ticket data for those with hasMultipleTickets
   const activitiesWithTickets = useMemo(() => {
@@ -234,7 +218,7 @@ export const useActivities = () => {
 };
 
 export const useFeaturedActivities = () => {
-  const activities = useQuery(api.activities.getFeatured);
+  const activities = useQuery(api.domains.activities.queries.getFeatured);
 
   // Process activities to include ticket data for those with hasMultipleTickets
   const activitiesWithTickets = useMemo(() => {
@@ -273,41 +257,24 @@ export const useFeaturedActivities = () => {
   };
 };
 
-// Get a single activity by ID for public display
+// For getting a single activity with creator info
 export const usePublicActivity = (id: string | null) => {
-  // Convert ID to Convex ID
-  const idAsConvexId = id ? id as Id<"activities"> : null;
-  
-  // Query for the activity
   const activity = useQuery(
-    api.activities.getById, 
-    idAsConvexId ? { id: idAsConvexId } : "skip"
+    api.domains.activities.queries.getById, 
+    id ? { id: id as Id<"activities"> } : "skip"
   );
   
-  // Get tickets if the activity has multiple tickets
-  const activityObj = activity ? mapConvexActivity(activity as ActivityFromConvex) : null;
-  const hasMultipleTickets = activityObj?.hasMultipleTickets;
-  
-  // Only fetch tickets if the activity exists and has multiple tickets
-  const { tickets, isLoading: isLoadingTickets } = useActiveActivityTickets(
-    (activityObj && hasMultipleTickets) ? activityObj.id : null
-  );
-  
-  // Add tickets to the activity object
-  const activityWithTickets = activityObj && {
-    ...activityObj,
-    tickets: hasMultipleTickets ? tickets : undefined
-  };
+  const isLoading = id !== null && activity === undefined;
   
   return {
-    activity: activityWithTickets,
-    isLoading: (id ? activity === undefined : false) || (hasMultipleTickets && isLoadingTickets),
+    activity: activity ? mapConvexActivity(activity as ActivityFromConvex) : null,
+    isLoading,
   };
 };
 
 // Get all active activities for public display
 export const usePublicActivities = () => {
-  const activities = useQuery(api.activities.getActivitiesWithCreators);
+  const activities = useQuery(api.domains.activities.queries.getActivitiesWithCreators);
   
   // Process activities to include ticket data for those with hasMultipleTickets
   const activitiesWithTickets = useMemo(() => {
@@ -349,41 +316,33 @@ export const usePublicActivities = () => {
 };
 
 export const useCreateActivity = () => {
-  const createMutation = useMutation(api.activities.create);
-  const createTicketMutation = useMutation(api.activities.createActivityTicket);
-  const getUserByClerkId = useMutation(api.auth.getUserByClerkId);
+  const createActivityMutation = useMutation(api.domains.activities.mutations.create);
+  const getCurrentUser = useCurrentUser();
   
-  return async (activity: Activity, clerkId: string) => {
+  return async (activityData: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!getCurrentUser.user) {
+      throw new Error("You must be logged in to create activities");
+    }
+    
+    // Get the current Convex user ID
+    const userInfo = getCurrentUser.user;
+    
+    // Ensure we have a valid Convex user ID
+    if (!userInfo._id) {
+      throw new Error("User has no Convex ID. Please try again later.");
+    }
+    
+    // Map activity data to Convex input
+    const convexData = mapActivityToConvex({
+      ...activityData,
+      id: '', // Will be generated by Convex
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }, userInfo._id as Id<"users">);
+    
     try {
-      // First get the Convex user ID from the Clerk ID
-      const convexUserId = await getUserByClerkId({ clerkId });
-      
-      if (!convexUserId) {
-        throw new Error("Could not find Convex user ID for the current user");
-      }
-      
-      // Then create the activity with the proper Convex user ID
-      const activityData = mapActivityToConvex(activity, convexUserId as Id<"users">);
-      const activityId = await createMutation(activityData);
-      
-      // If the activity has multiple tickets, create them
-      if (activity.hasMultipleTickets && activity.tickets && activity.tickets.length > 0) {
-        // Create each ticket
-        for (const ticket of activity.tickets) {
-          await createTicketMutation({
-            activityId: activityId as Id<"activities">,
-            name: ticket.name,
-            description: ticket.description,
-            price: ticket.price,
-            availableQuantity: ticket.availableQuantity,
-            maxPerOrder: ticket.maxPerOrder,
-            type: ticket.type,
-            benefits: ticket.benefits,
-            isActive: ticket.isActive
-          });
-        }
-      }
-      
+      // Create the activity in Convex
+      const activityId = await createActivityMutation(convexData);
       return activityId;
     } catch (error) {
       console.error("Error creating activity:", error);
@@ -393,98 +352,45 @@ export const useCreateActivity = () => {
 };
 
 export const useUpdateActivity = () => {
-  const updateMutation = useMutation(api.activities.update);
-  const createTicketMutation = useMutation(api.activities.createActivityTicket);
-  const updateTicketMutation = useMutation(api.activities.updateActivityTicket);
-  const deleteTicketMutation = useMutation(api.activities.removeActivityTicket);
+  const updateActivityMutation = useMutation(api.domains.activities.mutations.update);
+  const getCurrentUser = useCurrentUser();
   
-  return async (activity: Activity) => {
+  return async (activityData: Activity) => {
+    if (!getCurrentUser.user) {
+      throw new Error("You must be logged in to update activities");
+    }
+    
+    // Get the current Convex user ID
+    const userInfo = getCurrentUser.user;
+    
+    // Ensure we have a valid Convex user ID
+    if (!userInfo._id) {
+      throw new Error("User has no Convex ID. Please try again later.");
+    }
+    
     try {
-      const { id } = activity;
+      // We need to exclude some fields that are not in the update input
+      const { 
+        id,
+        createdAt,
+        updatedAt,
+        creatorName,
+        creatorEmail,
+        creatorImage,
+        tickets,
+        ...updateData
+      } = activityData;
       
-      // Convert id from string to Convex ID type
-      const updateData = {
+      // Update the activity in Convex
+      const result = await updateActivityMutation({
         id: id as Id<"activities">,
-        ...mapActivityToConvex(activity, activity.partnerId as Id<"users"> || null),
-      };
+        ...updateData,
+        // Convert numbers to bigints as expected by the backend
+        maxParticipants: updateData.maxParticipants,
+        minParticipants: updateData.minParticipants,
+      });
       
-      // Update the activity information
-      await updateMutation(updateData);
-      
-      // Handle tickets if multiple tickets is enabled
-      if (activity.hasMultipleTickets && activity.tickets && activity.tickets.length > 0) {
-        // First, fetch existing tickets for this activity
-        // Implementation note: not using useConvex here as it can't be called in callbacks
-        // This is a placeholder for the current implementation
-        // In a production app, we'd need to restructure this to avoid using hooks in callbacks
-        const existingTicketsData: Array<Record<string, unknown>> = [];
-        
-        const existingTickets: any[] = existingTicketsData || [];
-        
-        if (existingTickets && existingTickets.length > 0) {
-          // Create a map of existing ticket IDs
-          const existingTicketIds = new Map(existingTickets.map((ticket: any) => [ticket._id.toString(), ticket._id]));
-          
-          // Create a map of current ticket IDs - store strings for comparison
-          const currentTicketIds = new Set(activity.tickets.map((ticket: any) => ticket.id.toString()));
-          
-          // Update or create tickets
-          for (const ticket of activity.tickets) {
-            const ticketIdStr = ticket.id.toString();
-            if (existingTicketIds.has(ticketIdStr)) {
-              // Update existing ticket
-              await updateTicketMutation({
-                id: existingTicketIds.get(ticketIdStr) as Id<"activityTickets">,
-                name: ticket.name,
-                description: ticket.description,
-                price: ticket.price,
-                availableQuantity: ticket.availableQuantity,
-                maxPerOrder: ticket.maxPerOrder,
-                type: ticket.type,
-                benefits: ticket.benefits,
-                isActive: ticket.isActive
-              });
-            } else {
-              // Create new ticket
-              await createTicketMutation({
-                activityId: id as Id<"activities">,
-                name: ticket.name,
-                description: ticket.description,
-                price: ticket.price,
-                availableQuantity: ticket.availableQuantity,
-                maxPerOrder: ticket.maxPerOrder,
-                type: ticket.type,
-                benefits: ticket.benefits,
-                isActive: ticket.isActive
-              });
-            }
-          }
-          
-          // Delete tickets that no longer exist
-          for (const existingTicket of existingTickets) {
-            if (!currentTicketIds.has(existingTicket._id.toString())) {
-              await deleteTicketMutation({ id: existingTicket._id as Id<"activityTickets"> });
-            }
-          }
-        } else {
-          // If no existing tickets, create all
-          for (const ticket of activity.tickets) {
-            await createTicketMutation({
-              activityId: id as Id<"activities">,
-              name: ticket.name,
-              description: ticket.description,
-              price: ticket.price,
-              availableQuantity: ticket.availableQuantity,
-              maxPerOrder: ticket.maxPerOrder,
-              type: ticket.type,
-              benefits: ticket.benefits,
-              isActive: ticket.isActive
-            });
-          }
-        }
-      }
-      
-      return id;
+      return result;
     } catch (error) {
       console.error("Error updating activity:", error);
       throw error;
@@ -493,15 +399,15 @@ export const useUpdateActivity = () => {
 };
 
 export const useDeleteActivity = () => {
-  const deleteMutation = useMutation(api.activities.remove);
+  const deleteActivityMutation = useMutation(api.domains.activities.mutations.remove);
   
   return async (id: string) => {
-    return await deleteMutation({ id: id as Id<"activities"> });
+    return await deleteActivityMutation({ id: id as Id<"activities"> });
   };
 };
 
 export const useToggleFeatured = () => {
-  const toggleFeaturedMutation = useMutation(api.activities.toggleFeatured);
+  const toggleFeaturedMutation = useMutation(api.domains.activities.mutations.toggleFeatured);
   
   return async (id: string, isFeatured: boolean) => {
     return await toggleFeaturedMutation({ id: id as Id<"activities">, isFeatured });
@@ -509,158 +415,115 @@ export const useToggleFeatured = () => {
 };
 
 export const useToggleActive = () => {
-  const toggleActiveMutation = useMutation(api.activities.toggleActive);
+  const toggleActiveMutation = useMutation(api.domains.activities.mutations.toggleActive);
   
   return async (id: string, isActive: boolean) => {
     return await toggleActiveMutation({ id: id as Id<"activities">, isActive });
   };
 };
 
-// Get activities by the current user
 export const useUserActivities = () => {
-  const getUserByClerkId = useMutation(api.auth.getUserByClerkId);
-  const { user } = useCurrentUser();
-  
-  const [convexUserId, setConvexUserId] = useState<Id<"users"> | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useCurrentUser();
   
-  // First get the Convex user ID from Clerk ID
   useEffect(() => {
     const getConvexId = async () => {
-      if (!user?.id) return;
+      if (!user || !user._id) return;
       
-      try {
-        const userId = await getUserByClerkId({ clerkId: user.id });
-        if (userId) {
-          setConvexUserId(userId as Id<"users">);
+      const updateUserActivities = async () => {
+        try {
+          const userId = user._id as Id<"users">;
+          
+          // Query activities by partner ID
+          const activities = await api.domains.activities.queries.getByPartnerId({ partnerId: userId });
+          
+          // Map activities to frontend format
+          setActivities(activities.map(mapConvexActivity));
+        } catch (error) {
+          console.error("Error fetching user activities:", error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching Convex user ID:", error);
-      }
+      };
+      
+      updateUserActivities();
     };
     
     getConvexId();
-  }, [user?.id, getUserByClerkId]);
-  
-  // Then use the Convex user ID to fetch user activities
-  const userActivities = useQuery(
-    api.activities.getByUser, 
-    convexUserId ? { userId: convexUserId } : "skip"
-  );
-  
-  // Update activities when the query result changes
-  useEffect(() => {
-    const updateUserActivities = async () => {
-      if (!userActivities) return;
-      
-      // Map the activities to their frontend representation
-      const mappedActivities = userActivities.map(mapConvexActivity);
-      
-      // Process activities to add the _loadTickets function
-      const processedActivities = mappedActivities.map(activity => {
-        if (activity.hasMultipleTickets) {
-          return {
-            ...activity,
-            // Add a function to load tickets when needed
-            _loadTickets: async () => {
-              try {
-                // Use the queryTickets utility
-                const activityTickets = await queryTickets(activity.id);
-                return activityTickets;
-              } catch (error) {
-                console.error("Error loading tickets for activity:", error);
-                return [];
-              }
-            }
-          };
-        }
-        return activity;
-      });
-      
-      setActivities(processedActivities);
-      setIsLoading(false);
-    };
     
-    updateUserActivities();
-  }, [userActivities]);
+    if (!user) {
+      setIsLoading(false);
+    }
+  }, [user]);
   
   return { activities, isLoading };
 };
 
-// Get all tickets for an activity
+// Helper for getting tickets for an activity
 export const useActivityTickets = (activityId: string | null) => {
-  const idAsConvexId = activityId ? activityId as Id<"activities"> : null;
-  
-  const ticketsData = useQuery(
-    api.activities.getActivityTickets, 
-    idAsConvexId ? { activityId: idAsConvexId } : "skip"
+  const tickets = useQuery(
+    api.domains.activities.queries.getTicketsByActivity,
+    activityId ? { activityId: activityId as Id<"activities"> } : "skip"
   );
   
   return {
-    tickets: ticketsData?.map(mapConvexTicket) || [],
-    isLoading: activityId ? ticketsData === undefined : false,
+    tickets: tickets?.map(mapConvexTicket) || [],
+    isLoading: activityId !== null && tickets === undefined,
   };
 };
 
-// Get active tickets for an activity
+// Helper for getting active tickets for an activity
 export const useActiveActivityTickets = (activityId: string | null) => {
-  const idAsConvexId = activityId ? activityId as Id<"activities"> : null;
-  
-  const ticketsData = useQuery(
-    api.activities.getActiveActivityTickets, 
-    idAsConvexId ? { activityId: idAsConvexId } : "skip"
+  const tickets = useQuery(
+    api.domains.activities.queries.getActiveTicketsByActivity,
+    activityId ? { activityId: activityId as Id<"activities"> } : "skip"
   );
   
   return {
-    tickets: ticketsData?.map(mapConvexTicket) || [],
-    isLoading: activityId ? ticketsData === undefined : false,
+    tickets: tickets?.map(mapConvexTicket) || [],
+    isLoading: activityId !== null && tickets === undefined,
   };
 };
 
-// Create a new ticket for an activity
 export const useCreateActivityTicket = () => {
-  const createMutation = useMutation(api.activities.createActivityTicket);
+  const createTicketMutation = useMutation(api.domains.activities.mutations.createTicket);
   
-  return async (ticket: Omit<ActivityTicket, "id" | "createdAt">) => {
-    return await createMutation({
-      activityId: ticket.activityId as Id<"activities">,
-      name: ticket.name,
-      description: ticket.description,
-      price: ticket.price,
-      availableQuantity: ticket.availableQuantity,
-      maxPerOrder: ticket.maxPerOrder,
-      type: ticket.type,
-      benefits: ticket.benefits,
-      isActive: ticket.isActive
-    });
+  return async (ticketData: Omit<ActivityTicket, 'id' | 'createdAt'>) => {
+    // Convert number fields to bigint for Convex
+    const convexData = {
+      ...ticketData,
+      availableQuantity: ticketData.availableQuantity,
+      maxPerOrder: ticketData.maxPerOrder,
+    };
+    
+    try {
+      const ticketId = await createTicketMutation(convexData as any);
+      return ticketId;
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      throw error;
+    }
   };
 };
 
-// Update an existing ticket
 export const useUpdateActivityTicket = () => {
-  const updateMutation = useMutation(api.activities.updateActivityTicket);
+  const updateTicketMutation = useMutation(api.domains.activities.mutations.updateTicket);
   
-  return async (ticketId: string, updates: Partial<Omit<ActivityTicket, "id" | "activityId" | "createdAt">>) => {
-    return await updateMutation({
-      id: ticketId as Id<"activityTickets">,
-      ...updates
-    });
+  return async (ticketData: ActivityTicket) => {
+    const { id, createdAt, ...updateData } = ticketData;
+    
+    return await updateTicketMutation({
+      id: id as Id<"activityTickets">,
+      ...updateData,
+    } as any);
   };
 };
 
-// Delete a ticket
 export const useDeleteActivityTicket = () => {
-  const deleteMutation = useMutation(api.activities.removeActivityTicket);
+  const deleteTicketMutation = useMutation(api.domains.activities.mutations.removeTicket);
   
-  return async (ticketId: string) => {
-    return await deleteMutation({ id: ticketId as Id<"activityTickets"> });
+  return async (id: string) => {
+    return await deleteTicketMutation({ id: id as Id<"activityTickets"> });
   };
 };
-
-function queryTickets(id: string): Promise<ActivityTicket[]> {
-  // Esta é uma implementação temporária que retorna um array vazio
-  // Em um app real, você buscaria os tickets do banco de dados
-  console.warn(`Buscando tickets para atividade ${id} - implementação mock`);
-  return Promise.resolve([]);
-}

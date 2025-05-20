@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "../../_generated/dataModel";
-import { mutationWithRole } from "../../shared/rbac";
-import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../shared/rbac";
+import { mutationWithRole } from "../../domains/rbac";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
 import type { 
   EventCreateInput,
   EventUpdateInput,
@@ -9,6 +9,7 @@ import type {
   EventTicketUpdateInput,
   EventTicketUpdates
 } from "./types";
+import { internalMutation } from "../../_generated/server";
 
 /**
  * Create a new event
@@ -36,6 +37,8 @@ export const create = mutationWithRole(["partner", "master"])({
     isActive: v.boolean(),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
+    symplaUrl: v.optional(v.string()),
+    whatsappContact: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
@@ -86,6 +89,8 @@ export const update = mutationWithRole(["partner", "master"])({
     isActive: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.optional(v.id("users")),
+    symplaUrl: v.optional(v.string()),
+    whatsappContact: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
@@ -121,6 +126,8 @@ export const update = mutationWithRole(["partner", "master"])({
       isActive?: boolean;
       hasMultipleTickets?: boolean;
       partnerId?: Id<"users">;
+      symplaUrl?: string;
+      whatsappContact?: string;
     };
     
     // Create an object with all updated fields
@@ -313,5 +320,42 @@ export const removeEventTicket = mutationWithRole(["partner", "master"])({
     
     // Excluir o ingresso
     await ctx.db.delete(args.id);
+  },
+});
+
+/**
+ * Internal helper used by the Sympla sync action to either create or update
+ * a single event document in the `events` table. This mutation **must not**
+ * be called directly from the client.
+ */
+export const _upsertFromSympla = internalMutation({
+  args: {
+    event: v.any(), // Using v.any() keeps the validator simple and flexible.
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const data = args.event;
+
+    // Look for an existing event that matches either Sympla URL, Sympla ID or title.
+    const existing = await ctx.db
+      .query("events")
+      .withIndex("by_partner", (q) => q.eq("partnerId", data.partnerId))
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("symplaUrl"), data.symplaUrl),
+          q.eq(q.field("symplaId"), data.symplaId),
+          q.eq(q.field("title"), data.title),
+        ),
+      )
+      .collect();
+
+    if (existing.length > 0) {
+      // Update first match.
+      await ctx.db.patch(existing[0]._id, data);
+    } else {
+      await ctx.db.insert("events", data);
+    }
+
+    return null;
   },
 }); 

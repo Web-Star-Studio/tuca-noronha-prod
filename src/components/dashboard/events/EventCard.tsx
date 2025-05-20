@@ -1,11 +1,12 @@
 "use client";
 
-import { Event } from "@/lib/services/eventService";
+import { type Event } from "@/lib/services/eventService";
 import { cn } from "@/lib/utils";
-import { Calendar, Clock, ExternalLink, MapPin, Star, Trash2 } from "lucide-react";
+import { Calendar, Clock, ExternalLink, MapPin, Star, Trash2, RefreshCw, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 type EventCardProps = {
   event: Event;
@@ -22,6 +23,18 @@ export function EventCard({
   onToggleFeatured, 
   onToggleActive 
 }: EventCardProps) {
+  // Check if event was synced from Sympla
+  const isSyncedFromSympla = Boolean(event.symplaId || event.external_id);
+  const router = useRouter();
+  
+  const handleCardClick = () => {
+    if (isSyncedFromSympla && event.symplaUrl) {
+      // Open Sympla event page in a new tab
+      window.open(event.symplaUrl, '_blank');
+    } 
+    // No else case - clicking on local events does nothing now that we have a dedicated edit button
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -35,7 +48,15 @@ export function EventCard({
           "group overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col",
           !event.isActive && "opacity-75 hover:opacity-90"
         )}
-        onClick={() => onEdit(event)}
+        onClick={handleCardClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleCardClick();
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-label={`Evento ${event.title}`}
       >
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
           <Image
@@ -57,13 +78,33 @@ export function EventCard({
             R$ {event.price.toFixed(2)}
           </div>
           
-          {event.isFeatured && (
-            <div className="absolute top-3 right-3">
+          {/* Special badges container - top right */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {/* Featured badge */}
+            {event.isFeatured && (
               <div className="bg-gradient-to-r from-amber-400 to-yellow-500 shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-black flex items-center gap-1">
                 <Star className="h-3 w-3 fill-black" /> Destaque
               </div>
-            </div>
-          )}
+            )}
+            
+            {/* Sympla sync badge */}
+            {isSyncedFromSympla && (
+              <div className="bg-indigo-100 shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-indigo-700 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3" /> Integrado
+              </div>
+            )}
+            
+            {/* Sympla link badge */}
+            {event.symplaUrl && (
+              <div className="bg-blue-100 shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-blue-700 flex items-center gap-1">
+                <img 
+                  src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
+                  alt="Sympla" 
+                  className="h-2.5 mr-1"
+                /> Sympla
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="flex flex-col grow p-5">
@@ -73,7 +114,7 @@ export function EventCard({
               <motion.button 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-50 hover:bg-amber-100 transition-colors duration-200 shadow-sm"
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-50 hover:bg-amber-100 transition-colors duration-200 shadow-md hover:shadow-lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleFeatured(event.id, !event.isFeatured);
@@ -88,10 +129,10 @@ export function EventCard({
                 whileTap={{ scale: 0.95 }}
               >
                 <Link 
-                  href={`/eventos/${event.id}`} 
+                  href={isSyncedFromSympla && event.symplaUrl ? event.symplaUrl : `/eventos/${event.id}`} 
                   target="_blank"
                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors duration-200 shadow-sm"
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors duration-200 shadow-md hover:shadow-lg"
                 >
                   <ExternalLink className="h-4 w-4 text-blue-500" />
                   <span className="sr-only">Ver página</span>
@@ -101,7 +142,20 @@ export function EventCard({
               <motion.button 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-red-50 hover:bg-red-100 transition-colors duration-200 shadow-sm"
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-green-50 hover:bg-green-100 transition-colors duration-200 shadow-md hover:shadow-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(event);
+                }}
+              >
+                <Pencil className="h-4 w-4 text-green-500" />
+                <span className="sr-only">Editar</span>
+              </motion.button>
+              
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-red-50 hover:bg-red-100 transition-colors duration-200 shadow-md hover:shadow-lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(event.id);
@@ -138,7 +192,7 @@ export function EventCard({
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg transition-all ${
                   event.isActive 
                   ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
                   : 'bg-gray-50 text-gray-500 hover:bg-gray-100'

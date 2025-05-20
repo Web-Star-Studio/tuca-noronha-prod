@@ -1,14 +1,15 @@
 'use client'
 
-import activitiesStore, { Activity } from "@/lib/store/activitiesStore";
+import { Activity, useFeaturedActivities } from "@/lib/services/activityService";
 import ActivitiesCard from "@/components/cards/ActivitiesCard";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function FeaturedActivities() {
-  const { featuredActivities } = activitiesStore();
+  // Use Convex hook to get featured activities directly from API
+  const { activities: featuredActivities, isLoading } = useFeaturedActivities();
 
   return (
     <section className="py-24 container mx-auto px-4 md:px-6 max-w-7xl">
@@ -35,7 +36,12 @@ export default function FeaturedActivities() {
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        {featuredActivities && featuredActivities.length > 0 ? (
+        {isLoading ? (
+          <div className="col-span-full flex justify-center items-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+            <span className="ml-3 text-gray-600">Carregando atividades em destaque...</span>
+          </div>
+        ) : featuredActivities && featuredActivities.length > 0 ? (
           featuredActivities.map((activity: Activity, index: number) => (
             <motion.div
               key={activity.id}

@@ -1,6 +1,7 @@
 import type { QueryCtx, MutationCtx } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
 import type { Activity } from "./types";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
 
 type Ctx = QueryCtx | MutationCtx;
 

@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { mutation, action } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
 import type { MediaCreateInput, MediaUpdateInput, ImageDimensions } from "./types";
+import { mutationWithRole } from "../../domains/rbac";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
 
 /**
  * Generate an upload URL for the client
@@ -124,8 +126,8 @@ export const getImageDimensions = action({
     // 3. Return the dimensions
     
     return {
-      width: 1920n,  // Example value
-      height: 1080n, // Example value
+      width: BigInt(1920),  // Example value
+      height: BigInt(1080), // Example value
     };
   },
 });

@@ -32,8 +32,8 @@ function Input({
         size === "lg" && "h-10 px-4 py-2 text-base",
         
         // Variant styles
-        variant === "outline" && "shadow-none border border-input",
-        variant === "ghost" && "shadow-none hover:bg-accent",
+        variant === "outline" && "bg-transparent border border-input",
+        variant === "ghost" && "bg-transparent hover:bg-accent",
         
         // Focus and validation states
         "focus-visible:border-ring",

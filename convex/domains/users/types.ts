@@ -1,6 +1,5 @@
 import { Id } from "../../_generated/dataModel";
-
-export type UserRole = "traveler" | "partner" | "employee" | "master";
+import { UserRole } from "../rbac/types";
 
 export interface User {
   _id: Id<"users">;

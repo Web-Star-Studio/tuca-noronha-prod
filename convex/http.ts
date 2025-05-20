@@ -98,10 +98,7 @@ http.route({
         console.log(`User deletion result:`, result);
         
         return new Response(
-          JSON.stringify({ 
-            success: result.success, 
-            message: result.message 
-          }),
+          JSON.stringify(result), // Result already has success and message properties
           {
             status: 200,
             headers: { "Content-Type": "application/json" },

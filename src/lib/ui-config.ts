@@ -8,14 +8,14 @@
 // Classes Tailwind para componentes de card
 export const cardStyles = {
   // Estilo base para todos os cards
-  base: "bg-card text-card-foreground rounded-xl shadow-sm transition-all duration-300 overflow-hidden",
+  base: "bg-white text-card-foreground rounded-xl shadow transition-all duration-300 overflow-hidden",
   
   // Variações de hover
   hover: {
     default: "hover:shadow-md",
     lift: "hover:shadow-md hover:translate-y-[-4px]",
     scale: "hover:shadow-md hover:scale-[1.02]",
-    highlight: "hover:border-primary/20",
+    highlight: "hover:shadow-md",
   },
   
   // Variações de conteúdo
@@ -28,7 +28,7 @@ export const cardStyles = {
   // Variações de footer
   footer: {
     default: "px-4 py-3",
-    separated: "px-4 py-3 mt-2 border-t border-border/30 bg-muted/10",
+    separated: "px-4 py-3 mt-2 bg-gray-50 dark:bg-gray-800/10",
     flush: "px-4 py-3",
   }
 };
@@ -42,11 +42,11 @@ export const badgeStyles = {
   variant: {
     default: "bg-primary text-primary-foreground",
     secondary: "bg-secondary text-secondary-foreground",
-    outline: "bg-background shadow-sm text-foreground",
-    success: "bg-emerald-500 text-white",
-    warning: "bg-amber-500 text-white",
+    outline: "bg-background text-foreground",
+    success: "bg-success text-success-foreground",
+    warning: "bg-warning text-warning-foreground",
     danger: "bg-destructive text-destructive-foreground",
-    info: "bg-blue-500 text-white",
+    info: "bg-accent text-accent-foreground",
   }
 };
 
@@ -54,14 +54,17 @@ export const badgeStyles = {
 export const buttonStyles = {
   // Variantes de botão
   variant: {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
-    outline: "bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+    default: "bg-primary text-primary-foreground hover:bg-primary/90",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    outline: "bg-background hover:bg-accent hover:text-accent-foreground",
     ghost: "hover:bg-accent hover:text-accent-foreground",
     link: "text-primary underline-offset-4 hover:underline",
-    gradient: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm",
-    accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm",
+    gradient: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white",
+    accent: "bg-accent text-accent-foreground hover:bg-accent/90",
     soft: "bg-primary/10 text-primary hover:bg-primary/20",
+    destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+    success: "bg-success text-success-foreground hover:bg-success/90",
+    warning: "bg-warning text-warning-foreground hover:bg-warning/90",
   },
   
   // Tamanhos
@@ -86,25 +89,25 @@ export const buttonStyles = {
 export const formStyles = {
   // Base para inputs, selects, textareas
   input: {
-    base: "flex h-10 w-full rounded-md bg-white px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    base: "flex h-10 w-full rounded-md bg-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
   },
   
   // Selects
   select: {
-    base: "flex h-10 w-full items-center justify-between rounded-md bg-white px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-    trigger: "flex h-10 w-full items-center justify-between rounded-md bg-white px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-    content: "bg-white shadow-md rounded-md border-0 p-1",
+    base: "flex h-10 w-full items-center justify-between rounded-md bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    trigger: "flex h-10 w-full items-center justify-between rounded-md bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    content: "bg-white shadow-md rounded-md p-1",
   },
   
   // Textarea
   textarea: {
-    base: "flex min-h-[80px] w-full rounded-md bg-white px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+    base: "flex min-h-[80px] w-full rounded-md bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
   },
   
   // Switch/Toggle
   switch: {
-    base: "peer inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer items-center rounded-full shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-200",
-    thumb: "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+    base: "peer inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-success data-[state=unchecked]:bg-muted",
+    thumb: "pointer-events-none block h-5 w-5 rounded-full bg-white ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
   }
 };
 

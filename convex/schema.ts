@@ -61,6 +61,31 @@ export default defineSchema({
     .index("email", ["email"])
     .index("phone", ["phone"])
     .index("clerkId", ["clerkId"]),
+  assetPermissions: defineTable({
+    // ID do employee
+    employeeId: v.id("users"),
+    
+    // ID do partner que concedeu a permissão
+    partnerId: v.id("users"),
+    
+    // ID do asset (evento, restaurante, etc)
+    assetId: v.string(),
+    
+    // Tipo de asset (events, restaurants, etc)
+    assetType: v.string(),
+    
+    // Permissões (view, edit, manage)
+    permissions: v.array(v.string()),
+    
+    // Nota opcional sobre a permissão
+    note: v.optional(v.string()),
+  })
+    .index("by_employee", ["employeeId"]) // Todas as permissões de um employee
+    .index("by_partner", ["partnerId"]) // Todas as permissões concedidas por um partner
+    .index("by_asset_type", ["assetType"]) // Todas as permissões por tipo de asset
+    .index("by_asset", ["assetId"]) // Todas as permissões para um asset específico
+    .index("by_employee_asset_type", ["employeeId", "assetType"]) // Permissões de um employee por tipo
+    .index("by_employee_partner", ["employeeId", "partnerId"]),
   activities: defineTable({
     title: v.string(),
     description: v.string(),
@@ -123,6 +148,22 @@ export default defineSchema({
     isActive: v.boolean(),
     hasMultipleTickets: v.boolean(),     // Flag indicando se tem múltiplos ingressos
     partnerId: v.id("users"),
+    symplaUrl: v.optional(v.string()),   // URL for Sympla event
+    whatsappContact: v.optional(v.string()), // WhatsApp contact number for reservations
+    // New Sympla fields
+    symplaId: v.optional(v.string()),    // ID of the event in Sympla
+    symplaHost: v.optional(v.object({    // Information about the host from Sympla
+      name: v.string(),
+      description: v.string(),
+    })),
+    sympla_private_event: v.optional(v.boolean()), // If the event is private on Sympla
+    sympla_published: v.optional(v.boolean()),     // If the event is published on Sympla
+    sympla_cancelled: v.optional(v.boolean()),     // If the event is cancelled on Sympla
+    external_id: v.optional(v.string()),           // External ID (reference_id on Sympla)
+    sympla_categories: v.optional(v.object({       // Categories from Sympla
+      primary: v.optional(v.string()),
+      secondary: v.optional(v.string()),
+    })),
   })
     .index("by_partner", ["partnerId"])
     .index("by_date", ["date"])

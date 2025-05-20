@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: buttonStyles.variant.default,
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
+        destructive: buttonStyles.variant.destructive,
         outline: buttonStyles.variant.outline,
         secondary: buttonStyles.variant.secondary,
         ghost: buttonStyles.variant.ghost,
@@ -18,6 +18,8 @@ const buttonVariants = cva(
         gradient: buttonStyles.variant.gradient,
         accent: buttonStyles.variant.accent,
         soft: buttonStyles.variant.soft,
+        success: buttonStyles.variant.success,
+        warning: buttonStyles.variant.warning,
       },
       size: {
         default: buttonStyles.size.default,

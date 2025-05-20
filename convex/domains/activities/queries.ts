@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
 import type { Activity, ActivityWithCreator } from "./types";
+import { queryWithRole } from "../../domains/rbac";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess, verifyEmployeeAccess } from "../../domains/rbac";
 
 /**
  * Get all activities
@@ -10,7 +12,40 @@ export const getAll = query({
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
-    return await ctx.db.query("activities").collect();
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    if (!currentUserId || role === "traveler") {
+      return await ctx.db.query("activities").collect();
+    }
+
+    if (role === "master") {
+      return await ctx.db.query("activities").collect();
+    }
+
+    if (role === "partner") {
+      return await ctx.db
+        .query("activities")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
+    }
+
+    if (role === "employee") {
+      const permissions = await ctx.db
+        .query("assetPermissions")
+        .withIndex("by_employee_asset_type", (q) =>
+          q.eq("employeeId", currentUserId).eq("assetType", "activities"),
+        )
+        .collect();
+
+      if (permissions.length === 0) return [];
+
+      const allowedIds = new Set(permissions.map((p) => p.assetId));
+      const allActivities = await ctx.db.query("activities").collect();
+      return allActivities.filter((a) => allowedIds.has(a._id.toString()));
+    }
+
+    return [];
   },
 });
 
@@ -31,13 +66,33 @@ export const getFeatured = query({
 });
 
 /**
+ * Alias for getFeatured to maintain backward compatibility
+ */
+export const getFeaturedActivities = getFeatured;
+
+/**
  * Get an activity by ID
  */
 export const getById = query({
   args: { id: v.id("activities") },
   returns: v.any(),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const activity = await ctx.db.get(args.id);
+
+    const role = await getCurrentUserRole(ctx);
+
+    if (role === "traveler" || role === "master") {
+      return activity;
+    }
+
+    const hasAccess = await verifyPartnerAccess(ctx, args.id, "activities") ||
+                      await verifyEmployeeAccess(ctx, args.id, "activities", "view");
+
+    if (!hasAccess) {
+      throw new Error("Não autorizado a acessar esta atividade");
+    }
+
+    return activity;
   },
 });
 
@@ -83,7 +138,7 @@ export const getActivitiesWithCreators = query({
     // Get creator details for each activity
     const activitiesWithCreators = await Promise.all(
       activities.map(async (activity) => {
-        let creatorInfo = null;
+        let creatorInfo: any = null;
         if (activity.partnerId) {
           creatorInfo = await ctx.db.get(activity.partnerId);
         }

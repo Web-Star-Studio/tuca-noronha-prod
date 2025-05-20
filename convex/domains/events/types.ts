@@ -24,6 +24,8 @@ export interface Event {
   isActive: boolean;
   hasMultipleTickets: boolean;
   partnerId: Id<"users">;
+  symplaUrl?: string;
+  whatsappContact?: string;
 }
 
 export interface EventTicket {
@@ -73,6 +75,8 @@ export interface EventCreateInput {
   isActive: boolean;
   hasMultipleTickets?: boolean;
   partnerId: Id<"users">;
+  symplaUrl?: string;
+  whatsappContact?: string;
 }
 
 export interface EventUpdateInput {
@@ -98,6 +102,8 @@ export interface EventUpdateInput {
   isActive?: boolean;
   hasMultipleTickets?: boolean;
   partnerId?: Id<"users">;
+  symplaUrl?: string;
+  whatsappContact?: string;
 }
 
 export interface EventTicketCreateInput {

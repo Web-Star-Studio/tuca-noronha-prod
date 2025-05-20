@@ -20,6 +20,7 @@ import {
   Search,
   LayoutPanelLeft
 } from "lucide-react"
+import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
 import {
   Sidebar,
@@ -295,12 +296,19 @@ export default function DashboardLayout({
             </Button>
 
             <div className="overflow-hidden rounded-full">
-              {/* AD represents the user's initials */}
-              <Avatar className="h-9 w-9 border border-slate-200">
-                <AvatarFallback className="bg-slate-100 text-slate-800 font-medium">
-                  AD
-                </AvatarFallback>
-              </Avatar>
+              <UserButton appearance={{
+                elements: {
+                  userPreview: "bg-white rounded-lg shadow-md",
+                  userButtonPopoverCard: "bg-white rounded-lg shadow-lg border border-gray-200",
+                  userButtonTrigger: "shadow-sm hover:shadow-md focus:shadow-md transition-shadow",
+                  userButtonPopoverActions: "p-2",
+                  userButtonPopoverActionButton: "text-black hover:bg-blue-100 rounded-md transition-colors",
+                  userButtonPopoverActionButtonIcon: "text-gray-600",
+                  userButtonPopoverFooter: "border-t border-gray-200",
+                  userButtonPopoverActionButtonText: "text-sm font-medium",
+                  avatarBox: "h-9 w-9 rounded-full border border-slate-200"
+                }
+              }} />
             </div>
           </div>
         </header>

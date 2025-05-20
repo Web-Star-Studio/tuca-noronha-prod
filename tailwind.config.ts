@@ -78,7 +78,22 @@ const config: Config = {
             display: 'none'
           }
         }
-      }
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            a: {
+              color: 'hsl(var(--primary))',
+              '&:hover': {
+                color: 'hsl(var(--primary))',
+              },
+            },
+            'h1, h2, h3, h4, h5, h6': {
+              color: 'hsl(var(--foreground))',
+            },
+          },
+        },
+      },
     }
   },
   plugins: [
@@ -96,7 +111,8 @@ const config: Config = {
         }
       }
       addUtilities(newUtilities)
-    }
+    },
+    require('@tailwindcss/typography'),
   ],
 };
 export default config;

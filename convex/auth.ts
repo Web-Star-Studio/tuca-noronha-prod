@@ -1,10 +1,16 @@
+/**
+ * @deprecated This file is deprecated. Many functions have been moved to domains
+ * Please use `convex/domains/users/queries.ts` for user-related functions.
+ */
+
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import type { AuthContextWithClerk, ClerkUserIdentity, User } from "./types";
 import { isAuthenticated } from "./types";
 import type { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
-// Função auxiliar para obter o usuário a partir do contexto de autenticação
+// Helper function to get user from auth context
 export const getUserFromContext = async (ctx: AuthContextWithClerk): Promise<User> => {
   const identity = await ctx.auth.getUserIdentity();
   if (!isAuthenticated(identity)) {
@@ -18,7 +24,10 @@ export const getUserFromContext = async (ctx: AuthContextWithClerk): Promise<Use
   };
 };
 
-// Função query para obter o usuário atual
+/**
+ * Get the current authenticated user
+ * @deprecated Use domains.users.queries.getCurrentUser instead
+ */
 export const getUser = query({
   args: {},
   handler: async (ctx): Promise<User | null> => {
@@ -35,7 +44,10 @@ export const getUser = query({
   },
 });
 
-// Get Convex user ID by Clerk ID
+/**
+ * Get Convex user ID by Clerk ID
+ * @deprecated Use domains.users.queries.getUserByClerkId instead
+ */
 export const getUserByClerkId = query({
   args: {
     clerkId: v.string(),
@@ -56,11 +68,11 @@ export const getUserByClerkId = query({
   },
 });
 
-// Verificador de autenticação para uso em outras funções
+// Auth requirement helper for use in other functions
 export const requireAuth = async (ctx: AuthContextWithClerk): Promise<ClerkUserIdentity> => {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
-    throw new Error("Não autorizado");
+    throw new Error("Unauthorized");
   }
   return identity;
 };
