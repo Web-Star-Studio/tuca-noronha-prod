@@ -7,17 +7,17 @@ import { motion } from "framer-motion";
 type EventsPaginationProps = {
   currentPage: number;
   totalPages: number;
-  handlePageChange: (page: number) => void;
+  onPageChange: (page: number) => void;
 };
 
 export function EventsPagination({
   currentPage,
   totalPages,
-  handlePageChange
+  onPageChange
 }: EventsPaginationProps) {
   // Generate page numbers to display
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | string)[] = [];
     const maxVisiblePages = 5; // Maximum number of page buttons to show
     
     if (totalPages <= maxVisiblePages) {
@@ -76,7 +76,7 @@ export function EventsPagination({
       <Button
         variant="outline"
         size="icon"
-        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
         className="h-9 w-9 p-0 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:bg-gray-100 transition-colors disabled:opacity-50"
       >
@@ -88,7 +88,7 @@ export function EventsPagination({
           <Button
             key={`page-${page}`}
             variant={currentPage === page ? "default" : "outline"}
-            onClick={() => handlePageChange(page)}
+            onClick={() => onPageChange(page)}
             className={`h-9 w-9 p-0 ${currentPage === page 
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
               : 'bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:bg-gray-100'} transition-colors`}
@@ -96,14 +96,14 @@ export function EventsPagination({
             {page}
           </Button>
         ) : (
-          <span key={`ellipsis-${page}`} className="w-9 text-center text-gray-500">...</span>
+          <span key={`ellipsis-${page}-${currentPage}`} className="w-9 text-center text-gray-500">...</span>
         )
       )}
       
       <Button
         variant="outline"
         size="icon"
-        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
         className="h-9 w-9 p-0 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm hover:bg-gray-100 transition-colors disabled:opacity-50"
       >

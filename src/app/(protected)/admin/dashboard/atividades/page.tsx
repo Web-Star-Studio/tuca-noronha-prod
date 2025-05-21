@@ -853,7 +853,7 @@ export default function ActivitiesPage() {
       const clerkId = user.id;
       
       // Save the creator information
-      await createActivity(newActivity, clerkId);
+      await createActivity(newActivity);
       
       // Log the creation for audit purposes
       console.log(`Activity created by user ${user.id} at ${new Date().toISOString()}`);

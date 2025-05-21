@@ -19,7 +19,7 @@ export function RestaurantsPagination({
 
   // Função para gerar array de páginas a mostrar
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | string)[] = [];
     const maxPagesToShow = 5; // Limitar número de botões de página
     
     if (totalPages <= maxPagesToShow) {
@@ -74,7 +74,7 @@ export function RestaurantsPagination({
 
       {pageNumbers.map((page, index) => {
         if (page === "ellipsis") {
-          return <span key={`ellipsis-${index}`} className="px-3 py-2">...</span>;
+          return <span key={`ellipsis-${index}-${currentPage}`} className="px-3 py-2">...</span>;
         }
 
         return (

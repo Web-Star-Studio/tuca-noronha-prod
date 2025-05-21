@@ -147,10 +147,10 @@ export const deleteUser = internalAction({
       if (!deleteRes.ok) {
         console.error("ERRO ao excluir usuário no Clerk", deleteRes.status, deleteTxt);
         return false;
-      } else {
-        console.log(`SUCESSO: Usuário com ID ${userId} excluído no Clerk`);
-        return true;
       }
+      
+      console.log(`SUCESSO: Usuário com ID ${userId} excluído no Clerk`);
+      return true;
     } catch (error) {
       console.error("EXCEÇÃO ao excluir usuário:", error);
       return false;

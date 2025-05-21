@@ -93,7 +93,7 @@ export default function EventsPage() {
     
     try {
       setIsSubmitting(true)
-      await createEvent(eventData, user.id, user)
+      await createEvent(eventData)
       toast.success("Evento criado com sucesso!")
       setDialogOpen(false)
       setSelectedEvent(null)
@@ -240,7 +240,8 @@ export default function EventsPage() {
           <EventForm 
             event={selectedEvent}
             onSubmit={selectedEvent ? handleUpdateEvent : handleCreateEvent}
-            isSubmitting={isSubmitting}
+            loading={isSubmitting}
+            onCancel={() => setDialogOpen(false)}
           />
         </DialogContent>
       </Dialog>

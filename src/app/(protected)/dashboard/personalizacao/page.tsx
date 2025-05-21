@@ -87,7 +87,7 @@ export default function DashboardPersonalizationPage() {
       ) : (
         <div className="max-w-3xl mx-auto">
           <NoronhaTravelChatbot 
-            initialData={userData} 
+            initialData={userData || undefined} 
             onComplete={handleUpdateComplete} 
           />
         </div>

@@ -16,9 +16,10 @@ export function UserDebug() {
   const { user: clerkUser, isSignedIn, isLoaded } = useUser();
   const convexUser = useQuery(api.domains.users.queries.getCurrentUser);
   
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "fixing">("loading");
+  type UserStatus = "loading" | "success" | "error" | "fixing";
+  const [status, setStatus] = useState<UserStatus>("loading");
   const [message, setMessage] = useState("");
-  const [details, setDetails] = useState<any>(null);
+  const [details, setDetails] = useState<Record<string, unknown> | null>(null);
   
   useEffect(() => {
     if (!isLoaded) {
@@ -99,7 +100,9 @@ export function UserDebug() {
     } catch (error) {
       setStatus("error");
       setMessage("Erro ao sincronizar usuário");
-      setDetails(error);
+      setDetails(error instanceof Error 
+        ? { message: error.message, name: error.name } 
+        : { message: 'Erro desconhecido' });
     }
   };
   
@@ -144,10 +147,10 @@ export function UserDebug() {
         {status === "error" && (
           <Button 
             onClick={syncUser}
-            disabled={status === "fixing" || !clerkUser}
+            disabled={!clerkUser}
             className="w-full"
           >
-            {status === "fixing" ? "Sincronizando..." : "Sincronizar Usuário"}
+            Sincronizar Usuário
           </Button>
         )}
         

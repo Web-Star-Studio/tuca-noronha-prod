@@ -318,20 +318,25 @@ export default function NoronhaTravelChatbot({ onComplete, initialData, userName
       if ((currentQ.type === 'text' || currentQ.type === 'textarea')) {
         if (!currentInput.trim()) return;
         
-        if (currentQ.parentField) {
-          setFormData(prev => ({
-            ...prev,
-            [currentQ.parentField]: {
-              ...prev[currentQ.parentField as keyof typeof prev],
-              [currentQ.id]: currentInput
-            }
-          }));
-        } else {
-          setFormData(prev => ({
+        setFormData(prev => {
+          const currentQ = questions[currentQuestion];
+          // Se for um campo aninhado (usando parentField)
+          if (currentQ.parentField) {
+            const parentValue = prev[currentQ.parentField as keyof typeof prev];
+            return ({
+              ...prev,
+              [currentQ.parentField]: {
+                ...(typeof parentValue === 'object' ? parentValue : {}),
+                [currentQ.id]: currentInput
+              }
+            });
+          }
+          // Campo normal
+          return ({
             ...prev,
             [currentQ.id]: currentInput
-          }));
-        }
+          });
+        });
         
         setCurrentInput("");
         setCurrentQuestion(prev => prev + 1);
@@ -596,8 +601,10 @@ export default function NoronhaTravelChatbot({ onComplete, initialData, userName
                   : question.id;
                 
                 const isSelected = question.parentField
-                  ? formData[question.parentField as keyof typeof formData]?.[question.id as keyof typeof formData.preferences]?.includes(option.id)
-                  : formData[question.id as keyof typeof formData]?.includes(option.id);
+                  ? Array.isArray(formData[question.parentField as keyof typeof formData]?.[question.id as keyof typeof formData.preferences]) 
+                    && (formData[question.parentField as keyof typeof formData]?.[question.id as keyof typeof formData.preferences] as string[]).includes(option.id)
+                  : Array.isArray(formData[question.id as keyof typeof formData])
+                    && (formData[question.id as keyof typeof formData] as string[]).includes(option.id);
                 
                 return (
                   <Button
@@ -726,11 +733,18 @@ export default function NoronhaTravelChatbot({ onComplete, initialData, userName
           {question.type === 'text' && (
             <div className="mt-2">
               <Input
-                placeholder={question.placeholder || ''}
-                className="w-full p-3 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                placeholder={question.placeholder || "Digite sua resposta..."}
+                className="mt-2"
                 value={currentInput}
                 onChange={(e) => setCurrentInput(e.target.value)}
-                ref={inputRef as React.RefObject<HTMLInputElement>}
+              />
+              {/* Adicionando um input oculto para manter a referência */}
+              <input 
+                type="text" 
+                ref={inputRef} 
+                className="sr-only" 
+                tabIndex={-1}
+                aria-hidden="true"
               />
             </div>
           )}

@@ -363,8 +363,6 @@ export default function PreferencesSection() {
             userName={user?.firstName || "Visitante"}
             initialData={preferences || undefined}
             onComplete={handleChatbotComplete}
-            editMode={hasPreferences}
-            onSinglePreferenceUpdate={handlePreferenceUpdate}
           />
         </motion.div>
       )}

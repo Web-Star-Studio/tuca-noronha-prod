@@ -14,7 +14,7 @@ import {
 } from "@/components/dashboard/media"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react"
-import type { Id } from "../../../convex/_generated/dataModel"
+import type { Id } from "@/../convex/_generated/dataModel"
 import { AnimatePresence, motion } from "framer-motion"
 import { buttonStyles, cardStyles, transitionEffects, typography } from "@/lib/ui-config"
 import { cn } from "@/lib/utils"

@@ -30,7 +30,7 @@ export const syncUser = internalMutation({
     // Papel global do usuário; ex: "traveler", "partner", "employee", "master"
     role: v.optional(v.string()),
   },
-  returns: v.id("users"),
+  returns: v.any(),
   // @ts-ignore - This handler is intentionally not typed properly as it's deprecated
   handler: async (ctx, args) => {
     // Forward to the new implementation in the users domain

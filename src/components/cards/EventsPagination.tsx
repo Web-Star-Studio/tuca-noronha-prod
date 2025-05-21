@@ -20,7 +20,7 @@ export default function EventsPagination({
 
   // Função para criar as páginas mostradas na paginação
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | string)[] = [];
     // Sempre mostrar a primeira página
     pages.push(1);
     
@@ -68,7 +68,7 @@ export default function EventsPagination({
       {getPageNumbers().map((page, index) => (
         typeof page === "number" ? (
           <Button
-            key={index}
+            key={`page-${page}`}
             variant={currentPage === page ? "default" : "outline"}
             size="sm"
             onClick={() => onPageChange(page)}
@@ -81,7 +81,7 @@ export default function EventsPagination({
             {page}
           </Button>
         ) : (
-          <span key={index} className="text-gray-400 mx-1">...</span>
+          <span key={`ellipsis-${index}-${currentPage}`} className="text-gray-400 mx-1">...</span>
         )
       ))}
       

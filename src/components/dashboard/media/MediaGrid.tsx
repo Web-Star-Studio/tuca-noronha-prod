@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import type { Media } from "@/lib/services/mediaService"
-import type { Id } from "../../../convex/_generated/dataModel"
+import { Media } from "@/lib/services/mediaService"
+import Image from "next/image"
+import type { Id } from "@/../convex/_generated/dataModel"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"

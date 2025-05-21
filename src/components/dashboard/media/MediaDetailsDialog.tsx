@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import type { Media } from "@/lib/services/mediaService"
-import type { Id } from "../../../convex/_generated/dataModel"
+import type { Id } from "@/../convex/_generated/dataModel"
 import {
   Dialog,
   DialogContent,

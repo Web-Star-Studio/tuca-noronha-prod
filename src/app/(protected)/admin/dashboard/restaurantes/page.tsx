@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useRestaurants, useCreateRestaurant, useUpdateRestaurant, useDeleteRestaurant, useToggleFeatured, useToggleActive, type Restaurant } from "@/lib/services/restaurantService"
-import { Id } from "../../../../../../convex/_generated/dataModel"
+import { useRestaurants, useCreateRestaurant, useUpdateRestaurant, useDeleteRestaurant, useToggleFeatured, useToggleActive } from "@/lib/services/restaurantService"
+import { Restaurant } from "@/lib/services/restaurantService"
+import type { Id } from "@/../convex/_generated/dataModel"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"

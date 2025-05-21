@@ -1,6 +1,7 @@
 'use client'
 
-import { Activity, useFeaturedActivities } from "@/lib/services/activityService";
+import type { Activity } from "@/lib/store/activitiesStore";
+import { useFeaturedActivities } from "@/lib/services/activityService";
 import ActivitiesCard from "@/components/cards/ActivitiesCard";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";

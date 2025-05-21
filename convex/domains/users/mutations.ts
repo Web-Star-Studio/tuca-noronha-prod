@@ -96,14 +96,14 @@ export const syncUserFromClerk = internalMutation({
     console.log(`=== INÍCIO: syncUserFromClerk para clerkId=${args.clerkId}, email=${args.email} ===`);
     
     // Primeiro verificamos se existe algum convite pendente para esse e-mail
-    let partnerId = undefined;
+    let partnerId: Id<"users"> | undefined = undefined;
     let userRole = args.role || "traveler"; // Default role é traveler se não for especificado
     
     if (args.email) {
       console.log(`Verificando convites pendentes para email ${args.email}...`);
       const pendingInvites = await ctx.db
         .query("invites")
-        .withIndex("by_email", (q) => q.eq("email", args.email))
+        .withIndex("by_email", (q) => q.eq("email", args.email as string))
         .filter((q) => q.eq(q.field("status"), "pending"))
         .collect();
       

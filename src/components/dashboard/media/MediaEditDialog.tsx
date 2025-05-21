@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Media, useUpdateMedia } from "@/lib/services/mediaService"
+import type { Media } from "@/lib/services/mediaService"
+import { useUpdateMedia } from "@/lib/services/mediaService"
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Id } from '@/lib/services/mediaService'
+import type { Id } from '@/../convex/_generated/dataModel'
 import { buttonStyles, formStyles, transitionEffects, typography, cardStyles } from "@/lib/ui-config"
 import { cn } from "@/lib/utils"
 import { Save, PencilLine, Image } from "lucide-react"

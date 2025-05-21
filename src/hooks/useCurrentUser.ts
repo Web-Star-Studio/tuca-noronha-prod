@@ -3,6 +3,9 @@
  */
 
 import { useCurrentUser as CurrentUserHook } from "@/lib/hooks/useCurrentUser";
+import { useAuth } from "@clerk/nextjs";
+import { useEffect, useState } from 'react';
+import { useQuery } from "convex/react";
 
 // Re-export the simpler implementation from the new location
 export const useCurrentUser = CurrentUserHook;
@@ -18,7 +21,7 @@ export interface CurrentUser {
   isSignedIn: boolean;
   // Campos específicos do Convex
   convexId?: string; // ID interno do Convex (se existir)
-  convexData?: any;   // Dados adicionais do usuário no Convex
+  convexData?: Record<string, unknown>;   // Dados adicionais do usuário no Convex
 }
 
 /**
