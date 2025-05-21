@@ -27,6 +27,7 @@ import type * as domains_events_queries from "../domains/events/queries.js";
 import type * as domains_events_types from "../domains/events/types.js";
 import type * as domains_events_utils from "../domains/events/utils.js";
 import type * as domains_index from "../domains/index.js";
+import type * as domains_integrations_clerk from "../domains/integrations/clerk.js";
 import type * as domains_media_index from "../domains/media/index.js";
 import type * as domains_media_mutations from "../domains/media/mutations.js";
 import type * as domains_media_queries from "../domains/media/queries.js";
@@ -82,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "domains/events/types": typeof domains_events_types;
   "domains/events/utils": typeof domains_events_utils;
   "domains/index": typeof domains_index;
+  "domains/integrations/clerk": typeof domains_integrations_clerk;
   "domains/media/index": typeof domains_media_index;
   "domains/media/mutations": typeof domains_media_mutations;
   "domains/media/queries": typeof domains_media_queries;

@@ -57,10 +57,12 @@ export default defineSchema({
     phone: v.optional(v.string()),
     phoneVerificationTime: v.optional(v.float64()),
     role: v.optional(v.string()),
+    partnerId: v.optional(v.id("users")),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
-    .index("clerkId", ["clerkId"]),
+    .index("clerkId", ["clerkId"])
+    .index("by_partner", ["partnerId"]),
   assetPermissions: defineTable({
     // ID do employee
     employeeId: v.id("users"),
@@ -279,6 +281,17 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_isPublic", ["isPublic"])
     .index("by_storageId", ["storageId"]),
+  invites: defineTable({
+    employeeId: v.id("users"),  // ID do usuário placeholder
+    email: v.string(),            // Email convidado
+    token: v.string(),            // Token único de convite
+    createdAt: v.number(),        // Timestamp de criação
+    expiresAt: v.number(),        // Timestamp de expiração
+    status: v.string(),           // 'pending', 'used', etc.
+  })
+    .index("by_token", ["token"])
+    .index("by_employee", ["employeeId"])
+    .index("by_email", ["email"]),
   userPreferences: defineTable({
     userId: v.id("users"),                          // ID do usuário
     tripDuration: v.string(),                       // Duração da viagem

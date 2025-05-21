@@ -1,8 +1,27 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { queryWithRole } from "./query";
 import { getCurrentUserRole, getCurrentUserConvexId } from "../rbac";
 import type { Id } from "../../_generated/dataModel";
+
+type PermissionDoc = {
+  _id: Id<"assetPermissions">;
+  assetId: string;
+  assetType: string;
+  permissions: string[];
+  note?: string;
+  partnerId: Id<"users">;
+};
+
+type EmployeeDoc = {
+  _id: Id<"users">;
+  name?: string;
+  email?: string;
+  image?: string;
+  role?: string;
+  partnerId?: Id<"users">;
+};
 
 /**
  * Lista todos os employees associados ao partner atual.
@@ -27,29 +46,59 @@ export const listEmployees = queryWithRole(["partner", "master"])({
         .collect();
     }
 
-    // Se for partner, retorna apenas os employees que têm permissões criadas por este partner
+    // Se for partner, retorna:
+    // 1. Employees que possuem assetPermissions concedidas por este partner
+    // 2. Employees criados/associados diretamente a este partner (partnerId)
+
+    // Employees via permissões
     const permissions = await ctx.db
       .query("assetPermissions")
       .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
       .collect();
 
-    // Extrai os IDs únicos dos employees
-    const employeeIds = [...new Set(permissions.map((p) => p.employeeId.toString()))];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const employeeIdsFromPermissions = new Set(
+      permissions.map((p: { employeeId: Id<"users"> }) => p.employeeId.toString())
+    );
 
-    if (employeeIds.length === 0) {
+    // Employees via associação direta
+    const directEmployees = await ctx.db
+      .query("users")
+      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+      .collect();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const combinedIds = new Set<string>([
+      ...employeeIdsFromPermissions,
+      ...directEmployees.map((e: { _id: Id<"users"> }) => e._id.toString()),
+    ]);
+
+    if (combinedIds.size === 0) {
       return [];
     }
 
-    // Busca os dados dos employees
-    return await ctx.db
-      .query("users")
-      .filter((q) => 
-        q.and(
-          q.eq(q.field("role"), "employee"),
-          q.or(...employeeIds.map((id) => q.eq(q.field("_id"), id as Id<"users">)))
+    // Já temos os employees associados diretamente
+    const employees: EmployeeDoc[] = [...directEmployees as EmployeeDoc[]];
+
+    // IDs que ainda não temos carregados (via permissões)
+    const missingIds = [...employeeIdsFromPermissions].filter((id) =>
+      !directEmployees.some((d) => d._id.toString() === id)
+    );
+
+    if (missingIds.length > 0) {
+      const extra = await ctx.db
+        .query("users")
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("role"), "employee"),
+            q.or(...missingIds.map((id) => q.eq(q.field("_id"), id as Id<"users">)))
+          )
         )
-      )
-      .collect();
+        .collect();
+      employees.push(...(extra as EmployeeDoc[]));
+    }
+
+    return employees;
   },
 });
 
@@ -115,13 +164,13 @@ export const listEmployeeAssets = queryWithRole(["partner", "master", "employee"
     
     // Busca os detalhes de cada asset e adiciona as permissões
     const assetsWithPermissions = await Promise.all(
-      permissions.map(async (permission) => {
+      (permissions as PermissionDoc[]).map(async (permission) => {
         const assetId = permission.assetId;
         const assetType = permission.assetType;
         
         // Busca o asset baseado no tipo
-        let asset: any = null;
-        let assetDetails = {};
+        let asset: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-function-return-type
+        let assetDetails: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-function-return-type
         
         if (assetType === "events") {
           asset = await ctx.db.get(assetId as Id<"events">);
@@ -302,4 +351,31 @@ export const listPartnerAssets = queryWithRole(["partner", "master"])({
       media
     };
   }
+});
+
+/**
+ * Obtém um convite pelo token, validando status e expiração.
+ * Usado para onboarding via link de convite.
+ */
+export const getInvite = query({
+  args: { token: v.string() },
+  returns: v.object({
+    _id: v.id("invites"),
+    employeeId: v.id("users"),
+    email: v.string(),
+    token: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    status: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const invite = await ctx.db
+      .query("invites")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+    if (!invite) throw new Error("Convite não encontrado");
+    if (invite.status !== "pending") throw new Error("Convite já utilizado ou cancelado");
+    if (Date.now() > invite.expiresAt) throw new Error("Convite expirado");
+    return invite;
+  },
 }); 

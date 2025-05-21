@@ -180,7 +180,7 @@ export default function MediaPage() {
       
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] bg-white">
           <DialogHeader>
             <DialogTitle className={typography.title.gradient}>Adicionar nova mídia</DialogTitle>
           </DialogHeader>

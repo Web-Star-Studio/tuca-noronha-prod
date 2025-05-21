@@ -247,7 +247,7 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
       
       {/* Dialog de confirmação de exclusão */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px] bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
@@ -283,16 +283,18 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
             </div>
           )}
           
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="">
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
+              className="bg-gray-500 text-white hover:bg-gray-600 transition-colors hover:cursor-pointer"
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
+              className="bg-red-800 text-white hover:bg-red-500 transition-colors hover:cursor-pointer"
             >
               Excluir
             </Button>

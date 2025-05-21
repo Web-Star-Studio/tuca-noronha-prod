@@ -264,13 +264,15 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
           id="public" 
           checked={isPublic} 
           onCheckedChange={setIsPublic}
+          className={`${isPublic ? "bg-blue-500" : "bg-gray-500"}`}
+          
         />
         <Label htmlFor="public">Disponível publicamente</Label>
       </div>
       
       <Button 
         type="submit" 
-        className="w-full" 
+        className="w-full bg-blue-500 text-white hover:bg-blue-600 transition-colors hover:cursor-pointer" 
         variant="default"
         disabled={!selectedFile || uploading}
       >

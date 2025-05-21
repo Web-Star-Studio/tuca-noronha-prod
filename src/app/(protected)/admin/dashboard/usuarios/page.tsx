@@ -52,7 +52,7 @@ export default function EmployeesPage() {
         toast.success("Usuário atualizado com sucesso");
       } else {
         await createEmployee({ name, email });
-        toast.success("Novo usuário criado com sucesso");
+        toast.success("Convite enviado com sucesso");
       }
       setDialogOpen(false);
       setName("");
@@ -71,7 +71,7 @@ export default function EmployeesPage() {
     
     try {
       setIsSubmitting(true);
-      await removeEmployee(employeeToRemove);
+      await removeEmployee(employeeToRemove, true);
       toast.success("Usuário removido com sucesso");
       setConfirmDialogOpen(false);
       setEmployeeToRemove(null);
@@ -83,7 +83,7 @@ export default function EmployeesPage() {
     }
   };
 
-  const getInitials = (name: string = "") => {
+  const getInitials = (name = "") => {
     return name
       .split(" ")
       .map(part => part[0])
@@ -94,22 +94,22 @@ export default function EmployeesPage() {
 
   // Formatar os recursos para o gerenciador de permissões
   const assets = partnerAssets ? {
-    events: (partnerAssets.events || []).map((event: any) => ({
+    events: (partnerAssets.events || []).map((event: Asset) => ({
       _id: event._id,
       title: event.title,
       type: "events"
     })) as Asset[],
-    restaurants: (partnerAssets.restaurants || []).map((restaurant: any) => ({
+    restaurants: (partnerAssets.restaurants || []).map((restaurant: Asset) => ({
       _id: restaurant._id,
       name: restaurant.name,
       type: "restaurants"
     })) as Asset[],
-    activities: (partnerAssets.activities || []).map((activity: any) => ({
+    activities: (partnerAssets.activities || []).map((activity: Asset) => ({
       _id: activity._id,
       title: activity.title,
       type: "activities"
     })) as Asset[],
-    media: (partnerAssets.media || []).map((item: any) => ({
+    media: (partnerAssets.media || []).map((item: Asset) => ({
       _id: item._id,
       name: item.name || item.alt || "Mídia sem nome",
       type: "media"
@@ -124,14 +124,14 @@ export default function EmployeesPage() {
   // Filtra permissões para o funcionário selecionado
   const getEmployeePermissions = (employeeId: Id<"users">) => {
     return permissions.filter(
-      (permission: any) => permission.employeeId.toString() === employeeId.toString()
-    ) as AssetPermission[];
+      (permission: AssetPermission) => permission.employeeId.toString() === employeeId.toString()
+    );
   };
 
   // Conta permissões por funcionário
   const countPermissions = (employeeId: Id<"users">) => {
     return permissions.filter(
-      (permission: any) => permission.employeeId.toString() === employeeId.toString()
+      (permission: AssetPermission) => permission.employeeId.toString() === employeeId.toString()
     ).length;
   };
 
@@ -160,7 +160,7 @@ export default function EmployeesPage() {
           setDialogOpen(true);
         }}>
           <UserPlus className="h-4 w-4 mr-2" />
-          Novo Usuário
+          Convidar Funcionário
         </Button>
       </div>
 
@@ -264,7 +264,7 @@ export default function EmployeesPage() {
                   setDialogOpen(true);
                 }}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Usuário
+                  Convidar Funcionário
                 </Button>
               </div>
             )}
@@ -369,7 +369,7 @@ export default function EmployeesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle>{editMode ? "Editar usuário" : "Adicionar novo usuário"}</DialogTitle>
+            <DialogTitle>{editMode ? "Editar usuário" : "Convidar novo funcionário"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -408,7 +408,7 @@ export default function EmployeesPage() {
               className="bg-blue-600 hover:cursor-pointer hover:bg-blue-700 text-white"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editMode ? "Atualizar" : "Adicionar"}
+              {editMode ? "Atualizar" : "Enviar convite"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -426,7 +426,15 @@ export default function EmployeesPage() {
             <div>
               <p>Tem certeza que deseja remover este usuário?</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Todas as permissões associadas serão removidas e esta ação não pode ser desfeita.
+                Esta ação irá:
+              </p>
+              <ul className="text-sm text-muted-foreground mt-1 list-disc ml-4">
+                <li>Remover todas as permissões associadas</li>
+                <li>Remover o acesso do usuário à plataforma</li>
+                <li>Excluir a conta do usuário no sistema de autenticação</li>
+              </ul>
+              <p className="text-sm text-muted-foreground mt-1 font-semibold">
+                Esta ação não pode ser desfeita.
               </p>
             </div>
           </div>

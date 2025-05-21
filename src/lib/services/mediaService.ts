@@ -32,7 +32,7 @@ export type MediaUpload = {
 
 // Hook to get all media files with URL verification
 export function useMedia() {
-  const media = useQuery(api.media.getAllMedia);
+  const media = useQuery(api.domains.media.queries.getAllMedia);
   const verifyMediaUrls = useVerifyMediaUrls();
   
   // Verificar e atualizar URLs quando os dados forem carregados
@@ -49,7 +49,7 @@ export function useMedia() {
 // Hook to get media by category
 export function useMediaByCategory(category: string | null) {
   const media = useQuery(
-    api.media.getMediaByCategory,
+    api.domains.media.queries.getMediaByCategory,
     category ? { category } : "skip"
   );
   const verifyMediaUrls = useVerifyMediaUrls();
@@ -67,7 +67,7 @@ export function useMediaByCategory(category: string | null) {
 
 // Hook to get media by user
 export function useMediaByUser(userId: Id<"users">) {
-  const media = useQuery(api.media.getByUser, { userId });
+  const media = useQuery(api.domains.media.queries.getByUser, { userId });
   const verifyMediaUrls = useVerifyMediaUrls();
   
   // Verificar e atualizar URLs quando os dados forem carregados
@@ -83,7 +83,7 @@ export function useMediaByUser(userId: Id<"users">) {
 
 // Hook to get a single media file by ID
 export function useMediaById(id: Id<"media"> | null) {
-  const media = useQuery(api.media.getMediaById, id ? { id } : "skip");
+  const media = useQuery(api.domains.media.queries.getMediaById, id ? { id } : "skip");
   const verifyMediaUrls = useVerifyMediaUrls();
   
   // Verificar e atualizar URLs quando os dados forem carregados
@@ -99,7 +99,7 @@ export function useMediaById(id: Id<"media"> | null) {
 
 // Hook to verify and refresh Convex media URLs
 export function useVerifyMediaUrls() {
-  const refreshUrl = useMutation(api.media.refreshStorageUrl);
+  const refreshUrl = useMutation(api.domains.media.mutations.refreshMediaUrl);
   
   return async (mediaItems: Media[]) => {
     // Processa vários itens de mídia
@@ -127,8 +127,8 @@ export function useVerifyMediaUrls() {
 // Hook to upload a media file
 export function useUploadMedia() {
   const { user } = useCurrentUser();
-  const generateUploadUrl = useMutation(api.media.generateUploadUrl);
-  const storeMedia = useMutation(api.media.createMedia);
+  const generateUploadUrl = useMutation(api.domains.media.mutations.generateUploadUrl);
+  const storeMedia = useMutation(api.domains.media.mutations.createMedia);
   
   const uploadMedia = useCallback(
     async ({
@@ -209,7 +209,7 @@ export function useGetConvexUserId() {
 
 // Hook to delete a media file
 export function useDeleteMedia() {
-  const deleteMedia = useMutation(api.media.deleteMedia);
+  const deleteMedia = useMutation(api.domains.media.mutations.deleteMedia);
   
   const deleteMediaFn = useCallback(
     async (id: Id<"media">) => {
@@ -223,7 +223,7 @@ export function useDeleteMedia() {
 
 // Hook to update media metadata
 export function useUpdateMedia() {
-  const updateMedia = useMutation(api.media.updateMedia);
+  const updateMedia = useMutation(api.domains.media.mutations.updateMedia);
   
   const updateMediaFn = useCallback(
     async ({
@@ -256,7 +256,7 @@ export function useUpdateMedia() {
 // Hook to get media URL
 export function useMediaUrl(storageId: string | null) {
   const url = useQuery(
-    api.media.getMediaUrl,
+    api.domains.media.queries.getMediaUrl,
     storageId ? { storageId } : "skip"
   );
   return {

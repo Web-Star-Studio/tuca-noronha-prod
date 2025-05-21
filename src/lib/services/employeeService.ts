@@ -23,9 +23,9 @@ export const useEmployees = () => {
 };
 
 export const useCreateEmployee = () => {
-  const createEmployee = useMutation(api.domains.rbac.mutations.createEmployee);
-  return async ({ name, email, image }: { name: string; email: string; image?: string }) => {
-    return await createEmployee({ name, email, image });
+  const createInvite = useMutation(api.domains.rbac.mutations.createInvite);
+  return async ({ name, email }: { name: string; email: string }) => {
+    return await createInvite({ name, email });
   };
 };
 
@@ -58,8 +58,8 @@ export const useUpdateEmployee = () => {
 
 export const useRemoveEmployee = () => {
   const rem = useMutation(api.domains.rbac.mutations.removeEmployee);
-  return async (id: Id<"users">) => {
-    return await rem({ id });
+  return async (id: Id<"users">, includeClerk: boolean = true) => {
+    return await rem({ id, includeClerk });
   };
 };
 

@@ -1,8 +1,10 @@
 import { v } from "convex/values";
-import { mutation } from "../../_generated/server";
+import { mutation, internalMutation } from "../../_generated/server";
 import { mutationWithRole } from "./mutation";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../rbac";
 import type { Id } from "../../_generated/dataModel";
+import { internal, api } from "../../_generated/api";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Concede permissão a um employee para acessar um asset específico
@@ -143,31 +145,146 @@ export const createEmployee = mutationWithRole(["partner", "master"])({
   },
   returns: v.id("users"),
   handler: async (ctx, args) => {
+    console.log(`=== INÍCIO: createEmployee para email=${args.email}, name=${args.name} ===`);
+    
     const currentUserId = await getCurrentUserConvexId(ctx);
     if (!currentUserId) throw new Error("Usuário não autenticado");
 
     // Verifica se já existe usuário com esse e-mail
+    console.log(`Verificando se já existe usuário com email ${args.email}...`);
     const existing = await ctx.db
       .query("users")
       .withIndex("email", (q) => q.eq("email", args.email))
       .collect();
 
     if (existing.length > 0) {
-      // Se já existir, apenas muda o papel para employee (caso ainda não seja)
+      // Se já existir, garante papel employee e associa ao partner
+      console.log(`Usuário existente encontrado para ${args.email}, atualizando...`);
       const user = existing[0];
-      await ctx.db.patch(user._id, { role: "employee" });
+      await ctx.db.patch(user._id, {
+        role: "employee",
+        partnerId: currentUserId,
+      });
+      console.log(`Usuário atualizado com ID: ${user._id}`);
+      
+      // Envia convite via Clerk mesmo para usuário existente
+      console.log(`Agendando convite via Clerk para usuário existente ${args.email}...`);
+      await ctx.scheduler.runAfter(0, internal.domains.integrations.clerk.inviteEmployee, {
+        email: args.email,
+        name: args.name,
+      });
+      console.log(`Agendamento de convite concluído para ${args.email}`);
+      
       return user._id as Id<"users">;
     }
 
-    // Cria novo usuário placeholder
+    // Cria novo usuário placeholder associado ao partner
+    console.log(`Criando novo usuário employee para ${args.email}...`);
     const newEmployeeId = await ctx.db.insert("users", {
       name: args.name,
       email: args.email,
       image: args.image,
       role: "employee",
+      partnerId: currentUserId,
     });
+    console.log(`Novo employee criado com ID: ${newEmployeeId}`);
 
+    // Envia convite via Clerk (action async, fora da transação)
+    console.log(`Agendando convite via Clerk para novo usuário ${args.email}...`);
+    await ctx.scheduler.runAfter(0, internal.domains.integrations.clerk.inviteEmployee, {
+      email: args.email,
+      name: args.name,
+    });
+    console.log(`Agendamento de convite concluído para ${args.email}`);
+
+    console.log(`=== FIM: createEmployee para ${args.email} ===`);
     return newEmployeeId as Id<"users">;
+  },
+});
+
+/**
+ * Cria um convite de employee e registra um token para onboarding via e-mail.
+ */
+export const createInvite = mutationWithRole(["partner", "master"])({
+  args: {
+    name: v.optional(v.string()),
+    email: v.string(),
+  },
+  returns: v.id("invites"),
+  handler: async (ctx, args) => {
+    console.log(`=== INÍCIO: createInvite para email=${args.email}, name=${args.name} ===`);
+    
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) throw new Error("Usuário não autenticado");
+
+    // Cria ou obtém o placeholder employee e dispara convite via Clerk
+    console.log(`Criando ou obtendo employee para ${args.email}...`);
+    const inviteeId: Id<"users"> = await ctx.runMutation(
+      api.domains.rbac.mutations.createEmployee,
+      { name: args.name ?? "", email: args.email }
+    );
+    console.log(`Employee criado/obtido com ID: ${inviteeId}`);
+
+    // Gera token de convite
+    const token = uuidv4();
+    const now = Date.now();
+    const expiresAt = now + 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+    // Insere convite na tabela
+    console.log(`Gerando registro de convite na tabela invites para ${args.email}`);
+    const inviteId = await ctx.db.insert("invites", {
+      employeeId: inviteeId,
+      email: args.email,
+      token,
+      createdAt: now,
+      expiresAt,
+      status: "pending",
+    });
+    console.log(`Convite registrado com ID: ${inviteId}`);
+
+    console.log(`=== FIM: createInvite para ${args.email} ===`);
+    return inviteId;
+  },
+});
+
+/**
+ * Marca um convite como utilizado após confirmação de cadastro.
+ * Função privada para uso interno.
+ */
+export const markInviteUsed = internalMutation({
+  args: {
+    token: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const invite = await ctx.db
+      .query("invites")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+    if (!invite) throw new Error("Convite não encontrado");
+    await ctx.db.patch(invite._id, { status: "used" });
+    return null;
+  },
+});
+
+/**
+ * Marca todos os convites pendentes para um e-mail como usados (via webhook).
+ */
+export const markInvitesUsedByEmail = internalMutation({
+  args: {
+    email: v.string(),
+  },
+  returns: v.number(),
+  handler: async (ctx, args) => {
+    const invites = await ctx.db
+      .query("invites")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+    for (const invite of invites) {
+      await ctx.db.patch(invite._id, { status: "used" });
+    }
+    return invites.length;
   },
 });
 
@@ -191,14 +308,17 @@ export const updateEmployee = mutationWithRole(["partner", "master"])({
     if (!employee) throw new Error("Employee não encontrado");
     if (employee.role !== "employee") throw new Error("Usuário não é employee");
 
-    // Se partner, deve ser dono de ao menos uma permissão sobre employee (ou simples relação) —
-    // vamos checar se existe permissão criada por esse partner OU employeeId = currentUserId (impossível).
     if (role === "partner") {
-      const rel = await ctx.db
-        .query("assetPermissions")
-        .withIndex("by_employee_partner", (q) => q.eq("employeeId", args.id).eq("partnerId", currentUserId))
-        .collect();
-      if (rel.length === 0) throw new Error("Você não pode editar este employee");
+      // Permite se o employee estiver associado diretamente a este partner
+      if (employee.partnerId?.toString() === currentUserId.toString()) {
+        // ok
+      } else {
+        const rel = await ctx.db
+          .query("assetPermissions")
+          .withIndex("by_employee_partner", (q) => q.eq("employeeId", args.id).eq("partnerId", currentUserId))
+          .collect();
+        if (rel.length === 0) throw new Error("Você não pode editar este employee");
+      }
     }
 
     await ctx.db.patch(args.id, {
@@ -211,9 +331,13 @@ export const updateEmployee = mutationWithRole(["partner", "master"])({
 
 /**
  * Remove (demite) um employee — simplesmente altera role para traveler e remove suas permissões.
+ * Se includeClerk=true, também exclui o usuário do Clerk.
  */
 export const removeEmployee = mutationWithRole(["partner", "master"])({
-  args: { id: v.id("users") },
+  args: { 
+    id: v.id("users"),
+    includeClerk: v.optional(v.boolean())
+  },
   returns: v.boolean(),
   handler: async (ctx, args) => {
     const currentUserId = await getCurrentUserConvexId(ctx);
@@ -225,11 +349,14 @@ export const removeEmployee = mutationWithRole(["partner", "master"])({
     if (employee.role !== "employee") throw new Error("Usuário não é employee");
 
     if (role === "partner") {
-      const rel = await ctx.db
-        .query("assetPermissions")
-        .withIndex("by_employee_partner", (q) => q.eq("employeeId", args.id).eq("partnerId", currentUserId))
-        .collect();
-      if (rel.length === 0) throw new Error("Você não pode remover este employee");
+      // Permite remoção se for associado diretamente
+      if (employee.partnerId?.toString() !== currentUserId.toString()) {
+        const rel = await ctx.db
+          .query("assetPermissions")
+          .withIndex("by_employee_partner", (q) => q.eq("employeeId", args.id).eq("partnerId", currentUserId))
+          .collect();
+        if (rel.length === 0) throw new Error("Você não pode remover este employee");
+      }
     }
 
     // Remove permissões do employee concedidas por este partner (ou todas se master)
@@ -243,8 +370,17 @@ export const removeEmployee = mutationWithRole(["partner", "master"])({
       }
     }
 
-    // Atualiza role para traveler
-    await ctx.db.patch(args.id, { role: "traveler" });
+    // Se solicitado, também exclui o usuário do Clerk
+    if (args.includeClerk && employee.email) {
+      // Agendamos a exclusão no Clerk de maneira assíncrona
+      await ctx.scheduler.runAfter(0, internal.domains.integrations.clerk.deleteUser, {
+        email: employee.email
+      });
+      console.log(`Agendada exclusão do usuário ${employee.email} no Clerk`);
+    }
+
+    // Atualiza role para traveler e remove associação ao partner
+    await ctx.db.patch(args.id, { role: "traveler", partnerId: undefined });
     return true;
   },
 }); 

@@ -15,5 +15,8 @@ export * as media from "./media";
 // Export users domain
 export * as users from "./users";
 
+// Export RBAC domain for permissions and employee management
+export * as rbac from "./rbac";
+
 // Future domains will be exported here
 // export * as restaurants from "./restaurants"; 

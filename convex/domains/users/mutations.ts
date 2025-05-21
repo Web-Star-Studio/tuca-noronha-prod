@@ -93,6 +93,43 @@ export const syncUserFromClerk = internalMutation({
     )),
   },
   handler: async (ctx, args) => {
+    console.log(`=== INÍCIO: syncUserFromClerk para clerkId=${args.clerkId}, email=${args.email} ===`);
+    
+    // Primeiro verificamos se existe algum convite pendente para esse e-mail
+    let partnerId = undefined;
+    let userRole = args.role || "traveler"; // Default role é traveler se não for especificado
+    
+    if (args.email) {
+      console.log(`Verificando convites pendentes para email ${args.email}...`);
+      const pendingInvites = await ctx.db
+        .query("invites")
+        .withIndex("by_email", (q) => q.eq("email", args.email))
+        .filter((q) => q.eq(q.field("status"), "pending"))
+        .collect();
+      
+      if (pendingInvites.length > 0) {
+        console.log(`Encontrados ${pendingInvites.length} convites pendentes para ${args.email}`);
+        
+        // Encontra o usuário (employee placeholder) associado ao convite
+        const invite = pendingInvites[0]; // Usamos o primeiro convite se houver vários
+        const employee = await ctx.db.get(invite.employeeId);
+        
+        if (employee) {
+          console.log(`Encontrado employee placeholder: ${employee._id}`);
+          userRole = "employee"; // Garante que o papel será employee
+          partnerId = employee.partnerId; // Obtém o partnerId do convite
+          
+          // Marca todos os convites como usados
+          for (const inv of pendingInvites) {
+            await ctx.db.patch(inv._id, { status: "used" });
+            console.log(`Convite ${inv._id} marcado como usado`);
+          }
+        }
+      } else {
+        console.log(`Nenhum convite pendente encontrado para ${args.email}`);
+      }
+    }
+
     // First check if user exists by clerkId
     const existingUsersByClerkId = await ctx.db
       .query("users")
@@ -101,14 +138,23 @@ export const syncUserFromClerk = internalMutation({
     
     if (existingUsersByClerkId.length > 0) {
       // Update existing user
+      console.log(`Atualizando usuário existente pelo clerkId: ${existingUsersByClerkId[0]._id}`);
+      
+      // Preserva o papel atual do usuário, a menos que tenhamos um papel de convite
+      const currentRole = existingUsersByClerkId[0].role;
+      const finalRole = userRole === "employee" ? userRole : (currentRole || userRole);
+      
+      // Preserva o partnerId existente, a menos que tenhamos um novo do convite
+      const finalPartnerId = partnerId || existingUsersByClerkId[0].partnerId;
+      
       return await ctx.db.patch(existingUsersByClerkId[0]._id, {
         email: args.email,
         name: args.name,
         image: args.image,
         phone: args.phone,
         emailVerificationTime: args.updatedAt,
-        // Update role if provided
-        ...(args.role ? { role: args.role } : {}),
+        role: finalRole,
+        ...(finalPartnerId ? { partnerId: finalPartnerId } : {}),
       });
     }
     
@@ -121,6 +167,15 @@ export const syncUserFromClerk = internalMutation({
       
       if (existingUsersByEmail.length > 0) {
         // Update existing user with clerkId
+        console.log(`Atualizando usuário existente pelo email: ${existingUsersByEmail[0]._id}`);
+        
+        // Preserva o papel atual do usuário, a menos que tenhamos um papel de convite
+        const currentRole = existingUsersByEmail[0].role;
+        const finalRole = userRole === "employee" ? userRole : (currentRole || userRole);
+        
+        // Preserva o partnerId existente, a menos que tenhamos um novo do convite
+        const finalPartnerId = partnerId || existingUsersByEmail[0].partnerId;
+        
         return await ctx.db.patch(existingUsersByEmail[0]._id, {
           clerkId: args.clerkId,
           email: args.email,
@@ -128,22 +183,24 @@ export const syncUserFromClerk = internalMutation({
           image: args.image,
           phone: args.phone,
           emailVerificationTime: args.updatedAt,
-          // Update role if provided
-          ...(args.role ? { role: args.role } : {}),
+          role: finalRole,
+          ...(finalPartnerId ? { partnerId: finalPartnerId } : {}),
         });
       }
     }
-
-    // Create new user
+    
+    // If no existing user found, create a new one
+    console.log(`Criando novo usuário com clerkId=${args.clerkId}, role=${userRole}`);
     return await ctx.db.insert("users", {
       clerkId: args.clerkId,
       email: args.email,
       name: args.name,
       image: args.image,
       phone: args.phone,
-      emailVerificationTime: args.createdAt,
+      emailVerificationTime: args.createdAt || args.updatedAt,
       isAnonymous: false,
-      role: args.role ?? "traveler",
+      role: userRole,
+      ...(partnerId ? { partnerId } : {}),
     });
   },
 });

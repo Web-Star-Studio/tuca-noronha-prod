@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck, ShieldX } from "lucide-react";
 import { toast } from "sonner";
-import { type Id } from "@/../convex/_generated/dataModel";
+import type { Id } from "@/../convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export type AssetType = "events" | "restaurants" | "activities" | "media";
 export type Permission = "view" | "edit" | "manage";
 
+type AssetId = Id<"events"> | Id<"restaurants"> | Id<"activities"> | Id<"media">;
+
 export type Asset = {
-  _id: Id<string>;
+  _id: AssetId;
   title?: string;
   name?: string;
   description?: string;
@@ -76,6 +78,7 @@ export default function PermissionsManager({
   }, [open]);
 
   // Update asset ID when asset type changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setSelectedAssetId("");
   }, [selectedAssetType]);
@@ -177,7 +180,7 @@ export default function PermissionsManager({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl bg-white">
         <DialogHeader>
           <DialogTitle>Gerenciar permissões para {employeeName}</DialogTitle>
         </DialogHeader>
