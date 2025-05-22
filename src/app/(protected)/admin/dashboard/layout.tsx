@@ -18,7 +18,8 @@ import {
   FileText,
   ChevronLeft,
   Search,
-  LayoutPanelLeft
+  LayoutPanelLeft,
+  Car
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -211,6 +212,13 @@ function AdminSidebar() {
           />
 
           <SidebarLink
+            href="/admin/dashboard/vehicles"
+            icon={Car}
+            label="Veículos"
+            isActive={isActive}
+          />
+
+          <SidebarLink
             href="/admin/dashboard/pacotes"
             icon={Package}
             label="Pacotes"
@@ -244,7 +252,6 @@ function AdminSidebar() {
             label="Logs de Auditoria"
             isActive={isActive}
           />
-
 
           <SidebarLink
             href="/admin/dashboard/configuracoes"

@@ -1,10 +1,8 @@
-
-
 "use client"
 
 import activitiesStore from "@/lib/store/activitiesStore"
 import { useRestaurantsStore } from "@/lib/store/restaurantsStore"
-import { Calendar, DollarSign, MapPin, PackageSearch, PieChart, ShoppingBag, Utensils, Users } from "lucide-react"
+import { Calendar, DollarSign, MapPin, PackageSearch, PieChart, ShoppingBag, Utensils, Users, Car } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from "next/image"
@@ -132,7 +130,7 @@ export default function DashboardPage() {
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <DashboardCard
               title="Atividades"
               value={activities.length.toString()}
@@ -144,6 +142,12 @@ export default function DashboardPage() {
               value={restaurants.length.toString()}
               description="Total de restaurantes cadastrados"
               icon={Utensils}
+            />
+            <DashboardCard
+              title="Veículos"
+              value="0"
+              description="Total de veículos disponíveis"
+              icon={Car}
             />
             <DashboardCard
               title="Em Destaque"
