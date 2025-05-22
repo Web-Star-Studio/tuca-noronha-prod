@@ -25,15 +25,15 @@ export default function VehiclesPage() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<Id<"vehicles"> | null>(null);
   const [vehicleToRemove, setVehicleToRemove] = useState<Id<"vehicles"> | null>(null);
-  
+  const [tab, setTab] = useState("vehicles");
   // State for filters
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [appliedFilters, setAppliedFilters] = useState({
     search: "",
-    category: "",
-    status: ""
+    category: "all",
+    status: "all"
   });
 
   // Get vehicle statistics
@@ -74,12 +74,12 @@ export default function VehiclesPage() {
   // Function to reset filters
   const resetFilters = () => {
     setSearch("");
-    setCategoryFilter("");
-    setStatusFilter("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
     setAppliedFilters({
       search: "",
-      category: "",
-      status: ""
+      category: "all",
+      status: "all"
     });
   };
 
@@ -125,9 +125,9 @@ export default function VehiclesPage() {
 
       <Tabs defaultValue="vehicles" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="vehicles">Veículos</TabsTrigger>
-          <TabsTrigger value="bookings">Reservas</TabsTrigger>
-          <TabsTrigger value="stats">Estatísticas</TabsTrigger>
+          <TabsTrigger value="vehicles" className={`${tab === "vehicles" ? "bg-blue-500 text-white" : "bg-white text-black"}`} onClick={() => setTab("vehicles")}>Veículos</TabsTrigger>
+          <TabsTrigger value="bookings" className={`${tab === "bookings" ? "bg-blue-500 text-white" : "bg-white text-black"}`} onClick={() => setTab("bookings")}>Reservas</TabsTrigger>
+          <TabsTrigger value="stats" className={`${tab === "stats" ? "bg-blue-500 text-white" : "bg-white text-black"}`} onClick={() => setTab("stats")}>Estatísticas</TabsTrigger>
         </TabsList>
         
         <TabsContent value="vehicles" className="mt-6">
@@ -149,7 +149,7 @@ export default function VehiclesPage() {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="economy">Econômico</SelectItem>
                     <SelectItem value="compact">Compacto</SelectItem>
                     <SelectItem value="sedan">Sedan</SelectItem>
@@ -167,7 +167,7 @@ export default function VehiclesPage() {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="available">Disponível</SelectItem>
                     <SelectItem value="rented">Alugado</SelectItem>
                     <SelectItem value="maintenance">Manutenção</SelectItem>
@@ -222,7 +222,7 @@ export default function VehiclesPage() {
               <CardContent>
                 <div className="text-2xl font-bold">
                   {isLoadingStats ? (
-                    <div className="animate-pulse h-7 w-12 bg-slate-200 rounded"></div>
+                    <div className="animate-pulse h-7 w-12 bg-slate-200 rounded" />
                   ) : (
                     stats.totalVehicles
                   )}
@@ -236,7 +236,7 @@ export default function VehiclesPage() {
               <CardContent>
                 <div className="text-2xl font-bold">
                   {isLoadingStats ? (
-                    <div className="animate-pulse h-7 w-12 bg-slate-200 rounded"></div>
+                    <div className="animate-pulse h-7 w-12 bg-slate-200 rounded" />
                   ) : (
                     stats.rentedVehicles
                   )}
@@ -250,7 +250,7 @@ export default function VehiclesPage() {
               <CardContent>
                 <div className="text-2xl font-bold">
                   {isLoadingStats ? (
-                    <div className="animate-pulse h-7 w-28 bg-slate-200 rounded"></div>
+                    <div className="animate-pulse h-7 w-28 bg-slate-200 rounded" />
                   ) : (
                     formatCurrency(stats.totalRevenue)
                   )}
@@ -279,7 +279,7 @@ export default function VehiclesPage() {
 
       {/* Dialog para adicionar/editar veículo */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-white">
           <DialogHeader>
             <DialogTitle>{editMode ? "Editar Veículo" : "Adicionar Novo Veículo"}</DialogTitle>
           </DialogHeader>

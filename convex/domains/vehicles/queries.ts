@@ -39,11 +39,11 @@ export const listVehicles = query({
   handler: async (ctx, args) => {
     const { search, category, status } = args;
     
-    // Start with a fresh query to avoid chaining issues
+    // Start with a fresh query - must initialize with an index or fullTableScan
     let vehiclesQuery;
     
     // Apply status filter using index if available
-    if (status) {
+    if (status && status !== "all") {
       vehiclesQuery = ctx.db.query("vehicles")
         .withIndex("by_status", (q) => q.eq("status", status));
     } else {
@@ -55,15 +55,15 @@ export const listVehicles = query({
     if (search) {
       vehiclesQuery = vehiclesQuery.filter((q) => 
         q.or(
-          q.text(q.field("name"), search),
-          q.text(q.field("brand"), search),
-          q.text(q.field("model"), search),
-          q.text(q.field("licensePlate"), search)
+          q.like(q.field("name"), `%${search}%`),
+          q.like(q.field("brand"), `%${search}%`),
+          q.like(q.field("model"), `%${search}%`),
+          q.like(q.field("licensePlate"), `%${search}%`)
         )
       );
     }
     
-    if (category) {
+    if (category && category !== "all") {
       vehiclesQuery = vehiclesQuery.filter((q) => 
         q.eq("category", category)
       );
@@ -71,7 +71,7 @@ export const listVehicles = query({
     
     // Apply pagination
     const paginationResult = await vehiclesQuery.paginate({
-      cursor: args.paginationOpts?.cursor,
+      cursor: args.paginationOpts?.cursor ?? null,
       numItems: args.paginationOpts?.limit ?? 10
     });
     
@@ -219,7 +219,7 @@ export const listVehicleBookings = query({
   handler: async (ctx, args) => {
     const { vehicleId, userId, status } = args;
     
-    // Start building the query based on available filters
+    // Start building the query based on available filters - must initialize with an index or fullTableScan
     let bookingsQuery;
     
     // Apply the most selective index first
@@ -259,7 +259,7 @@ export const listVehicleBookings = query({
     
     // Apply pagination
     const paginationResult = await bookingsQuery.paginate({
-      cursor: args.paginationOpts?.cursor,
+      cursor: args.paginationOpts?.cursor ?? null,
       numItems: args.paginationOpts?.limit ?? 10
     });
     
