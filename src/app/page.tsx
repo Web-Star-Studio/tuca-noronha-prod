@@ -7,6 +7,7 @@ import FeaturedActivities from "@/components/highlights/activities/FeaturedActiv
 import FeaturedEvents from "@/components/highlights/events/FeaturedEvents";
 import FeaturedRestaurants from "@/components/highlights/restaurants/FeaturedRestaurants";
 import FeaturedHostings from "@/components/highlights/FeaturedHostings";
+import FeaturedVehicles from "@/components/highlights/vehicles/FeaturedVehicles";
 import BookingCTA from "@/components/cta/BookingCTA";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
       <FeaturedEvents />
       <FeaturedRestaurants />
       <FeaturedHostings />
+      <FeaturedVehicles />
       <FeaturedActivities />
       <BookingCTA />
       <Footer />

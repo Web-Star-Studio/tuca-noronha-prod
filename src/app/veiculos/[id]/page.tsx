@@ -1,0 +1,342 @@
+"use client";
+
+import { useEffect, useState, use } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { useQuery } from "convex/react";
+import type { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "../../../../convex/_generated/api";
+import {
+  MapPin,
+  ArrowLeft,
+  Heart,
+  Share2,
+  Star,
+  Info,
+  Calendar,
+  Car,
+  Fuel,
+  ToggleLeft,
+  Users,
+  Palette,
+  DollarSign,
+} from "lucide-react";
+
+// Shadcn components
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
+import { cn } from "@/lib/utils";
+
+export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
+  const [isFavorite, setIsFavorite] = useState(false);
+  
+  // Fetch vehicle data from Convex
+  const vehicle = useQuery(api.vehicles.queries.getVehicle, {
+    id: params.id as Id<"vehicles">
+  });
+
+  // Handle 404 case
+  if (vehicle === undefined) {
+    return (
+      <div className="container mx-auto px-4 py-8 mt-20">
+        <div className="animate-pulse space-y-8">
+          {/* Loading skeleton */}
+          <div className="h-10 w-40 bg-gray-200 rounded" />
+          <div className="h-96 w-full bg-gray-200 rounded-xl" />
+          <div className="space-y-4">
+            <div className="h-8 w-2/3 bg-gray-200 rounded" />
+            <div className="h-6 w-1/2 bg-gray-200 rounded" />
+            <div className="h-6 w-1/3 bg-gray-200 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (vehicle === null) {
+    notFound();
+  }
+
+  return (
+    <>
+      <main className="pb-20">
+        {/* Hero Image Section */}
+        <div className="relative w-full h-[70vh] overflow-hidden">
+          <Image
+            src={vehicle.imageUrl || "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"}
+            alt={vehicle.name}
+            fill
+            className="object-cover brightness-[0.85]"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
+            <div className="max-w-3xl">
+              <Link
+                href="/veiculos"
+                className={cn(
+                  "inline-flex absolute -top-12 left-10 items-center text-sm gap-1 transition-colors font-medium",
+                  "text-white hover:text-white/90 hover:underline hover:underline-offset-2"
+                )}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Voltar para Veículos</span>
+              </Link>
+
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <Badge
+                  variant="secondary"
+                  className="bg-white/20 backdrop-blur-sm"
+                >
+                  {vehicle.category}
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className="bg-white/20 backdrop-blur-sm"
+                >
+                  {vehicle.transmission}
+                </Badge>
+              </div>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-shadow-sm">
+                {vehicle.brand} {vehicle.model}
+              </h1>
+              <div className="flex items-center gap-1 text-yellow-400 mb-4">
+                <Star className="h-5 w-5 fill-yellow-400" />
+                <span className="font-medium">4.8</span>
+                <span className="text-white/80 text-sm">(24 avaliações)</span>
+              </div>
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4" />
+                  <span>Ano {vehicle.year}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  <span>{vehicle.seats} lugares</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Fuel className="h-4 w-4" />
+                  <span>{vehicle.fuelType}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content with Sticky Sidebar */}
+        <div className="container mx-auto px-4 pt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="mb-6 w-full justify-start bg-transparent border-b rounded-none p-0 h-auto">
+                  <TabsTrigger
+                    value="info"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                  >
+                    Detalhes
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="features"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                  >
+                    Características
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="photos"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                  >
+                    Fotos
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Info tab */}
+                <TabsContent value="info" className="space-y-10 mt-2">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-4">
+                      Sobre este veículo
+                    </h2>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                      {vehicle.description || `O ${vehicle.brand} ${vehicle.model} é um veículo ${vehicle.category.toLowerCase()} ideal para explorar a ilha de Fernando de Noronha. Com seu motor ${vehicle.fuelType.toLowerCase()} e transmissão ${vehicle.transmission.toLowerCase()}, oferece excelente desempenho e economia de combustível.`}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Especificações técnicas</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Marca</span>
+                        <span>{vehicle.brand}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Modelo</span>
+                        <span>{vehicle.model}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Ano</span>
+                        <span>{vehicle.year}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Categoria</span>
+                        <span>{vehicle.category}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Cor</span>
+                        <span>{vehicle.color}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Lugares</span>
+                        <span>{vehicle.seats}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Combustível</span>
+                        <span>{vehicle.fuelType}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-700">Transmissão</span>
+                        <span>{vehicle.transmission}</span>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Features tab */}
+                <TabsContent value="features" className="space-y-10 mt-2">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Características e comodidades</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                      {vehicle.features.map((feature, index) => (
+                        <div key={`feature-${feature}`} className="flex items-center gap-3 text-gray-700">
+                          <div className="h-2 w-2 rounded-full bg-blue-500" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Photos tab */}
+                <TabsContent value="photos" className="space-y-10 mt-2">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Galeria de fotos</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="aspect-video relative rounded-lg overflow-hidden">
+                        <Image 
+                          src={vehicle.imageUrl || "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"}
+                          alt={`${vehicle.brand} ${vehicle.model}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="aspect-video relative rounded-lg overflow-hidden">
+                        <Image 
+                          src="https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+                          alt="Interior do veículo"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="aspect-video relative rounded-lg overflow-hidden">
+                        <Image 
+                          src="https://images.unsplash.com/photo-1550355291-bbee04a92027?q=80&w=2076&auto=format&fit=crop&ixlib=rb-4.0.3"
+                          alt="Vista traseira"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="aspect-video relative rounded-lg overflow-hidden">
+                        <Image 
+                          src="https://images.unsplash.com/photo-1541443131876-44b03de101c5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+                          alt="Detalhes do veículo"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Sticky Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <Card className="border-2 border-gray-100 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <span className="text-2xl font-bold text-gray-800">R$ {vehicle.pricePerDay.toFixed(2)}</span>
+                        <span className="text-gray-500 text-sm"> / diária</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="rounded-full h-8 w-8"
+                          onClick={() => setIsFavorite(!isFavorite)}
+                        >
+                          <Heart
+                            className={cn(
+                              "h-4 w-4",
+                              isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-500"
+                            )}
+                          />
+                          <span className="sr-only">Adicionar aos favoritos</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="rounded-full h-8 w-8"
+                        >
+                          <Share2 className="h-4 w-4 text-gray-500" />
+                          <span className="sr-only">Compartilhar</span>
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t border-gray-100 pt-6 mt-4">
+                      <h3 className="font-semibold text-lg mb-4">Reserve este veículo</h3>
+                      
+                      {/* Booking form */}
+                      <VehicleBookingForm vehicleId={vehicle._id} pricePerDay={vehicle.pricePerDay} />
+                      
+                      <p className="text-xs text-gray-500 mt-4">
+                        Você não será cobrado ainda. O pagamento será realizado na retirada do veículo.
+                      </p>
+                    </div>
+                    
+                    <Alert className="mt-6 bg-blue-50 text-blue-800 border-blue-100">
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>Política de cancelamento</AlertTitle>
+                      <AlertDescription className="text-sm">
+                        Cancelamento gratuito até 24 horas antes da retirada do veículo. Após esse período, será cobrada uma taxa de 30%.
+                      </AlertDescription>
+                    </Alert>
+                  </CardContent>
+                </Card>
+                
+                <Card className="mt-4 border-gray-100">
+                  <CardContent className="p-5">
+                    <h3 className="font-medium text-gray-900 mb-2">Precisa de ajuda?</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Nossa equipe está disponível para responder suas perguntas.
+                    </p>
+                    <Button variant="outline" className="w-full">
+                      Entre em contato
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+} 

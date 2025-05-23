@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import VehicleList from "@/components/dashboard/vehicles/VehicleList";
 import VehicleForm from "@/components/dashboard/vehicles/VehicleForm";
 import { useVehicleStats, useDeleteVehicle, useVehicle } from "@/lib/services/vehicleService";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 export default function VehiclesPage() {
   // State for UI
