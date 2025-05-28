@@ -32,6 +32,7 @@ export const getUserActivityBookings = query({
       specialRequests: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
+      userId: v.id("users"),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),

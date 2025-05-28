@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { buttonStyles, typography, transitionEffects } from "@/lib/ui-config";
+import { SymplaSync } from "./SymplaSync";
 
 type EventsHeaderProps = {
   openCreateDialog: () => void;
@@ -25,12 +26,16 @@ export function EventsHeader({ openCreateDialog }: EventsHeaderProps) {
           Crie, edite e gerencie os eventos disponíveis na plataforma.
         </p>
       </div>
-      <Button 
-        onClick={openCreateDialog} 
-        className={`self-start md:self-center ${buttonStyles.variant.gradient} shadow-md hover:shadow-lg`}
-      >
-        <Plus className="mr-2 h-4 w-4" /> Novo Evento
-      </Button>
+      
+      <div className="flex gap-3 self-start md:self-center">
+        <SymplaSync />
+        <Button 
+          onClick={openCreateDialog} 
+          className={`${buttonStyles.variant.gradient} shadow-md hover:shadow-lg`}
+        >
+          <Plus className="mr-2 h-4 w-4" /> Novo Evento
+        </Button>
+      </div>
     </motion.div>
   );
 }
