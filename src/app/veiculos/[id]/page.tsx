@@ -37,7 +37,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
   const [isFavorite, setIsFavorite] = useState(false);
   
   // Fetch vehicle data from Convex
-  const vehicle = useQuery(api.vehicles.queries.getVehicle, {
+  const vehicle = useQuery(api.domains.vehicles.queries.getVehicle, {
     id: params.id as Id<"vehicles">
   });
 

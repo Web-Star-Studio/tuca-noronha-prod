@@ -178,7 +178,7 @@ export const useGetConvexUserId = () => {
 
 // Hooks for accessing Convex API
 export const useActivities = () => {
-  const activities = useQuery(api.domains.activities.queries.getActivitiesWithCreators);
+  const activities = useQuery(api.domains.activities.queries.getAll);
 
   // Process activities to include ticket data for those with hasMultipleTickets
   const activitiesWithTickets = useMemo(() => {
@@ -218,7 +218,7 @@ export const useActivities = () => {
 };
 
 export const useFeaturedActivities = () => {
-  const activities = useQuery(api.domains.activities.queries.getFeatured);
+  const activities = useQuery(api.domains.activities.queries.getPublicFeaturedActivities);
 
   // Process activities to include ticket data for those with hasMultipleTickets
   const activitiesWithTickets = useMemo(() => {
@@ -260,7 +260,7 @@ export const useFeaturedActivities = () => {
 // For getting a single activity with creator info
 export const usePublicActivity = (id: string | null) => {
   const activity = useQuery(
-    api.domains.activities.queries.getById, 
+    api.domains.activities.queries.getPublicActivityById, 
     id ? { id: id as Id<"activities"> } : "skip"
   );
   
@@ -274,7 +274,7 @@ export const usePublicActivity = (id: string | null) => {
 
 // Get all active activities for public display
 export const usePublicActivities = () => {
-  const activities = useQuery(api.domains.activities.queries.getActivitiesWithCreators);
+  const activities = useQuery(api.domains.activities.queries.getPublicActivitiesWithCreators);
   
   // Process activities to include ticket data for those with hasMultipleTickets
   const activitiesWithTickets = useMemo(() => {

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { usePublicActivity } from "@/lib/services/activityService";
 import { cn, formatCurrency } from "@/lib/utils";
+import { ActivityBookingForm } from "@/components/bookings";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -488,143 +489,68 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
 
             {/* Sticky Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                <Card className="border-gray-200 shadow-sm overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="p-6 border-b border-gray-100">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold">Reservar agora</h3>
-                        <div className="text-2xl font-bold text-blue-600">
-                          R$ {activity.price.toFixed(2)}
-                        </div>
+              <div className="sticky top-24 space-y-6">
+                {/* Activity Booking Form */}
+                <ActivityBookingForm
+                  activityId={params.id as any}
+                  activity={{
+                    title: activity.title,
+                    price: activity.price,
+                    minParticipants: activity.minParticipants,
+                    maxParticipants: activity.maxParticipants,
+                    hasMultipleTickets: activity.hasMultipleTickets,
+                  }}
+                  onBookingSuccess={(booking) => {
+                    // Redirect to confirmation page
+                    window.location.href = `/test-bookings/confirmation?code=${booking.confirmationCode}&type=activity`;
+                  }}
+                />
+
+                {/* Quick Info Card */}
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-6">
+                    <h4 className="font-medium mb-4">Informações rápidas</h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span>Duração: {activity.duration}</span>
                       </div>
-                      <p className="text-sm text-gray-500 mb-4">
-                        Preço por pessoa • {activity.duration}
-                      </p>
-
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="block text-sm font-medium text-gray-700 mb-1">
-                            Quantidade
-                          </Label>
-                          <div className="flex items-center border border-gray-300 rounded-md">
-                            <Button 
-                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                              className="px-3 py-2 text-gray-500 hover:bg-gray-100"
-                              disabled={quantity <= 1}
-                            >
-                              -
-                            </Button>
-                            <div className="flex-1 text-center">{quantity}</div>
-                            <Button
-                              onClick={() => setQuantity(Math.min(activity.maxParticipants, quantity + 1))}
-                              className="px-3 py-2 text-gray-500 hover:bg-gray-100"
-                              disabled={quantity >= activity.maxParticipants}
-                            >
-                              +
-                            </Button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Máximo: {activity.maxParticipants} pessoas
-                          </p>
-                        </div>
-
-                        <div className="pt-4 border-t border-gray-100">
-                          {activity.hasMultipleTickets && activity.tickets && selectedTicketId ? (
-                            <>
-                              {activity.tickets.find(t => t.id === selectedTicketId) && (
-                                <>
-                                  <div className="flex justify-between mb-1">
-                                    <span>Ingresso:</span>
-                                    <span className="font-medium text-gray-800">
-                                      {activity.tickets.find(t => t.id === selectedTicketId)?.name}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between mb-1">
-                                    <span>Preço unitário:</span>
-                                    <span className="font-medium text-gray-800">
-                                      {formatCurrency(activity.tickets.find(t => t.id === selectedTicketId)?.price || 0)}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between mb-2">
-                                    <span>Quantidade:</span>
-                                    <span className="font-medium text-gray-800">
-                                      {ticketQuantities[selectedTicketId] || 1}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between font-semibold text-lg border-t border-dashed border-gray-200 pt-2 mt-2">
-                                    <span>Total:</span>
-                                    <span>
-                                      {formatCurrency(
-                                        (activity.tickets.find(t => t.id === selectedTicketId)?.price || 0) * 
-                                        (ticketQuantities[selectedTicketId] || 1)
-                                      )}
-                                    </span>
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex justify-between mb-2">
-                                <span>Subtotal</span>
-                                <span>R$ {(activity.price * quantity).toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between font-semibold text-lg">
-                                <span>Total</span>
-                                <span>R$ {totalPrice.toFixed(2)}</span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">
-                          <ShoppingBag className="h-5 w-5 mr-2" />
-                          Reservar agora
-                        </Button>
-
-                        <div className="flex justify-between pt-4">
-                          <Button
-                            variant="outline"
-                            className="flex-1 mr-2"
-                            onClick={() => setIsFavorite(!isFavorite)}
-                          >
-                            <Heart
-                              className={cn(
-                                "h-5 w-5 mr-1",
-                                isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"
-                              )}
-                            />
-                            Favorito
-                          </Button>
-                          <Button variant="outline" className="flex-1 ml-2">
-                            <Share2 className="h-5 w-5 mr-1" />
-                            Compartilhar
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span>Mínimo: {activity.minParticipants} pessoas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Compass className="h-4 w-4 text-gray-500" />
+                        <span>Categoria: {activity.category}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Gauge className="h-4 w-4 text-gray-500" />
+                        <span>Dificuldade: {activity.difficulty}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span>Avaliação: {activity.rating.toFixed(1)}/5</span>
                       </div>
                     </div>
 
-                    <div className="p-6 bg-gray-50">
-                      <h4 className="font-medium mb-3">Informações rápidas</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                          <span>Duração: {activity.duration}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-gray-500" />
-                          <span>Mínimo: {activity.minParticipants} pessoas</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Compass className="h-4 w-4 text-gray-500" />
-                          <span>Categoria: {activity.category}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Gauge className="h-4 w-4 text-gray-500" />
-                          <span>Dificuldade: {activity.difficulty}</span>
-                        </div>
-                      </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setIsFavorite(!isFavorite)}
+                      >
+                        <Heart
+                          className={cn(
+                            "h-4 w-4 mr-2",
+                            isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"
+                          )}
+                        />
+                        Favorito
+                      </Button>
+                      <Button variant="outline" className="flex-1">
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Compartilhar
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

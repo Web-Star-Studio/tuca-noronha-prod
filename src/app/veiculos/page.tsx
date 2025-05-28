@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import VehicleCard from "@/components/cards/VehicleCard";
+import Header from "@/components/header/Header";
 import VehicleFilter from "@/components/filters/VehicleFilter";
+import VehiclesGrid from "@/components/cards/VehiclesGrid";
+import VehiclesSorting from "@/components/cards/VehiclesSorting";
+import VehiclesPagination from "@/components/cards/VehiclesPagination";
 
 // Define a type for vehicle data
 interface Vehicle {
@@ -26,8 +29,7 @@ interface Vehicle {
 // Define interface for Convex response
 interface VehiclesResponse {
   vehicles: Vehicle[];
-  hasMore: boolean;
-  cursor?: string;
+  continueCursor: string | null;
 }
 
 export default function VeiculosPage() {
@@ -36,32 +38,41 @@ export default function VeiculosPage() {
   const [selectedTransmissions, setSelectedTransmissions] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
+  // Estados para ordenação e paginação
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'year-asc' | 'year-desc'>('name-asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const vehiclesPerPage = 9;
+  
   // Fetch vehicles data from Convex
-  const vehiclesData = useQuery(api.vehicles.queries.listVehicles, {
-    paginationOpts: { limit: 50, cursor: null },
+  const vehiclesData = useQuery(api.domains.vehicles.queries.listVehicles, {
+    paginationOpts: { limit: 100 }, // Fetch more to enable client-side filtering
     status: "available" // Only show available vehicles
   }) as VehiclesResponse | undefined;
 
-  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+  const vehicles = vehiclesData?.vehicles || [];
+  const isLoading = vehiclesData === undefined;
   
   // Extract all available categories, brands, and transmissions (without duplicates)
-  const categories: string[] = vehiclesData ? 
-    Array.from(new Set(vehiclesData.vehicles
+  const categories: string[] = useMemo(() => {
+    return Array.from(new Set(vehicles
       .map((vehicle: Vehicle) => vehicle.category)
       .filter((category): category is string => typeof category === 'string')
-    )).sort() : [];
+    )).sort();
+  }, [vehicles]);
   
-  const brands: string[] = vehiclesData ? 
-    Array.from(new Set(vehiclesData.vehicles
+  const brands: string[] = useMemo(() => {
+    return Array.from(new Set(vehicles
       .map((vehicle: Vehicle) => vehicle.brand)
       .filter((brand): brand is string => typeof brand === 'string')
-    )).sort() : [];
+    )).sort();
+  }, [vehicles]);
   
-  const transmissions: string[] = vehiclesData ? 
-    Array.from(new Set(vehiclesData.vehicles
+  const transmissions: string[] = useMemo(() => {
+    return Array.from(new Set(vehicles
       .map((vehicle: Vehicle) => vehicle.transmission)
       .filter((transmission): transmission is string => typeof transmission === 'string')
-    )).sort() : [];
+    )).sort();
+  }, [vehicles]);
 
   const toggleCategoryFilter = (category: string) => {
     setSelectedCategories((prev) => {
@@ -70,6 +81,7 @@ export default function VeiculosPage() {
       }
       return [...prev, category];
     });
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
   const toggleBrandFilter = (brand: string) => {
@@ -79,6 +91,7 @@ export default function VeiculosPage() {
       }
       return [...prev, brand];
     });
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
   const toggleTransmissionFilter = (transmission: string) => {
@@ -88,12 +101,13 @@ export default function VeiculosPage() {
       }
       return [...prev, transmission];
     });
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
-  const applyFilters = () => {
-    if (!vehiclesData) return;
-    
-    const filtered = vehiclesData.vehicles.filter((vehicle: Vehicle) => {
+  // Filtrar e ordenar veículos
+  const filteredAndSortedVehicles = useMemo(() => {
+    // Primeiro filtrar
+    const filtered = vehicles.filter((vehicle: Vehicle) => {
       // Filtering by category
       const categoryMatch =
         selectedCategories.length === 0 ||
@@ -112,25 +126,63 @@ export default function VeiculosPage() {
       return categoryMatch && brandMatch && transmissionMatch;
     });
 
-    setFilteredVehicles(filtered);
+    // Depois ordenar
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'name-asc') {
+        return `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`);
+      }
+      if (sortBy === 'name-desc') {
+        return `${b.brand} ${b.model}`.localeCompare(`${a.brand} ${a.model}`);
+      }
+      if (sortBy === 'price-asc') {
+        return a.pricePerDay - b.pricePerDay;
+      }
+      if (sortBy === 'price-desc') {
+        return b.pricePerDay - a.pricePerDay;
+      }
+      if (sortBy === 'year-asc') {
+        return a.year - b.year;
+      }
+      if (sortBy === 'year-desc') {
+        return b.year - a.year;
+      }
+      return 0;
+    });
+  }, [vehicles, selectedCategories, selectedBrands, selectedTransmissions, sortBy]);
+
+  // Calcular páginas
+  const totalPages = Math.ceil(filteredAndSortedVehicles.length / vehiclesPerPage);
+  
+  // Obter veículos da página atual
+  const paginatedVehicles = useMemo(() => {
+    const startIndex = (currentPage - 1) * vehiclesPerPage;
+    return filteredAndSortedVehicles.slice(startIndex, startIndex + vehiclesPerPage);
+  }, [filteredAndSortedVehicles, currentPage]);
+
+  const applyFilters = () => {
+    // Filters are applied automatically through useMemo
+    setIsFilterOpen(false); // Close mobile filter on apply
   };
 
   const resetFilters = () => {
     setSelectedCategories([]);
     setSelectedBrands([]);
     setSelectedTransmissions([]);
-    setFilteredVehicles(vehiclesData?.vehicles || []);
+    setCurrentPage(1); // Reset to first page
   };
 
-  // Initialize filteredVehicles when data is loaded
-  useEffect(() => {
-    if (vehiclesData?.vehicles && vehiclesData.vehicles.length > 0) {
-      setFilteredVehicles(vehiclesData.vehicles);
-    }
-  }, [vehiclesData]);
+  // Função para mudar de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll suave para o topo da lista
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+  };
 
   return (
     <>
+      <Header />
+      
+      {/* Hero Banner */}
       <section className="relative mb-10">
         <div>
           <div
@@ -153,7 +205,9 @@ export default function VeiculosPage() {
         </div>
       </section>
 
+      {/* Main Content */}
       <section className="flex flex-col md:flex-row max-w-screen-xl mx-auto px-4 py-12 gap-8 items-start">
+        {/* Sidebar filters */}
         <VehicleFilter
           categories={categories}
           selectedCategories={selectedCategories}
@@ -170,26 +224,32 @@ export default function VeiculosPage() {
           setIsFilterOpen={setIsFilterOpen}
         />
 
+        {/* Main content area */}
         <div className="flex-1 md:w-2/3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredVehicles && filteredVehicles.length > 0 ? (
-              filteredVehicles.map((vehicle) => (
-                <div key={vehicle._id} className="w-full h-full">
-                  <VehicleCard vehicle={vehicle} />
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-10">
-                {vehiclesData?.vehicles === undefined ? (
-                  <p className="text-lg text-gray-500">Carregando veículos...</p>
-                ) : (
-                  <p className="text-lg text-gray-500">
-                    Nenhum veículo encontrado
-                  </p>
-                )}
-              </div>
-            )}
+          {/* Sorting component */}
+          <div className="hidden md:block">
+            <VehiclesSorting 
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              totalVehicles={filteredAndSortedVehicles.length}
+            />
           </div>
+          
+          {/* Grid de veículos com paginação */}
+          <VehiclesGrid 
+            vehicles={paginatedVehicles} 
+            isLoading={isLoading} 
+            resetFilters={resetFilters} 
+          />
+          
+          {/* Paginação */}
+          {filteredAndSortedVehicles.length > 0 && (
+            <VehiclesPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       </section>
     </>

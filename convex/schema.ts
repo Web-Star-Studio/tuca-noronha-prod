@@ -113,7 +113,8 @@ export default defineSchema({
     partnerId: v.id("users"),
   })
     .index("by_partner", ["partnerId"])
-    .index("featured_activities", ["isFeatured", "isActive"]),
+    .index("featured_activities", ["isFeatured", "isActive"])
+    .index("active_activities", ["isActive"]),
     
   activityTickets: defineTable({
     activityId: v.id("activities"),           // Referência à atividade
@@ -256,6 +257,7 @@ export default defineSchema({
     email: v.string(),                                  // Email de contato
     phone: v.string(),                                  // Telefone de contato
     specialRequests: v.optional(v.string()),            // Solicitações especiais (opcional)
+    partnerNotes: v.optional(v.string()),               // Notes from partner/employee
     status: v.string(),                                 // Status (ex: "pending", "confirmed", "canceled")
     confirmationCode: v.string(),                       // Código de confirmação
   })
@@ -308,6 +310,61 @@ export default defineSchema({
     updatedAt: v.number(),                          // Timestamp da última atualização
   })
     .index("by_user", ["userId"]),                  // Índice por usuário
+
+  // Activity Bookings
+  activityBookings: defineTable({
+    activityId: v.id("activities"),
+    userId: v.id("users"),
+    ticketId: v.optional(v.id("activityTickets")), // If activity has multiple tickets
+    date: v.string(),                              // Date for the activity (YYYY-MM-DD)
+    time: v.optional(v.string()),                  // Specific time if applicable
+    participants: v.number(),                      // Number of participants
+    totalPrice: v.number(),                        // Total price for booking
+    status: v.string(),                            // pending, confirmed, canceled, completed, refunded
+    paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
+    paymentMethod: v.optional(v.string()),         // credit_card, pix, bank_transfer
+    specialRequests: v.optional(v.string()),       // Special requests from customer
+    partnerNotes: v.optional(v.string()),          // Notes from partner/employee
+    confirmationCode: v.string(),                  // Unique confirmation code
+    customerInfo: v.object({                       // Customer contact information
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+    }),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_activity", ["activityId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_date", ["date"])
+    .index("by_confirmation_code", ["confirmationCode"]),
+
+  // Event Bookings  
+  eventBookings: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+    ticketId: v.optional(v.id("eventTickets")),    // If event has multiple tickets
+    quantity: v.number(),                          // Number of tickets
+    totalPrice: v.number(),                        // Total price for booking
+    status: v.string(),                            // pending, confirmed, canceled, completed, refunded
+    paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
+    paymentMethod: v.optional(v.string()),         // credit_card, pix, bank_transfer
+    specialRequests: v.optional(v.string()),       // Special requests from customer
+    partnerNotes: v.optional(v.string()),          // Notes from partner/employee
+    confirmationCode: v.string(),                  // Unique confirmation code
+    customerInfo: v.object({                       // Customer contact information
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+    }),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_confirmation_code", ["confirmationCode"]),
   
   // Vehicle tables
   vehicles: defineTable({
@@ -339,7 +396,9 @@ export default defineSchema({
     updatedAt: v.number(),
     ownerId: v.optional(v.id("users")), // Reference to user who created/owns this vehicle
     organizationId: v.optional(v.string()), // For multi-tenant applications
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("by_ownerId", ["ownerId"]),
   
   vehicleBookings: defineTable({
     vehicleId: v.id("vehicles"),
@@ -355,6 +414,7 @@ export default defineSchema({
     additionalDrivers: v.optional(v.number()),
     additionalOptions: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()), // Notes from partner/employee
     createdAt: v.number(),
     updatedAt: v.number(),
   })

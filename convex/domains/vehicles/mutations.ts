@@ -1,6 +1,7 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { Doc, Id } from "../../_generated/dataModel";
+import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../rbac/utils";
 
 // Create a new vehicle
 export const createVehicle = mutation({
@@ -23,13 +24,18 @@ export const createVehicle = mutation({
   },
   returns: v.id("vehicles"),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
+    // Get current user and role for RBAC
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
     
-    if (!identity) {
+    if (!currentUserId) {
       throw new Error("Não autorizado. Faça o login para continuar.");
     }
     
-    // TODO: Add proper authorization check here
+    // Only partners and admins can create vehicles
+    if (role !== "partner" && role !== "admin" && role !== "master") {
+      throw new Error("Acesso negado. Apenas partners podem criar veículos.");
+    }
     
     const currentTime = Date.now();
     
@@ -37,8 +43,8 @@ export const createVehicle = mutation({
       ...args,
       createdAt: currentTime,
       updatedAt: currentTime,
-      ownerId: undefined, // You might want to set this based on identity
-      organizationId: undefined, // You might want to set this based on identity
+      ownerId: currentUserId, // Set owner to current user
+      organizationId: currentUserId, // For now, use userId as orgId
     });
     
     return vehicleId;
@@ -69,9 +75,11 @@ export const updateVehicle = mutation({
   handler: async (ctx, args) => {
     const { id, ...fields } = args;
     
-    const identity = await ctx.auth.getUserIdentity();
+    // Get current user and role for RBAC
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
     
-    if (!identity) {
+    if (!currentUserId) {
       throw new Error("Não autorizado. Faça o login para continuar.");
     }
     
@@ -82,7 +90,14 @@ export const updateVehicle = mutation({
       throw new Error("Veículo não encontrado");
     }
     
-    // TODO: Add proper authorization check here
+    // Check ownership - only owners and admins can update
+    if (role === "partner") {
+      if (!existingVehicle.ownerId || existingVehicle.ownerId.toString() !== currentUserId.toString()) {
+        throw new Error("Acesso negado. Você só pode editar seus próprios veículos.");
+      }
+    } else if (role !== "admin" && role !== "master") {
+      throw new Error("Acesso negado. Permissões insuficientes.");
+    }
     
     // Update the vehicle
     await ctx.db.patch(id, {
@@ -101,9 +116,11 @@ export const deleteVehicle = mutation({
   },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
+    // Get current user and role for RBAC
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
     
-    if (!identity) {
+    if (!currentUserId) {
       throw new Error("Não autorizado. Faça o login para continuar.");
     }
     
@@ -114,7 +131,14 @@ export const deleteVehicle = mutation({
       throw new Error("Veículo não encontrado");
     }
     
-    // TODO: Add proper authorization check here
+    // Check ownership - only owners and admins can delete
+    if (role === "partner") {
+      if (!existingVehicle.ownerId || existingVehicle.ownerId.toString() !== currentUserId.toString()) {
+        throw new Error("Acesso negado. Você só pode deletar seus próprios veículos.");
+      }
+    } else if (role !== "admin" && role !== "master") {
+      throw new Error("Acesso negado. Permissões insuficientes.");
+    }
     
     // Check if vehicle has bookings before deletion
     const bookings = await ctx.db

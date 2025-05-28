@@ -191,4 +191,100 @@ export const getActiveActivityTickets = query({
       )
       .collect();
   },
-}); 
+});
+
+/**
+ * Get an activity by ID - PUBLIC VERSION (no auth required)
+ * This query is used for public activity pages where anyone can view active activities
+ */
+export const getPublicActivityById = query({
+  args: { id: v.id("activities") },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const activity = await ctx.db.get(args.id);
+    
+    // Only return active activities for public access
+    if (!activity || !activity.isActive) {
+      return null;
+    }
+    
+    return activity;
+  },
+});
+
+/**
+ * Get activities (only active) with creator information for public pages.
+ * Does not apply any RBAC filtering – any user (authenticated or not) receives
+ * the complete list of active activities.
+ */
+export const getPublicActivitiesWithCreators = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    // Get only active activities
+    const activities = await ctx.db
+      .query("activities")
+      .withIndex("active_activities", (q) => q.eq("isActive", true))
+      .collect();
+
+    // Load creator data
+    const activitiesWithCreators = await Promise.all(
+      activities.map(async (activity) => {
+        const user = activity.partnerId ? await ctx.db.get(activity.partnerId) : null;
+        return {
+          ...activity,
+          creator: user
+            ? {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                image: user.image,
+              }
+            : null,
+        };
+      }),
+    );
+
+    return activitiesWithCreators;
+  },
+});
+
+/**
+ * Get featured activities - PUBLIC VERSION (no auth required)
+ */
+export const getPublicFeaturedActivities = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("activities")
+      .withIndex("featured_activities", (q) => 
+        q.eq("isFeatured", true).eq("isActive", true)
+      )
+      .collect();
+  },
+});
+
+/**
+ * Get activities by partner ID
+ */
+export const getByPartnerId = query({
+  args: { partnerId: v.id("users") },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("activities")
+      .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+      .collect();
+  },
+});
+
+/**
+ * Alias for getActivityTickets to maintain compatibility with frontend
+ */
+export const getTicketsByActivity = getActivityTickets;
+
+/**
+ * Alias for getActiveActivityTickets to maintain compatibility with frontend
+ */
+export const getActiveTicketsByActivity = getActiveActivityTickets; 

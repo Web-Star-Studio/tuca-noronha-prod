@@ -17,8 +17,11 @@ import {
   BookOpen,
   Info,
 } from "lucide-react";
-import { type Restaurant, useRestaurantsStore } from "@/lib/store/restaurantsStore";
+import { type Restaurant } from "@/lib/store/restaurantsStore";
+import { useRestaurantBySlug } from "@/lib/services/restaurantService";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -26,29 +29,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RestaurantReservationForm } from "@/components/bookings/RestaurantReservationForm";
+import { RestaurantReservationForm as ImprovedRestaurantReservationForm } from "@/components/bookings/ImprovedRestaurantReservationForm";
 
 export default function RestaurantPage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { restaurant, isLoading } = useRestaurantBySlug(params.slug);
   const [isFavorite, setIsFavorite] = useState(false);
-  const { restaurants } = useRestaurantsStore();
-
-  useEffect(() => {
-    // Find restaurant by slug
-    setIsLoading(true);
-    const slug = params.slug;
-
-    // Find restaurant in data
-    setTimeout(() => {
-      const foundRestaurant = restaurants.find((r) => r.slug === slug);
-      if (foundRestaurant) {
-        setRestaurant(foundRestaurant);
-      }
-      setIsLoading(false);
-    }, 500);
-  }, [params.slug, restaurants]);
 
   // Handle 404 case
   if (!isLoading && !restaurant) {
@@ -275,7 +261,7 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
                   </Alert>
 
                   <div className="space-y-8">
-                    {restaurant.menuImages.length > 0 ? (
+                    {restaurant.menuImages && restaurant.menuImages.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {restaurant.menuImages.map((img, index) => (
                           <div key={`${restaurant.id}-menu-${index}`} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-gray-200">
@@ -324,12 +310,18 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
                 {/* Reservation Card */}
                 <Card className="overflow-hidden border-gray-200">
                   <CardContent className="p-0">
-                    <RestaurantReservationForm 
-                      maxGuests={restaurant.maxGuests || 10}
-                      pricePerPerson={restaurant.averagePrice}
-                      onReservationSubmit={(reservation) => {
+                    <ImprovedRestaurantReservationForm 
+                      restaurantId={restaurant.id as Id<"restaurants">}
+                      restaurant={{
+                        name: restaurant.name,
+                        address: restaurant.address,
+                        maximumPartySize: restaurant.maximumPartySize,
+                        acceptsReservations: restaurant.acceptsReservations,
+                        hours: restaurant.hours
+                      }}
+                      onReservationSuccess={(reservation) => {
                         console.log("Reservation submitted:", reservation);
-                        alert(`Reserva para ${reservation.guests} pessoas em ${reservation.date.toLocaleDateString()} às ${reservation.time} realizada com sucesso!`);
+                        toast.success(`Reserva realizada com sucesso! Código: ${reservation.confirmationCode}`);
                       }}
                     />
                   </CardContent>

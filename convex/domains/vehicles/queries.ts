@@ -1,6 +1,7 @@
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "../../shared/validators";
+import { getCurrentUserRole, getCurrentUserConvexId } from "../rbac/utils";
 
 // Get all vehicles with optional pagination
 export const listVehicles = query({
@@ -39,30 +40,30 @@ export const listVehicles = query({
   handler: async (ctx, args) => {
     const { search, category, status } = args;
     
-    // Start with a fresh query - must initialize with an index or fullTableScan
-    let vehiclesQuery;
+    // Get current user role and ID for RBAC
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
     
-    // Apply status filter using index if available
-    if (status && status !== "all") {
-      vehiclesQuery = ctx.db.query("vehicles")
-        .withIndex("by_status", (q) => q.eq("status", status));
-    } else {
-      vehiclesQuery = ctx.db.query("vehicles")
-        .order("desc");
+    // Use a consistent query structure to avoid cursor conflicts
+    // Always start with the same base query and apply filters consistently
+    let vehiclesQuery = ctx.db.query("vehicles").order("desc");
+    
+    // Apply RBAC filtering
+    if (role === "partner" && currentUserId) {
+      // Partners only see their own vehicles
+      vehiclesQuery = vehiclesQuery.filter((q) => q.eq(q.field("ownerId"), currentUserId));
+    } else if (role === "traveler" || !currentUserId) {
+      // Public access - only show available vehicles
+      vehiclesQuery = vehiclesQuery.filter((q) => q.eq(q.field("status"), "available"));
     }
+    // Admin/master sees all vehicles (no additional filtering)
     
-    // Apply other filters
-    if (search) {
-      vehiclesQuery = vehiclesQuery.filter((q) => 
-        q.or(
-          q.like(q.field("name"), `%${search}%`),
-          q.like(q.field("brand"), `%${search}%`),
-          q.like(q.field("model"), `%${search}%`),
-          q.like(q.field("licensePlate"), `%${search}%`)
-        )
-      );
+    // Apply status filter if specified (and not already applied above)
+    if (status && status !== "all" && !(role === "traveler" || !currentUserId)) {
+      vehiclesQuery = vehiclesQuery.filter((q) => q.eq(q.field("status"), status));
     }
-    
+
+    // Apply category filter
     if (category && category !== "all") {
       vehiclesQuery = vehiclesQuery.filter((q) => 
         q.eq("category", category)
@@ -75,8 +76,20 @@ export const listVehicles = query({
       numItems: args.paginationOpts?.limit ?? 10
     });
     
+    // Apply search filter post-query if needed
+    let vehicles = paginationResult.page;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      vehicles = vehicles.filter(vehicle => 
+        vehicle.name.toLowerCase().includes(searchLower) ||
+        vehicle.brand.toLowerCase().includes(searchLower) ||
+        vehicle.model.toLowerCase().includes(searchLower) ||
+        vehicle.licensePlate.toLowerCase().includes(searchLower)
+      );
+    }
+    
     return {
-      vehicles: paginationResult.page,
+      vehicles,
       continueCursor: paginationResult.continueCursor,
     };
   },
@@ -219,42 +232,21 @@ export const listVehicleBookings = query({
   handler: async (ctx, args) => {
     const { vehicleId, userId, status } = args;
     
-    // Start building the query based on available filters - must initialize with an index or fullTableScan
-    let bookingsQuery;
+    // Use a consistent query structure to avoid cursor conflicts
+    // Always start with the same base query and apply filters consistently
+    let bookingsQuery = ctx.db.query("vehicleBookings").order("desc");
     
-    // Apply the most selective index first
-    if (vehicleId && status) {
-      bookingsQuery = ctx.db.query("vehicleBookings")
-        .withIndex("by_vehicleId_status", (q) => 
-          q.eq("vehicleId", vehicleId).eq("status", status)
-        );
-    } else if (vehicleId) {
-      bookingsQuery = ctx.db.query("vehicleBookings")
-        .withIndex("by_vehicleId", (q) => 
-          q.eq("vehicleId", vehicleId)
-        );
-    } else if (userId) {
-      bookingsQuery = ctx.db.query("vehicleBookings")
-        .withIndex("by_userId", (q) => 
-          q.eq("userId", userId)
-        );
-    } else if (status) {
-      bookingsQuery = ctx.db.query("vehicleBookings")
-        .withIndex("by_status", (q) => 
-          q.eq("status", status)
-        );
-    } else {
-      bookingsQuery = ctx.db.query("vehicleBookings")
-        .order("desc");
+    // Apply filters based on available parameters
+    if (vehicleId) {
+      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("vehicleId"), vehicleId));
     }
     
-    // Apply additional filters if needed
-    if (vehicleId && status && userId) {
+    if (userId) {
       bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("userId"), userId));
-    } else if (vehicleId && userId && !status) {
-      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("userId"), userId));
-    } else if (status && userId && !vehicleId) {
-      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("userId"), userId));
+    }
+    
+    if (status) {
+      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("status"), status));
     }
     
     // Apply pagination

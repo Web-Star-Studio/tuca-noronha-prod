@@ -1,53 +1,68 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useState } from "react"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Users, Clock, Plus, Minus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
+
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { toast } from "sonner"
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
 
-export type RestaurantReservationFormProps = {
-  restaurantId?: string
-  restaurantName?: string
-  restaurantLocation?: string
-  maxGuests?: number
-  pricePerPerson?: number
-  className?: string
-  onReservationSubmit?: (reservation: {
-    restaurantId?: string
-    restaurantName?: string
-    date: Date
-    time: string
-    guests: number
-  }) => void
+interface RestaurantReservationFormProps {
+  restaurantId: Id<"restaurants">;
+  restaurant: {
+    name: string;
+    address: {
+      street: string;
+      neighborhood: string;
+      city: string;
+    };
+    maximumPartySize: number;
+    acceptsReservations: boolean;
+  };
+  onReservationSuccess?: (reservation: { confirmationCode: string }) => void;
+  className?: string;
 }
 
 export function RestaurantReservationForm({
   restaurantId,
-  restaurantName = "Sol & Mar Noronha",
-  maxGuests = 10,
+  restaurant,
+  onReservationSuccess,
   className,
-  onReservationSubmit
 }: RestaurantReservationFormProps) {
-  const [date, setDate] = useState<Date | undefined>(undefined)
-  const [time, setTime] = useState<string>("")
-  const [guests, setGuests] = useState(2)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState<string>("");
+  const [partySize, setPartySize] = useState(2);
+  const [customerInfo, setCustomerInfo] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [specialRequests, setSpecialRequests] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
   
   // Gerar horários disponíveis entre 18h e 22h com intervalo de 30min
   const availableTimes = [
@@ -63,62 +78,77 @@ export function RestaurantReservationForm({
   //   }).format(value)
   // }
   
-  const handleSubmit = async () => {
-    if (!date || !time) return
-    
-    setIsSubmitting(true)
-    
-    try {
-      // Simular um atraso de rede
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (onReservationSubmit) {
-        onReservationSubmit({
-          restaurantId,
-          restaurantName,
-          date,
-          time,
-          guests
-        })
-      }
-      
-      // Feedback de sucesso
-      toast.success("Reserva realizada", {
-        description: `Sua reserva para ${guests} ${guests === 1 ? "pessoa" : "pessoas"} foi confirmada para ${format(date, "PPP", { locale: ptBR })} às ${time}.`
-      })
-      
-      // Resetar formulário
-      setDate(undefined)
-      setTime("")
-      setGuests(2)
-    } catch (error) {
-      toast.error("Erro ao reservar", {
-        description: "Não foi possível completar sua reserva. Por favor, tente novamente."
-      })
-      console.error("Erro ao reservar:", error)
-    } finally {
-      setIsSubmitting(false)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!date || !time) {
+      toast.error("Selecione data e horário");
+      return;
     }
-  }
+
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
+      toast.error("Preencha todas as informações de contato");
+      return;
+    }
+
+    if (!restaurant.acceptsReservations) {
+      toast.error("Este restaurante não aceita reservas");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await createReservation({
+        restaurantId,
+        date: format(date, "yyyy-MM-dd"),
+        time,
+        partySize: BigInt(partySize),
+        customerInfo,
+        specialRequests: specialRequests || undefined,
+      });
+
+      toast.success("Reserva realizada com sucesso!", {
+        description: `Código de confirmação: ${result.confirmationCode}`,
+      });
+
+      if (onReservationSuccess) {
+        onReservationSuccess(result);
+      }
+
+      // Reset form
+      setDate(undefined);
+      setTime("");
+      setPartySize(2);
+      setCustomerInfo({ name: "", email: "", phone: "" });
+      setSpecialRequests("");
+    } catch (error) {
+      toast.error("Erro ao fazer reserva", {
+        description: error instanceof Error ? error.message : "Tente novamente",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const incrementGuests = () => {
-    if (guests < maxGuests) {
-      setGuests(guests + 1)
+    if (partySize < restaurant.maximumPartySize) {
+      setPartySize(partySize + 1);
     }
-  }
+  };
 
   const decrementGuests = () => {
-    if (guests > 1) {
-      setGuests(guests - 1)
+    if (partySize > 1) {
+      setPartySize(partySize - 1);
     }
-  }
+  };
 
   return (
     <div className={cn("rounded-xl overflow-hidden bg-blue-50 shadow-sm border border-gray-100", className)}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-xl font-bold text-gray-900">Faça sua reserva</h3>
-          <p className="text-sm text-gray-500 mt-1">Garanta seu lugar em {restaurantName}</p>
+          <p className="text-sm text-gray-500 mt-1">Garanta seu lugar em {restaurant.name}</p>
         </div>
         
         {/* Data picker */}
@@ -203,19 +233,19 @@ export function RestaurantReservationForm({
                 size="icon" 
                 className="h-8 w-8 rounded-full border-gray-200"
                 onClick={decrementGuests}
-                disabled={guests <= 1}
+                disabled={partySize <= 1}
               >
                 <Minus className="h-4 w-4" />
                 <span className="sr-only">Diminuir</span>
               </Button>
-              <span className="w-5 text-center font-medium">{guests}</span>
+              <span className="w-5 text-center font-medium">{partySize}</span>
               <Button
                 type="button"
                 variant="outline" 
                 size="icon" 
                 className="h-8 w-8 rounded-full border-gray-200"
                 onClick={incrementGuests}
-                disabled={guests >= maxGuests}
+                disabled={partySize >= restaurant.maximumPartySize}
               >
                 <Plus className="h-4 w-4" />
                 <span className="sr-only">Aumentar</span>

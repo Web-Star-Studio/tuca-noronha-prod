@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useRestaurants, useCreateRestaurant, useUpdateRestaurant, useDeleteRestaurant, useToggleFeatured, useToggleActive } from "@/lib/services/restaurantService"
+import { useRestaurantsWithCreators, useCreateRestaurant, useUpdateRestaurant, useDeleteRestaurant, useToggleFeatured, useToggleActive } from "@/lib/services/restaurantService"
 import { Restaurant } from "@/lib/services/restaurantService"
 import type { Id } from "@/../convex/_generated/dataModel"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
@@ -17,7 +17,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion"
 
 export default function RestaurantsPage() {
-  const { restaurants, isLoading } = useRestaurants()
+  const { restaurants, isLoading } = useRestaurantsWithCreators()
   const createRestaurant = useCreateRestaurant()
   const updateRestaurant = useUpdateRestaurant()
   const deleteRestaurant = useDeleteRestaurant()

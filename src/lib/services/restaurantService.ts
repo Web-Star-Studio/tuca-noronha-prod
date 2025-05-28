@@ -68,8 +68,8 @@ export type Restaurant = {
   };
 };
 
-// Hook para obter todos os restaurantes
-export function useRestaurants() {
+// Hook para obter todos os restaurantes (ADMIN/PARTNER)
+export function useAllRestaurants() {
   const restaurants = useQuery(api.domains.restaurants.queries.getAll);
   return {
     restaurants: restaurants as Restaurant[] | undefined,
@@ -104,8 +104,8 @@ export function useRestaurantById(id: string) {
   };
 }
 
-// Hook para obter restaurante por slug
-export function useRestaurantBySlug(slug: string) {
+// Hook para obter restaurante por slug (OLD - será removido)
+export function useRestaurantBySlugOld(slug: string) {
   const restaurant = useQuery(api.domains.restaurants.queries.getBySlug, { slug });
   return {
     restaurant: restaurant as Restaurant | undefined,
@@ -180,6 +180,24 @@ export function useToggleActive() {
   };
 }
 
+// Hook para obter todos os restaurantes ativos (páginas públicas)
+export function useRestaurants() {
+  const restaurants = useQuery(api.domains.restaurants.queries.getActive);
+  return {
+    restaurants: restaurants as Restaurant[] | undefined,
+    isLoading: restaurants === undefined
+  };
+}
+
+// Hook para obter restaurante por slug (páginas públicas)
+export function useRestaurantBySlug(slug: string) {
+  const restaurant = useQuery(api.domains.restaurants.queries.getBySlug, { slug });
+  return {
+    restaurant: restaurant as Restaurant | undefined,
+    isLoading: restaurant === undefined
+  };
+}
+
 // Hook para obter restaurantes de um usuário específico
 export function useRestaurantsByUser(userId: Id<"users">) {
   const restaurants = useQuery(api.domains.restaurants.queries.getByPartnerId, { partnerId: userId });
@@ -189,9 +207,9 @@ export function useRestaurantsByUser(userId: Id<"users">) {
   };
 }
 
-// Hook para obter restaurantes com informações do criador
+// Hook para obter restaurantes com informações do criador (ADMIN/PARTNER)
 export function useRestaurantsWithCreators() {
-  const restaurants = useQuery(api.domains.restaurants.queries.getWithCreator);
+  const restaurants = useQuery(api.domains.restaurants.queries.getAll);
   return {
     restaurants: restaurants as Restaurant[] | undefined,
     isLoading: restaurants === undefined

@@ -7,7 +7,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { motion, AnimatePresence } from "framer-motion"
 import { useConvexPreferences } from "@/lib/hooks/useConvexPreferences"
-import * as React from 'react'
+import type * as React from 'react'
 import {
   Card,
   CardContent,
@@ -72,6 +72,7 @@ import { cardStyles, badgeStyles, buttonStyles, transitionEffects, imageEffects,
 import { Textarea } from "@/components/ui/textarea"
 import NoronhaTravelChatbot from "@/components/NoronhaTravelChatbot"
 import PreferencesSection from "./PreferencesSection"
+import { BookingManagementDashboard } from "@/components/bookings"
 
 // Dados de exemplo para as reservas
 const mockReservations = [
@@ -1014,18 +1015,7 @@ export default function Dashboard() {
           />
         );
       case 'reservas':
-        return (
-          <ReservationsSection 
-            reservations={mockReservations}
-            getReservationIcon={getReservationIcon}
-            getReservationColor={getReservationColor}
-            getStatusVariant={getStatusVariant}
-            getStatusLabel={getStatusLabel}
-            onNewReservation={handleNewReservation}
-            onViewDetails={handleViewReservationDetails}
-            onCancelReservation={handleCancelReservation}
-          />
-        );
+        return <BookingManagementDashboard />;
       case 'recomendacoes':
         return (
           <div className="space-y-4">

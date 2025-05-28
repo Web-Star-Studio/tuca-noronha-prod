@@ -1,7 +1,7 @@
 "use client";
 
 import RestaurantCard from "@/components/cards/RestaurantCard";
-import { Restaurant, useRestaurantsStore } from "@/lib/store/restaurantsStore";
+import { useRestaurants, type Restaurant } from "@/lib/services/restaurantService";
 import RestaurantFilter from "@/components/filters/RestaurantFilter";
 import { useEffect, useState } from "react";
 
@@ -11,7 +11,7 @@ export default function RestaurantesPage() {
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>(
     []
   );
-  const { restaurants } = useRestaurantsStore();
+  const { restaurants, isLoading } = useRestaurants();
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(
     []
   );
@@ -19,7 +19,7 @@ export default function RestaurantesPage() {
 
   // Extrair todas as culinárias disponíveis (sem duplicatas)
   const cuisines = Array.from(
-    new Set(restaurants.flatMap((restaurant) => restaurant.cuisine))
+    new Set((restaurants || []).flatMap((restaurant) => restaurant.cuisine))
   ).sort();
 
   // Extrair todas as faixas de preço disponíveis
@@ -27,7 +27,7 @@ export default function RestaurantesPage() {
 
   // Extrair todos os bairros disponíveis (sem duplicatas)
   const neighborhoods = Array.from(
-    new Set(restaurants.map((restaurant) => restaurant.address.neighborhood))
+    new Set((restaurants || []).map((restaurant) => restaurant.address.neighborhood))
   ).sort();
 
   const toggleCuisineFilter = (cuisine: string) => {
@@ -61,6 +61,7 @@ export default function RestaurantesPage() {
   };
 
   const applyFilters = () => {
+    if (!restaurants) return;
     const filtered = restaurants.filter((restaurant: Restaurant) => {
       // Filtragem por culinária
       const cuisineMatch =
@@ -89,12 +90,12 @@ export default function RestaurantesPage() {
     setSelectedCuisines([]);
     setSelectedPriceRanges([]);
     setSelectedNeighborhoods([]);
-    setFilteredRestaurants(restaurants);
+    if (restaurants) setFilteredRestaurants(restaurants);
   };
 
   // Inicialização dos filteredRestaurants quando o componente monta
   useEffect(() => {
-    if (restaurants.length > 0) {
+    if (restaurants && restaurants.length > 0) {
       setFilteredRestaurants(restaurants);
     }
   }, [restaurants]);

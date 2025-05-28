@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -35,7 +35,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
   const totalPrice = totalDays * pricePerDay;
 
   // Create booking mutation
-  const createBooking = useMutation(api.vehicles.mutations.createVehicleBooking);
+  const createBooking = useMutation(api.domains.vehicles.mutations.createVehicleBooking);
 
   const handleBooking = async () => {
     if (!startDate || !endDate) {
@@ -154,6 +154,23 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
           </div>
         </div>
       )}
+
+      {/* Contact via WhatsApp */}
+      <div className="flex items-center justify-center pt-2 border-t mt-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50"
+          onClick={() => {
+            const message = "Olá! Gostaria de tirar dúvidas sobre aluguel de veículos. Vocês podem me ajudar?";
+            const whatsappUrl = `https://wa.me/5581999999999?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+          }}
+        >
+          <MessageCircle className="h-4 w-4" />
+          Tirar dúvidas pelo WhatsApp
+        </Button>
+      </div>
 
       <Button 
         className="w-full mt-4" 

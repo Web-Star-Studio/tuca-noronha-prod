@@ -20,6 +20,11 @@ import type * as domains_activities_mutations from "../domains/activities/mutati
 import type * as domains_activities_queries from "../domains/activities/queries.js";
 import type * as domains_activities_types from "../domains/activities/types.js";
 import type * as domains_activities_utils from "../domains/activities/utils.js";
+import type * as domains_bookings_index from "../domains/bookings/index.js";
+import type * as domains_bookings_mutations from "../domains/bookings/mutations.js";
+import type * as domains_bookings_queries from "../domains/bookings/queries.js";
+import type * as domains_bookings_types from "../domains/bookings/types.js";
+import type * as domains_bookings_utils from "../domains/bookings/utils.js";
 import type * as domains_events_actions from "../domains/events/actions.js";
 import type * as domains_events_index from "../domains/events/index.js";
 import type * as domains_events_mutations from "../domains/events/mutations.js";
@@ -79,6 +84,11 @@ declare const fullApi: ApiFromModules<{
   "domains/activities/queries": typeof domains_activities_queries;
   "domains/activities/types": typeof domains_activities_types;
   "domains/activities/utils": typeof domains_activities_utils;
+  "domains/bookings/index": typeof domains_bookings_index;
+  "domains/bookings/mutations": typeof domains_bookings_mutations;
+  "domains/bookings/queries": typeof domains_bookings_queries;
+  "domains/bookings/types": typeof domains_bookings_types;
+  "domains/bookings/utils": typeof domains_bookings_utils;
   "domains/events/actions": typeof domains_events_actions;
   "domains/events/index": typeof domains_events_index;
   "domains/events/mutations": typeof domains_events_mutations;

@@ -174,7 +174,33 @@ function ActivityForm({ activity, onSave, onCancel }: {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState<Activity>(
-    activity || {} as Activity
+    activity || {
+      id: "",
+      title: "",
+      description: "",
+      shortDescription: "",
+      price: 0,
+      category: "",
+      duration: "",
+      maxParticipants: 1,
+      minParticipants: 1,
+      difficulty: "Fácil",
+      rating: 5,
+      imageUrl: "",
+      galleryImages: [],
+      highlights: [],
+      includes: [],
+      itineraries: [],
+      excludes: [],
+      additionalInfo: [],
+      cancelationPolicy: [],
+      isFeatured: false,
+      isActive: true,
+      hasMultipleTickets: false,
+      tickets: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as Activity
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -840,7 +866,7 @@ export default function ActivitiesPage() {
       return matchesSearch && matchesCategory && matchesFeatured;
     });
   }, [allActivities, searchQuery, filterCategory, showFeaturedOnly]);
-  
+
   // Handle CRUD operations
   const handleCreateActivity = async (newActivity: Activity) => {
     if (!isAuthenticated || !user) {

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatDate, cn, formatCurrency } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
+import { EventBookingForm } from "@/components/bookings";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -364,11 +365,31 @@ export default function EventDetails({ event }: EventDetailsProps) {
           </div>
 
           {/* Sidebar - Sticky on desktop */}
-          <div className="lg:sticky lg:top-24 h-fit">
+          <div className="lg:sticky lg:top-24 h-fit space-y-6">
+            {/* Event Booking Form - Only show if no Sympla URL */}
+            {!event.symplaUrl && (
+              <EventBookingForm
+                eventId={event.id as any}
+                event={{
+                  title: event.title,
+                  date: event.date,
+                  time: event.time,
+                  location: event.location,
+                  price: event.price,
+                  hasMultipleTickets: event.hasMultipleTickets,
+                }}
+                onBookingSuccess={(booking) => {
+                  // Redirect to confirmation page
+                  window.location.href = `/test-bookings/confirmation?code=${booking.confirmationCode}&type=event`;
+                }}
+              />
+            )}
+
+            {/* Event Summary Card */}
             <Card className="border-gray-200 shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="p-6 border-b border-gray-100">
-                  <h3 className="text-xl font-semibold mb-2">Resumo</h3>
+                  <h3 className="text-xl font-semibold mb-2">Resumo do Evento</h3>
                   <div className="text-gray-600 text-sm space-y-1">
                     <div className="flex justify-between">
                       <span>Data:</span>
@@ -382,17 +403,22 @@ export default function EventDetails({ event }: EventDetailsProps) {
                       <span>Local:</span>
                       <span className="font-medium text-gray-800">{event.location}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Preço:</span>
+                      <span className="font-medium text-gray-800">
+                        {event.price > 0 ? formatCurrency(event.price) : 'Gratuito'}
+                      </span>
+                    </div>
                     
+                    {/* WhatsApp Contact for events without Sympla */}
                     {event.whatsappContact && !event.symplaUrl && (
                       <div className="p-4 bg-green-50/80 rounded-lg mt-4">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-green-800 font-medium">Reservas</h3>
-                          <div className="text-xs text-gray-500 flex items-center">
-                            via WhatsApp
-                          </div>
+                          <h3 className="text-green-800 font-medium">Contato Direto</h3>
+                          <div className="text-xs text-gray-500">via WhatsApp</div>
                         </div>
                         <p className="text-sm text-green-700 mb-3">
-                          Para reservar sua vaga neste evento, entre em contato via WhatsApp.
+                          Dúvidas? Entre em contato diretamente.
                         </p>
                         <a
                           href={generateWhatsAppLink(event.whatsappContact, event.title)}
@@ -401,11 +427,12 @@ export default function EventDetails({ event }: EventDetailsProps) {
                           className="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
                         >
                           <MessageCircle className="h-4 w-4 mr-2" />
-                          Reservar via WhatsApp
+                          Contato via WhatsApp
                         </a>
                       </div>
                     )}
 
+                    {/* Sympla Integration */}
                     {event.symplaUrl && (
                       <div className="p-4 bg-blue-50/80 rounded-lg mt-4">
                         <div className="flex items-center justify-between mb-2">
@@ -420,7 +447,7 @@ export default function EventDetails({ event }: EventDetailsProps) {
                           </div>
                         </div>
                         <p className="text-sm text-blue-700 mb-3">
-                          Os ingressos para este evento são vendidos através da plataforma Sympla.
+                          Os ingressos são vendidos através da Sympla.
                         </p>
                         <a
                           href={event.symplaUrl}

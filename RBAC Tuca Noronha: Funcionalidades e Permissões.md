@@ -1,162 +1,382 @@
-# Sistema de Controle de Acesso Baseado em Papéis (RBAC) para Tuca Noronha
+# Sistema RBAC - Tuca Noronha: Funcionalidades e Permissões
 
-## 1. Introdução
+## 1. Visão Geral do Sistema
 
-Este documento descreve o sistema de Controle de Acesso Baseado em Papéis (RBAC) para a plataforma Tuca Noronha. O objetivo do RBAC é garantir que os usuários tenham acesso apenas às funcionalidades e dados relevantes para suas responsabilidades e necessidades, protegendo a integridade e a segurança do sistema.
+A plataforma Tuca Noronha implementa um sistema robusto de Controle de Acesso Baseado em Papéis (RBAC) utilizando Next.js 15, React 19, Convex e Clerk. O sistema garante que usuários tenham acesso apenas às funcionalidades e dados apropriados para seus papéis e responsabilidades.
 
-A plataforma Tuca Noronha utilizará Next.js 15, React 19, Convex como banco de dados e Clerk para autenticação e gerenciamento de usuários. Os papéis definidos serão armazenados e gerenciados em conjunto com o Clerk e a lógica de autorização será implementada nas funções backend do Convex.
+### Stack Tecnológica
+- **Frontend**: Next.js 15 + React 19 + TypeScript
+- **Backend**: Convex (queries, mutations, actions)
+- **Autenticação**: Clerk (com metadados customizados)
+- **Autorização**: Validação em todas as funções Convex
+- **UI**: TailwindCSS + Shadcn/ui
 
-## 2. Definição dos Papéis (Roles)
+## 2. Papéis de Usuário (Roles)
 
-Identificamos quatro papéis principais na plataforma Tuca Noronha:
+### 2.1 Traveler (Viajante)
+**Usuário final que consome serviços da plataforma**
 
-1.  **Traveler (Viajante):**
-    * **Descrição:** Usuário final que consome os serviços oferecidos pela plataforma, como reserva de hospedagens, compra de atividades, aluguel de carros, etc.
-    * **Objetivo Principal:** Encontrar, reservar e gerenciar seus serviços de viagem.
+**Funcionalidades Principais:**
+- Busca e descoberta de serviços (atividades, eventos, restaurantes, veículos)
+- Sistema de reservas unificado
+- Gestão de perfil e preferências pessoais
+- Lista de desejos (wishlist)
+- Dashboard pessoal com histórico
+- Sistema de avaliações
 
-2.  **Partner (Parceiro):**
-    * **Descrição:** Entidade (empresa ou indivíduo) que possui um ou mais ativos (hotéis, restaurantes, locadoras de veículos, provedores de atividades/eventos) e os disponibiliza no hub Tuca Noronha.
-    * **Objetivo Principal:** Gerenciar seus ativos, disponibilidade, preços, reservas e sua equipe (Employees) na plataforma.
+### 2.2 Partner (Parceiro)
+**Proprietário de ativos que oferece serviços na plataforma**
 
-3.  **Employee (Colaborador do Parceiro):**
-    * **Descrição:** Usuário que trabalha para um Partner e possui permissões delegadas por este para gerenciar aspectos específicos dos ativos do Partner.
-    * **Objetivo Principal:** Auxiliar na gestão operacional dos ativos do Partner, conforme as permissões concedidas.
+**Funcionalidades Principais:**
+- Gestão completa de ativos próprios (CRUD)
+- Dashboard analítico com métricas
+- Gestão de equipe (employees) com permissões granulares
+- Controle de preços e disponibilidade
+- Gestão de reservas recebidas
+- Upload e gestão de mídia
 
-4.  **Master (Administrador Geral):**
-    * **Descrição:** Administrador com acesso total ao sistema Tuca Noronha.
-    * **Objetivo Principal:** Gerenciar toda a plataforma, usuários, parceiros, configurações e garantir o bom funcionamento do sistema.
+### 2.3 Employee (Funcionário)
+**Colaborador de um parceiro com acesso limitado a ativos específicos**
 
-## 3. Funcionalidades e Permissões por Papel
+**Funcionalidades Principais:**
+- Acesso apenas aos ativos designados pelo partner
+- Gestão operacional conforme permissões
+- Atualização de disponibilidade e preços (se autorizado)
+- Gestão de reservas dos ativos designados
 
-A seguir, detalhamos as principais funcionalidades e permissões (CRUD - Criar, Ler, Atualizar, Deletar) para cada papel em relação aos diferentes recursos da plataforma.
+### 2.4 Master (Administrador)
+**Administrador da plataforma com acesso total**
+
+**Funcionalidades Principais:**
+- Gestão completa da plataforma
+- Moderação de conteúdo
+- Analytics globais
+- Gestão de usuários e parceiros
+- Configurações do sistema
+
+## 3. Implementação Técnica Atual
+
+### 3.1 Estrutura de Autenticação (Clerk)
+
+```typescript
+// Metadados do usuário no Clerk
+interface ClerkMetadata {
+  publicMetadata: {
+    role: 'traveler' | 'partner' | 'employee' | 'master';
+    partnerId?: string; // Para employees
+    organizationId?: string; // Para employees
+  }
+}
+```
+
+### 3.2 Schema de Dados (Convex)
+
+#### Tabela Users
+```typescript
+users: {
+  clerkId: string,
+  email: string,
+  name: string,
+  role: 'traveler' | 'partner' | 'employee' | 'master',
+  partnerId?: Id<"users">, // Para employees
+  // ... outros campos
+}
+```
+
+#### Tabela Asset Permissions
+```typescript
+assetPermissions: {
+  userId: Id<"users">,
+  partnerId: Id<"users">,
+  assetType: 'activities' | 'events' | 'restaurants' | 'vehicles',
+  assetId: Id<any>,
+  permissions: {
+    canView: boolean,
+    canEdit: boolean,
+    canDelete: boolean,
+    canManageBookings: boolean,
+    canManagePricing: boolean,
+    canManageAvailability: boolean,
+  }
+}
+```
+
+### 3.3 Sistema de Validação (Convex Functions)
+
+Todas as funções Convex implementam verificação de autorização:
+
+```typescript
+// Exemplo de função com RBAC
+export const getActivities = query({
+  args: { /* ... */ },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Não autenticado");
+    
+    const user = await getUserByClerkId(ctx, identity.subject);
+    if (!user) throw new Error("Usuário não encontrado");
+    
+    // Lógica específica por role
+    switch (user.role) {
+      case 'partner':
+        // Retorna apenas atividades do partner
+        return getPartnerActivities(ctx, user._id);
+      case 'employee':
+        // Retorna apenas atividades com permissão
+        return getEmployeeActivities(ctx, user._id);
+      case 'master':
+        // Retorna todas as atividades
+        return getAllActivities(ctx);
+      default:
+        // Travelers veem apenas atividades ativas
+        return getPublicActivities(ctx);
+    }
+  }
+});
+```
+
+## 4. Domínios de Negócio Implementados
+
+### 4.1 Activities (Atividades)
+**Localização**: `/convex/domains/activities/`
+
+**Funcionalidades por Role:**
+- **Travelers**: Visualização, busca, filtros, reservas
+- **Partners**: CRUD completo dos próprios ativos, gestão de reservas
+- **Employees**: Operações conforme permissões designadas
+- **Masters**: Acesso completo, moderação
+
+**Schemas Principais:**
+- `activities`: Dados das atividades
+- `activityBookings`: Reservas de atividades
+
+### 4.2 Events (Eventos)
+**Localização**: `/convex/domains/events/`
+
+**Funcionalidades Especiais:**
+- Integração com Sympla para sincronização
+- Gestão de ingressos e capacidade
+- Sistema de reservas por quantidade
+
+**Schemas Principais:**
+- `events`: Dados dos eventos
+- `eventBookings`: Reservas de ingressos
+
+### 4.3 Restaurants (Restaurantes)
+**Localização**: `/convex/domains/restaurants/`
+
+**Funcionalidades Especiais:**
+- Perfis detalhados com cardápios
+- Horários de funcionamento
+- Sistema de reservas de mesa
+
+**Schemas Principais:**
+- `restaurants`: Dados dos restaurantes
+- `restaurantReservations`: Reservas de mesa
+
+### 4.4 Vehicles (Veículos)
+**Localização**: `/convex/domains/vehicles/`
+
+**Funcionalidades Especiais:**
+- Catálogo com especificações técnicas
+- Reservas por período (data início/fim)
+- Gestão de localização de retirada/devolução
+
+**Schemas Principais:**
+- `vehicles`: Dados dos veículos
+- `vehicleBookings`: Reservas de veículos
+
+### 4.5 Bookings (Sistema de Reservas)
+**Localização**: `/convex/domains/bookings/`
+
+**Sistema Unificado de Reservas:**
+- Códigos de confirmação únicos
+- Estados padronizados (pending, confirmed, canceled, completed)
+- Validação de disponibilidade
+- Dashboard unificado para gestão
+
+**Queries Principais:**
+- `getUserActivityBookings`: Reservas de atividades do usuário
+- `getUserEventBookings`: Reservas de eventos do usuário
+- `getUserRestaurantReservations`: Reservas de restaurantes
+- `getUserVehicleBookings`: Reservas de veículos
+- `getPartnerBookings`: Todas as reservas dos ativos do partner
+- `getActivityBookings`: Admin - todas as reservas de atividades
+
+### 4.6 Media (Gestão de Mídia)
+**Localização**: `/convex/domains/media/`
+
+**Funcionalidades:**
+- Upload de imagens para ativos
+- Organização por categorias
+- Controle de acesso por proprietário
+
+### 4.7 RBAC (Controle de Acesso)
+**Localização**: `/convex/domains/rbac/`
+
+**Funcionalidades:**
+- Gestão de permissões por asset
+- Validação de acesso em tempo real
+- Auditoria de permissões
+
+## 5. Sistema de Permissões Granulares
+
+### 5.1 Permissões por Asset (Employee)
+
+Os Partners podem conceder permissões específicas aos seus Employees para cada asset:
+
+```typescript
+interface AssetPermissions {
+  canView: boolean;           // Visualizar informações do asset
+  canEdit: boolean;           // Editar dados básicos
+  canDelete: boolean;         // Deletar asset
+  canManageBookings: boolean; // Gerenciar reservas
+  canManagePricing: boolean;  // Alterar preços
+  canManageAvailability: boolean; // Alterar disponibilidade
+}
+```
+
+### 5.2 Fluxo de Validação
+
+1. **Autenticação**: Verificação via Clerk
+2. **Identificação**: Busca do usuário no Convex via `clerkId`
+3. **Autorização por Role**: Verificação do papel base
+4. **Autorização Granular**: Para employees, verificação de permissões específicas por asset
+5. **Execução**: Operação autorizada é executada
+
+## 6. Rotas e Proteção (Frontend)
+
+### 6.1 Middleware de Autenticação
+**Arquivo**: `/src/middleware.ts`
+
+Protege rotas baseado na autenticação Clerk e redireciona conforme necessário.
+
+### 6.2 Rotas Protegidas
+**Estrutura**: `/src/app/(protected)/`
+
+- `/admin/dashboard/`: Apenas Masters
+- `/meu-painel/`: Usuários autenticados
+- `/reservas/`: Gestão de reservas do usuário
+
+### 6.3 Componentes Condicionais
+
+Renderização baseada em role usando hooks do Clerk:
+
+```typescript
+import { useUser } from "@clerk/nextjs";
+
+function AdminPanel() {
+  const { user } = useUser();
+  const userRole = user?.publicMetadata?.role;
+  
+  if (userRole !== 'master') {
+    return <AccessDenied />;
+  }
+  
+  return <AdminDashboard />;
+}
+```
+
+## 7. Dashboard e Analytics
+
+### 7.1 Dashboard por Role
+
+#### Traveler Dashboard
+- Histórico de reservas
+- Lista de desejos
+- Preferências pessoais
+- Status de reservas
+
+#### Partner Dashboard
+- Métricas de negócio
+- Gestão de ativos
+- Reservas recebidas
+- Gestão de equipe
+
+#### Employee Dashboard
+- Assets designados
+- Reservas dos assets permitidos
+- Tarefas operacionais
+
+#### Master Dashboard
+- Analytics globais
+- Gestão de usuários
+- Moderação de conteúdo
+- Configurações da plataforma
+
+### 7.2 Métricas e Relatórios
+
+- **Reservas**: Por período, status, tipo de serviço
+- **Revenue**: Por partner, por serviço
+- **Ocupação**: Taxa de ocupação por asset
+- **Performance**: Métricas de conversão
+
+## 8. Segurança e Boas Práticas
+
+### 8.1 Validação de Dados
+- Schemas rigorosos em todas as funções Convex
+- Sanitização de inputs
+- Validação de tipos TypeScript
+
+### 8.2 Proteção de Dados
+- Princípio do menor privilégio
+- Segregação de dados por proprietário
+- Logs de auditoria para ações sensíveis
+
+### 8.3 Performance
+- Índices otimizados no Convex
+- Paginação em listagens
+- Cache inteligente no frontend
+
+## 9. Fluxos de Trabalho Típicos
+
+### 9.1 Partner Gerenciando Employee
+
+1. Partner acessa "Gestão de Equipe"
+2. Convida novo Employee via email
+3. Employee cria conta e é associado à organização
+4. Partner define permissões por asset
+5. Employee acessa apenas funcionalidades permitidas
+
+### 9.2 Traveler Fazendo Reserva
+
+1. Traveler busca serviços
+2. Seleciona atividade/evento/restaurante/veículo
+3. Preenche dados da reserva
+4. Sistema valida disponibilidade
+5. Reserva é criada com código de confirmação
+6. Partner/Employee recebe notificação
+
+### 9.3 Admin Moderando Conteúdo
+
+1. Master acessa dashboard administrativo
+2. Visualiza conteúdo reportado
+3. Analisa violações de política
+4. Toma ação (aprovação/rejeição/suspensão)
+5. Notifica usuários envolvidos
+
+## 10. Evolução e Roadmap
+
+### 10.1 Funcionalidades Implementadas ✅
+- Sistema RBAC completo
+- Dashboard por role
+- Sistema de reservas unificado
+- Gestão de mídia
+- Integração Sympla (eventos)
+
+### 10.2 Próximas Funcionalidades 🚧
+- Sistema de avaliações
+- Notificações em tempo real
+- Chat entre usuários
+- Sistema de pagamentos
+- Analytics avançados
+
+### 10.3 Melhorias Futuras 🔮
+- Machine Learning para recomendações
+- Integração com mais plataformas externas
+- App mobile
+- Sistema de gamificação
 
 ---
 
-### 3.1. Traveler
-
-| Recurso/Funcionalidade        | Criar (C) | Ler (R)   | Atualizar (U) | Deletar (D) | Observações                                                                 |
-| :---------------------------- | :-------- | :-------- | :------------ | :---------- | :-------------------------------------------------------------------------- |
-| **Conta Pessoal** | ✅         | ✅         | ✅             | ✅          | Gerenciar próprio perfil, preferências, dados de pagamento.                   |
-| **Busca de Serviços** |           | ✅         |               |             | Hospedagens, Voos, Carros, Restaurantes, Atividades, Eventos.             |
-| **Detalhes de Serviços** |           | ✅         |               |             | Ver informações completas, preços, disponibilidade, avaliações.            |
-| **Reservas/Compras** | ✅         | ✅ (próprias) | ✅ (próprias)  | ✅ (próprias) | Conforme políticas de cancelamento/alteração.                             |
-| **Lista de Desejos** | ✅         | ✅         | ✅             | ✅          | Salvar serviços de interesse.                                               |
-| **Avaliações e Comentários** | ✅         | ✅         | ✅ (próprias)  | ✅ (próprias) | Apenas para serviços consumidos/reservados.                                 |
-| **Histórico de Reservas** |           | ✅ (próprias) |               |             |                                                                             |
-| **Pagamentos** | ✅         | ✅ (próprios) |               |             | Realizar pagamentos, ver histórico de transações.                           |
-| **Notificações** |           | ✅         | ✅ (status)    |             | Receber notificações sobre reservas, promoções.                             |
-| **Suporte ao Cliente** | ✅         | ✅ (próprios) |               |             | Abrir e acompanhar tickets de suporte.                                      |
-
----
-
-### 3.2. Partner
-
-| Recurso/Funcionalidade                | Criar (C) | Ler (R)         | Atualizar (U)   | Deletar (D)   | Observações                                                                                                |
-| :------------------------------------ | :-------- | :-------------- | :-------------- | :------------ | :--------------------------------------------------------------------------------------------------------- |
-| **Conta da Empresa/Parceiro** | ✅         | ✅               | ✅               | ⚠️ (Solicitar) | Gerenciar perfil da empresa, dados bancários, contatos.                                                    |
-| **Ativos (Próprios)** | ✅         | ✅ (próprios)    | ✅ (próprios)    | ✅ (próprios)  | Hotéis, Restaurantes, Carros, Atividades, Eventos. Inclui fotos, descrições, comodidades.                  |
-|   ↳ Disponibilidade e Preços          | ✅         | ✅ (próprios)    | ✅ (próprios)    | ✅ (próprios)  | Gerenciar inventário, tarifas, restrições, promoções para seus ativos.                                     |
-| **Reservas (de seus Ativos)** |           | ✅ (de seus ativos) | ✅ (status)      | ⚠️ (conforme política) | Ver e gerenciar reservas recebidas para seus ativos (confirmar, cancelar, etc.).                          |
-| **Employees (Colaboradores)** | ✅         | ✅ (de sua empresa) | ✅ (permissões) | ✅ (de sua empresa) | Convidar, gerenciar papéis de acesso dos seus Employees aos seus ativos.                                 |
-| **Relatórios (de seus Ativos)** |           | ✅               |                 |               | Vendas, ocupação, performance.                                                                             |
-| **Avaliações (de seus Ativos)** |           | ✅               | ✅ (responder)   |               | Ver e responder avaliações de seus serviços.                                                               |
-| **Configurações (de seus Ativos)** |           | ✅               | ✅               |               | Políticas de cancelamento, regras específicas do ativo.                                                    |
-| **Comunicação com Travelers** |           | ✅               | ✅               |               | Responder a perguntas sobre seus ativos/reservas (via sistema de mensagens).                             |
-| **Pagamentos/Repasses** |           | ✅ (próprios)    |                 |               | Visualizar histórico de repasses.                                                                          |
-| **Notificações** |           | ✅               | ✅ (status)      |               | Sobre novas reservas, cancelamentos, mensagens.                                                            |
-
----
-
-### 3.3. Employee
-
-O acesso do Employee é **condicional às permissões atribuídas pelo Partner** para ativos específicos.
-
-| Recurso/Funcionalidade                | Criar (C) | Ler (R)         | Atualizar (U)   | Deletar (D)   | Observações                                                                                                                               |
-| :------------------------------------ | :-------- | :-------------- | :-------------- | :------------ | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Conta Pessoal** |           | ✅               | ✅ (limitado)    |               | Gerenciar próprio perfil (nome, senha).                                                                                                   |
-| **Ativos (Designados pelo Partner)** | ⚠️ (C.P.) | ✅ (C.P.)        | ✅ (C.P.)        | ⚠️ (C.P.)     | C.P. = Conforme Permissão. Pode incluir gerenciar fotos, descrições.                                                                      |
-|   ↳ Disponibilidade e Preços          | ⚠️ (C.P.) | ✅ (C.P.)        | ✅ (C.P.)        | ⚠️ (C.P.)     | Gerenciar inventário, tarifas para ativos designados.                                                                                     |
-| **Reservas (dos Ativos Designados)** |           | ✅ (C.P.)        | ✅ (status, C.P.) | ⚠️ (C.P.)     | Ver e gerenciar (confirmar, check-in/out, cancelar) reservas dos ativos aos quais tem acesso.                                           |
-| **Relatórios (dos Ativos Designados)**|           | ✅ (C.P.)        |                 |               | Acesso limitado a relatórios operacionais dos ativos designados.                                                                          |
-| **Comunicação com Travelers** |           | ✅ (C.P.)        | ✅ (C.P.)        |               | Responder a perguntas sobre ativos/reservas designados.                                                                                   |
-| **Notificações** |           | ✅ (C.P.)        |                 |               | Sobre novas reservas, cancelamentos, mensagens relacionadas aos seus ativos.                                                              |
-| *Não tem acesso a:* |           |                 |                 |               | Gerenciamento de outros Employees, configurações gerais da empresa do Partner, dados financeiros do Partner, criação de novos ativos. |
-
----
-
-### 3.4. Master
-
-| Recurso/Funcionalidade                | Criar (C) | Ler (R)   | Atualizar (U) | Deletar (D) | Observações                                                                                                                             |
-| :------------------------------------ | :-------- | :-------- | :------------ | :---------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gerenciamento de Usuários (Todos)** | ✅         | ✅         | ✅             | ✅          | Inclui Travelers, Partners, Employees. Gerenciar papéis, status da conta (ativo, suspenso).                                           |
-| **Gerenciamento de Partners** | ✅         | ✅         | ✅             | ✅          | Aprovar/reprovar novos cadastros, gerenciar contratos, suspender contas.                                                                  |
-| **Gerenciamento de Ativos (Todos)** | ⚠️ (Mod.)  | ✅         | ✅ (Mod.)      | ✅ (Mod.)   | Mod. = Moderacional. Capacidade de intervir, editar ou remover ativos que violem políticas ou por questões de suporte.                 |
-| **Gerenciamento de Reservas (Todas)** | ⚠️ (Sup.)  | ✅         | ✅ (Sup.)      | ✅ (Sup.)   | Sup. = Suporte. Acesso para fins de suporte, resolução de disputas.                                                                       |
-| **Configurações da Plataforma** | ✅         | ✅         | ✅             | ✅          | Taxas, comissões, categorias de serviço, termos de uso, políticas de privacidade, integrações de pagamento, configurações de e-mail. |
-| **Relatórios Globais e Analytics** |           | ✅         |               |             | Performance da plataforma, transações, crescimento de usuários/parceiros.                                                               |
-| **Logs do Sistema e Auditoria** |           | ✅         |               |             | Acompanhar atividades importantes e alterações no sistema.                                                                              |
-| **Gerenciamento de Conteúdo** | ✅         | ✅         | ✅             | ✅          | Moderação de avaliações, conteúdo gerado por usuários e parceiros.                                                                        |
-| **Ferramentas de Suporte** | ✅         | ✅         | ✅             | ✅          | Gerenciar tickets de suporte, FAQs.                                                                                                     |
-| **Gestão Financeira da Plataforma** |           | ✅         | ✅             |             | Conciliação, visão geral de transações, repasses.                                                                                       |
-
-## 4. Gerenciamento de Papéis e Permissões
-
-### 4.1. Atribuição de Papéis
-
-* **Traveler:** Papel padrão para novos usuários que se cadastram na plataforma via Clerk para consumir serviços.
-* **Partner:**
-    * Pode ser um fluxo de cadastro específico para parceiros.
-    * Após aprovação (pelo Master), o usuário Clerk é associado a um "Partner Account" no Convex e seu papel é atualizado nos metadados do Clerk (ex: `publicMetadata: { role: 'partner', partnerId: 'convexPartnerId' }`).
-* **Employee:**
-    * Convidado pelo Partner através da plataforma.
-    * Um novo usuário Clerk é criado (ou um existente é vinculado) e associado à organização do Partner no Clerk e ao `partnerId` no Convex.
-    * O papel "employee" é definido nos metadados do Clerk (`publicMetadata: { role: 'employee', partnerId: 'convexPartnerId', organizationId: 'clerkOrgId' }`).
-* **Master:** Atribuído manualmente a usuários específicos (equipe Tuca Noronha) diretamente no Clerk ou através de uma interface administrativa interna.
-
-### 4.2. Gerenciamento de Permissões de Employee pelo Partner
-
-* O Partner terá uma interface para gerenciar seus Employees.
-* Para cada Employee, o Partner poderá associá-lo a um ou mais dos seus **ativos** (ex: Hotel A, Atividade B).
-* Para cada associação Employee-Ativo, o Partner poderá definir um **nível de permissão** ou um conjunto de permissões granulares. Exemplos de níveis:
-    * **Visualizador:** Apenas lê informações do ativo e reservas.
-    * **Operador:** Pode gerenciar disponibilidade, preços básicos, confirmar/cancelar reservas do ativo.
-    * **Gerente do Ativo:** Controle quase total sobre o ativo específico (descrição, fotos, preços avançados, disponibilidade), mas não sobre outros ativos ou configurações do Partner.
-* Essa lógica de permissão granular Employee-Ativo será armazenada no Convex (ex: tabela `employeeAssetPermissions`).
-
-## 5. Considerações Técnicas com a Stack (Next.js, Convex, Clerk)
-
-* **Clerk:**
-    * Servirá como provedor de identidade primário.
-    * Os papéis principais (Traveler, Partner, Employee, Master) podem ser armazenados nos `publicMetadata` ou `privateMetadata` do usuário no Clerk.
-    * As "Organizações" do Clerk podem ser utilizadas para agrupar Partners e seus Employees, facilitando o gerenciamento de membros da equipe do parceiro.
-    * O `userId` do Clerk será a chave para vincular ao perfil de usuário no Convex.
-
-* **Convex:**
-    * Armazenará todos os dados da aplicação (perfis de usuário detalhados, ativos dos parceiros, reservas, avaliações, etc.).
-    * Uma tabela `users` no Convex armazenará informações adicionais e o `clerkId` para referência.
-    * Funções backend (queries, mutations, actions) no Convex verificarão o papel do usuário (obtido de `ctx.auth.getUserIdentity()` e dos metadados do Clerk) antes de executar operações.
-    * Para o gerenciamento granular de permissões Partner -> Employee -> Ativo, será necessário um modelo de dados específico no Convex. Por exemplo:
-        * `partners`: { `userId` (Clerk ID do dono), `companyName`, ... }
-        * `assets`: { `partnerId`, `type` (hotel, activity, etc.), `name`, ... }
-        * `employeeAssignments`: { `employeeUserId` (Clerk ID), `partnerId`, `assetId`, `permissions`: ["view_reservations", "edit_availability"] }
-    * A lógica de autorização dentro das funções Convex garantirá que um Employee só possa modificar ativos aos quais foi explicitamente designado pelo Partner com as permissões adequadas.
-
-* **Next.js (Frontend):**
-    * Utilizará os hooks do Clerk (`useUser`, `useAuth`) para obter informações do usuário autenticado e seu papel.
-    * Renderizará condicionalmente componentes e funcionalidades da UI com base no papel e permissões do usuário.
-    * Chamará as funções Convex (queries e mutations) que, por sua vez, aplicarão as regras de RBAC no backend.
-    * Rotas protegidas e layouts específicos por papel podem ser implementados usando o middleware do Next.js e a verificação de autenticação/autorização do Clerk.
-
-## 6. Fluxo de Exemplo (Partner gerenciando Employee)
-
-1.  Um **Partner** loga na plataforma.
-2.  Acessa a seção "Minha Equipe".
-3.  Convida um novo **Employee** fornecendo um e-mail.
-4.  O Employee recebe o convite, cria uma conta (ou loga se já tiver) e é associado à organização do Partner no Clerk.
-5.  O Partner, na sua interface, vê o novo Employee e pode:
-    * Associar o Employee a um ou mais dos seus ativos (ex: "Hotel Praia Linda").
-    * Definir as permissões do Employee para o "Hotel Praia Linda" (ex: "Gerenciar Reservas", "Atualizar Tarifas").
-6.  Quando o **Employee** loga, o sistema verifica suas permissões (via Convex, consultando as `employeeAssignments` relacionadas ao seu `userId` e `partnerId`).
-7.  O Employee só poderá ver e interagir com o "Hotel Praia Linda" e apenas com as funcionalidades permitidas (ex: ver e confirmar reservas, mas não alterar a descrição principal do hotel).
-
-Este sistema RBAC visa fornecer uma estrutura flexível e segura para o crescimento da plataforma Tuca Noronha, atendendo às diversas necessidades de seus usuários.
+Este documento serve como referência completa para entender o funcionamento do sistema RBAC da plataforma Tuca Noronha, incluindo implementação técnica, estrutura de dados e fluxos de trabalho.

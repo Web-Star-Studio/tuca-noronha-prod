@@ -15,7 +15,8 @@ import {
   Image as ImageIcon,
   BarChart3,
   ListOrderedIcon,
-  Settings
+  Settings,
+  ClipboardList
 } from "lucide-react"
 import { TeamSwitcher } from "./TeamSwitcher"
 import { Sidebar, SidebarContent, SidebarHeader, SidebarRail, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"
@@ -71,6 +72,11 @@ const data = {
       title: "Reservas",
       url: "/admin/dashboard/reservas",
       icon: ShoppingBag,
+    },
+    {
+      title: "Minhas Reservas",
+      url: "/admin/dashboard/minhas-reservas",
+      icon: ClipboardList,
     },
     {
       title: "Usuários",
