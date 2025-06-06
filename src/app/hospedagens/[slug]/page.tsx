@@ -27,7 +27,7 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
   const [allImages, setAllImages] = useState<string[]>([]);
 
   // Buscar dados reais do Convex
-  const { data: accommodation, isLoading } = useAccommodationBySlug({ slug: params.slug });
+  const { accommodation, isLoading } = useAccommodationBySlug(params.slug);
 
   useEffect(() => {
     if (accommodation) {
@@ -111,8 +111,8 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
           <span>•</span>
           <div className="flex items-center">
             <span className="text-yellow-500 mr-1">⭐</span>
-            <span className="font-medium">{accommodation.rating.toFixed(1)}</span>
-            <span className="text-gray-500 ml-1">({accommodation.totalReviews} avaliações)</span>
+            <span className="font-medium">{accommodation.rating.overall.toFixed(1)}</span>
+            <span className="text-gray-500 ml-1">({accommodation.rating.totalReviews} avaliações)</span>
           </div>
         </div>
       </div>
@@ -168,19 +168,19 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
               <ul className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
                 <li className="flex items-center">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>Até {accommodation.maxGuests} hóspedes</span>
+                  <span>Até {accommodation.maximumGuests} hóspedes</span>
                 </li>
                 <li className="flex items-center">
                   <Home className="h-4 w-4 mr-2" />
-                  <span>{accommodation.bedrooms} quartos</span>
+                  <span>{accommodation.rooms.bedrooms} quartos</span>
                 </li>
                 <li className="flex items-center">
                   <BedDouble className="h-4 w-4 mr-2" />
-                  <span>{accommodation.beds || 2} camas</span>
+                  <span>{accommodation.rooms.beds || 2} camas</span>
                 </li>
                 <li className="flex items-center">
                   <Bath className="h-4 w-4 mr-2" />
-                  <span>{accommodation.bathrooms} banheiros</span>
+                  <span>{accommodation.rooms.bathrooms} banheiros</span>
                 </li>
               </ul>
             </div>
@@ -254,26 +254,26 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
               <div className="mb-6">
                 <div className="flex items-baseline">
-                  <span className="text-2xl font-bold">R$ {accommodation.pricePerNight.toLocaleString()}</span>
+                  <span className="text-2xl font-bold">R$ {accommodation.pricing.pricePerNight.toLocaleString()}</span>
                   <span className="text-gray-600 ml-1">/noite</span>
                 </div>
-                {accommodation.taxes && (
+                {accommodation.pricing.taxes && (
                   <p className="text-sm text-gray-600 mt-1">
-                    + R$ {accommodation.taxes} de taxas
+                    + R$ {accommodation.pricing.taxes} de taxas
                   </p>
                 )}
-                {accommodation.cleaningFee && (
+                {accommodation.pricing.cleaningFee && (
                   <p className="text-sm text-gray-600">
-                    + R$ {accommodation.cleaningFee} taxa de limpeza
+                    + R$ {accommodation.pricing.cleaningFee} taxa de limpeza
                   </p>
                 )}
               </div>
 
               <AccommodationBookingForm
-                accommodationId={accommodation._id}
+                accommodationId={accommodation._id || ''}
                 accommodationName={accommodation.name}
-                pricePerNight={accommodation.pricePerNight}
-                maxGuests={accommodation.maxGuests}
+                pricePerNight={accommodation.pricing.pricePerNight}
+                maxGuests={accommodation.maximumGuests}
                 onSubmit={handleBookingSubmit}
               />
             </div>

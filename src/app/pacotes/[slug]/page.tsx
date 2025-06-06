@@ -481,7 +481,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
                             <div
                               className="bg-yellow-500 h-2 rounded-full"
                               style={{
-                                width: `${reviewStats.totalReviews > 0 ? (count / reviewStats.totalReviews) * 100 : 0}%`,
+                                width: `${reviewStats.totalReviews > 0 ? (Number(count) / reviewStats.totalReviews) * 100 : 0}%`,
                               }}
                             />
                           </div>

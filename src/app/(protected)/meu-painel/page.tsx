@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { useQuery } from "convex/react"
 import { api } from "../../../../convex/_generated/api"
-import { CalendarDays, Clock, MapPin, Users, User, ListChecks, BedDouble, Utensils, Activity, Bell, Star, CreditCard, Award, Sparkles, BookCheckIcon, Gift, HomeIcon, CheckCircle2, Heart, Search, X, SlidersHorizontal, MessageCircle, HelpCircle, Plus, Circle, Eye, Info, Settings, Bookmark, LogOut, Package, Compass } from "lucide-react"
+import { CalendarDays, Clock, MapPin, Users, User, ListChecks, BedDouble, Utensils, Activity, Bell, Star, CreditCard, Award, Sparkles, BookCheckIcon, Gift, HomeIcon, CheckCircle2, Heart, Search, X, SlidersHorizontal, MessageCircle, HelpCircle, Plus, Circle, Eye, Info, Settings, Bookmark, LogOut, Package, Compass, DollarSign, Calendar } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { motion, AnimatePresence } from "framer-motion"
 import { useConvexPreferences } from "@/lib/hooks/useConvexPreferences"
-import type * as React from 'react'
+import * as React from 'react'
 import {
   Card,
   CardContent,

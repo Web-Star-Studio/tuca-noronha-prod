@@ -18,7 +18,7 @@ import {
   TRANSPORTATION_OPTIONS,
   FOOD_PREFERENCES_OPTIONS,
   type PackageRequestFormData 
-} from "../../../convex/domains/packages/packageRequestTypes";
+} from "../../../convex/domains/packages/types";
 
 interface PackageRequestFormProps {
   onSuccess?: (requestNumber: string) => void;

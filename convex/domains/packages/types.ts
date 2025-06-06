@@ -338,4 +338,62 @@ export const STATUS_COLORS = {
   proposal_sent: "bg-purple-100 text-purple-800",
   confirmed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800"
-} as const; 
+} as const;
+
+// Form option constants
+export const COMPANIONS_OPTIONS = [
+  { value: "1", label: "1 pessoa" },
+  { value: "2", label: "2 pessoas" },
+  { value: "3", label: "3 pessoas" },
+  { value: "4", label: "4 pessoas" },
+  { value: "5", label: "5 pessoas" },
+  { value: "6+", label: "6 ou mais pessoas" },
+];
+
+export const BUDGET_FLEXIBILITY_OPTIONS = [
+  { value: "rigid", label: "Rígido - não posso ultrapassar" },
+  { value: "flexible", label: "Flexível - posso ultrapassar um pouco" },
+  { value: "very_flexible", label: "Muito flexível - é apenas uma estimativa" },
+];
+
+export const ACCOMMODATION_TYPE_OPTIONS = [
+  { value: "hotel", label: "Hotel" },
+  { value: "pousada", label: "Pousada" },
+  { value: "resort", label: "Resort" },
+  { value: "apartment", label: "Apartamento" },
+  { value: "house", label: "Casa" },
+  { value: "hostel", label: "Hostel" },
+];
+
+export const ACTIVITY_OPTIONS = [
+  { value: "mergulho", label: "Mergulho" },
+  { value: "snorkeling", label: "Snorkeling" },
+  { value: "trilhas", label: "Trilhas" },
+  { value: "passeio_barco", label: "Passeios de barco" },
+  { value: "observacao_golfinhos", label: "Observação de golfinhos" },
+  { value: "surf", label: "Surf" },
+  { value: "stand_up_paddle", label: "Stand Up Paddle" },
+  { value: "pesca", label: "Pesca" },
+  { value: "fotografia", label: "Fotografia" },
+  { value: "relaxamento", label: "Relaxamento" },
+];
+
+export const TRANSPORTATION_OPTIONS = [
+  { value: "carro", label: "Carro alugado" },
+  { value: "buggy", label: "Buggy" },
+  { value: "moto", label: "Moto" },
+  { value: "bicicleta", label: "Bicicleta" },
+  { value: "a_pe", label: "A pé" },
+  { value: "transporte_publico", label: "Transporte público" },
+];
+
+export const FOOD_PREFERENCES_OPTIONS = [
+  { value: "frutos_mar", label: "Frutos do mar" },
+  { value: "vegetariana", label: "Vegetariana" },
+  { value: "vegana", label: "Vegana" },
+  { value: "sem_gluten", label: "Sem glúten" },
+  { value: "brasileira", label: "Culinária brasileira" },
+  { value: "internacional", label: "Culinária internacional" },
+  { value: "local", label: "Pratos típicos locais" },
+  { value: "sem_restricoes", label: "Sem restrições" },
+]; 

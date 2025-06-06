@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, MapPin, Calendar, Star, Users, Car, Utensils, Camera, Package } from "lucide-react"
 import Link from "next/link"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 
 export default function WishlistPage() {
@@ -20,16 +20,9 @@ export default function WishlistPage() {
   const handleRemoveFromWishlist = async (itemType: string, itemId: string) => {
     try {
       await removeFromWishlist({ itemType, itemId })
-      toast({
-        title: "Removido dos favoritos",
-        description: "Item removido da sua lista de favoritos.",
-      })
+      toast.success("Removido dos favoritos")
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível remover o item dos favoritos.",
-        variant: "destructive",
-      })
+      toast.error("Não foi possível remover o item dos favoritos.")
     }
   }
 

@@ -15,7 +15,7 @@ export default function HospedagensPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Buscar dados reais do Convex
-  const { data: accommodations = [], isLoading } = useAllAccommodations();
+  const { accommodations = [], isLoading } = useAllAccommodations();
 
   // Extrair todos os tipos de hospedagem disponíveis (sem duplicatas)
   const types = Array.from(
@@ -28,7 +28,7 @@ export default function HospedagensPage() {
   ).sort();
 
   // Encontrar o preço máximo para o slider
-  const maxPrice = Math.max(...accommodations.map(accommodation => accommodation.pricePerNight), 3000);
+  const maxPrice = Math.max(...accommodations.map(accommodation => accommodation.pricing.pricePerNight), 3000);
 
   const toggleTypeFilter = (type: string) => {
     setSelectedTypes((prev) => {
@@ -57,11 +57,11 @@ export default function HospedagensPage() {
 
       // Filtragem por faixa de preço
       const priceMatch =
-        accommodation.pricePerNight >= priceRange[0] &&
-        accommodation.pricePerNight <= priceRange[1];
+        accommodation.pricing.pricePerNight >= priceRange[0] &&
+        accommodation.pricing.pricePerNight <= priceRange[1];
 
       // Filtragem por número de hóspedes
-      const guestMatch = accommodation.maxGuests >= guestCount;
+      const guestMatch = accommodation.maximumGuests >= guestCount;
 
       // Filtragem por amenidades
       const amenitiesMatch =
@@ -94,7 +94,7 @@ export default function HospedagensPage() {
 
   // Transformar dados do Convex para o formato esperado pelo HostingCard
   const transformAccommodationToHosting = (accommodation: Accommodation) => ({
-    id: accommodation._id,
+    id: accommodation._id || '',
     name: accommodation.name,
     slug: accommodation.slug,
     description: accommodation.description,
@@ -111,29 +111,29 @@ export default function HospedagensPage() {
       }
     },
     phone: accommodation.phone,
-    website: accommodation.website,
+    website: accommodation.website || '',
     type: accommodation.type,
-    checkInTime: accommodation.checkInTime || "14:00",
-    checkOutTime: accommodation.checkOutTime || "11:00",
-    pricePerNight: accommodation.pricePerNight,
+    checkInTime: accommodation.policies?.checkIn || "14:00",
+    checkOutTime: accommodation.policies?.checkOut || "11:00",
+    pricePerNight: accommodation.pricing.pricePerNight,
     currency: "BRL",
     discountPercentage: 0,
-    taxes: accommodation.taxes,
-    cleaningFee: accommodation.cleaningFee,
+    taxes: accommodation.pricing.taxes,
+    cleaningFee: accommodation.pricing.cleaningFee,
     totalRooms: 1,
-    maxGuests: accommodation.maxGuests,
-    bedrooms: accommodation.bedrooms,
-    bathrooms: accommodation.bathrooms,
+    maxGuests: accommodation.maximumGuests,
+    bedrooms: accommodation.rooms.bedrooms,
+    bathrooms: accommodation.rooms.bathrooms,
     beds: {
       single: 0,
-      double: accommodation.beds || 2,
+      double: accommodation.rooms.beds || 2,
       queen: 0,
       king: 0
     },
-    area: accommodation.area || 35,
+    area: 35,
     amenities: accommodation.amenities,
-    houseRules: [],
-    cancellationPolicy: "Política de cancelamento padrão",
+    houseRules: accommodation.houseRules || [],
+    cancellationPolicy: accommodation.policies?.cancellation || "Política de cancelamento padrão",
     petsAllowed: false,
     smokingAllowed: false,
     eventsAllowed: false,
@@ -141,20 +141,20 @@ export default function HospedagensPage() {
     mainImage: accommodation.mainImage,
     galleryImages: accommodation.galleryImages || [],
     rating: {
-      overall: accommodation.rating,
-      cleanliness: accommodation.rating,
-      location: accommodation.rating,
-      checkin: accommodation.rating,
-      value: accommodation.rating,
-      accuracy: accommodation.rating,
-      communication: accommodation.rating,
-      totalReviews: accommodation.totalReviews
+      overall: accommodation.rating.overall,
+      cleanliness: accommodation.rating.cleanliness,
+      location: accommodation.rating.location,
+      checkin: accommodation.rating.checkIn,
+      value: accommodation.rating.value,
+      accuracy: accommodation.rating.accuracy,
+      communication: accommodation.rating.communication,
+      totalReviews: accommodation.rating.totalReviews
     },
     isActive: accommodation.isActive,
     isFeatured: accommodation.isFeatured,
     tags: [],
-    createdAt: accommodation._creationTime.toString(),
-    updatedAt: accommodation._creationTime.toString()
+    createdAt: accommodation._creationTime?.toString() || '',
+    updatedAt: accommodation._creationTime?.toString() || ''
   });
 
   if (isLoading) {
