@@ -1,17 +1,169 @@
 'use client'
 
-import { useHostingsStore } from "@/lib/store/hostingsStore";
 import HostingCard from "@/components/cards/HostingCard";
 import { ArrowRight, Home } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { useFeaturedAccommodations } from "@/lib/services/accommodationService";
+import type { Accommodation } from "@/lib/services/accommodationService";
 
 export default function FeaturedHostings() {
-  const { hostings } = useHostingsStore();
+  // Buscar dados reais do Convex
+  const { data: featuredAccommodations = [], isLoading } = useFeaturedAccommodations();
   
-  // Filtrar apenas as hospedagens destacadas
-  const featuredHostings = hostings.filter(hosting => hosting.isFeatured);
+  // Transformar dados do Convex para o formato esperado pelo HostingCard
+  const transformAccommodationToHosting = (accommodation: Accommodation) => ({
+    id: accommodation._id,
+    name: accommodation.name,
+    slug: accommodation.slug,
+    description: accommodation.description,
+    description_long: accommodation.description,
+    address: {
+      street: accommodation.address.street,
+      city: accommodation.address.city,
+      state: accommodation.address.state,
+      zipCode: accommodation.address.zipCode,
+      neighborhood: accommodation.address.neighborhood,
+      coordinates: {
+        latitude: accommodation.address.coordinates.latitude,
+        longitude: accommodation.address.coordinates.longitude
+      }
+    },
+    phone: accommodation.phone,
+    website: accommodation.website,
+    type: accommodation.type,
+    checkInTime: accommodation.checkInTime || "14:00",
+    checkOutTime: accommodation.checkOutTime || "11:00",
+    pricePerNight: accommodation.pricePerNight,
+    currency: "BRL",
+    discountPercentage: 0,
+    taxes: accommodation.taxes,
+    cleaningFee: accommodation.cleaningFee,
+    totalRooms: 1,
+    maxGuests: accommodation.maxGuests,
+    bedrooms: accommodation.bedrooms,
+    bathrooms: accommodation.bathrooms,
+    beds: {
+      single: 0,
+      double: accommodation.beds || 2,
+      queen: 0,
+      king: 0
+    },
+    area: accommodation.area || 35,
+    amenities: accommodation.amenities,
+    houseRules: [],
+    cancellationPolicy: "Política de cancelamento padrão",
+    petsAllowed: false,
+    smokingAllowed: false,
+    eventsAllowed: false,
+    minimumStay: accommodation.minimumStay || 1,
+    mainImage: accommodation.mainImage,
+    galleryImages: accommodation.galleryImages || [],
+    rating: {
+      overall: accommodation.rating,
+      cleanliness: accommodation.rating,
+      location: accommodation.rating,
+      checkin: accommodation.rating,
+      value: accommodation.rating,
+      accuracy: accommodation.rating,
+      communication: accommodation.rating,
+      totalReviews: accommodation.totalReviews
+    },
+    isActive: accommodation.isActive,
+    isFeatured: accommodation.isFeatured,
+    tags: [],
+    createdAt: accommodation._creationTime.toString(),
+    updatedAt: accommodation._creationTime.toString()
+  });
+
+  if (isLoading) {
+    return (
+      <section className="py-24 relative overflow-hidden bg-blue-50/30">
+        {/* Background design elements */}
+        <div className="absolute top-0 right-0 -z-10 opacity-10">
+          <Home className="w-72 h-72 text-blue-200" />
+        </div>
+        <div className="absolute bottom-20 left-10 -z-10 opacity-5">
+          <Image 
+            src="/images/bg-pattern.png" 
+            alt="Pattern" 
+            width={500} 
+            height={500} 
+            className="opacity-20"
+          />
+        </div>
+        
+        <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16">
+            <div className="max-w-2xl">
+              <h2 className="text-4xl md:text-5xl font-serif font-medium tracking-tight mb-4">
+                Onde Se Hospedar
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Carregando as melhores acomodações em Fernando de Noronha...
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-200 rounded-lg h-80 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!featuredAccommodations.length) {
+    return (
+      <section className="py-24 relative overflow-hidden bg-blue-50/30">
+        {/* Background design elements */}
+        <div className="absolute top-0 right-0 -z-10 opacity-10">
+          <Home className="w-72 h-72 text-blue-200" />
+        </div>
+        
+        <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="max-w-2xl"
+            >
+              <h2 className="text-4xl md:text-5xl font-serif font-medium tracking-tight mb-4">
+                Onde Se Hospedar
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Encontre as melhores acomodações em Fernando de Noronha
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="mt-6 md:mt-0"
+            >
+              <Link href="/hospedagens" className="text-blue-600 font-medium flex items-center group hover:underline">
+                Ver todas as hospedagens
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+          </div>
+
+          <div className="text-center py-10">
+            <p className="text-lg text-gray-500">
+              Nenhuma hospedagem em destaque no momento
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
   
   return (
     <section className="py-24 relative overflow-hidden bg-blue-50/30">
@@ -67,13 +219,13 @@ export default function FeaturedHostings() {
           viewport={{ once: true }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-          {featuredHostings.map((hosting) => (
+          {featuredAccommodations.map((accommodation) => (
             <motion.div
-              key={hosting.id}
+              key={accommodation._id}
               whileHover={{ y: -5 }}
               transition={{ duration: 0.2 }}
             >
-              <HostingCard hosting={hosting} />
+              <HostingCard hosting={transformAccommodationToHosting(accommodation)} />
             </motion.div>
           ))}
         </motion.div>

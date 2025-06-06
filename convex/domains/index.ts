@@ -22,4 +22,7 @@ export * as restaurants from "./restaurants";
 export * as users from "./users";
 
 // Export RBAC domain for permissions and employee management
-export * as rbac from "./rbac"; 
+export * as rbac from "./rbac";
+
+// Export packages domain
+export * as packages from "./packages"; 

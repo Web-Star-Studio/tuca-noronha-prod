@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   Search,
   LayoutPanelLeft,
-  Car
+  Car,
+  MessageSquare
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -222,6 +223,13 @@ function AdminSidebar() {
             href="/admin/dashboard/pacotes"
             icon={Package}
             label="Pacotes"
+            isActive={isActive}
+          />
+
+          <SidebarLink
+            href="/admin/dashboard/solicitacoes-pacotes"
+            icon={MessageSquare}
+            label="Solicitações de Pacotes"
             isActive={isActive}
           />
 

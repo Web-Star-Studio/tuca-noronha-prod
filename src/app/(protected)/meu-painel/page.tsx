@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
-import { CalendarDays, Clock, MapPin, Users, User, ListChecks, BedDouble, Utensils, Activity, Bell, Star, CreditCard, Award, Sparkles, BookCheckIcon, Gift, HomeIcon, CheckCircle2, Heart, Search, X, SlidersHorizontal, MessageCircle, HelpCircle, Plus, Circle, Eye, Info, Settings, Bookmark, LogOut } from "lucide-react"
+import { useQuery } from "convex/react"
+import { api } from "../../../../convex/_generated/api"
+import { CalendarDays, Clock, MapPin, Users, User, ListChecks, BedDouble, Utensils, Activity, Bell, Star, CreditCard, Award, Sparkles, BookCheckIcon, Gift, HomeIcon, CheckCircle2, Heart, Search, X, SlidersHorizontal, MessageCircle, HelpCircle, Plus, Circle, Eye, Info, Settings, Bookmark, LogOut, Package, Compass } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { motion, AnimatePresence } from "framer-motion"
@@ -46,18 +48,9 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 import { toast } from "sonner"
 import { Label } from '@/components/ui/label'
+import Link from "next/link"
 import { Switch } from "@/components/ui/switch"
 import {
   DropdownMenu,
@@ -892,239 +885,369 @@ const FloatingSupportButton = () => {
   );
 };
 
-// ****** SIDEBAR COMPONENT ******
-interface SidebarNavProps {
-  activeSection: string;
-  onSectionChange: (section: string) => void;
-  user: {
-    firstName?: string;
-    imageUrl?: string;
-    emailAddresses?: Array<{ emailAddress: string }>;
-  } | null;
-  unreadNotifications: number;
-}
+// ****** PACKAGE REQUESTS SECTION COMPONENT ******
+const PackageRequestsSection = () => {
+  const { user } = useUser()
+  const [trackingNumber, setTrackingNumber] = useState("")
+  const [searchResults, setSearchResults] = useState<any>(null)
+  const [isSearching, setIsSearching] = useState(false)
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ activeSection, onSectionChange, user, unreadNotifications }) => {
-  // Navigation links with icons
-  const navItems = [
-    { id: 'overview', label: 'Visão Geral', icon: HomeIcon, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { id: 'reservas', label: 'Minhas Reservas', icon: BookCheckIcon, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
-    { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { id: 'favoritos', label: 'Favoritos', icon: Heart, color: 'text-pink-600', bgColor: 'bg-pink-50' },
-    { id: 'personalizacao', label: 'Preferências', icon: User, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
-    { id: 'ajuda', label: 'Ajuda e Suporte', icon: HelpCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-  ];
-  
+  // Use the real Convex query
+  const getPackageRequestByNumber = useQuery(
+    api.packages.getPackageRequestByNumber,
+    trackingNumber.trim() ? { requestNumber: trackingNumber.trim() } : "skip"
+  );
+
+  const searchPackageRequest = async () => {
+    if (!trackingNumber.trim()) {
+      toast.error("Digite um número de acompanhamento")
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      // Trigger the search by updating the state
+      if (getPackageRequestByNumber) {
+        setSearchResults(getPackageRequestByNumber)
+        toast.success("Solicitação encontrada!")
+      } else {
+        toast.error("Solicitação não encontrada")
+        setSearchResults(null)
+      }
+    } catch (error) {
+      toast.error("Erro ao buscar solicitação")
+      setSearchResults(null)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // Watch for changes in the query result
+  React.useEffect(() => {
+    if (getPackageRequestByNumber && trackingNumber.trim()) {
+      setSearchResults(getPackageRequestByNumber)
+      setIsSearching(false)
+    }
+  }, [getPackageRequestByNumber, trackingNumber])
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending": return "bg-yellow-100 text-yellow-800"
+      case "in_review": return "bg-blue-100 text-blue-800"
+      case "proposal_sent": return "bg-purple-100 text-purple-800"
+      case "confirmed": return "bg-green-100 text-green-800"
+      case "cancelled": return "bg-red-100 text-red-800"
+      default: return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending": return "Pendente"
+      case "in_review": return "Em Análise"
+      case "proposal_sent": return "Proposta Enviada"
+      case "confirmed": return "Confirmado"
+      case "cancelled": return "Cancelado"
+      default: return status
+    }
+  }
+
   return (
-    <div className="w-full lg:w-64 flex flex-col h-full">
-      {/* Avatar and Edit Profile section removed */}
-      
-      {/* Navigation List */}
-      <nav className="flex-1 px-3 space-y-1 pt-4">
-        {navItems.map((item) => {
-          const isActive = activeSection === item.id;
-          return (
-            <Button
-              key={item.id}
-              variant={isActive ? "default" : "ghost"}
-              className={`w-full justify-start mb-1 ${
-                isActive 
-                  ? `bg-${item.color.split('-')[1]}-100 text-${item.color.split('-')[1]}-700 hover:bg-${item.color.split('-')[1]}-200 hover:text-${item.color.split('-')[1]}-800 border-l-4 border-${item.color.split('-')[1]}-600` 
-                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-              }`}
-              onClick={() => onSectionChange(item.id)}
-            >
-              <item.icon className={`mr-2 h-4 w-4 ${isActive ? item.color : 'text-gray-500'}`} />
-              {item.label}
-              {item.id === 'overview' && unreadNotifications > 0 && (
-                <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full">
-                  {unreadNotifications}
-                </Badge>
-              )}
-            </Button>
-          );
-        })}
-      </nav>
-      
-      <Separator className="mt-4 mb-4" />
-      
-      {/* Logout Button */}
-      <div className="px-3 pb-4">
-        <Button variant="ghost" className="w-full justify-start text-gray-700 hover:text-gray-900">
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Pacotes Solicitados</h2>
+        <Button asChild variant="outline">
+          <Link href="/pacotes">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Solicitação
+          </Link>
         </Button>
       </div>
-    </div>
-  );
-};
 
-// ****** END SIDEBAR COMPONENT ******
+      {/* Search Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            Acompanhar Solicitação
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <Input
+              placeholder="Digite o número de acompanhamento (ex: PKG-1234567890-ABC)"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && searchPackageRequest()}
+            />
+            <Button onClick={searchPackageRequest} disabled={isSearching}>
+              {isSearching ? "Buscando..." : "Buscar"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Search Results */}
+      {searchResults && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Solicitação {searchResults.requestNumber}</CardTitle>
+              <Badge className={getStatusColor(searchResults.status)}>
+                {getStatusLabel(searchResults.status)}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Trip Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Detalhes da Viagem</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <span>{searchResults.tripDetails.destination}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span>
+                      {format(new Date(searchResults.tripDetails.startDate), "dd/MM/yyyy", { locale: ptBR })} - {" "}
+                      {format(new Date(searchResults.tripDetails.endDate), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-500" />
+                    <span>{searchResults.tripDetails.groupSize} pessoas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-gray-500" />
+                    <span>R$ {searchResults.tripDetails.budget.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Histórico de Status</h4>
+                <div className="space-y-3">
+                  {searchResults.statusHistory.map((history: any, index: number) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        history.status === searchResults.status ? 'bg-blue-600' : 'bg-gray-300'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {getStatusLabel(history.status)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(history.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {history.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button variant="outline" size="sm">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Entrar em Contato
+              </Button>
+              {searchResults.status === "proposal_sent" && (
+                <Button size="sm">
+                  <Eye className="w-4 h-4 mr-2" />
+                  Ver Proposta
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No requests found message */}
+      {!searchResults && !isSearching && (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma solicitação encontrada</h3>
+          <p className="text-gray-500 mb-6">
+            Digite um número de acompanhamento para visualizar os detalhes da sua solicitação de pacote.
+          </p>
+          <Button asChild>
+            <Link href="/pacotes">
+              Solicitar Novo Pacote
+            </Link>
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+// ****** END PACKAGE REQUESTS SECTION COMPONENT ******
 
 export default function Dashboard() {
-  const { user } = useUser();
-  const [activeSection, setActiveSection] = useState('overview');
-  const [notifications, setNotifications] = useState(mockNotifications);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const isMobile = useMediaQuery('(max-width: 1024px)');
-  const unreadNotifications = notifications.filter(n => !n.read).length;
-  const { saveUserPreferences, isLoading, error, preferences } = useConvexPreferences();
+  const { user } = useUser()
+  const [activeSection, setActiveSection] = useState('overview')
+  const [notifications, setNotifications] = useState(mockNotifications)
 
-  // Handlers for ReservationsSection actions
   const handleNewReservation = () => {
-    toast.info("Abrindo opções para nova reserva...");
-  };
+    toast.success("Redirecionando para nova reserva...")
+  }
 
   const handleViewReservationDetails = (reservationId: string) => {
-    toast.info(`Carregando detalhes da reserva #${reservationId.substring(0,5)}...`);
-  };
+    toast.info(`Visualizando detalhes da reserva ${reservationId}`)
+  }
 
   const handleCancelReservation = (reservationId: string) => {
-    toast(`Cancelar reserva #${reservationId.substring(0,5)}?`, {
-      action: {
-        label: "Confirmar Cancelamento",
-        onClick: () => {
-          console.log(`Reservation ${reservationId} cancellation confirmed.`);
-          toast.success(`Reserva #${reservationId.substring(0,5)} cancelada.`);
-        },
-      },
-      cancel: {
-        label: "Manter Reserva",
-        onClick: () => console.log("Cancellation aborted"),
-      },
-      duration: 10000,
-    });
-  };
+    toast.error(`Cancelando reserva ${reservationId}`)
+  }
+
+  // Count unread notifications
+  const unreadNotifications = notifications.filter(n => !n.read).length
 
   const markNotificationAsRead = (id: string) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { ...notif, read: true } : notif
-    ));
-    toast.success("Notificação marcada como lida");
-  };
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === id 
+          ? { ...notification, read: true }
+          : notification
+      )
+    )
+  }
 
   const renderPageContent = () => {
     switch (activeSection) {
       case 'overview':
         return (
           <OverviewSection 
-            reservations={mockReservations} 
+            reservations={mockReservations}
             notifications={notifications}
             onMarkAsRead={markNotificationAsRead}
             onSectionChange={setActiveSection}
           />
-        );
+        )
       case 'reservas':
-        return <BookingManagementDashboard />;
+        return (
+          <ReservationsSection
+            reservations={mockReservations}
+            getReservationIcon={getReservationIcon}
+            getReservationColor={getReservationColor}
+            getStatusVariant={getStatusVariant}
+            getStatusLabel={getStatusLabel}
+            onNewReservation={handleNewReservation}
+            onViewDetails={handleViewReservationDetails}
+            onCancelReservation={handleCancelReservation}
+          />
+        )
+      case 'pacotes':
+        return <PackageRequestsSection />
       case 'recomendacoes':
         return (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Recomendações Personalizadas</h2>
-              <Button variant="outline" size="sm" className="text-xs">
-                <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
-                Filtrar
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {mockRecommendations.map((recommendation) => (
-                <RecommendationCard key={recommendation.id} item={recommendation} />
-              ))}
-            </div>
-            
-            {mockRecommendations.length === 0 && (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <Sparkles className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma recomendação</h3>
-                <p className="text-gray-500 mb-6">Preencha suas preferências para receber recomendações personalizadas</p>
-                <Button onClick={() => setActiveSection("personalizacao")}>Definir Preferências</Button>
-              </div>
-            )}
+          <div className="space-y-6">
+            <Card className="bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg text-purple-700">Recomendações Personalizadas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {mockRecommendations.map((item) => (
+                    <RecommendationCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        );
-      case 'personalizacao':
-        return (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <PreferencesSection />
-          </div>
-        );
+        )
       case 'favoritos':
         return (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <Bookmark className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Nenhum favorito salvo</h3>
-            <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              Adicione lugares, restaurantes e atividades aos favoritos para encontrá-los facilmente depois.
-            </p>
-            <Button onClick={() => setActiveSection("recomendacoes")}>
-              Explorar Recomendações
-            </Button>
+          <div className="space-y-6">
+            <Card className="bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg text-pink-700">Meus Favoritos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Seus itens favoritos aparecerão aqui.</p>
+              </CardContent>
+            </Card>
           </div>
-        );
+        )
+      case 'personalizacao':
+        return <PreferencesSection />
       case 'ajuda':
         return (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4">Central de Ajuda</h2>
-            <div className="space-y-6 max-w-3xl">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center">
-                      <CalendarDays className="h-4 w-4 mr-2 text-primary" />
-                      Reservas e Cancelamentos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0 text-sm">
-                    <p>Aprenda como fazer, alterar ou cancelar reservas.</p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="ghost" size="sm" className="w-full text-primary">Ver detalhes</Button>
-                  </CardFooter>
-                </Card>
-                
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center">
-                      <CreditCard className="h-4 w-4 mr-2 text-primary" />
-                      Pagamentos e Reembolsos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0 text-sm">
-                    <p>Informações sobre formas de pagamento e política de reembolso.</p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="ghost" size="sm" className="w-full text-primary">Ver detalhes</Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Additional help topics can be added here */}
-              </div>
+          <div className="space-y-6 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center">
+                    <CalendarDays className="h-4 w-4 mr-2 text-primary" />
+                    Reservas e Cancelamentos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 text-sm">
+                  <p>Aprenda como fazer, alterar ou cancelar reservas.</p>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="ghost" size="sm" className="w-full text-primary">Ver detalhes</Button>
+                </CardFooter>
+              </Card>
               
-              <Separator />
-              
-              <div>
-                <h3 className="font-medium mb-3">Contato direto</h3>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button variant="outline" className="flex-1">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Chat de Suporte
-                  </Button>
-                  <Button variant="outline" className="flex-1">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Enviar Email
-                  </Button>
-                </div>
-              </div>
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center">
+                    <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                    Pagamentos e Reembolsos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 text-sm">
+                  <p>Informações sobre formas de pagamento e política de reembolso.</p>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="ghost" size="sm" className="w-full text-primary">Ver detalhes</Button>
+                </CardFooter>
+              </Card>
             </div>
+            
+            <Separator />
+            
+            <Card className="bg-emerald-50 border-emerald-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg text-emerald-700">Contato Direto</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-emerald-600 mb-4">
+                  Precisa de ajuda personalizada? Entre em contato conosco:
+                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-emerald-700">
+                    <strong>WhatsApp:</strong> (81) 99999-9999
+                  </p>
+                  <p className="text-sm text-emerald-700">
+                    <strong>Email:</strong> suporte@tucanoronha.com.br
+                  </p>
+                  <p className="text-sm text-emerald-700">
+                    <strong>Horário:</strong> Segunda a Sexta, 8h às 18h
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        );
+        )
       default:
-        return <div>Conteúdo não disponível</div>;
+        return (
+          <OverviewSection 
+            reservations={mockReservations}
+            notifications={notifications}
+            onMarkAsRead={markNotificationAsRead}
+            onSectionChange={setActiveSection}
+          />
+        )
     }
-  };
+  }
 
-  // Add a new interface for the overview section props
   interface OverviewSectionProps {
     reservations: typeof mockReservations;
     notifications: Notification[];
@@ -1132,7 +1255,6 @@ export default function Dashboard() {
     onSectionChange: (section: string) => void;
   }
 
-  // Update the overview section component to use the interface
   const OverviewSection: React.FC<OverviewSectionProps> = ({ 
     reservations, 
     notifications, 
@@ -1141,25 +1263,21 @@ export default function Dashboard() {
   }) => {
     return (
       <div className="space-y-6">
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
             <CardContent className="pt-6">
               <div className="flex justify-between">
                 <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
-                  <BookCheckIcon className="h-5 w-5 text-white" />
+                  <CalendarDays className="h-5 w-5 text-white" />
                 </div>
-                <div className="text-2xl font-bold text-blue-700">{reservations.filter(r => r.status === 'confirmed').length}</div>
+                <div className="text-2xl font-bold text-blue-700">3</div>
               </div>
               <h3 className="text-sm font-medium mt-2 text-blue-800">Reservas Ativas</h3>
-              <p className="text-xs text-blue-600 mt-1">Suas próximas reservas</p>
+              <p className="text-xs text-blue-600 mt-1">Próximas viagens</p>
             </CardContent>
             <CardFooter className="pt-0 pb-3">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs w-full p-0 h-7 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-                onClick={() => onSectionChange('reservas')}
-              >
+              <Button variant="ghost" size="sm" className="text-xs w-full p-0 h-7 text-blue-600 hover:text-blue-700 hover:bg-blue-100">
                 Ver Reservas
               </Button>
             </CardFooter>
@@ -1236,6 +1354,16 @@ export default function Dashboard() {
                 <span className="text-sm font-medium">Nova Reserva</span>
               </Button>
               
+              <Link href="/meu-painel/guia">
+                <Button 
+                  variant="outline" 
+                  className="h-auto flex flex-col items-center justify-center py-4 px-2 gap-2 text-center border-orange-200 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 w-full"
+                >
+                  <Compass className="h-6 w-6 text-orange-500" />
+                  <span className="text-sm font-medium">Guia Interativo</span>
+                </Button>
+              </Link>
+              
               <Button 
                 onClick={() => onSectionChange('recomendacoes')} 
                 variant="outline" 
@@ -1279,36 +1407,23 @@ export default function Dashboard() {
               Ver Todas
             </Button>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             {reservations.length > 0 ? (
               <div className="space-y-3">
-                {reservations.slice(0, 2).map((reservation) => (
-                  <div key={reservation.id} className="flex items-start p-2 hover:bg-gray-50 rounded-md transition-colors">
-                    <div className={`p-2 rounded-md ${getReservationColor(reservation.type)} mr-3`}>
-                      {getReservationIcon(reservation.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between">
-                        <h4 className="font-medium truncate">{reservation.name}</h4>
-                        <Badge variant={getStatusVariant(reservation.status)} className="ml-2">
-                          {getStatusLabel(reservation.status)}
-                        </Badge>
+                {reservations.slice(0, 3).map((reservation) => (
+                  <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getReservationColor(reservation.type)}`}>
+                        {getReservationIcon(reservation.type)}
                       </div>
-                      <div className="flex flex-wrap text-sm text-gray-500 mt-1">
-                        <span className="flex items-center mr-4">
-                          <CalendarDays className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                          {reservation.type === 'accommodation' && reservation.checkIn && reservation.checkOut
-                            ? `${format(reservation.checkIn, "dd MMM", { locale: ptBR })} - ${format(reservation.checkOut, "dd MMM", { locale: ptBR })}`
-                            : reservation.date
-                              ? format(reservation.date, "dd MMM, yyyy", { locale: ptBR })
-                              : "Data não definida"}
-                        </span>
-                        <span className="flex items-center">
-                          <Users className="h-3.5 w-3.5 mr-1 text-gray-400" />
-                          {reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}
-                        </span>
+                      <div>
+                        <p className="font-medium text-sm">{reservation.name}</p>
+                        <p className="text-xs text-gray-600">{reservation.location}</p>
                       </div>
                     </div>
+                    <Badge variant={getStatusVariant(reservation.status)} className="text-xs">
+                      {getStatusLabel(reservation.status)}
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -1345,27 +1460,15 @@ export default function Dashboard() {
               Ver Todas
             </Button>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             {notifications.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-3">
                 {notifications.slice(0, 3).map((notification) => (
-                  <button 
+                  <NotificationItem 
                     key={notification.id} 
-                    type="button"
-                    className={`p-3 w-full text-left ${!notification.read ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'} rounded-md transition-colors cursor-pointer`}
+                    notification={notification}
                     onClick={() => onMarkAsRead(notification.id)}
-                    aria-label={`Notificação: ${notification.title}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className={`text-sm ${!notification.read ? 'font-medium' : ''}`}>{notification.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notification.description}</p>
-                      </div>
-                      <span className="text-xs text-gray-400">
-                        {format(notification.date, "dd/MM", { locale: ptBR })}
-                      </span>
-                    </div>
-                  </button>
+                  />
                 ))}
               </div>
             ) : (
@@ -1381,109 +1484,69 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6 max-w-screen-2xl">
-      {/* Mobile Header with Menu Button */}
-      <div className="lg:hidden flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Meu Painel</h1>
-        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0">
-            <SidebarNav 
-              activeSection={activeSection}
-              onSectionChange={(section) => {
-                setActiveSection(section);
-                setIsMobileSidebarOpen(false);
-              }}
-              user={{
-                firstName: user?.firstName || undefined,
-                imageUrl: user?.imageUrl || undefined,
-                emailAddresses: user?.emailAddresses || undefined
-              }}
-              unreadNotifications={unreadNotifications}
-            />
-          </SheetContent>
-        </Sheet>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar - hidden on mobile, shown on desktop */}
-        <div className="hidden lg:block lg:w-64 bg-white rounded-lg shadow-sm h-[calc(100vh-7rem)] sticky top-24 overflow-y-auto">
-          <SidebarNav 
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-            user={{
-              firstName: user?.firstName || undefined,
-              imageUrl: user?.imageUrl || undefined,
-              emailAddresses: user?.emailAddresses || undefined
-            }}
-            unreadNotifications={unreadNotifications}
-          />
-        </div>
-        
-        {/* Main Content Area */}
-        <div className="flex-1">
-          <div className={`
+      {/* Page Header */}
+      <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={`
             bg-gradient-to-r 
             ${activeSection === 'overview' ? 'from-blue-500 to-blue-600' : 
               activeSection === 'reservas' ? 'from-indigo-500 to-indigo-600' : 
+              activeSection === 'pacotes' ? 'from-orange-500 to-orange-600' :
               activeSection === 'recomendacoes' ? 'from-purple-500 to-purple-600' : 
               activeSection === 'favoritos' ? 'from-pink-500 to-pink-600' : 
               activeSection === 'personalizacao' ? 'from-cyan-500 to-cyan-600' : 
               activeSection === 'ajuda' ? 'from-emerald-500 to-emerald-600' : 
               'from-gray-700 to-gray-800'
             }
-            rounded-lg shadow-md p-4 mb-6 text-white
-          `}>
-            <h1 className="text-2xl font-bold">
-              {activeSection === 'overview' ? 'Meu Painel' : 
-              activeSection === 'reservas' ? 'Minhas Reservas' : 
-              activeSection === 'recomendacoes' ? 'Recomendações' :
-              activeSection === 'personalizacao' ? 'Preferências' :
-              activeSection === 'favoritos' ? 'Meus Favoritos' :
-              activeSection === 'ajuda' ? 'Ajuda e Suporte' : 'Meu Painel'}
-            </h1>
-          </div>
-          
-          <div className="space-y-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {renderPageContent()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
+            rounded-lg shadow-lg p-6 text-white
+          `}
+        >
+          <h1 className="text-3xl font-bold mb-2">
+            {activeSection === 'overview' ? 'Meu Painel' : 
+            activeSection === 'reservas' ? 'Minhas Reservas' : 
+            activeSection === 'pacotes' ? 'Pacotes Solicitados' :
+            activeSection === 'recomendacoes' ? 'Recomendações Personalizadas' :
+            activeSection === 'personalizacao' ? 'Preferências' :
+            activeSection === 'favoritos' ? 'Meus Favoritos' :
+            activeSection === 'ajuda' ? 'Ajuda e Suporte' : 'Meu Painel'}
+          </h1>
+          <p className="text-white/90">
+            {activeSection === 'overview' ? 'Visão geral das suas atividades e reservas' : 
+            activeSection === 'reservas' ? 'Gerencie todas as suas reservas em um só lugar' : 
+            activeSection === 'pacotes' ? 'Acompanhe suas solicitações de pacotes personalizados' :
+            activeSection === 'recomendacoes' ? 'Descobra opções perfeitas para você' :
+            activeSection === 'personalizacao' ? 'Configure suas preferências de viagem' :
+            activeSection === 'favoritos' ? 'Seus destinos e experiências favoritas' :
+            activeSection === 'ajuda' ? 'Encontre respostas e suporte quando precisar' : 'Bem-vindo ao seu painel personalizado'}
+          </p>
+        </motion.div>
       </div>
+      
+      {/* Main Content */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="space-y-6"
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderPageContent()}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Floating Support Button */}
+      <FloatingSupportButton />
     </div>
   );
 }
-
-// Helper component for missing icons
-interface IconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number | string;
-}
-
-const Mail = (props: IconProps) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <title>Email Icon</title>
-    <rect width="20" height="16" x="2" y="4" rx="2" />
-    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-  </svg>
-);
-
-const Menu = (props: IconProps) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <title>Menu Icon</title>
-    <line x1="4" x2="20" y1="12" y2="12" />
-    <line x1="4" x2="20" y1="6" y2="6" />
-    <line x1="4" x2="20" y1="18" y2="18" />
-  </svg>
-);

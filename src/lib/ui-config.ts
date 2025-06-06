@@ -175,3 +175,74 @@ export const imageEffects = {
     light: "absolute inset-0 bg-gradient-to-t from-white/60 via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300", 
   }
 };
+
+// Unified UI object for easier consumption
+export const ui = {
+  // Colors
+  colors: {
+    primary: "text-primary",
+    secondary: "text-secondary",
+    success: "text-green-600",
+    warning: "text-yellow-600",
+    danger: "text-red-600",
+    info: "text-blue-600",
+    text: {
+      primary: "text-foreground",
+      secondary: "text-muted-foreground", 
+      muted: "text-muted-foreground"
+    },
+    background: {
+      muted: "bg-muted",
+      primary: "bg-primary",
+      secondary: "bg-secondary",
+      accent: "bg-accent"
+    }
+  },
+  
+  // Typography
+  typography: {
+    h1: {
+      className: "text-3xl font-bold tracking-tight"
+    },
+    h2: {
+      className: "text-2xl font-semibold tracking-tight"
+    },
+    h3: {
+      className: "text-xl font-semibold"
+    }
+  },
+  
+  // Buttons
+  buttons: {
+    confirm: {
+      className: "bg-green-600 hover:bg-green-700 text-white"
+    },
+    cancel: {
+      className: "bg-red-600 hover:bg-red-700 text-white"
+    },
+    primary: {
+      className: buttonStyles.variant.default
+    },
+    secondary: {
+      className: buttonStyles.variant.secondary
+    }
+  },
+  
+  // Cards
+  cards: cardStyles,
+  
+  // Badges
+  badges: badgeStyles,
+  
+  // Forms
+  forms: formStyles,
+  
+  // Backgrounds
+  backgrounds: decorativeBackgrounds,
+  
+  // Transitions
+  transitions: transitionEffects,
+  
+  // Images
+  images: imageEffects
+};

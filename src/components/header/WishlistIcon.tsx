@@ -1,20 +1,30 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
-import React, { useState } from "react";
+import React from "react";
 import { Heart } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { api } from "../../../convex/_generated/api";
 
 interface WishlistIconProps {
   isTransparent: boolean;
 }
 
 const WishlistIcon = ({ isTransparent }: WishlistIconProps) => {
-    const [wishlistItems, setWishlistItems] = useState([]);
-  const hasItems = wishlistItems.length > 0;
+  const { userId } = useAuth();
+
+  // Buscar contagem de itens na wishlist
+  const wishlistCount = useQuery(
+    api.wishlist.getWishlistCount,
+    userId ? {} : "skip"
+  );
+
+  const hasItems = wishlistCount && wishlistCount > 0;
 
   return (
     <Link
-      href="/lista-de-desejos"
+      href="/wishlist"
       className="relative flex items-center justify-center"
       aria-label="Lista de Desejos"
     >
@@ -27,7 +37,7 @@ const WishlistIcon = ({ isTransparent }: WishlistIconProps) => {
         <span
           className={`absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-tuca-coral text-white text-xs font-medium`}
         >
-          {wishlistItems.length}
+          {wishlistCount > 99 ? '99+' : wishlistCount}
         </span>
       )}
     </Link>

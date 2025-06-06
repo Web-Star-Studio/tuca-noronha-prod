@@ -4,7 +4,7 @@ import * as React from "react"
 import { useState } from "react"
 import { format, differenceInDays } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Users, Bed, Check, Plus, Minus } from "lucide-react"
+import { Calendar as CalendarIcon, Users, Check, Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -12,28 +12,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"  
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
 
-const roomTypes = [
-  { id: "standard", name: "Standard", maxGuests: 2, pricePerNight: 250 },
-  { id: "deluxe", name: "Deluxe", maxGuests: 3, pricePerNight: 350 },
-  { id: "suite", name: "Suite", maxGuests: 4, pricePerNight: 500 },
-  { id: "family", name: "Família", maxGuests: 6, pricePerNight: 650 },
-]
-
 export type AccommodationBookingFormProps = {
-  hotelId?: string
-  hotelName?: string
+  accommodationId: string
+  accommodationName: string
+  pricePerNight: number
+  maxGuests: number
   className?: string
-  onBookingSubmit?: (booking: {
+  onSubmit?: (booking: {
     hotelId?: string
     hotelName?: string
     checkIn: Date
@@ -44,16 +33,17 @@ export type AccommodationBookingFormProps = {
 }
 
 export function AccommodationBookingForm({
-  hotelId,
-  hotelName = "Hotel & Resort",
+  accommodationId,
+  accommodationName,
+  pricePerNight,
+  maxGuests,
   className,
-  onBookingSubmit
+  onSubmit
 }: AccommodationBookingFormProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: undefined,
     to: undefined,
   })
-  const [roomType, setRoomType] = useState<string>("")
   const [guests, setGuests] = useState<number>(2)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -65,9 +55,6 @@ export function AccommodationBookingForm({
     }).format(value)
   }
   
-  // Obter o quarto selecionado
-  const selectedRoom = roomTypes.find(room => room.id === roomType)
-  
   // Calcular número de noites e preço total
   const calculateNights = () => {
     if (dateRange?.from && dateRange?.to) {
@@ -77,10 +64,18 @@ export function AccommodationBookingForm({
   }
   
   const nights = calculateNights()
-  const totalPrice = selectedRoom ? selectedRoom.pricePerNight * nights : 0
+  const totalPrice = pricePerNight * nights
   
   const handleSubmit = async () => {
-    if (!dateRange?.from || !dateRange?.to || !roomType) return
+    if (!dateRange?.from || !dateRange?.to) {
+      toast.error("Selecione as datas de check-in e check-out")
+      return
+    }
+    
+    if (guests > maxGuests) {
+      toast.error(`Número máximo de hóspedes: ${maxGuests}`)
+      return
+    }
     
     setIsSubmitting(true)
     
@@ -88,13 +83,13 @@ export function AccommodationBookingForm({
       // Simular um atraso de rede
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      if (onBookingSubmit) {
-        onBookingSubmit({
-          hotelId,
-          hotelName,
+      if (onSubmit) {
+        onSubmit({
+          hotelId: accommodationId,
+          hotelName: accommodationName,
           checkIn: dateRange.from,
           checkOut: dateRange.to,
-          roomType,
+          roomType: "Standard",
           guests
         })
       }
@@ -107,7 +102,6 @@ export function AccommodationBookingForm({
       
       // Resetar formulário
       setDateRange({ from: undefined, to: undefined })
-      setRoomType("")
       setGuests(2)
     } catch {
       toast.error("Erro ao reservar", {
@@ -120,7 +114,7 @@ export function AccommodationBookingForm({
   }
 
   const incrementGuests = () => {
-    if (roomType && guests < (selectedRoom?.maxGuests || 2)) {
+    if (guests < maxGuests) {
       setGuests(guests + 1)
     }
   }
@@ -131,16 +125,21 @@ export function AccommodationBookingForm({
     }
   }
 
+  const isFormValid = dateRange?.from && dateRange?.to && guests >= 1 && guests <= maxGuests
+
   return (
-    <div className={cn("rounded-xl overflow-hidden bg-blue-50 shadow-sm border border-gray-100", className)}>
+    <div className={cn("rounded-xl overflow-hidden bg-white shadow-sm border border-gray-200", className)}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-xl font-bold text-gray-900">Reserve sua hospedagem</h3>
-          <p className="text-sm text-gray-500 mt-1">Garanta seu lugar em {hotelName}</p>
+          <p className="text-sm text-gray-500 mt-1">Garanta seu lugar em {accommodationName}</p>
         </div>
         
         {/* Date range picker */}
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Período da estadia
+          </label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -153,12 +152,9 @@ export function AccommodationBookingForm({
                   <span className={cn(!dateRange?.from && "text-gray-400")}>
                     {dateRange?.from && dateRange?.to 
                       ? `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}` 
-                      : "Período"}
+                      : "Selecionar datas"}
                   </span>
                 </div>
-                <span className="text-sm text-gray-400">
-                  {!dateRange?.from && "Selecionar"}
-                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-0 border-none" side="bottom">
@@ -180,136 +176,86 @@ export function AccommodationBookingForm({
           </Popover>
         </div>
         
-        {/* Room type selector */}
+        {/* Guest counter */}
         <div>
-          <Select 
-            value={roomType} 
-            onValueChange={(value) => {
-              setRoomType(value)
-              // Reset guests to default when changing room type
-              setGuests(1)
-            }}
-          >
-            <SelectTrigger 
-              className="w-full justify-between bg-white border-gray-200 hover:bg-gray-50 h-14 px-4"
-            >
-              <div className="flex items-center">
-                <Bed className="mr-3 h-5 w-5 text-blue-600" />
-                <span className={cn(!roomType && "text-gray-400")}>
-                  {roomType 
-                    ? roomTypes.find(room => room.id === roomType)?.name 
-                    : "Tipo de quarto"}
-                </span>
-              </div>
-              <span className="text-sm text-gray-400">
-                {!roomType && "Selecionar"}
-              </span>
-            </SelectTrigger>
-            <SelectContent className="bg-white border-none">
-              {roomTypes.map((room) => (
-                <SelectItem 
-                  key={room.id} 
-                  value={room.id}
-                  className="text-gray-900 hover:bg-blue-100 font-semibold hover:text-gray-900"
-                >
-                  <div className="flex justify-between w-full">
-                    <span>{room.name}</span>
-                    <span className="text-sm text-gray-500">
-                      {formatCurrency(room.pricePerNight)}/noite
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Guest count selector */}
-        <div>
-          <div className="flex items-center justify-between border border-gray-200 rounded-md h-14 px-4 bg-white hover:bg-gray-50">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Número de hóspedes (máx. {maxGuests})
+          </label>
+          <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-center">
               <Users className="mr-3 h-5 w-5 text-blue-600" />
-              <span className="text-gray-900">Hóspedes</span>
+              <span className="font-medium">{guests} {guests === 1 ? "hóspede" : "hóspedes"}</span>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <Button
                 type="button"
-                variant="outline" 
-                size="icon" 
-                className="h-8 w-8 rounded-full border-gray-200"
+                variant="outline"
+                size="sm"
                 onClick={decrementGuests}
-                disabled={guests <= 1 || !roomType}
+                disabled={guests <= 1}
+                className="h-8 w-8 p-0"
               >
                 <Minus className="h-4 w-4" />
-                <span className="sr-only">Diminuir</span>
               </Button>
-              <span className="w-5 text-center font-medium">{guests}</span>
+              <span className="w-8 text-center text-sm font-medium">{guests}</span>
               <Button
                 type="button"
-                variant="outline" 
-                size="icon" 
-                className="h-8 w-8 rounded-full border-gray-200"
+                variant="outline"
+                size="sm"
                 onClick={incrementGuests}
-                disabled={!roomType || (selectedRoom && guests >= selectedRoom.maxGuests)}
+                disabled={guests >= maxGuests}
+                className="h-8 w-8 p-0"
               >
                 <Plus className="h-4 w-4" />
-                <span className="sr-only">Aumentar</span>
               </Button>
             </div>
           </div>
-          {roomType && (
-            <p className="text-xs text-gray-500 mt-1">
-              Max. {selectedRoom?.maxGuests} pessoas para {selectedRoom?.name}
-            </p>
-          )}
         </div>
         
-        {/* Price calculation */}
-        {roomType && dateRange?.from && dateRange?.to && (
-          <div className="mt-2 p-4 bg-white rounded-md border border-gray-200">
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm text-gray-700">
-                <span>{selectedRoom?.name}</span>
-                <span className="font-medium">{formatCurrency(selectedRoom?.pricePerNight || 0)}/noite</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-700">
-                <span>Período</span>
-                <span>{nights} {nights === 1 ? "noite" : "noites"}</span>
-              </div>
-              <div className="pt-2 border-t border-gray-200" />
-              <div className="flex justify-between font-medium text-blue-800">
-                <span>Total estimado</span>
+        {/* Price summary */}
+        {nights > 0 && (
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>{formatCurrency(pricePerNight)} x {nights} {nights === 1 ? "noite" : "noites"}</span>
                 <span>{formatCurrency(totalPrice)}</span>
               </div>
-              <p className="text-xs text-gray-500">
-                *O valor não inclui taxas extras ou serviços adicionais
-              </p>
+              <div className="border-t pt-2">
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span>{formatCurrency(totalPrice)}</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
         
-        <Button 
-          type="button"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 font-medium"
-          disabled={!dateRange?.from || !dateRange?.to || !roomType || isSubmitting}
+        {/* Submit button */}
+        <Button
           onClick={handleSubmit}
+          disabled={!isFormValid || isSubmitting}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-medium"
         >
           {isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                <title>Ícone de carregamento</title>
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Processando...
-            </span>
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+              Confirmando...
+            </>
           ) : (
-            <span className="flex items-center gap-2">
-              <Check className="h-4 w-4" />
-              Verificar disponibilidade
-            </span>
+            <>
+              <Check className="mr-2 h-5 w-5" />
+              Confirmar reserva
+            </>
           )}
         </Button>
+        
+        {!isFormValid && (dateRange?.from || dateRange?.to || guests !== 2) && (
+          <p className="text-sm text-red-600 text-center">
+            {!dateRange?.from || !dateRange?.to ? "Selecione as datas de check-in e check-out" :
+             guests > maxGuests ? `Número máximo de hóspedes: ${maxGuests}` :
+             guests < 1 ? "Selecione pelo menos 1 hóspede" : ""}
+          </p>
+        )}
       </div>
     </div>
   )

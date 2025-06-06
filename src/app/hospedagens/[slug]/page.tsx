@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { useHostingDetailStore, useHostingsStore } from "@/lib/store/hostingsStore";
 import { ChevronLeft, Users, Bath, Home, BedDouble, Check, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AccommodationBookingForm } from "@/components/bookings/AccommodationBookingForm";
+import { useAccommodationBySlug } from "@/lib/services/accommodationService";
+import type { Accommodation } from "@/lib/services/accommodationService";
 
 // Definir o tipo para o objeto de reserva
 type BookingData = {
@@ -22,47 +23,19 @@ type BookingData = {
 
 export default function HostingDetailPage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
-  const { hostings } = useHostingsStore();
-  const { hosting, setHosting, isLoading, setLoading } = useHostingDetailStore();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [allImages, setAllImages] = useState<string[]>([]);
 
-  // Estado para as datas de check-in e check-out
-  // const [dateRange] = useState<DateRange | undefined>({
-  //  from: addDays(new Date(), 1),
-  //  to: addDays(new Date(), 6)
-  // });
-
-  // Estado para quantidade de hóspedes (variáveis comentadas são usadas em funcionalidades futuras)
-  // const [guestCount, setGuestCount] = useState(2);
-  // const [adultCount, setAdultCount] = useState(2);
-  // const [childCount, setChildCount] = useState(0);
-
-  // const nightCount = dateRange?.from && dateRange?.to 
-  //  ? differenceInCalendarDays(dateRange.to, dateRange.from) 
-  //  : 0;
+  // Buscar dados reais do Convex
+  const { data: accommodation, isLoading } = useAccommodationBySlug({ slug: params.slug });
 
   useEffect(() => {
-    const currentHosting = hostings.find((h) => h.slug === params.slug);
-    
-    if (currentHosting) {
-      setHosting(currentHosting);
-      
+    if (accommodation) {
       // Combinar imagem principal com galeria para exibição
-      const images = [currentHosting.mainImage, ...currentHosting.galleryImages];
+      const images = [accommodation.mainImage, ...(accommodation.galleryImages || [])];
       setAllImages(images);
     }
-    
-    setLoading(false);
-  }, [hostings, params.slug, setHosting, setLoading]);
-
-  // Formatação do preço para moeda brasileira (função será usada em implementação futura)
-  // const formatCurrency = (value: number) => {
-  //   return new Intl.NumberFormat('pt-BR', {
-  //     style: 'currency',
-  //     currency: 'BRL'
-  //   }).format(value);
-  // };
+  }, [accommodation]);
 
   // Manipulador de eventos para a submissão de reserva
   const handleBookingSubmit = (booking: BookingData) => {
@@ -97,7 +70,7 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
     );
   }
 
-  if (!hosting) {
+  if (!accommodation) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
         <h1 className="text-3xl font-bold mb-4">Hospedagem não encontrada</h1>
@@ -127,19 +100,19 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
       {/* Heading */}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">
-          {hosting.name}
+          {accommodation.name}
         </h1>
         <div className="flex flex-wrap items-center gap-2 text-gray-600">
           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-            {hosting.type}
+            {accommodation.type}
           </span>
           <span>•</span>
-          <span>{hosting.address.neighborhood}, {hosting.address.city}</span>
+          <span>{accommodation.address.neighborhood}, {accommodation.address.city}</span>
           <span>•</span>
           <div className="flex items-center">
             <span className="text-yellow-500 mr-1">⭐</span>
-            <span className="font-medium">{hosting.rating.overall.toFixed(1)}</span>
-            <span className="text-gray-500 ml-1">({hosting.rating.totalReviews} avaliações)</span>
+            <span className="font-medium">{accommodation.rating.toFixed(1)}</span>
+            <span className="text-gray-500 ml-1">({accommodation.totalReviews} avaliações)</span>
           </div>
         </div>
       </div>
@@ -151,7 +124,7 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
             {allImages.length > 0 && (
               <Image
                 src={allImages[activeImageIndex]}
-                alt={hosting.name}
+                alt={accommodation.name}
                 fill
                 className="object-cover"
               />
@@ -172,7 +145,7 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
               >
                 <Image
                   src={image}
-                  alt={`${hosting.name} - imagem ${index + 2}`}
+                  alt={`${accommodation.name} - imagem ${index + 2}`}
                   fill
                   className="object-cover hover:scale-110 transition-transform duration-300"
                 />
@@ -190,139 +163,119 @@ export default function HostingDetailPage(props: { params: Promise<{ slug: strin
           <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 pb-8 border-b">
             <div>
               <h2 className="text-2xl font-bold mb-2">
-                {hosting.type} inteira
+                {accommodation.type} inteira
               </h2>
               <ul className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
                 <li className="flex items-center">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>Até {hosting.maxGuests} hóspedes</span>
-                </li>
-                <li className="flex items-center">
-                  <BedDouble className="h-4 w-4 mr-2" />
-                  <span>{hosting.bedrooms} quarto{hosting.bedrooms !== 1 ? 's' : ''}</span>
-                </li>
-                <li className="flex items-center">
-                  <Bath className="h-4 w-4 mr-2" />
-                  <span>{hosting.bathrooms} banheiro{hosting.bathrooms !== 1 ? 's' : ''}</span>
+                  <span>Até {accommodation.maxGuests} hóspedes</span>
                 </li>
                 <li className="flex items-center">
                   <Home className="h-4 w-4 mr-2" />
-                  <span>{hosting.area}m²</span>
+                  <span>{accommodation.bedrooms} quartos</span>
+                </li>
+                <li className="flex items-center">
+                  <BedDouble className="h-4 w-4 mr-2" />
+                  <span>{accommodation.beds || 2} camas</span>
+                </li>
+                <li className="flex items-center">
+                  <Bath className="h-4 w-4 mr-2" />
+                  <span>{accommodation.bathrooms} banheiros</span>
                 </li>
               </ul>
             </div>
           </div>
 
           {/* Description */}
-          <div className="mb-10">
+          <div>
             <h3 className="text-xl font-bold mb-4">Sobre esta acomodação</h3>
-            <p className="text-gray-700 whitespace-pre-line mb-6">
-              {hosting.description_long}
+            <p className="text-gray-700 leading-relaxed">
+              {accommodation.description}
             </p>
           </div>
 
           {/* Amenities */}
-          <div className="mb-10 pb-10 border-b">
-            <h3 className="text-xl font-bold mb-6">O que esta acomodação oferece</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4">
-              {hosting.amenities.map((amenity, index) => (
-                <div key={`${hosting.id}-${index}`} className="flex items-center">
-                  <Check className="text-blue-600 h-5 w-5 mr-3" />
-                  <span>{amenity}</span>
+          <div>
+            <h3 className="text-xl font-bold mb-6">O que este local oferece</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {accommodation.amenities.map((amenity, index) => (
+                <div key={index} className="flex items-center">
+                  <Check className="h-5 w-5 text-green-600 mr-3" />
+                  <span className="text-gray-700">{amenity}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* House rules */}
-          <div className="mb-10 pb-10 border-b">
-            <h3 className="text-xl font-bold mb-6">Regras da casa</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 mb-8">
-              <div>
-                <h4 className="font-medium mb-3">Check-in e Check-out</h4>
-                <div className="text-gray-700">
-                  <div className="mb-1">Check-in: {hosting.checkInTime}</div>
-                  <div>Check-out: {hosting.checkOutTime}</div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-medium mb-3">Estadia mínima</h4>
-                <div className="text-gray-700">
-                  {hosting.minimumStay} noite{hosting.minimumStay !== 1 ? 's' : ''}
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {hosting.houseRules.map((rule, index) => (
-                <div key={`${hosting.id}-${index}`} className="flex items-start">
-                  <Check className="text-blue-600 h-5 w-5 mr-3 mt-0.5" />
-                  <span>{rule}</span>
-                </div>
-              ))}
-              
-              <div className="flex items-start">
-                <span className={`h-5 w-5 mr-3 mt-0.5 flex items-center justify-center ${hosting.petsAllowed ? 'text-blue-600' : 'text-red-500'}`}>
-                  {hosting.petsAllowed ? <Check /> : <X />}
-                </span>
-                <span>Animais de estimação {hosting.petsAllowed ? 'permitidos' : 'não permitidos'}</span>
-              </div>
-              
-              <div className="flex items-start">
-                <span className={`h-5 w-5 mr-3 mt-0.5 flex items-center justify-center ${hosting.smokingAllowed ? 'text-blue-600' : 'text-red-500'}`}>
-                  {hosting.smokingAllowed ? <Check /> : <X />}
-                </span>
-                <span>Fumar {hosting.smokingAllowed ? 'permitido' : 'não permitido'}</span>
-              </div>
-              
-              <div className="flex items-start">
-                <span className={`h-5 w-5 mr-3 mt-0.5 flex items-center justify-center ${hosting.eventsAllowed ? 'text-blue-600' : 'text-red-500'}`}>
-                  {hosting.eventsAllowed ? <Check /> : <X />}
-                </span>
-                <span>Eventos e festas {hosting.eventsAllowed ? 'permitidos' : 'não permitidos'}</span>
-              </div>
+          {/* Location */}
+          <div>
+            <h3 className="text-xl font-bold mb-4">Onde você vai ficar</h3>
+            <div className="text-gray-700">
+              <p className="mb-2">
+                <strong>{accommodation.address.neighborhood}</strong>, {accommodation.address.city}, {accommodation.address.state}
+              </p>
+              <p className="text-sm text-gray-600">
+                {accommodation.address.street}, {accommodation.address.zipCode}
+              </p>
             </div>
           </div>
 
-          {/* Cancellation policy */}
-          <div className="mb-10">
-            <h3 className="text-xl font-bold mb-4">Política de cancelamento</h3>
-            <p className="text-gray-700">
-              {hosting.cancellationPolicy}
-            </p>
-          </div>
+          {/* Contact Information */}
+          {(accommodation.phone || accommodation.website) && (
+            <div>
+              <h3 className="text-xl font-bold mb-4">Informações de contato</h3>
+              <div className="space-y-2">
+                {accommodation.phone && (
+                  <p className="text-gray-700">
+                    <strong>Telefone:</strong> {accommodation.phone}
+                  </p>
+                )}
+                {accommodation.website && (
+                  <p className="text-gray-700">
+                    <strong>Website:</strong>{" "}
+                    <a 
+                      href={accommodation.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {accommodation.website}
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Booking card */}
-        <div>
-          <div className="sticky top-32">
-            <AccommodationBookingForm
-              hotelId={hosting.id}
-              hotelName={hosting.name}
-              onBookingSubmit={handleBookingSubmit}
-            />
+        {/* Sidebar - Booking Form */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
+              <div className="mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold">R$ {accommodation.pricePerNight.toLocaleString()}</span>
+                  <span className="text-gray-600 ml-1">/noite</span>
+                </div>
+                {accommodation.taxes && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    + R$ {accommodation.taxes} de taxas
+                  </p>
+                )}
+                {accommodation.cleaningFee && (
+                  <p className="text-sm text-gray-600">
+                    + R$ {accommodation.cleaningFee} taxa de limpeza
+                  </p>
+                )}
+              </div>
 
-            {/* Apenas um resumo das políticas abaixo do formulário */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-gray-600 border border-gray-100">
-              <p className="mb-2 font-medium">Informações importantes:</p>
-              <ul className="space-y-2">
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">•</span>
-                  Check-in a partir das {hosting.checkInTime}
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">•</span>
-                  Check-out até {hosting.checkOutTime}
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">•</span>
-                  Estadia mínima: {hosting.minimumStay} noite(s)
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">•</span>
-                  {hosting.cancellationPolicy.split('.')[0]}.
-                </li>
-              </ul>
+              <AccommodationBookingForm
+                accommodationId={accommodation._id}
+                accommodationName={accommodation.name}
+                pricePerNight={accommodation.pricePerNight}
+                maxGuests={accommodation.maxGuests}
+                onSubmit={handleBookingSubmit}
+              />
             </div>
           </div>
         </div>

@@ -28,16 +28,22 @@ export default function EventCard({ event }: { event: Event }) {
       >
         {/* Main image - no padding at top */}
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-          <Image  
-            src={event.imageUrl} 
-            alt={event.title}
-            fill
-            className={`object-cover transition-all duration-500 group-hover:scale-105 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            onLoad={() => setIsImageLoaded(true)}
-            loading="lazy"
-          />
-          {!isImageLoaded && (
+          {event.imageUrl && event.imageUrl.trim() !== '' ? (
+            <Image  
+              src={event.imageUrl} 
+              alt={event.title}
+              fill
+              className={`object-cover transition-all duration-500 group-hover:scale-105 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              onLoad={() => setIsImageLoaded(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <Calendar className="h-12 w-12 text-gray-400" />
+            </div>
+          )}
+          {!isImageLoaded && event.imageUrl && event.imageUrl.trim() !== '' && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse" />
           )}
           {/* Price badge */}

@@ -58,6 +58,43 @@
   .hover-lift:hover {
     transform: translateY(-3px);
   }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    /* Ensure mobile sidebars have proper stacking */
+    .mobile-sidebar {
+      z-index: 75 !important;
+      background-color: white !important;
+    }
+    
+    /* Improve mobile navigation styling */
+    .mobile-nav-menu {
+      z-index: 70 !important;
+      background-color: white !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    }
+    
+    /* Better mobile touch targets */
+    .mobile-touch-target {
+      min-height: 44px !important;
+      min-width: 44px !important;
+    }
+    
+    /* Prevent content shift on mobile */
+    .mobile-no-shift {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+  }
+
+  /* Sheet overlay improvements */
+  [data-radix-popper-content-wrapper] {
+    z-index: 80 !important;
+  }
+  
+  [data-overlay-container] {
+    z-index: 60 !important;
+  }
 }
 
 @layer base {

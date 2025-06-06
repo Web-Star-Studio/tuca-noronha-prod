@@ -49,12 +49,18 @@ function RecentActivities() {
           {recentActivities.map(activity => (
             <div key={activity.id} className="flex items-center p-4 hover:bg-slate-50 transition-colors duration-200">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-4 relative">
-                <Image 
-                  src={activity.imageUrl} 
-                  alt={activity.title}
-                  fill
-                  className="object-cover"
-                />
+                {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
+                  <Image 
+                    src={activity.imageUrl} 
+                    alt={activity.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <div className="w-6 h-6 bg-gray-400 rounded-full"></div>
+                  </div>
+                )}
               </div>
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium leading-none">{activity.title}</p>
@@ -86,12 +92,18 @@ function RecentRestaurants() {
           {recentRestaurants.map(restaurant => (
             <div key={restaurant.id} className="flex items-center p-4 hover:bg-slate-50 transition-colors duration-200">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-4 relative">
-                <Image 
-                  src={restaurant.mainImage} 
-                  alt={restaurant.name}
-                  fill
-                  className="object-cover"
-                />
+                {restaurant.mainImage && restaurant.mainImage.trim() !== '' ? (
+                  <Image 
+                    src={restaurant.mainImage} 
+                    alt={restaurant.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <div className="w-6 h-6 bg-gray-400 rounded-full"></div>
+                  </div>
+                )}
               </div>
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium leading-none">{restaurant.name}</p>

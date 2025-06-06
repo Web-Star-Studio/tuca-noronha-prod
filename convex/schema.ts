@@ -423,4 +423,363 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_vehicleId_status", ["vehicleId", "status"])
     .index("by_dates", ["startDate", "endDate"]),
+
+  // Accommodations/Hospedagens
+  accommodations: defineTable({
+    name: v.string(),                                   // Nome da hospedagem
+    slug: v.string(),                                   // Slug para URL
+    description: v.string(),                            // Descrição curta
+    description_long: v.string(),                       // Descrição longa
+    address: v.object({                                 // Objeto com informações de endereço
+      street: v.string(),                               // Rua
+      city: v.string(),                                 // Cidade
+      state: v.string(),                                // Estado
+      zipCode: v.string(),                              // CEP
+      neighborhood: v.string(),                         // Bairro
+      coordinates: v.object({                           // Coordenadas geográficas
+        latitude: v.float64(),                          // Latitude
+        longitude: v.float64(),                         // Longitude
+      }),
+    }),
+    phone: v.string(),                                  // Telefone de contato
+    website: v.optional(v.string()),                    // Website (opcional)
+    type: v.string(),                                   // Tipo (Pousada, Hotel, Apartamento, Casa, Villa)
+    checkInTime: v.string(),                            // Horário de check-in
+    checkOutTime: v.string(),                           // Horário de check-out
+    pricePerNight: v.float64(),                         // Preço por noite
+    currency: v.string(),                               // Moeda (BRL)
+    discountPercentage: v.optional(v.float64()),        // Porcentagem de desconto (opcional)
+    taxes: v.optional(v.float64()),                     // Taxas adicionais (opcional)
+    cleaningFee: v.optional(v.float64()),               // Taxa de limpeza (opcional)
+    totalRooms: v.int64(),                              // Total de quartos
+    maxGuests: v.int64(),                               // Número máximo de hóspedes
+    bedrooms: v.int64(),                                // Número de quartos
+    bathrooms: v.int64(),                               // Número de banheiros
+    beds: v.object({                                    // Informações sobre camas
+      single: v.int64(),                                // Camas de solteiro
+      double: v.int64(),                                // Camas de casal
+      queen: v.int64(),                                 // Camas queen
+      king: v.int64(),                                  // Camas king
+    }),
+    area: v.float64(),                                  // Área em m²
+    amenities: v.array(v.string()),                     // Comodidades
+    houseRules: v.array(v.string()),                    // Regras da casa
+    cancellationPolicy: v.string(),                     // Política de cancelamento
+    petsAllowed: v.boolean(),                           // Animais permitidos
+    smokingAllowed: v.boolean(),                        // Fumo permitido
+    eventsAllowed: v.boolean(),                         // Eventos permitidos
+    minimumStay: v.int64(),                             // Estadia mínima em noites
+    mainImage: v.string(),                              // Imagem principal
+    galleryImages: v.array(v.string()),                 // Imagens da galeria
+    rating: v.object({                                  // Objeto com avaliações
+      overall: v.float64(),                             // Nota geral
+      cleanliness: v.float64(),                         // Nota para limpeza
+      location: v.float64(),                            // Nota para localização
+      checkin: v.float64(),                             // Nota para check-in
+      value: v.float64(),                               // Nota para custo-benefício
+      accuracy: v.float64(),                            // Nota para precisão
+      communication: v.float64(),                       // Nota para comunicação
+      totalReviews: v.int64(),                          // Total de avaliações
+    }),
+    isActive: v.boolean(),                              // Status ativo/inativo
+    isFeatured: v.boolean(),                            // Status destacado
+    tags: v.array(v.string()),                          // Tags para busca
+    partnerId: v.id("users"),                           // ID do parceiro/proprietário
+  })
+    .index("by_slug", ["slug"])                         // Índice por slug (URL)
+    .index("by_partner", ["partnerId"])                 // Índice por parceiro
+    .index("featured_accommodations", ["isFeatured", "isActive"]) // Índice para hospedagens destacadas
+    .index("active_accommodations", ["isActive"]),      // Índice para hospedagens ativas
+
+  // Accommodation Bookings
+  accommodationBookings: defineTable({
+    accommodationId: v.id("accommodations"),            // Referência à hospedagem
+    userId: v.id("users"),                              // Usuário que fez a reserva
+    checkInDate: v.string(),                            // Data de check-in (YYYY-MM-DD)
+    checkOutDate: v.string(),                           // Data de check-out (YYYY-MM-DD)
+    guests: v.int64(),                                  // Número de hóspedes
+    totalPrice: v.float64(),                            // Preço total da reserva
+    status: v.string(),                                 // Status (pending, confirmed, canceled, completed, refunded)
+    paymentStatus: v.optional(v.string()),              // Status do pagamento (pending, paid, refunded, failed)
+    paymentMethod: v.optional(v.string()),              // Método de pagamento (credit_card, pix, bank_transfer)
+    specialRequests: v.optional(v.string()),            // Solicitações especiais do cliente
+    partnerNotes: v.optional(v.string()),               // Notas do parceiro/funcionário
+    confirmationCode: v.string(),                       // Código único de confirmação
+    customerInfo: v.object({                            // Informações de contato do cliente
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+    }),
+    createdAt: v.number(),                              // Timestamp de criação
+    updatedAt: v.number(),                              // Timestamp de atualização
+  })
+    .index("by_accommodation", ["accommodationId"])     // Índice por hospedagem
+    .index("by_user", ["userId"])                       // Índice por usuário
+    .index("by_status", ["status"])                     // Índice por status
+    .index("by_check_in_date", ["checkInDate"])         // Índice por data de check-in
+    .index("by_accommodation_dates", ["accommodationId", "checkInDate", "checkOutDate"]) // Índice por hospedagem e datas
+    .index("by_confirmation_code", ["confirmationCode"]), // Índice por código de confirmação
+
+  // Notifications System
+  notifications: defineTable({
+    userId: v.id("users"),                      // User who receives the notification
+    type: v.string(),                           // Type: "booking_confirmed", "booking_canceled", "booking_updated", etc.
+    title: v.string(),                          // Notification title
+    message: v.string(),                        // Notification message
+    relatedId: v.optional(v.string()),          // Related entity ID (booking, event, etc.)
+    relatedType: v.optional(v.string()),        // Related entity type (activity_booking, event_booking, etc.)
+    isRead: v.boolean(),                        // Whether the notification has been read
+    data: v.optional(v.object({                 // Additional data for the notification
+      confirmationCode: v.optional(v.string()),
+      bookingType: v.optional(v.string()),
+      assetName: v.optional(v.string()),
+      partnerName: v.optional(v.string()),
+    })),
+    createdAt: v.number(),                      // When the notification was created
+    readAt: v.optional(v.number()),             // When it was read (if applicable)
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_unread", ["userId", "isRead"])
+    .index("by_user_type", ["userId", "type"])
+    .index("by_created", ["createdAt"]),
+
+  // Packages System
+  packages: defineTable({
+    // Basic Information
+    name: v.string(),                           // Nome do pacote
+    slug: v.string(),                           // Slug para URL amigável
+    description: v.string(),                    // Descrição curta
+    description_long: v.string(),               // Descrição detalhada
+    
+    // Package Configuration
+    duration: v.number(),                       // Duração em dias
+    maxGuests: v.number(),                      // Número máximo de hóspedes
+    
+    // Pricing
+    basePrice: v.number(),                      // Preço base do pacote
+    discountPercentage: v.optional(v.number()), // Desconto aplicado sobre preços individuais
+    currency: v.string(),                       // Moeda (BRL)
+    
+    // Included Services
+    accommodationId: v.optional(v.id("accommodations")), // Hospedagem incluída (opcional)
+    vehicleId: v.optional(v.id("vehicles")),    // Veículo incluído (opcional)
+    includedActivityIds: v.array(v.id("activities")), // Atividades incluídas
+    includedRestaurantIds: v.array(v.id("restaurants")), // Restaurantes incluídos
+    includedEventIds: v.array(v.id("events")),  // Eventos incluídos
+    
+    // Package Details
+    highlights: v.array(v.string()),            // Destaques do pacote
+    includes: v.array(v.string()),              // O que está incluído
+    excludes: v.array(v.string()),              // O que não está incluído
+    itinerary: v.array(v.object({               // Itinerário dia a dia
+      day: v.number(),                          // Dia (1, 2, 3...)
+      title: v.string(),                        // Título do dia
+      description: v.string(),                  // Descrição das atividades
+      activities: v.array(v.string()),          // Atividades do dia
+    })),
+    
+    // Media
+    mainImage: v.string(),                      // Imagem principal
+    galleryImages: v.array(v.string()),         // Galeria de imagens
+    
+    // Policies
+    cancellationPolicy: v.string(),             // Política de cancelamento
+    terms: v.array(v.string()),                 // Termos e condições
+    
+    // Availability
+    availableFromDate: v.string(),              // Data de início da disponibilidade
+    availableToDate: v.string(),                // Data de fim da disponibilidade
+    blackoutDates: v.array(v.string()),         // Datas não disponíveis
+    
+    // Status
+    isActive: v.boolean(),                      // Status ativo/inativo
+    isFeatured: v.boolean(),                    // Status destacado
+    
+    // Metadata
+    tags: v.array(v.string()),                  // Tags para busca
+    category: v.string(),                       // Categoria do pacote (Aventura, Relaxamento, Cultural, etc.)
+    partnerId: v.id("users"),                   // ID do parceiro criador
+    createdAt: v.number(),                      // Timestamp de criação
+    updatedAt: v.number(),                      // Timestamp de atualização
+  })
+    .index("by_slug", ["slug"])
+    .index("by_partner", ["partnerId"])
+    .index("by_category", ["category"])
+    .index("featured_packages", ["isFeatured", "isActive"])
+    .index("active_packages", ["isActive"])
+    .index("by_accommodation", ["accommodationId"])
+    .index("by_vehicle", ["vehicleId"]),
+
+  // Package Bookings
+  packageBookings: defineTable({
+    packageId: v.id("packages"),
+    userId: v.id("users"),
+    startDate: v.string(),
+    endDate: v.string(),
+    guests: v.number(),
+    totalPrice: v.number(),
+    breakdown: v.object({
+      accommodationPrice: v.number(),
+      vehiclePrice: v.optional(v.number()),
+      activitiesPrice: v.number(),
+      restaurantsPrice: v.number(),
+      eventsPrice: v.number(),
+      discount: v.number(),
+    }),
+    status: v.string(),
+    paymentStatus: v.optional(v.string()),
+    paymentMethod: v.optional(v.string()),
+    relatedBookings: v.object({
+      accommodationBookingId: v.optional(v.id("accommodationBookings")),
+      vehicleBookingId: v.optional(v.id("vehicleBookings")),
+      activityBookingIds: v.array(v.id("activityBookings")),
+      restaurantReservationIds: v.array(v.id("restaurantReservations")),
+      eventBookingIds: v.array(v.id("eventBookings")),
+    }),
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+    }),
+    specialRequests: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
+    confirmationCode: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_package", ["packageId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_start_date", ["startDate"])
+    .index("by_confirmation_code", ["confirmationCode"])
+    .index("by_package_dates", ["packageId", "startDate", "endDate"]),
+
+  // Wishlist/Favorites System
+  wishlistItems: defineTable({
+    userId: v.id("users"),
+    itemType: v.string(), // "package", "accommodation", "activity", "restaurant", "event", "vehicle"
+    itemId: v.string(), // ID of the item (stored as string for flexibility)
+    addedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_type", ["userId", "itemType"])
+    .index("by_user_item", ["userId", "itemType", "itemId"]),
+
+  // Package Comparison System
+  packageComparisons: defineTable({
+    userId: v.id("users"),
+    packageIds: v.array(v.id("packages")), // Up to 3 packages for comparison
+    name: v.optional(v.string()), // Optional name for saved comparison
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"]),
+
+  // Package Request System (Simplified)
+  packageRequests: defineTable({
+    // Customer Information
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      age: v.optional(v.number()),
+      occupation: v.optional(v.string()),
+    }),
+    
+    // Trip Details
+    tripDetails: v.object({
+      destination: v.string(),
+      startDate: v.string(),
+      endDate: v.string(),
+      duration: v.number(), // in days
+      groupSize: v.number(),
+      companions: v.string(), // family, friends, couple, solo, business
+      budget: v.number(),
+      budgetFlexibility: v.string(), // strict, somewhat_flexible, very_flexible
+    }),
+    
+    // Preferences
+    preferences: v.object({
+      accommodationType: v.array(v.string()), // hotel, pousada, resort, apartment, etc.
+      activities: v.array(v.string()), // adventure, cultural, relaxation, food, etc.
+      transportation: v.array(v.string()), // car, bus, plane, walking, etc.
+      foodPreferences: v.array(v.string()), // local_cuisine, international, vegetarian, etc.
+      accessibility: v.optional(v.array(v.string())), // wheelchair, visual_impairment, etc.
+    }),
+    
+    // Special Requirements
+    specialRequirements: v.optional(v.string()),
+    previousExperience: v.optional(v.string()), // Have they traveled here before?
+    expectedHighlights: v.optional(v.string()), // What are they most excited about?
+    
+    // Status and Management
+    status: v.string(), // pending, in_review, proposal_sent, confirmed, cancelled
+    adminNotes: v.optional(v.string()),
+    proposalSent: v.optional(v.boolean()),
+    proposalDetails: v.optional(v.string()),
+    
+    // Metadata
+    requestNumber: v.string(), // Unique request number for tracking
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    assignedTo: v.optional(v.id("users")), // Admin user assigned to this request
+  })
+    .index("by_status", ["status"])
+    .index("by_email", ["customerInfo.email"])
+    .index("by_request_number", ["requestNumber"])
+    .index("by_assigned_to", ["assignedTo"])
+    .index("by_created_date", ["createdAt"]),
+
+  // Reviews System (for packages, accommodations, restaurants, activities, events)
+  reviews: defineTable({
+    userId: v.id("users"),
+    itemType: v.string(), // "package", "accommodation", "activity", "restaurant", "event"
+    itemId: v.string(), // ID of the item being reviewed
+    rating: v.number(), // Overall rating 1-5
+    title: v.string(),
+    comment: v.string(),
+    
+    // Detailed ratings (optional based on item type)
+    detailedRatings: v.optional(v.object({
+      value: v.optional(v.number()), // Value for money
+      service: v.optional(v.number()), // Service quality
+      cleanliness: v.optional(v.number()), // Cleanliness (accommodations)
+      location: v.optional(v.number()), // Location (accommodations/restaurants)
+      food: v.optional(v.number()), // Food quality (restaurants)
+      organization: v.optional(v.number()), // Organization (activities/events)
+      guide: v.optional(v.number()), // Guide quality (activities)
+    })),
+    
+    // Additional info
+    visitDate: v.optional(v.string()), // When they experienced the service
+    groupType: v.optional(v.string()), // Solo, Couple, Family, Friends, Business
+    wouldRecommend: v.boolean(),
+    photos: v.optional(v.array(v.string())), // Review photos
+    
+    // Helpful votes
+    helpfulVotes: v.number(),
+    unhelpfulVotes: v.number(),
+    
+    // Status
+    isVerified: v.boolean(), // Whether this is a verified purchase/booking
+    isApproved: v.boolean(), // Moderation status
+    
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_item", ["itemType", "itemId"])
+    .index("by_user", ["userId"])
+    .index("by_item_approved", ["itemType", "itemId", "isApproved"])
+    .index("by_rating", ["itemType", "itemId", "rating"]),
+
+  // Review helpfulness votes
+  reviewVotes: defineTable({
+    reviewId: v.id("reviews"),
+    userId: v.id("users"),
+    voteType: v.string(), // "helpful" or "unhelpful"
+    createdAt: v.number(),
+  })
+    .index("by_review", ["reviewId"])
+    .index("by_user_review", ["userId", "reviewId"]),
 });

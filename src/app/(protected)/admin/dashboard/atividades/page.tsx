@@ -41,13 +41,19 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
         onClick={() => onEdit(activity)}
       >
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-          <Image
-            src={activity.imageUrl}
-            alt={activity.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
+          {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
+            <Image
+              src={activity.imageUrl}
+              alt={activity.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <div className="text-gray-400 text-sm">Sem imagem</div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           
           {/* Badge de categoria */}
@@ -508,7 +514,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
               />
             </div>
             
-            {formData.imageUrl && (
+            {formData.imageUrl && formData.imageUrl.trim() !== '' && (
               <div className="mt-4 relative h-40 rounded-md overflow-hidden">
                 <Image 
                   src={formData.imageUrl}

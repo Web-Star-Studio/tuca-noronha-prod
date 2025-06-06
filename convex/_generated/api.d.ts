@@ -15,6 +15,10 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as clerk from "../clerk.js";
+import type * as domains_accommodations_index from "../domains/accommodations/index.js";
+import type * as domains_accommodations_mutations from "../domains/accommodations/mutations.js";
+import type * as domains_accommodations_queries from "../domains/accommodations/queries.js";
+import type * as domains_accommodations_types from "../domains/accommodations/types.js";
 import type * as domains_activities_index from "../domains/activities/index.js";
 import type * as domains_activities_mutations from "../domains/activities/mutations.js";
 import type * as domains_activities_queries from "../domains/activities/queries.js";
@@ -38,6 +42,15 @@ import type * as domains_media_mutations from "../domains/media/mutations.js";
 import type * as domains_media_queries from "../domains/media/queries.js";
 import type * as domains_media_types from "../domains/media/types.js";
 import type * as domains_media_utils from "../domains/media/utils.js";
+import type * as domains_notifications_actions from "../domains/notifications/actions.js";
+import type * as domains_notifications_mutations from "../domains/notifications/mutations.js";
+import type * as domains_notifications_queries from "../domains/notifications/queries.js";
+import type * as domains_notifications_types from "../domains/notifications/types.js";
+import type * as domains_packages_index from "../domains/packages/index.js";
+import type * as domains_packages_mutations from "../domains/packages/mutations.js";
+import type * as domains_packages_queries from "../domains/packages/queries.js";
+import type * as domains_packages_types from "../domains/packages/types.js";
+import type * as domains_packages_utils from "../domains/packages/utils.js";
 import type * as domains_rbac_action from "../domains/rbac/action.js";
 import type * as domains_rbac_functions from "../domains/rbac/functions.js";
 import type * as domains_rbac_index from "../domains/rbac/index.js";
@@ -52,6 +65,7 @@ import type * as domains_restaurants_mutations from "../domains/restaurants/muta
 import type * as domains_restaurants_queries from "../domains/restaurants/queries.js";
 import type * as domains_restaurants_types from "../domains/restaurants/types.js";
 import type * as domains_restaurants_utils from "../domains/restaurants/utils.js";
+import type * as domains_users_helpers from "../domains/users/helpers.js";
 import type * as domains_users_index from "../domains/users/index.js";
 import type * as domains_users_mutations from "../domains/users/mutations.js";
 import type * as domains_users_queries from "../domains/users/queries.js";
@@ -61,12 +75,16 @@ import type * as domains_vehicles_mutations from "../domains/vehicles/mutations.
 import type * as domains_vehicles_queries from "../domains/vehicles/queries.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
+import type * as packageComparison from "../packageComparison.js";
+import type * as packages from "../packages.js";
 import type * as rbac from "../rbac.js";
+import type * as reviews from "../reviews.js";
 import type * as shared_index from "../shared/index.js";
 import type * as shared_rbac from "../shared/rbac.js";
 import type * as shared_validators from "../shared/validators.js";
 import type * as types from "../types.js";
 import type * as userPreferences from "../userPreferences.js";
+import type * as wishlist from "../wishlist.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -79,6 +97,10 @@ import type * as userPreferences from "../userPreferences.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   clerk: typeof clerk;
+  "domains/accommodations/index": typeof domains_accommodations_index;
+  "domains/accommodations/mutations": typeof domains_accommodations_mutations;
+  "domains/accommodations/queries": typeof domains_accommodations_queries;
+  "domains/accommodations/types": typeof domains_accommodations_types;
   "domains/activities/index": typeof domains_activities_index;
   "domains/activities/mutations": typeof domains_activities_mutations;
   "domains/activities/queries": typeof domains_activities_queries;
@@ -102,6 +124,15 @@ declare const fullApi: ApiFromModules<{
   "domains/media/queries": typeof domains_media_queries;
   "domains/media/types": typeof domains_media_types;
   "domains/media/utils": typeof domains_media_utils;
+  "domains/notifications/actions": typeof domains_notifications_actions;
+  "domains/notifications/mutations": typeof domains_notifications_mutations;
+  "domains/notifications/queries": typeof domains_notifications_queries;
+  "domains/notifications/types": typeof domains_notifications_types;
+  "domains/packages/index": typeof domains_packages_index;
+  "domains/packages/mutations": typeof domains_packages_mutations;
+  "domains/packages/queries": typeof domains_packages_queries;
+  "domains/packages/types": typeof domains_packages_types;
+  "domains/packages/utils": typeof domains_packages_utils;
   "domains/rbac/action": typeof domains_rbac_action;
   "domains/rbac/functions": typeof domains_rbac_functions;
   "domains/rbac/index": typeof domains_rbac_index;
@@ -116,6 +147,7 @@ declare const fullApi: ApiFromModules<{
   "domains/restaurants/queries": typeof domains_restaurants_queries;
   "domains/restaurants/types": typeof domains_restaurants_types;
   "domains/restaurants/utils": typeof domains_restaurants_utils;
+  "domains/users/helpers": typeof domains_users_helpers;
   "domains/users/index": typeof domains_users_index;
   "domains/users/mutations": typeof domains_users_mutations;
   "domains/users/queries": typeof domains_users_queries;
@@ -125,12 +157,16 @@ declare const fullApi: ApiFromModules<{
   "domains/vehicles/queries": typeof domains_vehicles_queries;
   functions: typeof functions;
   http: typeof http;
+  packageComparison: typeof packageComparison;
+  packages: typeof packages;
   rbac: typeof rbac;
+  reviews: typeof reviews;
   "shared/index": typeof shared_index;
   "shared/rbac": typeof shared_rbac;
   "shared/validators": typeof shared_validators;
   types: typeof types;
   userPreferences: typeof userPreferences;
+  wishlist: typeof wishlist;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

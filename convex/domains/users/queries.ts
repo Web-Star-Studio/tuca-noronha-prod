@@ -11,6 +11,18 @@ import { UserRole } from "../rbac/types";
  */
 export const getCurrentUser = query({
   args: {},
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      id: v.id("users"),
+      clerkId: v.string(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      role: v.string(),
+    }),
+    v.null()
+  ),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -29,6 +41,12 @@ export const getCurrentUser = query({
     }
     
     const user = users[0];
+    // Ensure clerkId is not undefined before returning
+    if (!user.clerkId) {
+      console.log("User has no clerkId:", user._id);
+      return null;
+    }
+    
     return {
       _id: user._id,
       id: user._id,
@@ -48,6 +66,22 @@ export const getUserByClerkId = query({
   args: {
     clerkId: v.string(),
   },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      _creationTime: v.number(),
+      clerkId: v.string(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      role: v.optional(v.string()),
+      partnerId: v.optional(v.id("users")),
+      emailVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
     const users = await ctx.db
       .query("users")
@@ -58,7 +92,25 @@ export const getUserByClerkId = query({
       return null;
     }
     
-    return users[0];
+    const user = users[0];
+    // Ensure clerkId exists before returning
+    if (!user.clerkId) {
+      return null;
+    }
+    
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      phone: user.phone,
+      role: user.role,
+      partnerId: user.partnerId,
+      emailVerificationTime: user.emailVerificationTime,
+      isAnonymous: user.isAnonymous,
+    };
   },
 });
 
@@ -69,9 +121,84 @@ export const getUserById = query({
   args: {
     userId: v.id("users"),
   },
-  returns: v.any(),
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      _creationTime: v.number(),
+      clerkId: v.string(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      role: v.optional(v.string()),
+      partnerId: v.optional(v.id("users")),
+      emailVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+    }),
+    v.null()
+  ),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.userId);
+    const user = await ctx.db.get(args.userId);
+    
+    if (!user || !user.clerkId) {
+      return null;
+    }
+    
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      phone: user.phone,
+      role: user.role,
+      partnerId: user.partnerId,
+      emailVerificationTime: user.emailVerificationTime,
+      isAnonymous: user.isAnonymous,
+    };
+  },
+});
+
+/**
+ * Get all users (admin only)
+ */
+export const getAllUsers = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("users"),
+    _creationTime: v.number(),
+    clerkId: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    role: v.optional(v.string()),
+    partnerId: v.optional(v.id("users")),
+    emailVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+  })),
+  handler: async (ctx) => {
+    // Note: In a production environment, you might want to add role-based access control here
+    // For now, returning all users for admin functionality
+    const users = await ctx.db.query("users").collect();
+    
+    // Filter out users without clerkId and map to proper format
+    return users
+      .filter(user => user.clerkId)
+      .map(user => ({
+        _id: user._id,
+        _creationTime: user._creationTime,
+        clerkId: user.clerkId as string, // safe because we filtered for clerkId existence
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        phone: user.phone,
+        role: user.role,
+        partnerId: user.partnerId,
+        emailVerificationTime: user.emailVerificationTime,
+        isAnonymous: user.isAnonymous,
+      }));
   },
 });
 
@@ -87,14 +214,40 @@ export const getUsersByRole = query({
       v.literal("master"),
     ),
   },
-  returns: v.array(v.any()),
+  returns: v.array(v.object({
+    _id: v.id("users"),
+    _creationTime: v.number(),
+    clerkId: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    role: v.optional(v.string()),
+    partnerId: v.optional(v.id("users")),
+    emailVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+  })),
   handler: async (ctx, args) => {
     // Using a filter since there's no 'by_role' index in the schema yet
     const users = await ctx.db
       .query("users")
       .collect();
     
-    // Filter in memory for users with the specified role
-    return users.filter(user => user.role === args.role);
+    // Filter in memory for users with the specified role and valid clerkId
+    return users
+      .filter(user => user.role === args.role && user.clerkId)
+      .map(user => ({
+        _id: user._id,
+        _creationTime: user._creationTime,
+        clerkId: user.clerkId as string, // safe because we filtered for clerkId existence
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        phone: user.phone,
+        role: user.role,
+        partnerId: user.partnerId,
+        emailVerificationTime: user.emailVerificationTime,
+        isAnonymous: user.isAnonymous,
+      }));
   },
 }); 

@@ -1,7 +1,7 @@
 import { Activity } from "@/lib/store/activitiesStore";
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, Star, Users } from "lucide-react";
+import { Clock, Star, Users, ImageIcon } from "lucide-react";
 
 export default function ActivitiesCard({activity}: {activity: Activity}) {
     return (
@@ -9,20 +9,26 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
             <Link href={`/atividades/${activity.id}`} className="flex flex-col h-full w-full">
                 {/* Imagem principal - sem padding no topo */}
                 <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-                    <Image  
-                        src={activity.imageUrl} 
-                        alt={activity.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
+                    {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
+                        <Image  
+                            src={activity.imageUrl} 
+                            alt={activity.title}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-gray-400" />
+                        </div>
+                    )}
                     {/* Badge de preço */}
                     <div className="absolute bottom-3 right-3 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-sm">
-                        $ {activity.price.toFixed(2)}
+                        $ {activity.price?.toFixed(2) || '0.00'}
                     </div>
                     {/* Badge de categoria */}
                     <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
-                        {activity.category}
+                        {activity.category || 'Categoria'}
                     </div>
                 </div>
                 
@@ -30,16 +36,16 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                 <div className="flex flex-col grow p-5">
                     {/* Título e avaliação */}
                     <div className="mb-2 flex justify-between items-start">
-                        <h3 className="text-lg font-medium line-clamp-1">{activity.title}</h3>
+                        <h3 className="text-lg font-medium line-clamp-1">{activity.title || 'Título da Atividade'}</h3>
                         <div className="flex items-center gap-1 text-amber-500 text-sm">
                             <Star className="h-4 w-4 fill-current" />
-                            <span className="font-semibold">{activity.rating.toFixed(1)}</span>
+                            <span className="font-semibold">{activity.rating?.toFixed(1) || '0.0'}</span>
                         </div>
                     </div>
                     
                     {/* Descrição curta */}
                     <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                        {activity.shortDescription}
+                        {activity.shortDescription || 'Descrição não disponível'}
                     </p>
                     
                     {/* Informações adicionais */}
@@ -47,11 +53,11 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                         <div className="flex gap-4 text-sm text-gray-500">
                             <div className="flex items-center gap-1.5">
                                 <Clock className="h-4 w-4 text-gray-400" />
-                                <span>{activity.duration}</span>
+                                <span>{activity.duration || 'Duração não informada'}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Users className="h-4 w-4 text-gray-400" />
-                                <span>Até {activity.maxParticipants}</span>
+                                <span>Até {activity.maxParticipants || 0}</span>
                             </div>
                         </div>
                         

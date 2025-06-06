@@ -49,15 +49,21 @@ export default function EventDetails({ event }: EventDetailsProps) {
     <main className="pb-20">
       {/* Hero Image Section */}
       <div className="relative w-full h-[70vh] overflow-hidden">
-        <Image
-          src={event.imageUrl}
-          alt={event.title}
-          fill
-          className={`object-cover brightness-[0.85] transition-opacity duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          priority
-          onLoad={() => setIsImageLoaded(true)}
-        />
-        {!isImageLoaded && (
+        {event.imageUrl && event.imageUrl.trim() !== '' ? (
+          <Image
+            src={event.imageUrl}
+            alt={event.title}
+            fill
+            className={`object-cover brightness-[0.85] transition-opacity duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            priority
+            onLoad={() => setIsImageLoaded(true)}
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+            <Calendar className="h-24 w-24 text-gray-500" />
+          </div>
+        )}
+        {!isImageLoaded && event.imageUrl && event.imageUrl.trim() !== '' && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />

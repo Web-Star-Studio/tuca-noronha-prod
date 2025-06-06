@@ -90,13 +90,22 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
       <main className="pb-20">
         {/* Hero Image Section */}
         <div className="relative w-full h-[70vh] overflow-hidden">
-          <Image
-            src={activity.imageUrl}
-            alt={activity.title}
-            fill
-            className="object-cover brightness-[0.85]"
-            priority
-          />
+          {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
+            <Image
+              src={activity.imageUrl}
+              alt={activity.title}
+              fill
+              className="object-cover brightness-[0.85]"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+              <div className="text-gray-500 text-center">
+                <Compass className="h-24 w-24 mx-auto mb-4" />
+                <p className="text-xl">Imagem não disponível</p>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
@@ -275,12 +284,21 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                           key={index}
                           className="relative aspect-video rounded-lg overflow-hidden"
                         >
-                          <Image
-                            src={image}
-                            alt={`${activity.title} - Imagem ${index + 1}`}
-                            fill
-                            className="object-cover hover:scale-105 transition-transform duration-300"
-                          />
+                          {image && image.trim() !== '' ? (
+                            <Image
+                              src={image}
+                              alt={`${activity.title} - Imagem ${index + 1}`}
+                              fill
+                              className="object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <div className="text-gray-400 text-sm text-center">
+                                <div className="h-8 w-8 bg-gray-300 rounded mx-auto mb-2"></div>
+                                Imagem não disponível
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

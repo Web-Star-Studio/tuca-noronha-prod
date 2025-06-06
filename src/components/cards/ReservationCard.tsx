@@ -135,12 +135,20 @@ export default function ReservationCard({ reservation, onClick }: ReservationCar
                 )}
               </Badge>
             </div>
-            <Image 
-              src={reservation.imageUrl} 
-              alt={reservation.name} 
-              fill
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            {reservation.imageUrl && reservation.imageUrl.trim() !== '' ? (
+              <Image 
+                src={reservation.imageUrl} 
+                alt={reservation.name} 
+                fill
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 w-full h-full bg-gray-300 flex items-center justify-center">
+                {isRestaurant && <Utensils className="h-12 w-12 text-gray-500" />}
+                {isAccommodation && <BedDouble className="h-12 w-12 text-gray-500" />}
+                {isActivity && <Activity className="h-12 w-12 text-gray-500" />}
+              </div>
+            )}
           </div>
           
           <div className="p-5 md:p-6 md:w-3/4 space-y-4">

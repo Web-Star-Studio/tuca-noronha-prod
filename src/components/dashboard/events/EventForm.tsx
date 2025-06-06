@@ -597,7 +597,7 @@ export function EventForm({
               />
             </div>
             
-            {formData.imageUrl && (
+            {formData.imageUrl && formData.imageUrl.trim() !== '' && (
               <div className="mt-4 relative h-40 rounded-md overflow-hidden">
                 <Image 
                   src={formData.imageUrl}

@@ -1161,3 +1161,144 @@ export const getVehicleBookings = query({
     };
   },
 });
+
+/**
+ * Get activity booking by ID
+ */
+export const getActivityBookingById = query({
+  args: {
+    bookingId: v.id("activityBookings"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("activityBookings"),
+      _creationTime: v.number(),
+      activityId: v.id("activities"),
+      userId: v.id("users"),
+      date: v.string(),
+      time: v.optional(v.string()),
+      participants: v.number(),
+      totalPrice: v.number(),
+      status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      confirmationCode: v.string(),
+      customerInfo: v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+      }),
+      specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    return booking || null;
+  },
+});
+
+/**
+ * Get event booking by ID
+ */
+export const getEventBookingById = query({
+  args: {
+    bookingId: v.id("eventBookings"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("eventBookings"),
+      _creationTime: v.number(),
+      eventId: v.id("events"),
+      userId: v.id("users"),
+      quantity: v.number(),
+      totalPrice: v.number(),
+      status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      confirmationCode: v.string(),
+      customerInfo: v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+      }),
+      specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    return booking || null;
+  },
+});
+
+/**
+ * Get restaurant reservation by ID
+ */
+export const getRestaurantReservationById = query({
+  args: {
+    reservationId: v.id("restaurantReservations"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("restaurantReservations"),
+      _creationTime: v.number(),
+      restaurantId: v.id("restaurants"),
+      userId: v.id("users"),
+      date: v.string(),
+      time: v.string(),
+      partySize: v.int64(),
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      status: v.string(),
+      confirmationCode: v.string(),
+      specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.reservationId);
+    return reservation || null;
+  },
+});
+
+/**
+ * Get vehicle booking by ID
+ */
+export const getVehicleBookingById = query({
+  args: {
+    bookingId: v.id("vehicleBookings"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("vehicleBookings"),
+      _creationTime: v.number(),
+      vehicleId: v.id("vehicles"),
+      userId: v.id("users"),
+      startDate: v.number(),
+      endDate: v.number(),
+      totalPrice: v.number(),
+      status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      pickupLocation: v.optional(v.string()),
+      returnLocation: v.optional(v.string()),
+      additionalDrivers: v.optional(v.number()),
+      additionalOptions: v.optional(v.array(v.string())),
+      notes: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    return booking || null;
+  },
+});

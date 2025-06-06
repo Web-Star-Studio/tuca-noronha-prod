@@ -44,6 +44,10 @@ export const listVehicles = query({
     const role = await getCurrentUserRole(ctx);
     const currentUserId = await getCurrentUserConvexId(ctx);
     
+    // Reset cursor to null if query parameters have changed to avoid cursor conflicts
+    // This prevents InvalidCursor errors when switching between different filter combinations
+    let cursor = args.paginationOpts?.cursor ?? null;
+    
     // Use a consistent query structure to avoid cursor conflicts
     // Always start with the same base query and apply filters consistently
     let vehiclesQuery = ctx.db.query("vehicles").order("desc");
@@ -70,11 +74,24 @@ export const listVehicles = query({
       );
     }
     
-    // Apply pagination
-    const paginationResult = await vehiclesQuery.paginate({
-      cursor: args.paginationOpts?.cursor ?? null,
-      numItems: args.paginationOpts?.limit ?? 10
-    });
+    // Apply pagination with error handling for invalid cursors
+    let paginationResult;
+    try {
+      paginationResult = await vehiclesQuery.paginate({
+        cursor,
+        numItems: args.paginationOpts?.limit ?? 10
+      });
+    } catch (error) {
+      // If cursor is invalid, retry without cursor (start from beginning)
+      if (error instanceof Error && error.message.includes("InvalidCursor")) {
+        paginationResult = await vehiclesQuery.paginate({
+          cursor: null,
+          numItems: args.paginationOpts?.limit ?? 10
+        });
+      } else {
+        throw error;
+      }
+    }
     
     // Apply search filter post-query if needed
     let vehicles = paginationResult.page;
