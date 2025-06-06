@@ -396,4 +396,34 @@ export const FOOD_PREFERENCES_OPTIONS = [
   { value: "internacional", label: "Culinária internacional" },
   { value: "local", label: "Pratos típicos locais" },
   { value: "sem_restricoes", label: "Sem restrições" },
-]; 
+];
+
+export interface PackageRequestFormData {
+  customerInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    age?: number;
+    occupation: string;
+  };
+  tripDetails: {
+    destination: string;
+    startDate: string;
+    endDate: string;
+    duration: number;
+    groupSize: number;
+    companions: string;
+    budget: number;
+    budgetFlexibility: string;
+  };
+  preferences: {
+    accommodationType: string[];
+    activities: string[];
+    transportation: string[];
+    foodPreferences: string[];
+    accessibility: string[];
+  };
+  specialRequirements: string;
+  previousExperience: string;
+  expectedHighlights: string;
+} 

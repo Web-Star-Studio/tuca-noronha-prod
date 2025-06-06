@@ -66,7 +66,7 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
     setFormData(prev => ({
       ...prev,
       [section]: {
-        ...prev[section],
+        ...(prev[section] as any),
         [field]: value
       }
     }));

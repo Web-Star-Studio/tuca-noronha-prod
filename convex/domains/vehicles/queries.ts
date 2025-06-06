@@ -84,7 +84,29 @@ export const listVehicles = query({
     } catch (error) {
       // If cursor is invalid, retry without cursor (start from beginning)
       if (error instanceof Error && error.message.includes("InvalidCursor")) {
-        paginationResult = await vehiclesQuery.paginate({
+        // Create a fresh query for retry since the original query is consumed
+        let retryQuery = ctx.db.query("vehicles").order("desc");
+        
+        // Apply the same RBAC filtering
+        if (role === "partner" && currentUserId) {
+          retryQuery = retryQuery.filter((q) => q.eq(q.field("ownerId"), currentUserId));
+        } else if (role === "traveler" || !currentUserId) {
+          retryQuery = retryQuery.filter((q) => q.eq(q.field("status"), "available"));
+        }
+        
+        // Apply status filter if specified
+        if (status && status !== "all" && !(role === "traveler" || !currentUserId)) {
+          retryQuery = retryQuery.filter((q) => q.eq(q.field("status"), status));
+        }
+
+        // Apply category filter
+        if (category && category !== "all") {
+          retryQuery = retryQuery.filter((q) => 
+            q.eq("category", category)
+          );
+        }
+        
+        paginationResult = await retryQuery.paginate({
           cursor: null,
           numItems: args.paginationOpts?.limit ?? 10
         });

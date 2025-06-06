@@ -6,7 +6,7 @@ import { api } from "../../../convex/_generated/api"
 import { Button } from "./button"
 import { Badge } from "./badge"
 import { GitCompare, X, Eye } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -34,16 +34,9 @@ export function ComparisonBar() {
       await removeFromComparison({
         packageId: packageId as any,
       })
-      toast({
-        title: "Removido da comparação",
-        description: "Pacote removido da comparação.",
-      })
+      toast.success("Removido da comparação")
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao remover pacote.",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Erro ao remover pacote.")
     }
   }
 
@@ -52,16 +45,9 @@ export function ComparisonBar() {
 
     try {
       await clearComparison({})
-      toast({
-        title: "Comparação limpa",
-        description: "Todos os pacotes foram removidos da comparação.",
-      })
+      toast.success("Comparação limpa")
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao limpar comparação.",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Erro ao limpar comparação.")
     }
   }
 

@@ -1,11 +1,7 @@
-import React from "react";
-import { Metadata } from "next";
-import PackageRequestForm from "@/components/packages/PackageRequestForm";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Solicitar Pacote Personalizado | Tuca Noronha",
-  description: "Solicite um pacote de viagem personalizado para o destino dos seus sonhos. Nossa equipe criará uma proposta exclusiva para você.",
-};
+import React from "react";
+import PackageRequestForm from "@/components/packages/PackageRequestForm";
 
 export default function SolicitarPacotePage() {
   return (

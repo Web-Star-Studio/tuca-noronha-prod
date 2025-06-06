@@ -485,7 +485,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
                               }}
                             />
                           </div>
-                          <span className="text-sm text-gray-600 w-8">{count}</span>
+                          <span className="text-sm text-gray-600 w-8">{Number(count)}</span>
                         </div>
                       ))}
                   </div>

@@ -43,7 +43,7 @@ export function PackagesStats() {
   }, {} as Record<string, number>)
   
   const mostPopularCategory = Object.entries(categories)
-    .sort(([,a], [,b]) => b - a)[0]?.[0] || "N/A"
+    .sort(([,a], [,b]) => Number(b) - Number(a))[0]?.[0] || "N/A"
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {

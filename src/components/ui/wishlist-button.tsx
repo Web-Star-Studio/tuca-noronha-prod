@@ -6,13 +6,13 @@ import { useAuth } from "@clerk/nextjs"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Button } from "./button"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface WishlistButtonProps {
   itemType: string
   itemId: string
-  variant?: "default" | "outline" | "ghost" | "icon"
+  variant?: "default" | "outline" | "ghost"
   size?: "default" | "sm" | "lg" | "icon"
   className?: string
   showText?: boolean
@@ -49,11 +49,7 @@ export function WishlistButton({
     }
 
     if (!userId) {
-      toast({
-        title: "Login necessário",
-        description: "Faça login para adicionar itens aos favoritos.",
-        variant: "destructive",
-      })
+      toast.error("Faça login para adicionar itens aos favoritos.")
       return
     }
 
@@ -65,26 +61,16 @@ export function WishlistButton({
           itemType,
           itemId,
         })
-        toast({
-          title: "Removido dos favoritos",
-          description: "Item removido da sua lista de favoritos.",
-        })
+        toast.success("Item removido dos favoritos.")
       } else {
         await addToWishlist({
           itemType,
           itemId,
         })
-        toast({
-          title: "Adicionado aos favoritos",
-          description: "Item adicionado à sua lista de favoritos.",
-        })
+        toast.success("Item adicionado aos favoritos.")
       }
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar favoritos.",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Erro ao atualizar favoritos.")
     } finally {
       setIsLoading(false)
     }
@@ -106,7 +92,7 @@ export function WishlistButton({
             : "text-gray-600"
         )}
       />
-      {showText && (variant !== "icon" && size !== "icon") && (
+      {showText && size !== "icon" && (
         <span>
           {isLoading 
             ? "..." 

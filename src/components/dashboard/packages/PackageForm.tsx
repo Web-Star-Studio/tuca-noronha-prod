@@ -158,7 +158,7 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
         .replace(/[^a-z0-9\s-]/g, "")
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")
-        .trim("-")
+        .replace(/^-+|-+$/g, "")
       setFormData(prev => ({ ...prev, slug }))
     }
   }, [formData.name, pkg])

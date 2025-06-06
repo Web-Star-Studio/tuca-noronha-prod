@@ -8,8 +8,7 @@ export { Label } from "./label"
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs"
 export { Textarea } from "./textarea"
-export { toast, useToast } from "./use-toast"
-export { Toaster } from "./toaster"
+// Toast functionality is provided by sonner
 
 // Custom Components
 export { WishlistButton } from "./wishlist-button"

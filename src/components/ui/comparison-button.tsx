@@ -6,12 +6,12 @@ import { useAuth } from "@clerk/nextjs"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Button } from "./button"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface ComparisonButtonProps {
   packageId: string
-  variant?: "default" | "outline" | "ghost" | "icon"
+  variant?: "default" | "outline" | "ghost"
   size?: "default" | "sm" | "lg" | "icon"
   className?: string
   showText?: boolean
@@ -52,11 +52,7 @@ export function ComparisonButton({
     }
 
     if (!userId) {
-      toast({
-        title: "Login necessário",
-        description: "Faça login para comparar pacotes.",
-        variant: "destructive",
-      })
+      toast.error("Faça login para comparar pacotes.")
       return
     }
 
@@ -67,35 +63,21 @@ export function ComparisonButton({
         await removeFromComparison({
           packageId: packageId as any,
         })
-        toast({
-          title: "Removido da comparação",
-          description: "Pacote removido da sua lista de comparação.",
-        })
+        toast.success("Pacote removido da comparação.")
       } else {
         // Check if comparison is full (max 3 packages)
         if (comparisonCount && comparisonCount >= 3) {
-          toast({
-            title: "Limite atingido",
-            description: "Você pode comparar no máximo 3 pacotes. Remova um para adicionar outro.",
-            variant: "destructive",
-          })
+          toast.error("Você pode comparar no máximo 3 pacotes. Remova um para adicionar outro.")
           return
         }
 
         await addToComparison({
           packageId: packageId as any,
         })
-        toast({
-          title: "Adicionado à comparação",
-          description: "Pacote adicionado à sua lista de comparação.",
-        })
+        toast.success("Pacote adicionado à comparação.")
       }
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar comparação.",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Erro ao atualizar comparação.")
     } finally {
       setIsLoading(false)
     }
@@ -117,7 +99,7 @@ export function ComparisonButton({
             : "text-gray-600"
         )}
       />
-      {showText && (variant !== "icon" && size !== "icon") && (
+      {showText && size !== "icon" && (
         <span>
           {isLoading 
             ? "..." 

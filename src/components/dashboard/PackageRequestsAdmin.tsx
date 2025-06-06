@@ -253,7 +253,7 @@ export default function PackageRequestsAdmin() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                        <DialogContent className="bg-white max-w-3xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Detalhes da Solicitação #{request.requestNumber}</DialogTitle>
                           </DialogHeader>
@@ -310,7 +310,7 @@ export default function PackageRequestsAdmin() {
 
       {/* Update Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Atualizar Solicitação</DialogTitle>
             <DialogDescription>
@@ -385,7 +385,7 @@ function RequestDetailsContent({ request }: { request: any }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       {/* Customer Information */}
       <Card>
         <CardHeader>
