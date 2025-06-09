@@ -546,16 +546,17 @@ export const confirmActivityBooking = mutation({
     });
 
     // Schedule notification sending action
-    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-      userId: booking.userId,
-      bookingId: booking._id,
-      bookingType: "activity",
-      assetName: activity.title,
-      confirmationCode: booking.confirmationCode,
-      customerEmail: booking.customerInfo.email,
-      customerName: booking.customerInfo.name,
-      partnerName: user.name,
-    });
+    // TODO: Uncomment when notifications domain is implemented
+    // await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+    //   userId: booking.userId,
+    //   bookingId: booking._id,
+    //   bookingType: "activity",
+    //   assetName: activity.title,
+    //   confirmationCode: booking.confirmationCode,
+    //   customerEmail: booking.customerInfo.email,
+    //   customerName: booking.customerInfo.name,
+    //   partnerName: user.name,
+    // });
 
     return null;
   },
@@ -620,16 +621,17 @@ export const confirmEventBooking = mutation({
     });
 
     // Schedule notification sending action
-    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-      userId: booking.userId,
-      bookingId: booking._id,
-      bookingType: "event",
-      assetName: event.title,
-      confirmationCode: booking.confirmationCode,
-      customerEmail: booking.customerInfo.email,
-      customerName: booking.customerInfo.name,
-      partnerName: user.name,
-    });
+    // TODO: Uncomment when notifications domain is implemented
+    // await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+    //   userId: booking.userId,
+    //   bookingId: booking._id,
+    //   bookingType: "event",
+    //   assetName: event.title,
+    //   confirmationCode: booking.confirmationCode,
+    //   customerEmail: booking.customerInfo.email,
+    //   customerName: booking.customerInfo.name,
+    //   partnerName: user.name,
+    // });
 
     return null;
   },
@@ -693,16 +695,17 @@ export const confirmRestaurantReservation = mutation({
     });
 
     // Schedule notification sending action
-    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-      userId: reservation.userId,
-      bookingId: reservation._id,
-      bookingType: "restaurant",
-      assetName: restaurant.name,
-      confirmationCode: reservation.confirmationCode,
-      customerEmail: reservation.email,
-      customerName: reservation.name,
-      partnerName: user.name,
-    });
+    // TODO: Uncomment when notifications domain is implemented
+    // await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+    //   userId: reservation.userId,
+    //   bookingId: reservation._id,
+    //   bookingType: "restaurant",
+    //   assetName: restaurant.name,
+    //   confirmationCode: reservation.confirmationCode,
+    //   customerEmail: reservation.email,
+    //   customerName: reservation.name,
+    //   partnerName: user.name,
+    // });
 
     return null;
   },
@@ -767,19 +770,20 @@ export const confirmVehicleBooking = mutation({
     });
 
     // Create basic notification for vehicle bookings since they don't have confirmation codes or customer info fields
-    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
-      userId: booking.userId,
-      type: "booking_confirmed",
-      title: "Reserva de Veículo Confirmada! 🎉",
-      message: `Sua reserva para "${vehicle.name}" foi confirmada!`,
-      relatedId: booking._id,
-      relatedType: "vehicle_booking",
-      data: {
-        bookingType: "vehicle",
-        assetName: vehicle.name,
-        partnerName: user.name,
-      },
-    });
+    // TODO: Uncomment when notifications domain is implemented
+    // await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+    //   userId: booking.userId,
+    //   type: "booking_confirmed",
+    //   title: "Reserva de Veículo Confirmada! 🎉",
+    //   message: `Sua reserva para "${vehicle.name}" foi confirmada!`,
+    //   relatedId: booking._id,
+    //   relatedType: "vehicle_booking",
+    //   data: {
+    //     bookingType: "vehicle",
+    //     assetName: vehicle.name,
+    //     partnerName: user.name,
+    //   },
+    // });
 
     return null;
   },
@@ -796,3 +800,245 @@ async function hasEmployeePermission(
   // This should be implemented when the asset permissions schema is defined
   return false;
 }
+
+/**
+ * Seed test data for traveler user - only for development/testing
+ */
+export const seedTestReservations = mutation({
+  args: {
+    travelerEmail: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+    reservationsCreated: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    // Get current user
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!currentUser || currentUser.role !== "master") {
+      throw new Error("Apenas usuários master podem executar esta operação");
+    }
+
+    // Find traveler user by email
+    const travelerUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.travelerEmail))
+      .unique();
+
+    if (!travelerUser) {
+      throw new Error("Usuário traveler não encontrado");
+    }
+
+    const now = Date.now();
+    const tomorrow = now + 24 * 60 * 60 * 1000; // Tomorrow
+    const nextWeek = now + 7 * 24 * 60 * 60 * 1000; // Next week
+    const nextMonth = now + 30 * 24 * 60 * 60 * 1000; // Next month
+
+    let reservationsCreated = 0;
+
+    try {
+      // Create test activity booking
+      const activityId = await ctx.db.insert("activities", {
+        title: "Passeio de Barco - Baía dos Golfinhos",
+        description: "Explore a vida marinha em um dos melhores pontos de Fernando de Noronha",
+        shortDescription: "Tour pela famosa Baía dos Golfinhos",
+        price: 150.0,
+        category: "adventure",
+        duration: "4 horas",
+        maxParticipants: BigInt(10),
+        minParticipants: BigInt(2),
+        difficulty: "easy",
+        rating: 4.8,
+        imageUrl: "/images/activity-dolphins.jpg",
+        galleryImages: ["/images/activity-dolphins-1.jpg", "/images/activity-dolphins-2.jpg"],
+        highlights: ["Observação de golfinhos", "Mergulho livre", "Lanche incluído"],
+        includes: ["Equipamento de mergulho", "Guia especializado", "Seguro"],
+        itineraries: ["9:00 - Embarque", "10:00 - Chegada na Baía", "12:00 - Retorno"],
+        excludes: ["Transporte terrestre"],
+        additionalInfo: ["Necessário saber nadar"],
+        cancelationPolicy: ["Cancelamento gratuito até 24h antes"],
+        isFeatured: true,
+        isActive: true,
+        hasMultipleTickets: false,
+        partnerId: currentUser._id,
+      });
+
+      await ctx.db.insert("activityBookings", {
+        activityId,
+        userId: travelerUser._id,
+        date: new Date(nextWeek).toISOString().split('T')[0],
+        participants: 2,
+        totalPrice: 300.0,
+        status: "confirmed",
+        confirmationCode: "ACT001",
+        customerInfo: {
+          name: travelerUser.name || "João Silva",
+          email: travelerUser.email || args.travelerEmail,
+          phone: "+55 81 99999-9999",
+        },
+        createdAt: now,
+        updatedAt: now,
+      });
+      reservationsCreated++;
+
+      // Create test restaurant reservation
+      const restaurantId = await ctx.db.insert("restaurants", {
+        name: "Sol & Mar Noronha",
+        slug: "sol-e-mar-noronha",
+        description: "Restaurante de frutos do mar com vista panorâmica para o oceano",
+        description_long: "Localizado na Vila dos Remédios, oferece pratos da culinária regional com ingredientes frescos locais",
+        address: {
+          street: "Vila dos Remédios, s/n",
+          city: "Fernando de Noronha",
+          state: "PE",
+          zipCode: "53990-000",
+          neighborhood: "Vila dos Remédios",
+          coordinates: { latitude: -3.8536, longitude: -32.4297 },
+        },
+        phone: "+55 81 3619-1234",
+        cuisine: ["frutos do mar", "regional"],
+        priceRange: "moderate",
+        diningStyle: "Casual",
+        hours: {
+          Monday: ["11:30-15:00", "18:00-22:00"],
+          Tuesday: ["11:30-15:00", "18:00-22:00"],
+          Wednesday: ["11:30-15:00", "18:00-22:00"],
+          Thursday: ["11:30-15:00", "18:00-22:00"],
+          Friday: ["11:30-15:00", "18:00-23:00"],
+          Saturday: ["11:30-15:00", "18:00-23:00"],
+          Sunday: ["11:30-15:00", "18:00-22:00"],
+        },
+        paymentOptions: ["dinheiro", "cartao", "pix"],
+        acceptsReservations: true,
+        maximumPartySize: BigInt(8),
+        mainImage: "/images/restaurant-sol-mar.jpg",
+        galleryImages: ["/images/restaurant-sol-mar-1.jpg"],
+        rating: {
+          overall: 4.7,
+          food: 4.8,
+          service: 4.6,
+          ambience: 4.7,
+          value: 4.5,
+          noiseLevel: "moderate",
+          totalReviews: BigInt(156),
+        },
+        features: ["vista-mar", "ar-condicionado", "wifi"],
+        isFeatured: true,
+        isActive: true,
+        tags: ["frutos-do-mar", "vista-mar", "romantico"],
+        partnerId: currentUser._id,
+      });
+
+      await ctx.db.insert("restaurantReservations", {
+        restaurantId,
+        userId: travelerUser._id,
+        date: new Date(tomorrow).toISOString().split('T')[0],
+        time: "19:30",
+        partySize: BigInt(2),
+        name: travelerUser.name || "João Silva",
+        email: travelerUser.email || args.travelerEmail,
+        phone: "+55 81 99999-9999",
+        status: "confirmed",
+        confirmationCode: "REST001",
+      });
+      reservationsCreated++;
+
+      // Create test accommodation booking
+      const accommodationId = await ctx.db.insert("accommodations", {
+        name: "Pousada Mar Azul",
+        slug: "pousada-mar-azul",
+        description: "Pousada aconchegante com vista para o mar",
+        description_long: "Localizada na Praia do Sueste, oferece quartos confortáveis com vista panorâmica para o oceano",
+        address: {
+          street: "Estrada da Praia do Sueste, 100",
+          city: "Fernando de Noronha",
+          state: "PE",
+          zipCode: "53990-000",
+          neighborhood: "Praia do Sueste",
+          coordinates: { latitude: -3.8536, longitude: -32.4297 },
+        },
+        phone: "+55 81 3619-5678",
+        type: "pousada",
+        checkInTime: "14:00",
+        checkOutTime: "12:00",
+        pricePerNight: 320.0,
+        currency: "BRL",
+        totalRooms: BigInt(12),
+        maxGuests: BigInt(4),
+        bedrooms: BigInt(2),
+        bathrooms: BigInt(1),
+        beds: { single: BigInt(0), double: BigInt(2), queen: BigInt(0), king: BigInt(0) },
+        area: 45,
+        amenities: ["wifi", "ar-condicionado", "cafe-da-manha", "vista-mar"],
+        houseRules: ["Não permitido fumar", "Não permitido festas"],
+        cancellationPolicy: "Cancelamento gratuito até 24h antes",
+        petsAllowed: false,
+        smokingAllowed: false,
+        eventsAllowed: false,
+        minimumStay: BigInt(2),
+        mainImage: "/images/pousada-mar-azul.jpg",
+        galleryImages: ["/images/pousada-mar-azul-1.jpg"],
+        rating: {
+          overall: 4.6,
+          cleanliness: 4.7,
+          location: 4.8,
+          checkin: 4.5,
+          value: 4.4,
+          accuracy: 4.6,
+          communication: 4.5,
+          totalReviews: BigInt(89),
+        },
+        tags: ["vista-mar", "aconchegante", "cafe-da-manha"],
+        isActive: true,
+        isFeatured: true,
+        partnerId: currentUser._id,
+      });
+
+      const checkInDate = new Date(nextMonth);
+      const checkOutDate = new Date(nextMonth + 3 * 24 * 60 * 60 * 1000); // 3 days later
+
+      await ctx.db.insert("accommodationBookings", {
+        accommodationId,
+        userId: travelerUser._id,
+        checkInDate: checkInDate.toISOString().split('T')[0],
+        checkOutDate: checkOutDate.toISOString().split('T')[0],
+        guests: BigInt(2),
+        totalPrice: 960.0, // 3 nights * 320
+        status: "confirmed",
+        confirmationCode: "HOTEL001",
+        customerInfo: {
+          name: travelerUser.name || "João Silva",
+          email: travelerUser.email || args.travelerEmail,
+          phone: "+55 81 99999-9999",
+        },
+        createdAt: now,
+        updatedAt: now,
+      });
+      reservationsCreated++;
+
+      return {
+        success: true,
+        message: `${reservationsCreated} reservas de teste criadas com sucesso para ${args.travelerEmail}`,
+        reservationsCreated,
+      };
+
+    } catch (error) {
+      console.error("Erro ao criar dados de teste:", error);
+      return {
+        success: false,
+        message: `Erro ao criar dados de teste: ${error}`,
+        reservationsCreated,
+      };
+    }
+  },
+});

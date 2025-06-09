@@ -98,21 +98,37 @@ export const getById = query({
   handler: async (ctx, args) => {
     const restaurant = await ctx.db.get(args.id);
 
-    const role = await getCurrentUserRole(ctx);
+    if (!restaurant) {
+      return null;
+    }
 
-    // Travelers or masters can access directly
-    if (role === "traveler" || role === "master") {
+    // Para restaurantes ativos, permitir acesso público
+    if (restaurant.isActive) {
       return restaurant;
     }
 
-    const hasAccess = await verifyPartnerAccess(ctx, args.id, "restaurants") ||
-                      await verifyEmployeeAccess(ctx, args.id, "restaurants", "view");
+    // Para restaurantes inativos, aplicar verificações de permissão
+    const role = await getCurrentUserRole(ctx);
 
-    if (!hasAccess) {
-      throw new Error("Não autorizado a acessar este restaurante");
+    // Master sempre tem acesso
+    if (role === "master") {
+      return restaurant;
     }
 
-    return restaurant;
+    // Partner e employee verificam permissões para restaurantes inativos
+    if (role === "partner" || role === "employee") {
+      const hasAccess = await verifyPartnerAccess(ctx, args.id, "restaurants") ||
+                        await verifyEmployeeAccess(ctx, args.id, "restaurants", "view");
+
+      if (!hasAccess) {
+        throw new Error("Não autorizado a acessar este restaurante");
+      }
+
+      return restaurant;
+    }
+
+    // Para travelers, não mostrar restaurantes inativos
+    return null;
   },
 });
 
@@ -210,5 +226,237 @@ export const search = query({
     }
     
     return results;
+  },
+});
+
+/**
+ * Lista todas as mesas de um restaurante
+ */
+export const getRestaurantTables = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    restaurantId: v.id("restaurants"),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para ver as mesas deste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para ver as mesas deste restaurante");
+      }
+    }
+
+    // Buscar mesas do restaurante
+    const tables = await ctx.db
+      .query("restaurantTables")
+      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    return tables.sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
+/**
+ * Lista categorias do cardápio de um restaurante
+ */
+export const getMenuCategories = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    restaurantId: v.id("restaurants"),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para ver o cardápio deste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para ver o cardápio deste restaurante");
+      }
+    }
+
+    // Buscar categorias do cardápio
+    const categories = await ctx.db
+      .query("menuCategories")
+      .withIndex("by_restaurant_order", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    return categories.sort((a, b) => a.order - b.order);
+  },
+});
+
+/**
+ * Lista itens do cardápio por categoria
+ */
+export const getMenuItemsByCategory = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    categoryId: v.id("menuCategories"),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se a categoria existe e obter o restaurante
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) {
+      throw new Error("Categoria não encontrada");
+    }
+
+    const restaurant = await ctx.db.get(category.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para ver este cardápio");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para ver este cardápio");
+      }
+    }
+
+    // Buscar itens da categoria
+    const items = await ctx.db
+      .query("menuItems")
+      .withIndex("by_category_order", (q) => q.eq("categoryId", args.categoryId))
+      .collect();
+
+    return items.sort((a, b) => a.order - b.order);
+  },
+});
+
+/**
+ * Lista completa do cardápio com categorias e itens
+ */
+export const getFullMenu = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    restaurantId: v.id("restaurants"),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para ver o cardápio deste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para ver o cardápio deste restaurante");
+      }
+    }
+
+    // Buscar categorias
+    const categories = await ctx.db
+      .query("menuCategories")
+      .withIndex("by_restaurant_order", (q) => q.eq("restaurantId", args.restaurantId))
+      .collect();
+
+    // Buscar itens para cada categoria
+    const categoriesWithItems = await Promise.all(
+      categories.map(async (category) => {
+        const items = await ctx.db
+          .query("menuItems")
+          .withIndex("by_category_order", (q) => q.eq("categoryId", category._id))
+          .collect();
+
+        return {
+          ...category,
+          items: items.sort((a, b) => a.order - b.order),
+        };
+      })
+    );
+
+    return categoriesWithItems.sort((a, b) => a.order - b.order);
   },
 }); 

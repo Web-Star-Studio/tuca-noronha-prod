@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useVehicles } from "@/lib/services/vehicleService";
 import type { Vehicle } from "@/lib/services/vehicleService";
 import { toast } from "sonner";
+import { useOrganization } from "@/lib/providers/organization-context";
 
 type VehicleListProps = {
   onEdit?: (vehicleId: string) => void;
@@ -24,8 +25,11 @@ export default function VehicleList({
   category,
   status,
 }: VehicleListProps) {
+  // Get the active organization
+  const { activeOrganization } = useOrganization();
+  
   // Use our custom hook to fetch vehicles from Convex
-  const { vehicles, isLoading } = useVehicles(search, category, status);
+  const { vehicles, isLoading } = useVehicles(search, category, status, 10, activeOrganization?._id);
 
   // Handle edit action
   const handleEditVehicle = (vehicleId: string) => {

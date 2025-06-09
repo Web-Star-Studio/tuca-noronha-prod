@@ -25,4 +25,7 @@ export * as users from "./users";
 export * as rbac from "./rbac";
 
 // Export packages domain
-export * as packages from "./packages"; 
+export * as packages from "./packages";
+
+// Export chat domain for real-time messaging
+export * as chat from "./chat"; 

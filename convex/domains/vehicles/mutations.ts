@@ -33,7 +33,7 @@ export const createVehicle = mutation({
     }
     
     // Only partners and admins can create vehicles
-    if (role !== "partner" && role !== "admin" && role !== "master") {
+    if (role !== "partner" && role !== "master") {
       throw new Error("Acesso negado. Apenas partners podem criar veículos.");
     }
     
@@ -95,7 +95,7 @@ export const updateVehicle = mutation({
       if (!existingVehicle.ownerId || existingVehicle.ownerId.toString() !== currentUserId.toString()) {
         throw new Error("Acesso negado. Você só pode editar seus próprios veículos.");
       }
-    } else if (role !== "admin" && role !== "master") {
+    } else if (role !== "master") {
       throw new Error("Acesso negado. Permissões insuficientes.");
     }
     
@@ -136,7 +136,7 @@ export const deleteVehicle = mutation({
       if (!existingVehicle.ownerId || existingVehicle.ownerId.toString() !== currentUserId.toString()) {
         throw new Error("Acesso negado. Você só pode deletar seus próprios veículos.");
       }
-    } else if (role !== "admin" && role !== "master") {
+    } else if (role !== "master") {
       throw new Error("Acesso negado. Permissões insuficientes.");
     }
     

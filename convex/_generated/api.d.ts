@@ -29,6 +29,9 @@ import type * as domains_bookings_mutations from "../domains/bookings/mutations.
 import type * as domains_bookings_queries from "../domains/bookings/queries.js";
 import type * as domains_bookings_types from "../domains/bookings/types.js";
 import type * as domains_bookings_utils from "../domains/bookings/utils.js";
+import type * as domains_chat_index from "../domains/chat/index.js";
+import type * as domains_chat_mutations from "../domains/chat/mutations.js";
+import type * as domains_chat_queries from "../domains/chat/queries.js";
 import type * as domains_events_actions from "../domains/events/actions.js";
 import type * as domains_events_index from "../domains/events/index.js";
 import type * as domains_events_mutations from "../domains/events/mutations.js";
@@ -58,6 +61,7 @@ import type * as domains_rbac_mutation from "../domains/rbac/mutation.js";
 import type * as domains_rbac_mutations from "../domains/rbac/mutations.js";
 import type * as domains_rbac_queries from "../domains/rbac/queries.js";
 import type * as domains_rbac_query from "../domains/rbac/query.js";
+import type * as domains_rbac_test from "../domains/rbac/test.js";
 import type * as domains_rbac_types from "../domains/rbac/types.js";
 import type * as domains_rbac_utils from "../domains/rbac/utils.js";
 import type * as domains_restaurants_index from "../domains/restaurants/index.js";
@@ -65,6 +69,9 @@ import type * as domains_restaurants_mutations from "../domains/restaurants/muta
 import type * as domains_restaurants_queries from "../domains/restaurants/queries.js";
 import type * as domains_restaurants_types from "../domains/restaurants/types.js";
 import type * as domains_restaurants_utils from "../domains/restaurants/utils.js";
+import type * as domains_support_mutations from "../domains/support/mutations.js";
+import type * as domains_support_queries from "../domains/support/queries.js";
+import type * as domains_users_actions from "../domains/users/actions.js";
 import type * as domains_users_helpers from "../domains/users/helpers.js";
 import type * as domains_users_index from "../domains/users/index.js";
 import type * as domains_users_mutations from "../domains/users/mutations.js";
@@ -111,6 +118,9 @@ declare const fullApi: ApiFromModules<{
   "domains/bookings/queries": typeof domains_bookings_queries;
   "domains/bookings/types": typeof domains_bookings_types;
   "domains/bookings/utils": typeof domains_bookings_utils;
+  "domains/chat/index": typeof domains_chat_index;
+  "domains/chat/mutations": typeof domains_chat_mutations;
+  "domains/chat/queries": typeof domains_chat_queries;
   "domains/events/actions": typeof domains_events_actions;
   "domains/events/index": typeof domains_events_index;
   "domains/events/mutations": typeof domains_events_mutations;
@@ -140,6 +150,7 @@ declare const fullApi: ApiFromModules<{
   "domains/rbac/mutations": typeof domains_rbac_mutations;
   "domains/rbac/queries": typeof domains_rbac_queries;
   "domains/rbac/query": typeof domains_rbac_query;
+  "domains/rbac/test": typeof domains_rbac_test;
   "domains/rbac/types": typeof domains_rbac_types;
   "domains/rbac/utils": typeof domains_rbac_utils;
   "domains/restaurants/index": typeof domains_restaurants_index;
@@ -147,6 +158,9 @@ declare const fullApi: ApiFromModules<{
   "domains/restaurants/queries": typeof domains_restaurants_queries;
   "domains/restaurants/types": typeof domains_restaurants_types;
   "domains/restaurants/utils": typeof domains_restaurants_utils;
+  "domains/support/mutations": typeof domains_support_mutations;
+  "domains/support/queries": typeof domains_support_queries;
+  "domains/users/actions": typeof domains_users_actions;
   "domains/users/helpers": typeof domains_users_helpers;
   "domains/users/index": typeof domains_users_index;
   "domains/users/mutations": typeof domains_users_mutations;

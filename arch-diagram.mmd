@@ -1,0 +1,47 @@
+    flowchart TD
+        subgraph Frontend [Next.js/React UI]
+          UI1(Main_Pages) -.->|SSR/AppRouter| UI2[App Router &
+    Protected Routes]
+          UI2 --> UI3[Components
+    (Bookings, Filters,
+    Dashboard, etc.)]
+          UI3 --> UI4[Hooks & Lib]
+          UI2 --> UI5[Middleware (Auth)]
+        end
+
+        subgraph Clerk [🟦 Clerk (Authentication)]
+          Auth1[Sign-in, User Profile]
+        end
+
+        subgraph Convex [🟧 Convex Backend]
+          C1[Domains:
+    Activities,
+    Packages,
+    Reviews, etc.]
+          C2[RBAC,
+    User Prefs]
+          C3[Functions &
+    Business Logic]
+          DB[(Convex
+    Database)]
+        end
+
+        subgraph External [🟦 External APIs]
+          EXT1[Alerts,
+    Third-party
+    Integrations]
+        end
+
+        UI1 -->|Client-side & Submission| C3
+        UI5 -->|User Session| Clerk
+
+        Clerk -->|JWT/\nUser Context| UI5
+
+        UI3 -->|Fetch/Mutate| C3
+
+        C3 --> C1
+        C3 --> C2
+        C1 --> DB
+        C2 --> DB
+
+        C3 --> EXT1

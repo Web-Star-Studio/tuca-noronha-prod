@@ -7,8 +7,8 @@
 
 // Classes Tailwind para componentes de card
 export const cardStyles = {
-  // Estilo base para todos os cards
-  base: "bg-white text-card-foreground rounded-xl shadow transition-all duration-300 overflow-hidden",
+  // Estilo base para todos os cards - sempre com background branco por padrão
+  base: "bg-white text-foreground rounded-xl shadow transition-all duration-300 overflow-hidden",
   
   // Variações de hover
   hover: {
@@ -87,21 +87,21 @@ export const buttonStyles = {
 
 // Estilos para campos de formulário
 export const formStyles = {
-  // Base para inputs, selects, textareas
+  // Base para inputs, selects, textareas - sempre com background branco por padrão
   input: {
-    base: "flex h-10 w-full rounded-md bg-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    base: "flex h-10 w-full rounded-md bg-white border border-border px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
   },
   
-  // Selects
+  // Selects - sempre com background branco por padrão
   select: {
-    base: "flex h-10 w-full items-center justify-between rounded-md bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-    trigger: "flex h-10 w-full items-center justify-between rounded-md bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-    content: "bg-white shadow-md rounded-md p-1",
+    base: "flex h-10 w-full items-center justify-between rounded-md bg-white border border-border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    trigger: "flex h-10 w-full items-center justify-between rounded-md bg-white border border-border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    content: "bg-white shadow-md rounded-md p-1 border border-border",
   },
   
-  // Textarea
+  // Textarea - sempre com background branco por padrão
   textarea: {
-    base: "flex min-h-[80px] w-full rounded-md bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+    base: "flex min-h-[80px] w-full rounded-md bg-white border border-border px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
   },
   
   // Switch/Toggle

@@ -79,20 +79,37 @@ export const getById = query({
   handler: async (ctx, args) => {
     const activity = await ctx.db.get(args.id);
 
-    const role = await getCurrentUserRole(ctx);
+    if (!activity) {
+      return null;
+    }
 
-    if (role === "traveler" || role === "master") {
+    // Para atividades ativas, permitir acesso público
+    if (activity.isActive) {
       return activity;
     }
 
-    const hasAccess = await verifyPartnerAccess(ctx, args.id, "activities") ||
-                      await verifyEmployeeAccess(ctx, args.id, "activities", "view");
+    // Para atividades inativas, aplicar verificações de permissão
+    const role = await getCurrentUserRole(ctx);
 
-    if (!hasAccess) {
-      throw new Error("Não autorizado a acessar esta atividade");
+    // Master sempre tem acesso
+    if (role === "master") {
+      return activity;
     }
 
-    return activity;
+    // Partner e employee verificam permissões para atividades inativas
+    if (role === "partner" || role === "employee") {
+      const hasAccess = await verifyPartnerAccess(ctx, args.id, "activities") ||
+                        await verifyEmployeeAccess(ctx, args.id, "activities", "view");
+
+      if (!hasAccess) {
+        throw new Error("Não autorizado a acessar esta atividade");
+      }
+
+      return activity;
+    }
+
+    // Para travelers, não mostrar atividades inativas
+    return null;
   },
 });
 

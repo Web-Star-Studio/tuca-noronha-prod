@@ -58,36 +58,150 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.float64()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
     .index("clerkId", ["clerkId"])
-    .index("by_partner", ["partnerId"]),
+    .index("by_partner", ["partnerId"])
+    .index("by_organization", ["organizationId"]),
   assetPermissions: defineTable({
+    employeeId: v.id("users"),
+    assetId: v.string(), // Store as string for flexibility across different asset types
+    assetType: v.string(),
+    permissions: v.array(v.string()), // Array of permissions like ["view", "edit", "manage"]
+    grantedAt: v.number(),
+    grantedBy: v.id("users"), // Partner who granted the permissions
+  })
+    .index("by_employee_asset_type", ["employeeId", "assetType"])
+    .index("by_asset_type", ["assetType", "assetId"]),
+    
+  // Mensagens de suporte do botão flutuante
+  supportMessages: defineTable({
+    userId: v.id("users"), // Usuário que enviou a mensagem
+    userRole: v.union(v.literal("traveler"), v.literal("partner"), v.literal("employee"), v.literal("master")),
+    subject: v.string(),
+    category: v.union(
+      v.literal("duvida"),
+      v.literal("problema"), 
+      v.literal("sugestao"),
+      v.literal("cancelamento"),
+      v.literal("outro")
+    ),
+    message: v.string(),
+    contactEmail: v.string(),
+    isUrgent: v.boolean(),
+    status: v.union(
+      v.literal("open"),
+      v.literal("in_progress"),
+      v.literal("resolved"),
+      v.literal("closed")
+    ),
+    assignedToMasterId: v.optional(v.id("users")), // Master responsável
+    responseMessage: v.optional(v.string()),
+    respondedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_assigned_master", ["assignedToMasterId"])
+    .index("by_user", ["userId"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_urgent", ["isUrgent"]),
+
+  // Permissões sobre organizações/empreendimentos
+  organizationPermissions: defineTable({
     // ID do employee
     employeeId: v.id("users"),
     
     // ID do partner que concedeu a permissão
     partnerId: v.id("users"),
     
-    // ID do asset (evento, restaurante, etc)
-    assetId: v.string(),
-    
-    // Tipo de asset (events, restaurants, etc)
-    assetType: v.string(),
+    // ID da organização/empreendimento
+    organizationId: v.id("partnerOrganizations"),
     
     // Permissões (view, edit, manage)
     permissions: v.array(v.string()),
     
     // Nota opcional sobre a permissão
     note: v.optional(v.string()),
+    
+    createdAt: v.number(),
+    updatedAt: v.number(),
   })
     .index("by_employee", ["employeeId"]) // Todas as permissões de um employee
     .index("by_partner", ["partnerId"]) // Todas as permissões concedidas por um partner
-    .index("by_asset_type", ["assetType"]) // Todas as permissões por tipo de asset
-    .index("by_asset", ["assetId"]) // Todas as permissões para um asset específico
-    .index("by_employee_asset_type", ["employeeId", "assetType"]) // Permissões de um employee por tipo
-    .index("by_employee_partner", ["employeeId", "partnerId"]),
+    .index("by_organization", ["organizationId"]) // Todas as permissões para uma organização específica
+    .index("by_employee_partner", ["employeeId", "partnerId"]) // Permissões de um employee por partner
+    .index("by_employee_organization", ["employeeId", "organizationId"]), // Permissões específicas employee-organização
+
+  // Sistema de Chat
+  chatRooms: defineTable({
+    // Tipo de contexto do chat (asset ou booking)
+    contextType: v.union(v.literal("asset"), v.literal("booking")),
+    
+    // ID do contexto (asset ID ou booking ID)
+    contextId: v.string(),
+    
+    // Tipo do asset (se contextType for "asset")
+    assetType: v.optional(v.string()), // "restaurants", "events", "activities", "vehicles", "accommodations"
+    
+    // Participantes do chat
+    travelerId: v.id("users"), // O traveler que iniciou o chat
+    partnerId: v.id("users"),  // O partner/employee responsável pelo asset
+    
+    // Status do chat
+    status: v.union(
+      v.literal("active"),
+      v.literal("closed"),
+      v.literal("archived")
+    ),
+    
+    // Metadata
+    title: v.string(), // Título do chat baseado no contexto
+    lastMessageAt: v.optional(v.number()),
+    lastMessagePreview: v.optional(v.string()),
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_traveler", ["travelerId"])
+    .index("by_partner", ["partnerId"])
+    .index("by_context", ["contextType", "contextId"])
+    .index("by_traveler_partner", ["travelerId", "partnerId"])
+    .index("by_status", ["status"]),
+
+  chatMessages: defineTable({
+    // Referência à sala de chat
+    chatRoomId: v.id("chatRooms"),
+    
+    // Autor da mensagem
+    senderId: v.id("users"),
+    senderRole: v.union(v.literal("traveler"), v.literal("partner"), v.literal("employee"), v.literal("master")),
+    
+    // Conteúdo da mensagem
+    content: v.string(),
+    messageType: v.union(
+      v.literal("text"),
+      v.literal("image"),
+      v.literal("file"),
+      v.literal("system") // Mensagens automáticas do sistema
+    ),
+    
+    // Metadados da mensagem
+    isRead: v.boolean(),
+    readAt: v.optional(v.number()),
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_chatroom", ["chatRoomId"])
+    .index("by_chatroom_timestamp", ["chatRoomId", "createdAt"])
+    .index("by_sender", ["senderId"])
+    .index("by_unread", ["isRead"]),
+
   activities: defineTable({
     title: v.string(),
     description: v.string(),
@@ -260,11 +374,83 @@ export default defineSchema({
     partnerNotes: v.optional(v.string()),               // Notes from partner/employee
     status: v.string(),                                 // Status (ex: "pending", "confirmed", "canceled")
     confirmationCode: v.string(),                       // Código de confirmação
+    tableId: v.optional(v.id("restaurantTables")),      // Mesa atribuída (opcional)
   })
-    .index("by_restaurant", ["restaurantId"])           // Índice por restaurante
-    .index("by_user", ["userId"])                       // Índice por usuário
-    .index("by_restaurant_date", ["restaurantId", "date"]) // Índice por restaurante e data
-    .index("by_status", ["status"]),                    // Índice por status
+    .index("by_restaurant", ["restaurantId"])
+    .index("by_user", ["userId"])
+    .index("by_date", ["date"])
+    .index("by_status", ["status"])
+    .index("by_table", ["tableId"]),
+
+  // Tabelas do restaurante
+  restaurantTables: defineTable({
+    restaurantId: v.id("restaurants"),                  // Referência ao restaurante
+    name: v.string(),                                   // Nome/número da mesa (ex: "Mesa 01", "VIP A")
+    capacity: v.int64(),                                // Capacidade máxima de pessoas
+    location: v.string(),                               // Localização (ex: "Interno", "Varanda", "VIP")
+    type: v.string(),                                   // Tipo (ex: "Standard", "VIP", "Bar")
+    shape: v.string(),                                  // Formato (ex: "Round", "Square", "Rectangular")
+    isActive: v.boolean(),                              // Mesa disponível para reservas
+    isVip: v.boolean(),                                 // Mesa VIP
+    hasView: v.boolean(),                               // Mesa com vista
+    notes: v.optional(v.string()),                      // Observações especiais
+    position: v.optional(v.object({                     // Posição no layout (opcional)
+      x: v.float64(),
+      y: v.float64(),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_restaurant", ["restaurantId"])
+    .index("by_restaurant_active", ["restaurantId", "isActive"])
+    .index("by_capacity", ["capacity"]),
+
+  // Categorias do cardápio
+  menuCategories: defineTable({
+    restaurantId: v.id("restaurants"),                  // Referência ao restaurante
+    name: v.string(),                                   // Nome da categoria (ex: "Pratos Principais", "Sobremesas")
+    description: v.optional(v.string()),                // Descrição da categoria
+    order: v.int64(),                                   // Ordem de exibição
+    isActive: v.boolean(),                              // Categoria ativa
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_restaurant", ["restaurantId"])
+    .index("by_restaurant_order", ["restaurantId", "order"]),
+
+  // Itens do cardápio
+  menuItems: defineTable({
+    restaurantId: v.id("restaurants"),                  // Referência ao restaurante
+    categoryId: v.id("menuCategories"),                 // Referência à categoria
+    name: v.string(),                                   // Nome do prato
+    description: v.string(),                            // Descrição do prato
+    price: v.float64(),                                 // Preço
+    image: v.optional(v.string()),                      // Imagem do prato (opcional)
+    ingredients: v.array(v.string()),                   // Lista de ingredientes
+    allergens: v.array(v.string()),                     // Alérgenos
+    preparationTime: v.optional(v.int64()),             // Tempo de preparo em minutos (opcional)
+    calories: v.optional(v.int64()),                    // Calorias (opcional)
+    isVegetarian: v.boolean(),                          // Vegetariano
+    isVegan: v.boolean(),                               // Vegano
+    isGlutenFree: v.boolean(),                          // Sem glúten
+    isSpicy: v.boolean(),                               // Picante
+    spicyLevel: v.optional(v.int64()),                  // Nível de picância (1-5) (opcional)
+    isSignature: v.boolean(),                           // Prato assinatura
+    isAvailable: v.boolean(),                           // Disponível
+    order: v.int64(),                                   // Ordem dentro da categoria
+    tags: v.array(v.string()),                          // Tags (ex: "Popular", "Chef's Choice")
+    notes: v.optional(v.string()),                      // Observações
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_restaurant", ["restaurantId"])
+    .index("by_category", ["categoryId"])
+    .index("by_restaurant_available", ["restaurantId", "isAvailable"])
+    .index("by_category_order", ["categoryId", "order"])
+    .index("by_signature", ["isSignature"])             // Índice por pratos assinatura
+    .index("by_spicy", ["isSpicy"])                     // Índice por pratos picantes
+    .index("by_vegetarian", ["isVegetarian"])           // Índice por pratos vegetarianos
+    .index("by_restaurant_signature", ["restaurantId", "isSignature"]), // Índice por restaurante e pratos assinatura
   media: defineTable({
     storageId: v.string(),          // Convex Storage ID
     fileName: v.string(),          // Original file name
@@ -782,4 +968,43 @@ export default defineSchema({
   })
     .index("by_review", ["reviewId"])
     .index("by_user_review", ["userId", "reviewId"]),
+
+  // Organizações/Empreendimentos de Partners
+  partnerOrganizations: defineTable({
+    name: v.string(),                        // Nome do empreendimento
+    description: v.optional(v.string()),     // Descrição do empreendimento
+    type: v.string(),                        // Tipo: "restaurant", "accommodation", "rental_service", "activity_service", "event_service"
+    image: v.optional(v.string()),           // Logo/imagem do empreendimento
+    partnerId: v.id("users"),                // ID do partner dono
+    isActive: v.boolean(),                   // Se está ativo
+    settings: v.optional(v.object({         // Configurações específicas do empreendimento
+      theme: v.optional(v.string()),         // Tema/cor principal
+      contactInfo: v.optional(v.object({    // Informações de contato
+        email: v.optional(v.string()),
+        phone: v.optional(v.string()),
+        website: v.optional(v.string()),
+      })),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_partner", ["partnerId"])
+    .index("by_partner_type", ["partnerId", "type"])
+    .index("by_type", ["type"]),
+
+  // Tabela para relacionar assets com organizações
+  partnerAssets: defineTable({
+    organizationId: v.id("partnerOrganizations"), // ID da organização
+    assetId: v.string(),                          // ID do asset (pode ser de qualquer tabela)
+    assetType: v.string(),                        // Tipo do asset (restaurants, events, activities, vehicles, accommodations)
+    partnerId: v.id("users"),                     // ID do partner (para facilitar queries)
+    isActive: v.boolean(),                        // Se o asset está ativo nesta organização
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_organization", ["organizationId"])
+    .index("by_partner", ["partnerId"])
+    .index("by_asset", ["assetId", "assetType"])
+    .index("by_organization_type", ["organizationId", "assetType"])
+    .index("by_partner_type", ["partnerId", "assetType"]),
 });

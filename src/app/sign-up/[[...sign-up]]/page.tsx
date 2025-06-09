@@ -161,7 +161,9 @@ export default function SignUpPage() {
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.8, duration: 0.4 }}
                         >
-                          <SignUp.Captcha className="empty:hidden" />
+                          <SignUp.Captcha />
+                          {/* Manual CAPTCHA element as fallback */}
+                          <div id="clerk-captcha" />
                           <SignUp.Action submit asChild>
                             <Button
                               disabled={isGlobalLoading}

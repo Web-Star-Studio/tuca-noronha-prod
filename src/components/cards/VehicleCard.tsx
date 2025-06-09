@@ -104,7 +104,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           <div className="flex justify-between items-center">
             <div>
               <span className="text-lg font-bold">
-                R$ {vehicle.pricePerDay.toFixed(2)}
+                R$ {(vehicle.pricePerDay || 0).toFixed(2)}
               </span>
               <span className="text-sm text-gray-500"> /dia</span>
             </div>

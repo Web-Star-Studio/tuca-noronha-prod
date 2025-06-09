@@ -25,6 +25,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
+import { ChatButton } from "@/components/chat/ChatButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -371,26 +372,39 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
                 </Card>
 
                 {/* Action buttons */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-gray-200"
-                    onClick={() => setIsFavorite(!isFavorite)}
-                  >
-                    <Heart
-                      className={cn(
-                        "h-5 w-5 mr-2",
-                        isFavorite
-                          ? "fill-red-500 text-red-500"
-                          : "text-gray-600"
-                      )}
-                    />
-                    Favorito
-                  </Button>
-                  <Button variant="outline" className="flex-1 border-gray-200">
-                    <Share2 className="h-5 w-5 mr-2 text-gray-600" />
-                    Compartilhar
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-gray-200"
+                      onClick={() => setIsFavorite(!isFavorite)}
+                    >
+                      <Heart
+                        className={cn(
+                          "h-5 w-5 mr-2",
+                          isFavorite
+                            ? "fill-red-500 text-red-500"
+                            : "text-gray-600"
+                        )}
+                      />
+                      Favorito
+                    </Button>
+                    <Button variant="outline" className="flex-1 border-gray-200">
+                      <Share2 className="h-5 w-5 mr-2 text-gray-600" />
+                      Compartilhar
+                    </Button>
+                  </div>
+
+                  {/* Chat Button */}
+                  <ChatButton
+                    assetId={restaurant.id as string}
+                    assetType="restaurants"
+                    assetName={restaurant.name}
+                    partnerId={restaurant.partnerId as any}
+                    variant="default"
+                    size="md"
+                    className="w-full"
+                  />
                 </div>
 
                 {/* Rating Card */}

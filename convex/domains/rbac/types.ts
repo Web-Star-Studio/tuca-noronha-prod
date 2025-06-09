@@ -1,7 +1,7 @@
 import type { Id } from "../../_generated/dataModel";
 
 // Define the user roles in the system
-export type UserRole = "traveler" | "partner" | "employee" | "admin" | "master";
+export type UserRole = "traveler" | "partner" | "employee" | "master";
 
 // User with role information
 export interface UserWithRole {

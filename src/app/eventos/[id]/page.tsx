@@ -3,6 +3,7 @@ import { use } from "react";
 
 import { notFound } from "next/navigation";
 import { usePublicEvent } from "@/lib/services/eventService";
+import { ChatButton } from "@/components/chat/ChatButton";
 import EventDetails from "@/components/cards/EventDetails";
 
 export default function EventPage(props: { params: Promise<{ id: string }> }) {
@@ -31,5 +32,20 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
     );
   }
 
-  return <EventDetails event={event} />;
+  return (
+    <>
+      <EventDetails event={event} />
+      
+      {/* Botão de Chat Flutuante */}
+      <ChatButton
+        assetId={event.id}
+        assetType="events"
+        assetName={event.title}
+        partnerId={event.partnerId as any}
+        variant="floating"
+        size="lg"
+        showLabel={false}
+      />
+    </>
+  );
 }

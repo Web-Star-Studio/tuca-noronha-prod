@@ -166,23 +166,37 @@ export const getById = query({
   handler: async (ctx, args) => {
     const event = await ctx.db.get(args.id);
     
-    // Verifica se o usuário atual tem acesso ao evento (apenas no contexto admin)
-    const role = await getCurrentUserRole(ctx);
+    if (!event) {
+      return null;
+    }
     
-    // Para usuários públicos (traveler) ou master, retorna sem verificar permissões
-    if (role === "traveler" || role === "master") {
+    // Para eventos ativos, permitir acesso público
+    if (event.isActive) {
       return event;
     }
     
-    // Para partner e employee, verificamos permissões
-    const hasAccess = await verifyPartnerAccess(ctx, args.id, "events") || 
-                      await verifyEmployeeAccess(ctx, args.id, "events", "view");
+    // Para eventos inativos, aplicar verificações de permissão
+    const role = await getCurrentUserRole(ctx);
     
-    if (!hasAccess) {
-      throw new Error("Não autorizado a acessar este evento");
+    // Master sempre tem acesso
+    if (role === "master") {
+      return event;
     }
     
-    return event;
+    // Partner e employee verificam permissões para eventos inativos
+    if (role === "partner" || role === "employee") {
+      const hasAccess = await verifyPartnerAccess(ctx, args.id, "events") || 
+                        await verifyEmployeeAccess(ctx, args.id, "events", "view");
+      
+      if (!hasAccess) {
+        throw new Error("Não autorizado a acessar este evento");
+      }
+      
+      return event;
+    }
+    
+    // Para travelers, não mostrar eventos inativos
+    return null;
   },
 });
 

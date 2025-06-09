@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { ChatButton } from "@/components/chat/ChatButton";
 import { toast } from "sonner";
 
 type BookingStatus = "pending" | "confirmed" | "canceled" | "completed";
@@ -137,6 +138,17 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
               <StatusIcon className="h-3 w-3 mr-1" />
               {statusInfo.label}
             </Badge>
+            <ChatButton
+              assetId={booking.activityId}
+              assetType="activities"
+              assetName={booking.activityTitle}
+              partnerId={booking.partnerId}
+              bookingId={booking._id}
+              bookingContext={`Reserva #${booking.confirmationCode}`}
+              variant="outline"
+              size="sm"
+              showLabel={false}
+            />
             <ConfirmBookingDialog
               bookingId={booking._id}
               bookingType="activity"

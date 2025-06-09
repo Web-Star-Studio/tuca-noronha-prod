@@ -304,11 +304,11 @@ export const listEmployeePermissions = queryWithRole(["partner", "master"])({
 });
 
 /**
- * Lista todos os assets que um partner possui, para gerenciamento de permissões.
- * Agrupa por tipo (eventos, restaurantes, etc).
+ * Lista todas as organizações de um partner
  */
-export const listPartnerAssets = queryWithRole(["partner", "master"])({
+export const listPartnerOrganizations = queryWithRole(["partner", "master"])({
   args: {},
+  returns: v.array(v.any()),
   handler: async (ctx) => {
     const currentUserId = await getCurrentUserConvexId(ctx);
     const currentUserRole = await getCurrentUserRole(ctx);
@@ -316,6 +316,182 @@ export const listPartnerAssets = queryWithRole(["partner", "master"])({
     if (!currentUserId) {
       throw new Error("Usuário não autenticado");
     }
+
+    // Se for master, retorna todas as organizações
+    if (currentUserRole === "master") {
+      return await ctx.db.query("partnerOrganizations").collect();
+    }
+
+    // Se for partner, retorna apenas suas organizações
+    return await ctx.db
+      .query("partnerOrganizations")
+      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+      .collect();
+  },
+});
+
+/**
+ * Obtém uma organização específica por ID
+ */
+export const getOrganization = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    organizationId: v.id("partnerOrganizations"),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const organization = await ctx.db.get(args.organizationId);
+    if (!organization) {
+      throw new Error("Organização não encontrada");
+    }
+
+    // Masters podem ver qualquer organização
+    if (currentUserRole === "master") {
+      return organization;
+    }
+
+    // Partners só podem ver suas próprias organizações
+    if (currentUserRole === "partner") {
+      if (organization.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para ver esta organização");
+      }
+      return organization;
+    }
+
+    // Employees só podem ver organizações onde têm permissões
+    if (currentUserRole === "employee") {
+      const hasOrganizationPermission = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee_organization", (q) => 
+          q.eq("employeeId", currentUserId).eq("organizationId", args.organizationId)
+        )
+        .first();
+
+      if (!hasOrganizationPermission) {
+        throw new Error("Você não tem permissão para ver esta organização");
+      }
+      return organization;
+    }
+
+    throw new Error("Acesso negado");
+  },
+});
+
+/**
+ * Lista todos os assets de uma organização específica
+ */
+export const listOrganizationAssets = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    organizationId: v.id("partnerOrganizations"),
+    assetType: v.optional(v.string()), // Filtro opcional por tipo
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verifica se a organização existe
+    const organization = await ctx.db.get(args.organizationId);
+    if (!organization) {
+      throw new Error("Organização não encontrada");
+    }
+
+    // Verifica permissões
+    if (currentUserRole === "partner") {
+      if (organization.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para ver os assets desta organização");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verifica se o employee tem permissão para esta organização específica
+      const hasOrganizationPermission = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee_organization", (q) => 
+          q.eq("employeeId", currentUserId).eq("organizationId", args.organizationId)
+        )
+        .first();
+
+      if (!hasOrganizationPermission) {
+        throw new Error("Você não tem permissão para ver os assets desta organização");
+      }
+    }
+
+    // Busca os assets da organização
+    let query = ctx.db
+      .query("partnerAssets")
+      .withIndex("by_organization", (q) => q.eq("organizationId", args.organizationId));
+
+    if (args.assetType) {
+      query = ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId).eq("assetType", args.assetType)
+        );
+    }
+
+    const partnerAssets = await query.collect();
+
+    // Para cada asset, busca os dados completos
+    const assetsWithDetails = await Promise.all(
+      partnerAssets.map(async (partnerAsset) => {
+        let assetDetails = null;
+
+        switch (partnerAsset.assetType) {
+          case "restaurants":
+            assetDetails = await ctx.db.get(partnerAsset.assetId as any);
+            break;
+          case "events":
+            assetDetails = await ctx.db.get(partnerAsset.assetId as any);
+            break;
+          case "activities":
+            assetDetails = await ctx.db.get(partnerAsset.assetId as any);
+            break;
+          case "vehicles":
+            assetDetails = await ctx.db.get(partnerAsset.assetId as any);
+            break;
+          case "accommodations":
+            assetDetails = await ctx.db.get(partnerAsset.assetId as any);
+            break;
+          default:
+            break;
+        }
+
+        return {
+          ...partnerAsset,
+          assetDetails,
+        };
+      })
+    );
+
+    return assetsWithDetails.filter(asset => asset.assetDetails !== null);
+  },
+});
+
+/**
+ * Lista todos os assets que um partner possui, para gerenciamento de permissões.
+ * Agrupa por tipo (eventos, restaurantes, etc).
+ */
+export const listPartnerAssets = queryWithRole(["partner", "master"])({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+
     
     // Função para verificar se o usuário é o dono do asset
     const isOwner = (partnerId: Id<"users"> | undefined) => {
@@ -323,7 +499,7 @@ export const listPartnerAssets = queryWithRole(["partner", "master"])({
       return currentUserRole === "master" || partnerId.toString() === currentUserId.toString();
     };
 
-    // Busca os assets por tipo
+    // Busca os assets por tipo (versão antiga)
     const events = await ctx.db
       .query("events")
       .collect()
@@ -339,17 +515,32 @@ export const listPartnerAssets = queryWithRole(["partner", "master"])({
       .collect()
       .then(items => items.filter(item => isOwner(item.partnerId)));
 
+    // Vehicles usa ownerId em vez de partnerId
+    const vehicles = await ctx.db
+      .query("vehicles")
+      .collect()
+      .then(items => items.filter(item => isOwner(item.ownerId)));
+
+    const accommodations = await ctx.db
+      .query("accommodations")
+      .collect()
+      .then(items => items.filter(item => isOwner(item.partnerId)));
+
     const media = await ctx.db
       .query("media")
       .collect()
       .then(items => items.filter(item => isOwner(item.partnerId)));
 
-    return {
+    const result = {
       events,
       restaurants,
       activities,
+      vehicles,
+      accommodations,
       media
     };
+
+    return result;
   }
 });
 
@@ -377,5 +568,290 @@ export const getInvite = query({
     if (invite.status !== "pending") throw new Error("Convite já utilizado ou cancelado");
     if (Date.now() > invite.expiresAt) throw new Error("Convite expirado");
     return invite;
+  },
+});
+
+/**
+ * Lista todas as permissões de organizações concedidas por um partner ou todas (para master)
+ */
+export const listAllOrganizationPermissions = queryWithRole(["partner", "master"])({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    let permissions;
+
+    // Master vê todas as permissões
+    if (currentUserRole === "master") {
+      permissions = await ctx.db.query("organizationPermissions").collect();
+    } else {
+      // Partner vê apenas as permissões que ele concedeu
+      permissions = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
+    }
+
+    // Para cada permissão, busca dados completos do employee e organização
+    const permissionsWithDetails = await Promise.all(
+      permissions.map(async (permission) => {
+        const employee = await ctx.db.get(permission.employeeId);
+        const organization = await ctx.db.get(permission.organizationId);
+        const partner = await ctx.db.get(permission.partnerId);
+
+        return {
+          _id: permission._id,
+          employeeId: permission.employeeId,
+          partnerId: permission.partnerId,
+          organizationId: permission.organizationId,
+          permissions: permission.permissions,
+          note: permission.note,
+          createdAt: permission.createdAt,
+          updatedAt: permission.updatedAt,
+          employee: employee ? {
+            id: employee._id,
+            name: employee.name,
+            email: employee.email,
+            image: employee.image,
+          } : null,
+          organization: organization ? {
+            id: organization._id,
+            name: organization.name,
+            description: organization.description,
+            type: organization.type,
+            image: organization.image,
+          } : null,
+          partner: partner ? {
+            id: partner._id,
+            name: partner.name,
+            email: partner.email,
+          } : null,
+        };
+      })
+    );
+
+    return permissionsWithDetails.filter(p => p.employee && p.organization);
+  },
+});
+
+/**
+ * Lista todas as organizações que um employee pode acessar, com suas permissões
+ */
+export const listEmployeeOrganizations = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    // ID opcional do employee (apenas partners e masters podem especificar outro employee)
+    employeeId: v.optional(v.id("users")),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+    
+    let targetEmployeeId = args.employeeId;
+    
+    // Se não foi fornecido um employeeId, usa o usuário atual
+    if (!targetEmployeeId) {
+      targetEmployeeId = currentUserId;
+    }
+    
+    // Employees só podem ver suas próprias permissões
+    if (currentUserRole === "employee" && targetEmployeeId.toString() !== currentUserId.toString()) {
+      throw new Error("Você só pode visualizar suas próprias organizações");
+    }
+    
+    // Partners só podem ver permissões de seus employees
+    if (currentUserRole === "partner") {
+      // Verifica se o employee pertence a este partner
+      const permissions = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", targetEmployeeId))
+        .filter((q) => q.eq(q.field("partnerId"), currentUserId))
+        .collect();
+      
+      if (permissions.length === 0 && targetEmployeeId.toString() !== currentUserId.toString()) {
+        throw new Error("Este employee não pertence a você");
+      }
+    }
+    
+    // Busca as permissões do employee
+    const permissions = await ctx.db
+      .query("organizationPermissions")
+      .withIndex("by_employee", (q) => q.eq("employeeId", targetEmployeeId))
+      .collect();
+
+    // Para cada permissão, busca os dados completos da organização
+    const organizationsWithPermissions = await Promise.all(
+      permissions.map(async (permission) => {
+        const organization = await ctx.db.get(permission.organizationId);
+        
+        if (!organization) return null;
+        
+        // Busca informações do partner dono da organização
+        const partner = await ctx.db.get(permission.partnerId);
+        
+        return {
+          permissionId: permission._id,
+          organizationId: permission.organizationId,
+          permissions: permission.permissions,
+          note: permission.note,
+          organization: {
+            id: organization._id,
+            name: organization.name,
+            description: organization.description,
+            type: organization.type,
+            image: organization.image,
+            isActive: organization.isActive,
+          },
+          partner: partner ? {
+            id: partner._id,
+            name: partner.name,
+            email: partner.email,
+          } : null,
+        };
+      })
+    );
+    
+    // Filtra out nulls (em caso de organizações que foram removidas)
+    return organizationsWithPermissions.filter(Boolean);
+  },
+});
+
+/**
+ * Obtém as permissões de um employee para uma organização específica
+ */
+export const getEmployeeOrganizationPermission = queryWithRole(["partner", "master", "employee"])({
+  args: {
+    employeeId: v.id("users"),
+    organizationId: v.id("partnerOrganizations"),
+  },
+  returns: v.union(v.any(), v.null()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+    
+    // Employees só podem ver suas próprias permissões
+    if (currentUserRole === "employee" && args.employeeId.toString() !== currentUserId.toString()) {
+      throw new Error("Você só pode visualizar suas próprias permissões");
+    }
+    
+    // Busca a permissão específica
+    const permission = await ctx.db
+      .query("organizationPermissions")
+      .withIndex("by_employee_organization", (q) => 
+        q.eq("employeeId", args.employeeId).eq("organizationId", args.organizationId)
+      )
+      .first();
+      
+    if (!permission) {
+      return null;
+    }
+    
+    // Partners só podem ver permissões que eles concederam
+    if (currentUserRole === "partner" && permission.partnerId.toString() !== currentUserId.toString()) {
+      throw new Error("Você não tem permissão para ver esta permissão");
+    }
+    
+    // Busca dados completos
+    const employee = await ctx.db.get(permission.employeeId);
+    const organization = await ctx.db.get(permission.organizationId);
+    const partner = await ctx.db.get(permission.partnerId);
+    
+    return {
+      _id: permission._id,
+      employeeId: permission.employeeId,
+      partnerId: permission.partnerId,
+      organizationId: permission.organizationId,
+      permissions: permission.permissions,
+      note: permission.note,
+      createdAt: permission.createdAt,
+      updatedAt: permission.updatedAt,
+      employee: employee ? {
+        id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        image: employee.image,
+      } : null,
+      organization: organization ? {
+        id: organization._id,
+        name: organization.name,
+        description: organization.description,
+        type: organization.type,
+        image: organization.image,
+      } : null,
+      partner: partner ? {
+        id: partner._id,
+        name: partner.name,
+        email: partner.email,
+      } : null,
+    };
+  },
+});
+
+/**
+ * Lista organizações baseado no role do usuário:
+ * - Masters: todas as organizações
+ * - Partners: suas próprias organizações  
+ * - Employees: organizações que foram atribuídas a eles
+ */
+export const listUserOrganizations = queryWithRole(["partner", "master", "employee"])({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Se for master, retorna todas as organizações
+    if (currentUserRole === "master") {
+      return await ctx.db.query("partnerOrganizations").collect();
+    }
+
+    // Se for partner, retorna apenas suas organizações
+    if (currentUserRole === "partner") {
+      return await ctx.db
+        .query("partnerOrganizations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
+    }
+
+    // Se for employee, retorna organizações que tem permissão para acessar
+    if (currentUserRole === "employee") {
+      const permissions = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .collect();
+
+      if (permissions.length === 0) {
+        return [];
+      }
+
+      // Busca as organizações para as quais o employee tem permissão
+      const organizationIds = permissions.map(p => p.organizationId);
+      const organizations = await Promise.all(
+        organizationIds.map(id => ctx.db.get(id))
+      );
+
+      // Filtra organizações que existem e estão ativas
+      return organizations.filter(org => org && org.isActive);
+    }
+
+    return [];
   },
 }); 

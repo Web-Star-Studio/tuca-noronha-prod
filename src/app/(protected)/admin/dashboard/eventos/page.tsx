@@ -86,10 +86,7 @@ export default function EventsPage() {
       return
     }
     
-    console.log("DEBUG - Creating event with user:", user);
-    console.log("DEBUG - User clerkId:", user.id);
-    console.log("DEBUG - User convexId:", user._id || "not available");
-    console.log("DEBUG - User role:", user.role);
+    
     
     try {
       setIsSubmitting(true)

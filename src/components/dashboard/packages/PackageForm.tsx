@@ -53,7 +53,8 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
     paginationOpts: { numItems: 100, cursor: null }
   })
   const vehiclesQuery = useQuery(api.domains.vehicles.queries.listVehicles, {
-    paginationOpts: { limit: 100 }
+    paginationOpts: { limit: 100 },
+    organizationId: undefined // Load all vehicles for package creation
   })
   const activitiesQuery = useQuery(api.domains.activities.queries.getAll, {})
   const restaurantsQuery = useQuery(api.domains.restaurants.queries.getAll, {})

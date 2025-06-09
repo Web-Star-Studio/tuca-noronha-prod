@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, internalMutation } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
+import { internal } from "../../_generated/api";
 import { mutationWithRole } from "../../domains/rbac";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
 import type { UserCreateInput, UserUpdateInput } from "./types";
@@ -337,5 +338,146 @@ export const getUserByClerkId = mutation({
     
     console.log("MUTATION: Found user:", users[0]._id, "with clerkId:", users[0].clerkId);
     return users[0]._id;
+  },
+});
+
+/**
+ * Create an employee and their Clerk account
+ */
+export const createEmployee = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    organizationId: v.id("partnerOrganizations"),
+  },
+  handler: async (ctx, args) => {
+    // Verify the current user has permission to create employees
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser || (currentUser.role !== "partner" && currentUser.role !== "master")) {
+      throw new Error("Unauthorized: Only partners and masters can create employees");
+    }
+
+    // Check if user with this email already exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (existingUser) {
+      throw new Error("A user with this email already exists");
+    }
+
+    // First, create the user in Convex database
+    const userId = await ctx.db.insert("users", {
+      email: args.email,
+      name: args.name,
+      role: "employee",
+      organizationId: args.organizationId,
+      partnerId: currentUser._id, // Link employee to the current partner
+      isAnonymous: false,
+      emailVerificationTime: Date.now(),
+    });
+
+    // Schedule the action to create the user in Clerk
+    await ctx.scheduler.runAfter(0, internal.domains.users.actions.createClerkUser, {
+      userId,
+      name: args.name,
+      email: args.email,
+      password: args.password,
+    });
+
+    return userId;
+  },
+});
+
+/**
+ * Remove an employee
+ */
+export const removeEmployee = mutation({
+  args: {
+    employeeId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Verify the current user has permission to remove employees
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser || (currentUser.role !== "partner" && currentUser.role !== "master")) {
+      throw new Error("Unauthorized: Only partners and masters can remove employees");
+    }
+
+    // Get the employee to be removed
+    const employee = await ctx.db.get(args.employeeId);
+    if (!employee) {
+      throw new Error("Employee not found");
+    }
+
+    if (employee.role !== "employee") {
+      throw new Error("User is not an employee");
+    }
+
+    // Only allow removal if the employee belongs to the current user's organization
+    // or if the current user is a master
+    if (currentUser.role !== "master" && employee.partnerId !== currentUser._id) {
+      throw new Error("Unauthorized: You can only remove employees from your own organization");
+    }
+
+    // If the employee has a Clerk account, schedule deletion
+    if (employee.clerkId) {
+      await ctx.scheduler.runAfter(0, internal.domains.users.actions.deleteClerkUser, {
+        clerkId: employee.clerkId,
+      });
+    }
+
+    // Remove the user from Convex database
+    await ctx.db.delete(args.employeeId);
+
+    return { success: true };
+  },
+});
+
+/**
+ * Internal mutation to update a user with their Clerk ID
+ */
+export const updateUserWithClerkId = internalMutation({
+  args: {
+    userId: v.id("users"),
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      clerkId: args.clerkId,
+    });
+    return { success: true };
+  },
+});
+
+/**
+ * Internal mutation to delete a user
+ */
+export const deleteUser = internalMutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.userId);
+    return { success: true };
   },
 }); 
