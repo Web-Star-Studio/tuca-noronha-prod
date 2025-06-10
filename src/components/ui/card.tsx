@@ -9,12 +9,12 @@ const Card = React.forwardRef<
     size?: "default" | "sm" | "lg";
   }
 >(({ className, variant = "default", size = "default", ...props }, ref) => {
-  // Variantes do card
+  // Variantes do card - sempre com background branco por padrão
   const variantStyles = {
     default: cardStyles.base,
     interactive: `${cardStyles.base} ${cardStyles.hover.default} cursor-pointer`,
-    solid: "bg-secondary rounded-xl shadow transition-all duration-300 overflow-hidden",
-    outline: "bg-white rounded-xl shadow-sm transition-all duration-300 overflow-hidden",
+    solid: "bg-white rounded-xl shadow transition-all duration-300 overflow-hidden",
+    outline: "bg-white border border-border rounded-xl shadow-sm transition-all duration-300 overflow-hidden",
   }
   
   // Tamanhos do card

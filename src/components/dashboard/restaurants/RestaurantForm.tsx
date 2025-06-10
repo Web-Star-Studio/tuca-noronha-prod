@@ -34,13 +34,42 @@ export function RestaurantForm({
 }: RestaurantFormProps) {
   const isEditing = !!restaurant;
 
+  // Convert BigInt values from Convex to regular numbers for the form
+  const prepareRestaurantForForm = (restaurant: Restaurant | null | undefined) => {
+    if (!restaurant) return null;
+    
+    return {
+      ...restaurant,
+      maximumPartySize: Number(restaurant.maximumPartySize) || 8,
+      rating: {
+        ...restaurant.rating,
+        overall: Number(restaurant.rating.overall) || 0,
+        food: Number(restaurant.rating.food) || 0,
+        service: Number(restaurant.rating.service) || 0,
+        ambience: Number(restaurant.rating.ambience) || 0,
+        value: Number(restaurant.rating.value) || 0,
+        totalReviews: Number(restaurant.rating.totalReviews) || 0,
+      },
+      address: {
+        ...restaurant.address,
+        coordinates: {
+          latitude: Number(restaurant.address.coordinates.latitude) || 0,
+          longitude: Number(restaurant.address.coordinates.longitude) || 0,
+        },
+      },
+    };
+  };
+
+  // Prepare restaurant data with BigInt converted to numbers
+  const preparedRestaurant = useMemo(() => prepareRestaurantForForm(restaurant), [restaurant]);
+
   // Estados para arrays e objetos complexos
-  const [cuisineTypes, setCuisineTypes] = useState<string[]>(restaurant?.cuisine || []);
-  const [features, setFeatures] = useState<string[]>(restaurant?.features || []);
-  const [tags, setTags] = useState<string[]>(restaurant?.tags || []);
-  const [paymentOptions, setPaymentOptions] = useState<string[]>(restaurant?.paymentOptions || []);
-  const [galleryImages, setGalleryImages] = useState<string[]>(restaurant?.galleryImages || []);
-  const [menuImages, setMenuImages] = useState<string[]>(restaurant?.menuImages || []);
+  const [cuisineTypes, setCuisineTypes] = useState<string[]>(preparedRestaurant?.cuisine || []);
+  const [features, setFeatures] = useState<string[]>(preparedRestaurant?.features || []);
+  const [tags, setTags] = useState<string[]>(preparedRestaurant?.tags || []);
+  const [paymentOptions, setPaymentOptions] = useState<string[]>(preparedRestaurant?.paymentOptions || []);
+  const [galleryImages, setGalleryImages] = useState<string[]>(preparedRestaurant?.galleryImages || []);
+  const [menuImages, setMenuImages] = useState<string[]>(preparedRestaurant?.menuImages || []);
   const [currentTab, setCurrentTab] = useState("basic");
   
   // Estados para inputs temporários
@@ -62,7 +91,7 @@ export function RestaurantForm({
     Sunday: [] as string[],
   }), []);
 
-  const [hours, setHours] = useState(restaurant?.hours || defaultHours);
+  const [hours, setHours] = useState(preparedRestaurant?.hours || defaultHours);
   
   // Form setup
   const {
@@ -72,7 +101,7 @@ export function RestaurantForm({
     setValue,
     watch,
   } = useForm<Restaurant>({
-    defaultValues: restaurant || {
+    defaultValues: preparedRestaurant || {
       name: "",
       slug: "",
       description: "",
@@ -300,6 +329,24 @@ export function RestaurantForm({
       galleryImages: galleryImages,
       menuImages: menuImages,
       hours: hours,
+      // Convert string values to numbers
+      maximumPartySize: Number(data.maximumPartySize) || 8,
+      address: {
+        ...data.address,
+        coordinates: {
+          latitude: Number(data.address.coordinates.latitude) || 0,
+          longitude: Number(data.address.coordinates.longitude) || 0,
+        },
+      },
+      rating: {
+        ...data.rating,
+        overall: Number(data.rating.overall) || 0,
+        food: Number(data.rating.food) || 0,
+        service: Number(data.rating.service) || 0,
+        ambience: Number(data.rating.ambience) || 0,
+        value: Number(data.rating.value) || 0,
+        totalReviews: Number(data.rating.totalReviews) || 0,
+      },
     };
 
     // Chamar a função onSubmit com os dados completos
@@ -371,7 +418,7 @@ export function RestaurantForm({
             <div className="space-y-2">
               <Label htmlFor="priceRange">Faixa de Preço *</Label>
               <Select
-                defaultValue={restaurant?.priceRange || "$$"}
+                defaultValue={preparedRestaurant?.priceRange || "$$"}
                 onValueChange={(value) => setValue("priceRange", value)}
               >
                 <SelectTrigger>
@@ -389,7 +436,7 @@ export function RestaurantForm({
             <div className="space-y-2">
               <Label htmlFor="diningStyle">Estilo de Serviço *</Label>
               <Select
-                defaultValue={restaurant?.diningStyle || "Casual"}
+                defaultValue={preparedRestaurant?.diningStyle || "Casual"}
                 onValueChange={(value) => setValue("diningStyle", value)}
               >
                 <SelectTrigger>
@@ -495,6 +542,7 @@ export function RestaurantForm({
             <div className="flex items-center space-x-2">
               <Switch 
                 id="acceptsReservations" 
+                variant="primary"
                 checked={watch("acceptsReservations")} 
                 onCheckedChange={(checked) => setValue("acceptsReservations", checked)} 
               />
@@ -510,7 +558,6 @@ export function RestaurantForm({
                 max="100"
                 {...register("maximumPartySize", { 
                   required: "Tamanho máximo é obrigatório",
-                  valueAsNumber: true,
                   min: { value: 1, message: "Deve ser pelo menos 1" },
                 })}
                 error={errors.maximumPartySize?.message}
@@ -523,6 +570,7 @@ export function RestaurantForm({
             <div className="flex items-center space-x-2">
               <Switch 
                 id="isActive" 
+                variant="success"
                 checked={watch("isActive")} 
                 onCheckedChange={(checked) => setValue("isActive", checked)} 
               />
@@ -532,6 +580,7 @@ export function RestaurantForm({
             <div className="flex items-center space-x-2">
               <Switch 
                 id="isFeatured" 
+                variant="warning"
                 checked={watch("isFeatured")} 
                 onCheckedChange={(checked) => setValue("isFeatured", checked)} 
               />
@@ -641,7 +690,7 @@ export function RestaurantForm({
           <div className="space-y-2">
             <Label htmlFor="dressCode">Código de Vestimenta</Label>
             <Select
-              defaultValue={restaurant?.dressCode || "Casual"}
+                              defaultValue={preparedRestaurant?.dressCode || "Casual"}
               onValueChange={(value) => setValue("dressCode", value)}
             >
               <SelectTrigger>
@@ -702,7 +751,6 @@ export function RestaurantForm({
                   max="5"
                   {...register("rating.overall", { 
                     required: "Classificação geral é obrigatória",
-                    valueAsNumber: true,
                     min: { value: 0, message: "Mínimo é 0" },
                     max: { value: 5, message: "Máximo é 5" },
                   })}
@@ -720,7 +768,6 @@ export function RestaurantForm({
                   max="5"
                   {...register("rating.food", { 
                     required: "Classificação da comida é obrigatória",
-                    valueAsNumber: true,
                     min: { value: 0, message: "Mínimo é 0" },
                     max: { value: 5, message: "Máximo é 5" },
                   })}
@@ -738,7 +785,6 @@ export function RestaurantForm({
                   max="5"
                   {...register("rating.service", { 
                     required: "Classificação do serviço é obrigatória",
-                    valueAsNumber: true,
                     min: { value: 0, message: "Mínimo é 0" },
                     max: { value: 5, message: "Máximo é 5" },
                   })}
@@ -756,7 +802,6 @@ export function RestaurantForm({
                   max="5"
                   {...register("rating.ambience", { 
                     required: "Classificação do ambiente é obrigatória",
-                    valueAsNumber: true,
                     min: { value: 0, message: "Mínimo é 0" },
                     max: { value: 5, message: "Máximo é 5" },
                   })}
@@ -774,7 +819,6 @@ export function RestaurantForm({
                   max="5"
                   {...register("rating.value", { 
                     required: "Classificação do custo-benefício é obrigatória",
-                    valueAsNumber: true,
                     min: { value: 0, message: "Mínimo é 0" },
                     max: { value: 5, message: "Máximo é 5" },
                   })}
@@ -785,7 +829,7 @@ export function RestaurantForm({
               <div className="space-y-2">
                 <Label htmlFor="rating.noiseLevel">Nível de Ruído</Label>
                 <Select
-                  defaultValue={restaurant?.rating?.noiseLevel || "Moderate"}
+                  defaultValue={preparedRestaurant?.rating?.noiseLevel || "Moderate"}
                   onValueChange={(value) => setValue("rating.noiseLevel", value)}
                 >
                   <SelectTrigger>
@@ -809,7 +853,6 @@ export function RestaurantForm({
                 min="0"
                 {...register("rating.totalReviews", { 
                   required: "Total de avaliações é obrigatório",
-                  valueAsNumber: true,
                   min: { value: 0, message: "Mínimo é 0" },
                 })}
                 error={errors.rating?.totalReviews?.message}
@@ -893,7 +936,6 @@ export function RestaurantForm({
                   placeholder="Ex: -22.9028"
                   {...register("address.coordinates.latitude", { 
                     required: "Latitude é obrigatória",
-                    valueAsNumber: true,
                   })}
                   error={errors.address?.coordinates?.latitude?.message}
                 />
@@ -911,7 +953,6 @@ export function RestaurantForm({
                   placeholder="Ex: -43.2075"
                   {...register("address.coordinates.longitude", { 
                     required: "Longitude é obrigatória",
-                    valueAsNumber: true,
                   })}
                   error={errors.address?.coordinates?.longitude?.message}
                 />

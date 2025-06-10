@@ -8,17 +8,18 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   error?: string
 }
 
-function Input({ 
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ 
   className, 
   type, 
   variant = "default", 
   size = "default",
   error,
   ...props 
-}: InputProps) {
+}, ref) => {
   return (
     <input
       type={type}
+      ref={ref}
       data-slot="input"
       data-variant={variant}
       data-size={size}
@@ -46,6 +47,7 @@ function Input({
       {...props}
     />
   )
-}
+})
+Input.displayName = "Input"
 
 export { Input }

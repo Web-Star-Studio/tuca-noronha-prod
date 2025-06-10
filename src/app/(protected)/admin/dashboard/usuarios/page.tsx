@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useEmployees, useCreateEmployee, useUpdateEmployee, useRemoveEmployee, usePartnerAssets, type Employee } from "@/lib/services/employeeService";
+import { useEmployees, useCreateEmployee, useUpdateEmployee, useRemoveEmployee, usePartnerOrganizations, useOrganizationPermissions, type Employee } from "@/lib/services/employeeService";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -10,463 +10,457 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, Plus, UserPlus, Trash2, PenSquare, Key, Shield, AlertCircle } from "lucide-react";
+import { Loader2, Plus, UserPlus, Trash2, PenSquare, Key, Shield, AlertCircle, Users, Search, Filter, Mail, Building2, Calendar, Store, Activity, Car, UserCheck, Crown } from "lucide-react";
 import { toast } from "sonner";
-import PermissionsManager, { type AssetPermission, type Asset } from "@/components/dashboard/users/PermissionsManager";
+import PermissionsManager from "@/components/dashboard/users/PermissionsManager";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useRouter } from "next/navigation";
+import CreatePartnerModal from "@/components/dashboard/users/CreatePartnerModal";
+import UserDetailsModal from "@/components/dashboard/users/UserDetailsModal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-export default function EmployeesPage() {
-  const { employees, isLoading } = useEmployees();
-  const createEmployee = useCreateEmployee();
-  const updateEmployee = useUpdateEmployee();
-  const removeEmployee = useRemoveEmployee();
+type SystemUser = {
+  _id: Id<"users">;
+  _creationTime: number;
+  clerkId: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  createdAt?: number;
+  updatedAt?: number;
+  organizationsCount: number;
+  assetsCount: number;
+};
 
-  // Recursos (assets) do parceiro para gerenciamento de permissões
-  const { assets: partnerAssets, isLoading: isLoadingAssets } = usePartnerAssets();
+const roleLabels: Record<string, string> = {
+  traveler: "Viajante",
+  partner: "Parceiro",
+  employee: "Funcionário", 
+  master: "Master Admin",
+};
 
-  // Permissões atuais - TEMPORÁRIO: usando array vazio enquanto resolvemos o erro de tipagem
-  // TODO: Restaurar a linha abaixo quando o problema for resolvido
-  // const permissions = useQuery(api.domains.rbac.queries.listAllAssetPermissions, {}) || [];
-  const permissions: AssetPermission[] = [];
+const roleColors: Record<string, string> = {
+  traveler: "bg-blue-100 text-blue-800",
+  partner: "bg-green-100 text-green-800",
+  employee: "bg-yellow-100 text-yellow-800",
+  master: "bg-purple-100 text-purple-800",
+};
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [employeeToRemove, setEmployeeToRemove] = useState<Id<"users"> | null>(null);
-  const [editMode, setEditMode] = useState<Id<"users"> | null>(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Estado para gerenciamento de permissões
-  const [permissionsOpen, setPermissionsOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<{ id: Id<"users">; name: string } | null>(null);
+const roleIcons: Record<string, any> = {
+  traveler: UserCheck,
+  partner: Building2,
+  employee: Users,
+  master: Crown,
+};
 
-  const handleCreate = async () => {
-    if (!name || (!editMode && !email)) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-    try {
-      setIsSubmitting(true);
-      if (editMode) {
-        await updateEmployee({ id: editMode, name });
-        toast.success("Usuário atualizado com sucesso");
-      } else {
-        await createEmployee({ name, email });
-        toast.success("Convite enviado com sucesso");
-      }
-      setDialogOpen(false);
-      setName("");
-      setEmail("");
-      setEditMode(null);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro ao salvar usuário");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+export default function UsersManagementPage() {
+  const { user } = useCurrentUser();
+  const router = useRouter();
 
-  const handleRemoveEmployee = async () => {
-    if (!employeeToRemove) return;
-    
-    try {
-      setIsSubmitting(true);
-      await removeEmployee(employeeToRemove, true);
-      toast.success("Usuário removido com sucesso");
-      setConfirmDialogOpen(false);
-      setEmployeeToRemove(null);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro ao remover usuário");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getInitials = (name = "") => {
-    return name
-      .split(" ")
-      .map(part => part[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  // Formatar os recursos para o gerenciador de permissões
-  const assets = partnerAssets ? {
-    events: (partnerAssets.events || []).map((event: Asset) => ({
-      _id: event._id,
-      title: event.title,
-      type: "events"
-    })) as Asset[],
-    restaurants: (partnerAssets.restaurants || []).map((restaurant: Asset) => ({
-      _id: restaurant._id,
-      name: restaurant.name,
-      type: "restaurants"
-    })) as Asset[],
-    activities: (partnerAssets.activities || []).map((activity: Asset) => ({
-      _id: activity._id,
-      title: activity.title,
-      type: "activities"
-    })) as Asset[],
-    media: (partnerAssets.media || []).map((item: Asset) => ({
-      _id: item._id,
-      name: item.name || "Mídia sem nome",
-      type: "media"
-    })) as Asset[],
-  } : {
-    events: [],
-    restaurants: [],
-    activities: [],
-    media: []
-  };
-
-  // Filtra permissões para o funcionário selecionado
-  const getEmployeePermissions = (employeeId: Id<"users">) => {
-    return permissions.filter(
-      (permission: AssetPermission) => permission.employeeId.toString() === employeeId.toString()
+  // Renderiza loader enquanto verifica permissões
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
+  }
+
+  // Verifica se o usuário tem permissão para acessar esta página
+  if (user?.role === "employee") {
+    // Employees não podem acessar o gerenciamento de usuários
+    router.push("/admin/dashboard");
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Acesso Negado</h2>
+          <p className="text-gray-600">Você não tem permissão para acessar esta página.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | null>(null);
+  const [isUserDetailsModalOpen, setIsUserDetailsModalOpen] = useState(false);
+
+  // Queries
+  const systemUsers = useQuery(api["domains/users/queries"].listAllUsers, {
+    role: selectedRole === "all" ? undefined : selectedRole as any,
+    limit: 200,
+  });
+
+  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics);
+
+  const handleCreatePartnerSuccess = () => {
+    // Refetch data would happen automatically due to Convex reactivity
+    toast.success("Dados atualizados!");
   };
 
-  // Conta permissões por funcionário
-  const countPermissions = (employeeId: Id<"users">) => {
-    return permissions.filter(
-      (permission: AssetPermission) => permission.employeeId.toString() === employeeId.toString()
-    ).length;
+  const handleViewUserDetails = (userId: Id<"users">) => {
+    setSelectedUserId(userId);
+    setIsUserDetailsModalOpen(true);
   };
 
-  const openPermissions = (employee: Employee) => {
-    setSelectedEmployee({
-      id: employee._id,
-      name: employee.name || "Sem nome"
+  const handleCloseUserDetails = () => {
+    setIsUserDetailsModalOpen(false);
+    setSelectedUserId(null);
+  };
+
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return "N/A";
+    return new Date(timestamp).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
-    setPermissionsOpen(true);
   };
 
-  const isDataLoading = isLoading || isLoadingAssets;
+  // Filtrar usuários baseado na busca
+  const filteredUsers = systemUsers?.filter((user) => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.name?.toLowerCase().includes(searchLower) ||
+      user.email?.toLowerCase().includes(searchLower) ||
+      user.clerkId.toLowerCase().includes(searchLower)
+    );
+  }) || [];
+
+  const getRoleIcon = (role: string) => {
+    const Icon = roleIcons[role] || UserCheck;
+    return <Icon className="h-4 w-4" />;
+  };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Gerenciamento de Usuários</h1>
-          <p className="text-muted-foreground mt-1">Gerencie os usuários do sistema e suas permissões</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
+            <Users className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Gestão de Usuários</h1>
+            <p className="text-sm text-gray-600">
+              Visualizar e gerenciar todos os usuários do sistema
+            </p>
+          </div>
         </div>
         
-        <Button onClick={() => {
-          setEditMode(null);
-          setName("");
-          setEmail("");
-          setDialogOpen(true);
-        }}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Convidar Funcionário
-        </Button>
+        {/* Botão Criar Partner - apenas para masters */}
+        {user?.role === "master" && (
+          <Button
+            onClick={() => setIsCreatePartnerModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Criar Partner
+          </Button>
+        )}
       </div>
 
-      {isDataLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <span className="ml-3 text-muted-foreground">Carregando dados...</span>
+      {/* Estatísticas */}
+      {systemStats && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{systemStats.users.total}</div>
+              <p className="text-xs text-muted-foreground">usuários registrados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Viajantes</CardTitle>
+              <UserCheck className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{systemStats.users.travelers}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Parceiros</CardTitle>
+              <Building2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{systemStats.users.partners}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Funcionários</CardTitle>
+              <Users className="h-4 w-4 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{systemStats.users.employees}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Masters</CardTitle>
+              <Crown className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{systemStats.users.masters}</div>
+            </CardContent>
+          </Card>
         </div>
-      ) : (
-        <Tabs defaultValue="cards" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="cards">Cards</TabsTrigger>
-            <TabsTrigger value="table">Tabela</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="cards" className="mt-6">
-            {employees && employees.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {employees.map((emp: Employee) => (
-                  <Card key={emp._id.toString()} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center">
-                          <Avatar className="h-10 w-10 mr-3">
-                            {emp.image ? (
-                              <AvatarImage src={emp.image} alt={emp.name || "Employee"} />
-                            ) : (
-                              <AvatarFallback>{getInitials(emp.name)}</AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div>
-                            <CardTitle className="text-lg">{emp.name || "Sem nome"}</CardTitle>
-                            <CardDescription className="text-sm">{emp.email}</CardDescription>
-                          </div>
-                        </div>
-                        <Badge variant={emp.role === "employee" ? "outline" : "secondary"}>
-                          {emp.role === "employee" ? "Funcionário" : emp.role}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="text-sm pt-2">
-                      <div className="mt-2">
-                        <div className="flex items-center mt-2">
-                          <Key className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            {countPermissions(emp._id) > 0 
-                              ? `${countPermissions(emp._id)} permissões atribuídas` 
-                              : "Sem permissões atribuídas"}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-end gap-2 bg-muted/30 py-2">
-                      {emp.role === "employee" && (
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
-                          onClick={() => openPermissions(emp)}
-                        >
-                          <Shield className="h-3.5 w-3.5 mr-1" />
-                          Permissões
-                        </Button>
-                      )}
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          setEditMode(emp._id);
-                          setName(emp.name || "");
-                          setEmail(emp.email || "");
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <PenSquare className="h-3.5 w-3.5 mr-1" />
-                        Editar
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => {
-                          setEmployeeToRemove(emp._id);
-                          setConfirmDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1" />
-                        Remover
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-muted/10">
-                <UserPlus className="h-10 w-10 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">Nenhum usuário cadastrado</h3>
-                <p className="text-muted-foreground mb-4">Adicione seu primeiro usuário para começar</p>
-                <Button onClick={() => {
-                  setEditMode(null);
-                  setName("");
-                  setEmail("");
-                  setDialogOpen(true);
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Convidar Funcionário
-                </Button>
-              </div>
+      )}
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar por nome, email ou ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar por role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Roles</SelectItem>
+            <SelectItem value="traveler">Viajantes</SelectItem>
+            <SelectItem value="partner">Parceiros</SelectItem>
+            <SelectItem value="employee">Funcionários</SelectItem>
+            <SelectItem value="master">Masters</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Tabela de Usuários */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Usuários do Sistema
+            {filteredUsers.length > 0 && (
+              <Badge variant="secondary">
+                {filteredUsers.length} {filteredUsers.length === 1 ? "usuário" : "usuários"}
+              </Badge>
             )}
-          </TabsContent>
-          
-          <TabsContent value="table">
-            <div className="rounded-md border overflow-hidden">
-              <table className="min-w-full divide-y divide-border">
-                <thead>
-                  <tr className="bg-muted/50">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Usuário</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Função</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Permissões</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-card divide-y divide-border">
-                  {employees && employees.length > 0 ? (
-                    employees.map((emp: Employee) => (
-                      <tr key={emp._id.toString()} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Avatar className="h-8 w-8 mr-3">
-                              {emp.image ? (
-                                <AvatarImage src={emp.image} alt={emp.name || "Employee"} />
-                              ) : (
-                                <AvatarFallback>{getInitials(emp.name)}</AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div className="text-sm font-medium">{emp.name || "—"}</div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!systemUsers && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
+          {systemUsers && filteredUsers.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Nenhum usuário encontrado</h3>
+              <p className="text-gray-600">
+                {searchTerm 
+                  ? `Nenhum usuário encontrado para "${searchTerm}".`
+                  : "Não há usuários no sistema no momento."
+                }
+              </p>
+            </div>
+          )}
+
+          {filteredUsers.length > 0 && (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Organizações</TableHead>
+                    <TableHead>Assets</TableHead>
+                    <TableHead>Criado em</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user._id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
+                            {getRoleIcon(user.role || "traveler")}
                           </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{emp.email}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <Badge variant={emp.role === "employee" ? "outline" : "secondary"}>
-                            {emp.role === "employee" ? "Funcionário" : emp.role}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          {countPermissions(emp._id) > 0 ? (
-                            <Badge variant="outline">
-                              {countPermissions(emp._id)} permissões
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">Nenhuma</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                          {emp.role === "employee" && (
-                            <Button 
-                              size="sm" 
-                              variant="secondary"
-                              onClick={() => openPermissions(emp)}
-                            >
-                              <Shield className="h-3.5 w-3.5 mr-1" />
-                              Permissões
+                          <div>
+                            <div className="font-medium">
+                              {user.name || "Nome não informado"}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {user.clerkId.slice(0, 8)}...
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${roleColors[user.role || "traveler"]}`}>
+                          {roleLabels[user.role || "traveler"]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          {user.email || "Email não informado"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-gray-400" />
+                          {user.organizationsCount}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Store className="h-4 w-4 text-gray-400" />
+                          {user.assetsCount}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          {formatDate(user._creationTime)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewUserDetails(user._id)}
+                          >
+                            Ver Detalhes
+                          </Button>
+                          {user.role === "partner" && user.assetsCount > 0 && (
+                            <Button variant="outline" size="sm">
+                              Ver Assets
                             </Button>
                           )}
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              setEditMode(emp._id);
-                              setName(emp.name || "");
-                              setEmail(emp.email || "");
-                              setDialogOpen(true);
-                            }}
-                          >
-                            <PenSquare className="h-3.5 w-3.5 mr-1" />
-                            Editar
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => {
-                              setEmployeeToRemove(emp._id);
-                              setConfirmDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Remover
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                        Nenhum usuário cadastrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          </TabsContent>
-        </Tabs>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Dialog para criar/editar employee */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>{editMode ? "Editar usuário" : "Convidar novo funcionário"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">Nome</label>
-              <Input 
-                id="name"
-                placeholder="Nome completo" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-              />
+      {/* Quick Actions */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Partners Ativos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold mb-2">
+              {systemUsers?.filter(u => u.role === "partner").length || 0}
             </div>
-            
-            {!editMode && (
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <Input 
-                  id="email"
-                  type="email"
-                  placeholder="email@exemplo.com" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                />
-                <p className="text-xs text-muted-foreground">
-                  Um convite será enviado para este email
-                </p>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="bg-red-600 hover:cursor-pointer hover:bg-red-700 text-white">Cancelar</Button>
+            <p className="text-sm text-gray-600 mb-4">
+              Parceiros gerenciando {systemStats?.assets.total || 0} assets
+            </p>
             <Button 
-              disabled={isSubmitting} 
-              onClick={handleCreate}
-              className="bg-blue-600 hover:cursor-pointer hover:bg-blue-700 text-white"
+              variant="outline" 
+              className="w-full" 
+              onClick={() => setSelectedRole("partner")}
             >
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editMode ? "Atualizar" : "Enviar convite"}
+              Ver Parceiros
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
 
-      {/* Dialog de confirmação para remover employee */}
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Remover usuário</DialogTitle>
-          </DialogHeader>
-
-          <div className="py-4 flex items-start space-x-4">
-            <AlertCircle className="h-6 w-6 text-destructive shrink-0 mt-0.5" />
-            <div>
-              <p>Tem certeza que deseja remover este usuário?</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Esta ação irá:
-              </p>
-              <ul className="text-sm text-muted-foreground mt-1 list-disc ml-4">
-                <li>Remover todas as permissões associadas</li>
-                <li>Remover o acesso do usuário à plataforma</li>
-                <li>Excluir a conta do usuário no sistema de autenticação</li>
-              </ul>
-              <p className="text-sm text-muted-foreground mt-1 font-semibold">
-                Esta ação não pode ser desfeita.
-              </p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Funcionários
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold mb-2">
+              {systemUsers?.filter(u => u.role === "employee").length || 0}
             </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancelar</Button>
-            <Button 
-              variant="destructive"
-              disabled={isSubmitting} 
-              onClick={handleRemoveEmployee}
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Remover
+            <p className="text-sm text-gray-600 mb-4">
+              Employees com acesso ao sistema
+            </p>
+            <Button variant="outline" className="w-full" onClick={() => setSelectedRole("employee")}>
+              Ver Funcionários
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
 
-      {/* Gerenciador de permissões */}
-      {selectedEmployee && (
-        <PermissionsManager
-          employeeId={selectedEmployee.id}
-          employeeName={selectedEmployee.name}
-          open={permissionsOpen}
-          onOpenChange={setPermissionsOpen}
-          assets={assets}
-          currentPermissions={getEmployeePermissions(selectedEmployee.id)}
-          onPermissionsChange={() => {}} // Recarregar permissões (opcional)
-        />
-      )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Viajantes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold mb-2">
+              {systemUsers?.filter(u => u.role === "traveler").length || 0}
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Usuários utilizando a plataforma
+            </p>
+            <Button variant="outline" className="w-full" onClick={() => setSelectedRole("traveler")}>
+              Ver Viajantes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modal de Criação de Partner */}
+      <CreatePartnerModal
+        isOpen={isCreatePartnerModalOpen}
+        onClose={() => setIsCreatePartnerModalOpen(false)}
+        onSuccess={handleCreatePartnerSuccess}
+      />
+
+      {/* Modal de Detalhes do Usuário */}
+      <UserDetailsModal
+        isOpen={isUserDetailsModalOpen}
+        onClose={handleCloseUserDetails}
+        userId={selectedUserId}
+      />
     </div>
   );
 } 

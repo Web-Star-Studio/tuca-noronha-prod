@@ -13,13 +13,13 @@ export default function Header() {
     
     // Verifica se estamos em uma página de detalhe de hospedagem
     const isDetailPage = /^\/hospedagens\/[^/]+$/.test(pathname)
-    const isProfilePage = /^\/meu-painel$/.test(pathname)
+    const isProfilePage = /^\/meu-painel/.test(pathname) // Incluindo subpáginas do meu-painel
     const isReservationPage = /^\/reservas\/[^/]+$/.test(pathname)
 
     useEffect(() => {
       const handleScroll = () => {
-        // Se estiver em uma página de detalhes, nunca usar transparência
-        if (isDetailPage || isProfilePage || isReservationPage) {
+        // Se estiver em uma página de detalhes ou reservas (exceto meu-painel), nunca usar transparência
+        if (isDetailPage || isReservationPage) {
           setIsTransparent(false)
           return
         }
@@ -29,11 +29,15 @@ export default function Header() {
         setIsTransparent(scrollPosition <= 50)
       }
       
-      // Adicionar evento de scroll
-      window.addEventListener('scroll', handleScroll)
-      
-      // Verificar posição inicial
-      handleScroll()
+      // Se estiver em páginas específicas (exceto meu-painel), sempre definir como não transparente
+      if (isDetailPage || isReservationPage) {
+        setIsTransparent(false)
+      } else {
+        // Adicionar evento de scroll
+        window.addEventListener('scroll', handleScroll)
+        // Verificar posição inicial
+        handleScroll()
+      }
       
       // Limpar o event listener quando o componente for desmontado
       return () => {
@@ -41,12 +45,17 @@ export default function Header() {
       }
     }, [isDetailPage, isProfilePage, isReservationPage])
     
+    // Determinar se deve usar texto branco (quando transparente E não está em páginas de detalhes/reservas)
+    const shouldUseWhiteText = isTransparent && !isDetailPage && !isReservationPage
+    
     return (
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          isTransparent
+          shouldUseWhiteText
             ? "bg-transparent text-white"
-            : "bg-white/80 backdrop-blur-lg text-gray-900 shadow-sm border-b border-white/20"
+            : `bg-white/80 backdrop-blur-lg text-gray-900 shadow-sm ${
+                isProfilePage ? "" : "border-b border-white/20"
+              }`
         }`}
       >
         <div className="w-full px-4 sm:px-6 lg:px-12">
@@ -56,15 +65,15 @@ export default function Header() {
               href="/"
               className="text-2xl font-bold tracking-tighter"
             >
-              <span className={`${isTransparent ? "text-white" : "text-gray-900"} ${playfairDisplay.className}`}>
+              <span className={`${shouldUseWhiteText ? "text-white" : "text-gray-900"} ${playfairDisplay.className}`}>
                 Tuca Noronha
               </span>
             </Link>
 
             {/* User Menu and Navigation Dropdown */}
             <div className="flex items-center space-x-4">
-              <UserMenu isTransparent={isTransparent} />
-              <DropdownNavigation isTransparent={isTransparent} />
+              <UserMenu isTransparent={shouldUseWhiteText} />
+              <DropdownNavigation isTransparent={shouldUseWhiteText} />
             </div>
           </div>
         </div>

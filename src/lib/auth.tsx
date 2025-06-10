@@ -40,7 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     <AuthContext.Provider value={{ 
       isAuthenticated, 
       userId, 
-      // Consideramos que estamos carregando se o Clerk ainda estiver carregando
+      // Consideramos que estamos carregando se o Clerk ainda estiver carregando OU se o Convex ainda está verificando
       isLoading: isLoading || !clerkLoaded 
     }}>
       {children}

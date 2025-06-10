@@ -13,6 +13,7 @@ export const getCurrentUser = queries.getCurrentUser;
 export const getUserByClerkIdQuery = queries.getUserByClerkId; // renamed to avoid conflict
 export const getUserById = queries.getUserById;
 export const getUsersByRole = queries.getUsersByRole;
+export const getUserDetailsById = queries.getUserDetailsById;
 
 // Re-export mutations
 export const createUser = mutations.createUser;
@@ -21,6 +22,7 @@ export const deleteUserFromClerk = mutations.deleteUserFromClerk;
 export const setRole = mutations.setRole;
 export const updateUserProfile = mutations.updateUserProfile;
 export const getUserByClerkId = mutations.getUserByClerkId; // the mutation version keeps the original name
+export const createPartner = mutations.createPartner;
 
 // Re-export utility functions
 export {

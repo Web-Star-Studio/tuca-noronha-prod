@@ -87,6 +87,9 @@ export function RestaurantCard({
                 <DropdownMenuItem onClick={() => onEdit(restaurant)}>
                   Editar
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.location.href = `/admin/dashboard/restaurantes/${restaurant._id}/cardapio-mesas`}>
+                  Cardápio & Mesas
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onToggleFeatured(restaurantId, !restaurant.isFeatured)}>
                   {restaurant.isFeatured ? "Remover destaque" : "Destacar"}
                 </DropdownMenuItem>
@@ -152,9 +155,17 @@ export function RestaurantCard({
               variant="outline" 
               size="sm" 
               className="h-8 text-xs text-blue-700 hover:bg-blue-50"
+              onClick={() => window.location.href = `/admin/dashboard/restaurantes/${restaurant._id}/cardapio-mesas`}
+            >
+              Cardápio & Mesas
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-xs text-gray-700 hover:bg-gray-50"
               onClick={() => onEdit(restaurant)}
             >
-              Gerenciar
+              Editar
             </Button>
           </div>
         </CardFooter>

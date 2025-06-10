@@ -73,7 +73,7 @@ export const createRestaurantReservationValidator = v.object({
   restaurantId: v.id("restaurants"),
   date: v.string(),
   time: v.string(),
-  partySize: v.int64(),
+  partySize: v.number(),
   customerInfo: customerInfoValidator,
   specialRequests: v.optional(v.string()),
 });

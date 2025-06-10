@@ -17,6 +17,7 @@ export {
   verifyPartnerAccess,
   verifyEmployeeAccess,
   hasAssetAccess,
+  hasOrganizationAccess,
   filterAccessibleAssets
 } from "./utils";
 
@@ -27,4 +28,40 @@ export type { EmployeePermission } from "./types";
 // Export RBAC function wrappers
 export const mutationWithRole = mutationRole;
 export const queryWithRole = queryRole;
-export const actionWithRole = actionRole; 
+export const actionWithRole = actionRole;
+
+// Export queries
+export { 
+  listAllAssetPermissions,
+  listEmployeeAssets,
+  listPartnerOrganizations,
+  listUserOrganizations,
+  getOrganization,
+  listOrganizationAssets,
+  listPartnerAssets,
+  listAllOrganizationPermissions,
+  listEmployeeOrganizations,
+  getEmployeeOrganizationPermission
+} from "./queries";
+
+// Export test functions
+export {
+  testOrganizationAccess,
+  testEmployeeOrganizationAccess
+} from "./test";
+
+// Export mutations  
+export {
+  grantAssetPermission,
+  revokeAssetPermission,
+  createEmployee,
+  createInvite,
+  removeEmployee,
+  updateEmployee,
+  createOrganization,
+  createOrganizationWithRestaurant,
+  updateOrganization,
+  grantOrganizationPermission,
+  revokeOrganizationPermission,
+  updateOrganizationPermission
+} from "./mutations"; 

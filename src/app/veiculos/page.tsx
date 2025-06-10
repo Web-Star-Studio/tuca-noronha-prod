@@ -8,6 +8,7 @@ import VehicleFilter from "@/components/filters/VehicleFilter";
 import VehiclesGrid from "@/components/cards/VehiclesGrid";
 import VehiclesSorting from "@/components/cards/VehiclesSorting";
 import VehiclesPagination from "@/components/cards/VehiclesPagination";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 // Define a type for vehicle data
 interface Vehicle {
@@ -43,31 +44,31 @@ export default function VeiculosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const vehiclesPerPage = 9;
   
-  // Fetch vehicles data from Convex
-  const vehiclesData = useQuery(api.domains.vehicles.queries.listVehicles, {
-    paginationOpts: { limit: 100 }, // Fetch more to enable client-side filtering
-    status: "available" // Only show available vehicles
-  }) as VehiclesResponse | undefined;
+  // Fetch vehicles data from Convex - Use simple query for public page to avoid cursor issues
+  const vehiclesData = useQuery(api.domains.vehicles.queries.listVehiclesSimple, {
+    status: "available", // Only show available vehicles
+    organizationId: undefined // Public view - show all available vehicles
+  });
 
-  const vehicles = vehiclesData?.vehicles || [];
+  const vehicles = vehiclesData || [];
   const isLoading = vehiclesData === undefined;
   
   // Extract all available categories, brands, and transmissions (without duplicates)
-  const categories: string[] = useMemo(() => {
+  const categories = useMemo(() => {
     return Array.from(new Set(vehicles
       .map((vehicle: Vehicle) => vehicle.category)
       .filter((category): category is string => typeof category === 'string')
     )).sort();
   }, [vehicles]);
   
-  const brands: string[] = useMemo(() => {
+  const brands = useMemo(() => {
     return Array.from(new Set(vehicles
       .map((vehicle: Vehicle) => vehicle.brand)
       .filter((brand): brand is string => typeof brand === 'string')
     )).sort();
   }, [vehicles]);
   
-  const transmissions: string[] = useMemo(() => {
+  const transmissions = useMemo(() => {
     return Array.from(new Set(vehicles
       .map((vehicle: Vehicle) => vehicle.transmission)
       .filter((transmission): transmission is string => typeof transmission === 'string')
@@ -206,52 +207,54 @@ export default function VeiculosPage() {
       </section>
 
       {/* Main Content */}
-      <section className="flex flex-col md:flex-row max-w-screen-xl mx-auto px-4 py-12 gap-8 items-start">
-        {/* Sidebar filters */}
-        <VehicleFilter
-          categories={categories}
-          selectedCategories={selectedCategories}
-          toggleCategoryFilter={toggleCategoryFilter}
-          brands={brands}
-          selectedBrands={selectedBrands}
-          toggleBrandFilter={toggleBrandFilter}
-          transmissions={transmissions}
-          selectedTransmissions={selectedTransmissions}
-          toggleTransmissionFilter={toggleTransmissionFilter}
-          applyFilters={applyFilters}
-          resetFilters={resetFilters}
-          isFilterOpen={isFilterOpen}
-          setIsFilterOpen={setIsFilterOpen}
-        />
-
-        {/* Main content area */}
-        <div className="flex-1 md:w-2/3">
-          {/* Sorting component */}
-          <div className="hidden md:block">
-            <VehiclesSorting 
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              totalVehicles={filteredAndSortedVehicles.length}
-            />
-          </div>
-          
-          {/* Grid de veículos com paginação */}
-          <VehiclesGrid 
-            vehicles={paginatedVehicles} 
-            isLoading={isLoading} 
-            resetFilters={resetFilters} 
+      <ErrorBoundary>
+        <section className="flex flex-col md:flex-row max-w-screen-xl mx-auto px-4 py-12 gap-8 items-start">
+          {/* Sidebar filters */}
+          <VehicleFilter
+            categories={categories as string[]}
+            selectedCategories={selectedCategories}
+            toggleCategoryFilter={toggleCategoryFilter}
+            brands={brands as string[]}
+            selectedBrands={selectedBrands}
+            toggleBrandFilter={toggleBrandFilter}
+            transmissions={transmissions as string[]}
+            selectedTransmissions={selectedTransmissions}
+            toggleTransmissionFilter={toggleTransmissionFilter}
+            applyFilters={applyFilters}
+            resetFilters={resetFilters}
+            isFilterOpen={isFilterOpen}
+            setIsFilterOpen={setIsFilterOpen}
           />
-          
-          {/* Paginação */}
-          {filteredAndSortedVehicles.length > 0 && (
-            <VehiclesPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
+
+          {/* Main content area */}
+          <div className="flex-1 md:w-2/3">
+            {/* Sorting component */}
+            <div className="hidden md:block">
+              <VehiclesSorting 
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                totalVehicles={filteredAndSortedVehicles.length}
+              />
+            </div>
+            
+            {/* Grid de veículos com paginação */}
+            <VehiclesGrid 
+              vehicles={paginatedVehicles} 
+              isLoading={isLoading} 
+              resetFilters={resetFilters} 
             />
-          )}
-        </div>
-      </section>
+            
+            {/* Paginação */}
+            {filteredAndSortedVehicles.length > 0 && (
+              <VehiclesPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
+          </div>
+        </section>
+      </ErrorBoundary>
     </>
   );
 } 

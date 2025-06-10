@@ -124,7 +124,12 @@ export default function WishlistPage() {
                 {item.item.rating && (
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span>{item.item.rating}</span>
+                    <span>
+                      {typeof item.item.rating === 'object' 
+                        ? item.item.rating.overall?.toFixed(1) || '0.0'
+                        : Number(item.item.rating).toFixed(1)
+                      }
+                    </span>
                   </div>
                 )}
               </div>

@@ -61,12 +61,14 @@ export function useVehicles(
   search?: string,
   category?: string,
   status?: string,
-  limit = 10
+  limit = 10,
+  organizationId?: string
 ) {
   const result = useQuery(api.domains.vehicles.queries.listVehicles, {
     search,
     category,
     status,
+    organizationId,
     paginationOpts: { limit },
   });
 

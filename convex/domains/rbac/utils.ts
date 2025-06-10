@@ -118,6 +118,53 @@ export async function verifyEmployeeAccess(
 }
 
 /**
+ * Verifica se um employee tem acesso a uma organização específica
+ */
+export async function hasOrganizationAccess(
+  ctx: Ctx,
+  organizationId: Id<"partnerOrganizations">,
+  requiredPermission?: string // Ex: "view", "edit", "manage"
+): Promise<boolean> {
+  const currentUserId = await getCurrentUserConvexId(ctx);
+  if (!currentUserId) return false;
+  
+  const role = await getCurrentUserRole(ctx);
+  
+  // Masters têm acesso total a todas as organizações
+  if (role === "master") return true;
+  
+  // Partners têm acesso total a suas próprias organizações
+  if (role === "partner") {
+    const organization = await ctx.db.get(organizationId);
+    if (organization && organization.partnerId.toString() === currentUserId.toString()) {
+      return true;
+    }
+  }
+  
+  // Employees precisam ter permissão explícita para a organização
+  if (role === "employee") {
+    const permission = await ctx.db
+      .query("organizationPermissions")
+      .withIndex("by_employee_organization", (q) => 
+        q.eq("employeeId", currentUserId).eq("organizationId", organizationId)
+      )
+      .first();
+    
+    // Se não tiver permissões explícitas, não tem acesso
+    if (!permission) return false;
+    
+    // Se não precisar verificar uma permissão específica, basta ter qualquer permissão
+    if (!requiredPermission) return true;
+    
+    // Verifica se tem a permissão específica
+    return permission.permissions.includes(requiredPermission);
+  }
+  
+  // Outros papéis (como traveler) não têm acesso a organizações no admin
+  return false;
+}
+
+/**
  * Verifica se um usuário tem acesso a um asset específico, considerando seu papel
  */
 export async function hasAssetAccess(

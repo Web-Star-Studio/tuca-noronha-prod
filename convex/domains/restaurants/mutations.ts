@@ -323,4 +323,372 @@ export const toggleActive = mutationWithRole(["partner", "master"])({
     await ctx.db.patch(args.id, { isActive: args.isActive });
     return args.id;
   },
+});
+
+/**
+ * Cria uma nova mesa no restaurante
+ */
+export const createTable = mutationWithRole(["partner", "master", "employee"])({
+  args: {
+    restaurantId: v.id("restaurants"),
+    name: v.string(),
+    capacity: v.number(),
+    location: v.string(),
+    type: v.string(),
+    shape: v.string(),
+    isVip: v.boolean(),
+    hasView: v.boolean(),
+    notes: v.optional(v.string()),
+    position: v.optional(v.object({
+      x: v.number(),
+      y: v.number(),
+    })),
+  },
+  returns: v.id("restaurantTables"),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para adicionar mesas neste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para adicionar mesas neste restaurante");
+      }
+    }
+
+    const now = Date.now();
+
+    const tableId = await ctx.db.insert("restaurantTables", {
+      restaurantId: args.restaurantId,
+      name: args.name,
+      capacity: args.capacity,
+      location: args.location,
+      type: args.type,
+      shape: args.shape,
+      isActive: true,
+      isVip: args.isVip,
+      hasView: args.hasView,
+      notes: args.notes,
+      position: args.position,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return tableId;
+  },
+});
+
+/**
+ * Atualiza uma mesa existente
+ */
+export const updateTable = mutationWithRole(["partner", "master", "employee"])({
+  args: {
+    tableId: v.id("restaurantTables"),
+    name: v.optional(v.string()),
+    capacity: v.optional(v.number()),
+    location: v.optional(v.string()),
+    type: v.optional(v.string()),
+    shape: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
+    isVip: v.optional(v.boolean()),
+    hasView: v.optional(v.boolean()),
+    notes: v.optional(v.string()),
+    position: v.optional(v.object({
+      x: v.number(),
+      y: v.number(),
+    })),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se a mesa existe
+    const table = await ctx.db.get(args.tableId);
+    if (!table) {
+      throw new Error("Mesa não encontrada");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(table.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para editar mesas neste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para editar mesas neste restaurante");
+      }
+    }
+
+    const updateData: any = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.name !== undefined) updateData.name = args.name;
+    if (args.capacity !== undefined) updateData.capacity = args.capacity;
+    if (args.location !== undefined) updateData.location = args.location;
+    if (args.type !== undefined) updateData.type = args.type;
+    if (args.shape !== undefined) updateData.shape = args.shape;
+    if (args.isActive !== undefined) updateData.isActive = args.isActive;
+    if (args.isVip !== undefined) updateData.isVip = args.isVip;
+    if (args.hasView !== undefined) updateData.hasView = args.hasView;
+    if (args.notes !== undefined) updateData.notes = args.notes;
+    if (args.position !== undefined) updateData.position = args.position;
+
+    await ctx.db.patch(args.tableId, updateData);
+    return true;
+  },
+});
+
+/**
+ * Remove uma mesa
+ */
+export const deleteTable = mutationWithRole(["partner", "master"])({
+  args: {
+    tableId: v.id("restaurantTables"),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se a mesa existe
+    const table = await ctx.db.get(args.tableId);
+    if (!table) {
+      throw new Error("Mesa não encontrada");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(table.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Apenas partners donos podem deletar mesas
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para deletar mesas neste restaurante");
+      }
+    }
+
+    // Verificar se há reservas associadas a esta mesa
+    const reservations = await ctx.db
+      .query("restaurantReservations")
+      .withIndex("by_table", (q) => q.eq("tableId", args.tableId))
+      .collect();
+
+    if (reservations.length > 0) {
+      throw new Error("Não é possível deletar uma mesa que possui reservas associadas");
+    }
+
+    await ctx.db.delete(args.tableId);
+    return true;
+  },
+});
+
+/**
+ * Cria uma nova categoria no cardápio
+ */
+export const createMenuCategory = mutationWithRole(["partner", "master", "employee"])({
+  args: {
+    restaurantId: v.id("restaurants"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    order: v.number(),
+  },
+  returns: v.id("menuCategories"),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para adicionar categorias neste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para adicionar categorias neste restaurante");
+      }
+    }
+
+    const now = Date.now();
+
+    const categoryId = await ctx.db.insert("menuCategories", {
+      restaurantId: args.restaurantId,
+      name: args.name,
+      description: args.description,
+      order: args.order,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return categoryId;
+  },
+});
+
+/**
+ * Cria um novo item no cardápio
+ */
+export const createMenuItem = mutationWithRole(["partner", "master", "employee"])({
+  args: {
+    categoryId: v.id("menuCategories"),
+    name: v.string(),
+    description: v.string(),
+    price: v.number(),
+    image: v.optional(v.string()),
+    ingredients: v.array(v.string()),
+    allergens: v.array(v.string()),
+    preparationTime: v.optional(v.number()),
+    calories: v.optional(v.number()),
+    isVegetarian: v.boolean(),
+    isVegan: v.boolean(),
+    isGlutenFree: v.boolean(),
+    isSpicy: v.boolean(),
+    spicyLevel: v.optional(v.number()),
+    isSignature: v.boolean(),
+    order: v.number(),
+    tags: v.array(v.string()),
+    notes: v.optional(v.string()),
+  },
+  returns: v.id("menuItems"),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se a categoria existe
+    const category = await ctx.db.get(args.categoryId);
+    if (!category) {
+      throw new Error("Categoria não encontrada");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(category.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para adicionar itens neste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          // Buscar organizações do partner dono do restaurante
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+      
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para adicionar itens neste restaurante");
+      }
+    }
+
+    const now = Date.now();
+
+    const itemId = await ctx.db.insert("menuItems", {
+      restaurantId: category.restaurantId,
+      categoryId: args.categoryId,
+      name: args.name,
+      description: args.description,
+      price: args.price,
+      image: args.image,
+      ingredients: args.ingredients,
+      allergens: args.allergens,
+      preparationTime: args.preparationTime,
+      calories: args.calories,
+      isVegetarian: args.isVegetarian,
+      isVegan: args.isVegan,
+      isGlutenFree: args.isGlutenFree,
+      isSpicy: args.isSpicy,
+      spicyLevel: args.spicyLevel,
+      isSignature: args.isSignature,
+      isAvailable: true,
+      order: args.order,
+      tags: args.tags,
+      notes: args.notes,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return itemId;
+  },
 }); 

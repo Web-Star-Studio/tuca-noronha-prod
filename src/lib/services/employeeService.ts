@@ -73,4 +73,95 @@ export const usePartnerAssets = () => {
     assets,
     isLoading: assets === undefined
   };
+};
+
+/**
+ * Obtém todas as organizações do usuário atual baseado em seu role.
+ * - Partners: suas próprias organizações
+ * - Employees: organizações atribuídas a eles
+ * - Masters: todas as organizações
+ */
+export const useUserOrganizations = () => {
+  const organizations = useQuery(api.domains.rbac.queries.listUserOrganizations);
+  return {
+    organizations,
+    isLoading: organizations === undefined
+  };
+};
+
+/**
+ * @deprecated Use useUserOrganizations instead
+ * Obtém todas as organizações do parceiro atual.
+ * Útil para gerenciamento de permissões sobre empreendimentos.
+ */
+export const usePartnerOrganizations = () => {
+  const organizations = useQuery(api.domains.rbac.queries.listUserOrganizations);
+  return {
+    organizations,
+    isLoading: organizations === undefined
+  };
+};
+
+/**
+ * Hook para conceder permissão sobre uma organização a um employee
+ */
+export const useGrantOrganizationPermission = () => {
+  const grant = useMutation(api.domains.rbac.mutations.grantOrganizationPermission);
+  return async (args: {
+    employeeId: Id<"users">;
+    organizationId: Id<"partnerOrganizations">;
+    permissions: string[];
+    note?: string;
+  }) => {
+    return await grant(args);
+  };
+};
+
+/**
+ * Hook para revogar permissão sobre uma organização de um employee
+ */
+export const useRevokeOrganizationPermission = () => {
+  const revoke = useMutation(api.domains.rbac.mutations.revokeOrganizationPermission);
+  return async (permissionId: Id<"organizationPermissions">) => {
+    return await revoke({ permissionId });
+  };
+};
+
+/**
+ * Hook para atualizar permissões sobre uma organização
+ */
+export const useUpdateOrganizationPermission = () => {
+  const update = useMutation(api.domains.rbac.mutations.updateOrganizationPermission);
+  return async (args: {
+    permissionId: Id<"organizationPermissions">;
+    permissions: string[];
+    note?: string;
+  }) => {
+    return await update(args);
+  };
+};
+
+/**
+ * Hook para listar todas as permissões de organizações
+ */
+export const useOrganizationPermissions = () => {
+  const permissions = useQuery(api.domains.rbac.queries.listAllOrganizationPermissions, {});
+  return {
+    permissions,
+    isLoading: permissions === undefined
+  };
+};
+
+/**
+ * Hook para listar organizações que um employee pode acessar
+ */
+export const useEmployeeOrganizations = (employeeId?: Id<"users">) => {
+  const organizations = useQuery(
+    api.domains.rbac.queries.listEmployeeOrganizations, 
+    employeeId ? { employeeId } : {}
+  );
+  return {
+    organizations,
+    isLoading: organizations === undefined
+  };
 }; 

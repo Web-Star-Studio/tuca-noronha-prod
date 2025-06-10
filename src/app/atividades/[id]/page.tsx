@@ -30,12 +30,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 export default function ActivityPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const { activity, isLoading } = usePublicActivity(params.id);
   const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
+
   const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
@@ -552,19 +553,12 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     </div>
 
                     <div className="flex gap-2 mt-4">
-                      <Button
+                      <WishlistButton
+                        itemType="activity"
+                        itemId={activity.id}
                         variant="outline"
                         className="flex-1"
-                        onClick={() => setIsFavorite(!isFavorite)}
-                      >
-                        <Heart
-                          className={cn(
-                            "h-4 w-4 mr-2",
-                            isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"
-                          )}
-                        />
-                        Favorito
-                      </Button>
+                      />
                       <Button variant="outline" className="flex-1">
                         <Share2 className="h-4 w-4 mr-2" />
                         Compartilhar

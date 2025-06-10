@@ -185,7 +185,7 @@ export const getUserRestaurantReservations = query({
       restaurantAddress: v.string(),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
@@ -378,7 +378,7 @@ export const getBookingByConfirmationCode = query({
         restaurantName: v.string(),
         date: v.string(),
         time: v.string(),
-        partySize: v.int64(),
+        partySize: v.number(),
         status: v.string(),
         confirmationCode: v.string(),
         name: v.string(),
@@ -516,7 +516,7 @@ export const getPartnerBookings = query({
       restaurantName: v.string(),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       status: v.string(),
       name: v.string(),
       email: v.string(),
@@ -570,7 +570,7 @@ export const getPartnerBookings = query({
         restaurantName: string;
         date: string;
         time: string;
-        partySize: bigint;
+        partySize: number;
         status: string;
         name: string;
         email: string;
@@ -728,8 +728,8 @@ export const getActivityBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show bookings for their activities
@@ -776,7 +776,7 @@ export const getActivityBookings = query({
       };
     }
 
-    // Admin sees all bookings
+    // Admin and master see all bookings
     let query = ctx.db.query("activityBookings").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -831,6 +831,10 @@ export const getEventBookings = query({
         phone: v.string(),
       }),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      userId: v.id("users"),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -846,8 +850,8 @@ export const getEventBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show bookings for their events
@@ -894,7 +898,7 @@ export const getEventBookings = query({
       };
     }
 
-    // Admin sees all bookings
+    // Admin and master see all bookings
     let query = ctx.db.query("eventBookings").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -938,15 +942,17 @@ export const getRestaurantReservations = query({
       _creationTime: v.number(),
       restaurantId: v.id("restaurants"),
       restaurantName: v.string(),
+      userId: v.id("users"),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
       status: v.string(),
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -962,8 +968,8 @@ export const getRestaurantReservations = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show reservations for their restaurants
@@ -1010,7 +1016,7 @@ export const getRestaurantReservations = query({
       };
     }
 
-    // Admin sees all reservations
+    // Admin and master see all reservations
     let query = ctx.db.query("restaurantReservations").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -1053,6 +1059,7 @@ export const getVehicleBookings = query({
       _id: v.id("vehicleBookings"),
       _creationTime: v.number(),
       vehicleId: v.id("vehicles"),
+      userId: v.id("users"),
       vehicleName: v.string(),
       vehicleBrand: v.string(),
       vehicleModel: v.string(),
@@ -1064,6 +1071,11 @@ export const getVehicleBookings = query({
       pickupLocation: v.optional(v.string()),
       returnLocation: v.optional(v.string()),
       notes: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      additionalDrivers: v.optional(v.number()),
+      additionalOptions: v.optional(v.array(v.string())),
+      createdAt: v.number(),
+      updatedAt: v.number(),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -1079,8 +1091,8 @@ export const getVehicleBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show bookings for their vehicles
@@ -1130,7 +1142,7 @@ export const getVehicleBookings = query({
       };
     }
 
-    // Admin sees all bookings
+    // Admin and master see all bookings
     let query = ctx.db.query("vehicleBookings").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -1251,7 +1263,7 @@ export const getRestaurantReservationById = query({
       userId: v.id("users"),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
@@ -1300,5 +1312,266 @@ export const getVehicleBookingById = query({
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
     return booking || null;
+  },
+});
+
+/**
+ * Get all user reservations in a unified format for dashboard
+ */
+export const getUserReservations = query({
+  args: {},
+  returns: v.array(v.object({
+    id: v.string(),
+    type: v.string(),
+    name: v.string(),
+    date: v.optional(v.number()),
+    checkIn: v.optional(v.number()),
+    checkOut: v.optional(v.number()),
+    guests: v.number(),
+    status: v.string(),
+    location: v.string(),
+    imageUrl: v.string(),
+    confirmationCode: v.string(),
+    createdAt: v.number(),
+  })),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const reservations: any[] = [];
+
+    // Get activity bookings
+    const activityBookings = await ctx.db
+      .query("activityBookings")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const booking of activityBookings) {
+      const activity = await ctx.db.get(booking.activityId);
+      if (activity) {
+        reservations.push({
+          id: booking._id.toString(),
+          type: 'activity',
+          name: activity.title,
+          date: new Date(booking.date).getTime(),
+          guests: booking.participants,
+          status: booking.status,
+          location: 'Fernando de Noronha', // Default location
+          imageUrl: activity.imageUrl || '/images/activity-default.jpg',
+          confirmationCode: booking.confirmationCode,
+          createdAt: booking.createdAt,
+        });
+      }
+    }
+
+    // Get event bookings
+    const eventBookings = await ctx.db
+      .query("eventBookings")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const booking of eventBookings) {
+      const event = await ctx.db.get(booking.eventId);
+      if (event) {
+        reservations.push({
+          id: booking._id.toString(),
+          type: 'event',
+          name: event.title,
+          date: new Date(event.date).getTime(),
+          guests: booking.quantity,
+          status: booking.status,
+          location: event.location,
+          imageUrl: event.imageUrl || '/images/event-default.jpg',
+          confirmationCode: booking.confirmationCode,
+          createdAt: booking.createdAt,
+        });
+      }
+    }
+
+    // Get restaurant reservations
+    const restaurantReservations = await ctx.db
+      .query("restaurantReservations")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const reservation of restaurantReservations) {
+      const restaurant = await ctx.db.get(reservation.restaurantId);
+      if (restaurant) {
+        const reservationDateTime = new Date(`${reservation.date}T${reservation.time}`);
+        reservations.push({
+          id: reservation._id.toString(),
+          type: 'restaurant',
+          name: restaurant.name,
+          date: reservationDateTime.getTime(),
+          guests: reservation.partySize,
+          status: reservation.status,
+          location: `${restaurant.address.neighborhood}, ${restaurant.address.city} - ${restaurant.address.state}`,
+          imageUrl: restaurant.mainImage || '/images/restaurant-default.jpg',
+          confirmationCode: reservation.confirmationCode,
+          createdAt: reservation._creationTime,
+        });
+      }
+    }
+
+    // Get vehicle bookings
+    const vehicleBookings = await ctx.db
+      .query("vehicleBookings")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const booking of vehicleBookings) {
+      const vehicle = await ctx.db.get(booking.vehicleId);
+      if (vehicle) {
+        reservations.push({
+          id: booking._id.toString(),
+          type: 'vehicle',
+          name: `${vehicle.brand} ${vehicle.model}`,
+          checkIn: booking.startDate,
+          checkOut: booking.endDate,
+          guests: 1, // Vehicle bookings don't have guests, but we need a value
+          status: booking.status,
+          location: booking.pickupLocation || 'Fernando de Noronha',
+          imageUrl: vehicle.imageUrl || '/images/vehicle-default.jpg',
+          confirmationCode: booking._id.toString(), // Vehicle bookings might not have confirmation codes
+          createdAt: booking.createdAt,
+        });
+      }
+    }
+
+    // Get accommodation bookings
+    const accommodationBookings = await ctx.db
+      .query("accommodationBookings")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const booking of accommodationBookings) {
+      const accommodation = await ctx.db.get(booking.accommodationId);
+      if (accommodation) {
+        reservations.push({
+          id: booking._id.toString(),
+          type: 'accommodation',
+          name: accommodation.name,
+          checkIn: new Date(booking.checkInDate).getTime(),
+          checkOut: new Date(booking.checkOutDate).getTime(),
+          guests: booking.guests,
+          status: booking.status,
+          location: `${accommodation.address.neighborhood}, ${accommodation.address.city} - ${accommodation.address.state}`,
+          imageUrl: accommodation.mainImage || '/images/accommodation-default.jpg',
+          confirmationCode: booking.confirmationCode,
+          createdAt: booking.createdAt,
+        });
+      }
+    }
+
+    // Sort by creation date (most recent first)
+    reservations.sort((a, b) => b.createdAt - a.createdAt);
+
+    return reservations;
+  },
+});
+
+/**
+ * Get user statistics for dashboard
+ */
+export const getUserStats = query({
+  args: {},
+  returns: v.object({
+    totalReservations: v.number(),
+    activeReservations: v.number(),
+    totalSpent: v.number(),
+    favoriteLocations: v.array(v.string()),
+    completedTrips: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Get all user reservations
+    const activityBookings = await ctx.db
+      .query("activityBookings")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const eventBookings = await ctx.db
+      .query("eventBookings")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const restaurantReservations = await ctx.db
+      .query("restaurantReservations")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const vehicleBookings = await ctx.db
+      .query("vehicleBookings")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const accommodationBookings = await ctx.db
+      .query("accommodationBookings")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Calculate statistics
+    const totalReservations = activityBookings.length + eventBookings.length + 
+                             restaurantReservations.length + vehicleBookings.length + 
+                             accommodationBookings.length;
+
+    const activeReservations = [
+      ...activityBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
+      ...eventBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
+      ...restaurantReservations.filter(r => r.status === 'confirmed' || r.status === 'pending'),
+      ...vehicleBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
+      ...accommodationBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
+    ].length;
+
+    const completedTrips = [
+      ...activityBookings.filter(b => b.status === 'completed'),
+      ...eventBookings.filter(b => b.status === 'completed'),
+      ...restaurantReservations.filter(r => r.status === 'completed'),
+      ...vehicleBookings.filter(b => b.status === 'completed'),
+      ...accommodationBookings.filter(b => b.status === 'completed'),
+    ].length;
+
+    // Calculate total spent
+    const totalSpent = [
+      ...activityBookings.map(b => b.totalPrice),
+      ...eventBookings.map(b => b.totalPrice),
+      ...vehicleBookings.map(b => b.totalPrice),
+      ...accommodationBookings.map(b => b.totalPrice),
+    ].reduce((sum, price) => sum + price, 0);
+
+    // Get favorite locations from completed trips
+    const favoriteLocations = ["Fernando de Noronha", "Praia do Sancho", "Baía do Sueste"];
+
+    return {
+      totalReservations,
+      activeReservations,
+      totalSpent,
+      favoriteLocations,
+      completedTrips,
+    };
   },
 });

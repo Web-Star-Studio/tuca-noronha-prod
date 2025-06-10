@@ -21,38 +21,48 @@ export default function AdminLayout({
   const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    // Skip check if still loading
+    // Debug log para entender o estado atual
+    console.log('Admin Layout State:', { isLoading, isAuthenticated, hasUser: !!user, userRole: user?.role });
+    
+    // Skip check if still loading - wait for auth to stabilize
     if (isLoading) return;
     
-    // If not authenticated, redirect to sign-in
-    if (!isAuthenticated) {
+    // If not authenticated and auth check is complete, redirect to sign-in
+    if (!isAuthenticated && !isLoading) {
+      console.log('Redirecting to sign-in: not authenticated');
       router.push("/sign-in");
       return;
     }
     
     // If authenticated but user data still loading, wait
-    if (!user) return;
+    if (isAuthenticated && !user) return;
     
-    // Check if user has required admin role
-    const userRole = user.role || "traveler";
-    if (!ADMIN_ALLOWED_ROLES.includes(userRole)) {
-      // Show toast notification
-      toast.error("Você não tem permissão para acessar a área administrativa.", {
-        description: "Área restrita a parceiros, funcionários e administradores.",
-      });
-      
-      // Instead of redirecting, show access denied message in place
-      setAccessDenied(true);
-    } else {
-      setAccessDenied(false);
+    // Only proceed with role check if we have user data
+    if (user) {
+      // Check if user has required admin role
+      const userRole = user.role || "traveler";
+      if (!ADMIN_ALLOWED_ROLES.includes(userRole)) {
+        // Show toast notification
+        toast.error("Você não tem permissão para acessar a área administrativa.", {
+          description: "Área restrita a parceiros, funcionários e administradores.",
+        });
+        
+        // Instead of redirecting, show access denied message in place
+        setAccessDenied(true);
+      } else {
+        setAccessDenied(false);
+      }
     }
   }, [isLoading, isAuthenticated, user, router]);
 
-  // Show nothing while checking permissions
-  if (isLoading || !user) {
+  // Show loading while checking permissions - but only if we're authenticated or still loading auth
+  if (isLoading || (isAuthenticated && !user)) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="animate-pulse text-slate-400">Verificando permissões administrativas...</div>
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="text-slate-600">Verificando permissões administrativas...</div>
+        </div>
       </div>
     );
   }

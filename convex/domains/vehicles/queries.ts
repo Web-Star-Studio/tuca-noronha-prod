@@ -3,13 +3,14 @@ import { v } from "convex/values";
 import { paginationOptsValidator } from "../../shared/validators";
 import { getCurrentUserRole, getCurrentUserConvexId } from "../rbac/utils";
 
-// Get all vehicles with optional pagination
+// Get all vehicles with optional pagination - STABLE VERSION
 export const listVehicles = query({
   args: {
     ...paginationOptsValidator,
     search: v.optional(v.string()),
     category: v.optional(v.string()),
-    status: v.optional(v.string())
+    status: v.optional(v.string()),
+    organizationId: v.optional(v.string())
   },
   returns: v.object({
     vehicles: v.array(v.object({
@@ -38,85 +39,97 @@ export const listVehicles = query({
     continueCursor: v.union(v.string(), v.null()),
   }),
   handler: async (ctx, args) => {
-    const { search, category, status } = args;
+    const { search, category, status, organizationId } = args;
     
     // Get current user role and ID for RBAC
     const role = await getCurrentUserRole(ctx);
     const currentUserId = await getCurrentUserConvexId(ctx);
     
-    // Reset cursor to null if query parameters have changed to avoid cursor conflicts
-    // This prevents InvalidCursor errors when switching between different filter combinations
+    const limit = args.paginationOpts?.limit ?? 20;
     let cursor = args.paginationOpts?.cursor ?? null;
     
-    // Use a consistent query structure to avoid cursor conflicts
-    // Always start with the same base query and apply filters consistently
-    let vehiclesQuery = ctx.db.query("vehicles").order("desc");
+    // Create a query signature to identify if this is the same query structure
+    const querySignature = JSON.stringify({
+      search: search || null,
+      category: category || null,
+      status: status || null,
+      organizationId: organizationId || null,
+      role,
+      userId: currentUserId?.toString() || null
+    });
+    
+    // If cursor exists, validate it by attempting a small query first
+    if (cursor) {
+      try {
+        // Try to use the cursor with a minimal query to validate it
+        await ctx.db
+          .query("vehicles")
+          .order("desc")
+          .paginate({
+            cursor,
+            numItems: 1
+          });
+      } catch (error) {
+        // If cursor validation fails, reset to start from beginning
+        console.warn("Invalid cursor detected, resetting pagination:", error);
+        cursor = null;
+      }
+    }
+    
+    let paginationResult;
+    
+    try {
+      // Use a stable base query structure - no conditional filtering at DB level
+      paginationResult = await ctx.db
+        .query("vehicles")
+        .order("desc")
+        .paginate({
+          cursor,
+          numItems: limit
+        });
+    } catch (error) {
+      // If pagination fails, start fresh without cursor
+      console.warn("Pagination failed, starting fresh:", error);
+      paginationResult = await ctx.db
+        .query("vehicles")
+        .order("desc")
+        .paginate({
+          cursor: null,
+          numItems: limit
+        });
+    }
+    
+    // Apply all filtering post-pagination to maintain cursor stability
+    let vehicles = paginationResult.page;
     
     // Apply RBAC filtering
     if (role === "partner" && currentUserId) {
       // Partners only see their own vehicles
-      vehiclesQuery = vehiclesQuery.filter((q) => q.eq(q.field("ownerId"), currentUserId));
+      vehicles = vehicles.filter(vehicle => 
+        vehicle.ownerId?.toString() === currentUserId.toString()
+      );
     } else if (role === "traveler" || !currentUserId) {
       // Public access - only show available vehicles
-      vehiclesQuery = vehiclesQuery.filter((q) => q.eq(q.field("status"), "available"));
+      vehicles = vehicles.filter(vehicle => vehicle.status === "available");
     }
-    // Admin/master sees all vehicles (no additional filtering)
+    // Admin/master sees all vehicles (no filtering)
     
-    // Apply status filter if specified (and not already applied above)
-    if (status && status !== "all" && !(role === "traveler" || !currentUserId)) {
-      vehiclesQuery = vehiclesQuery.filter((q) => q.eq(q.field("status"), status));
+    // Apply organization filter
+    if (organizationId) {
+      vehicles = vehicles.filter(vehicle => vehicle.organizationId === organizationId);
     }
-
+    
+    // Apply status filter (if not already applied by RBAC)
+    if (status && status !== "all" && !(role === "traveler" || !currentUserId)) {
+      vehicles = vehicles.filter(vehicle => vehicle.status === status);
+    }
+    
     // Apply category filter
     if (category && category !== "all") {
-      vehiclesQuery = vehiclesQuery.filter((q) => 
-        q.eq("category", category)
-      );
+      vehicles = vehicles.filter(vehicle => vehicle.category === category);
     }
     
-    // Apply pagination with error handling for invalid cursors
-    let paginationResult;
-    try {
-      paginationResult = await vehiclesQuery.paginate({
-        cursor,
-        numItems: args.paginationOpts?.limit ?? 10
-      });
-    } catch (error) {
-      // If cursor is invalid, retry without cursor (start from beginning)
-      if (error instanceof Error && error.message.includes("InvalidCursor")) {
-        // Create a fresh query for retry since the original query is consumed
-        let retryQuery = ctx.db.query("vehicles").order("desc");
-        
-        // Apply the same RBAC filtering
-        if (role === "partner" && currentUserId) {
-          retryQuery = retryQuery.filter((q) => q.eq(q.field("ownerId"), currentUserId));
-        } else if (role === "traveler" || !currentUserId) {
-          retryQuery = retryQuery.filter((q) => q.eq(q.field("status"), "available"));
-        }
-        
-        // Apply status filter if specified
-        if (status && status !== "all" && !(role === "traveler" || !currentUserId)) {
-          retryQuery = retryQuery.filter((q) => q.eq(q.field("status"), status));
-        }
-
-        // Apply category filter
-        if (category && category !== "all") {
-          retryQuery = retryQuery.filter((q) => 
-            q.eq("category", category)
-          );
-        }
-        
-        paginationResult = await retryQuery.paginate({
-          cursor: null,
-          numItems: args.paginationOpts?.limit ?? 10
-        });
-      } else {
-        throw error;
-      }
-    }
-    
-    // Apply search filter post-query if needed
-    let vehicles = paginationResult.page;
+    // Apply search filter
     if (search) {
       const searchLower = search.toLowerCase();
       vehicles = vehicles.filter(vehicle => 
@@ -131,6 +144,69 @@ export const listVehicles = query({
       vehicles,
       continueCursor: paginationResult.continueCursor,
     };
+  },
+});
+
+// Simple list without pagination for dropdowns/selects
+export const listVehiclesSimple = query({
+  args: {
+    organizationId: v.optional(v.string()),
+    status: v.optional(v.string())
+  },
+  returns: v.array(v.object({
+    _id: v.id("vehicles"),
+    name: v.string(),
+    brand: v.string(),
+    model: v.string(),
+    category: v.string(),
+    year: v.number(),
+    color: v.string(),
+    seats: v.number(),
+    fuelType: v.string(),
+    transmission: v.string(),
+    pricePerDay: v.number(),
+    imageUrl: v.optional(v.string()),
+    status: v.string(),
+    licensePlate: v.string(),
+  })),
+  handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    let vehicles = await ctx.db.query("vehicles").order("desc").collect();
+    
+    // Apply RBAC filtering
+    if (role === "partner" && currentUserId) {
+      vehicles = vehicles.filter(v => v.ownerId?.toString() === currentUserId.toString());
+    } else if (role === "traveler" || !currentUserId) {
+      vehicles = vehicles.filter(v => v.status === "available");
+    }
+    
+    // Apply filters
+    if (args.organizationId) {
+      vehicles = vehicles.filter(v => v.organizationId === args.organizationId);
+    }
+    
+    if (args.status) {
+      vehicles = vehicles.filter(v => v.status === args.status);
+    }
+    
+    return vehicles.map(v => ({
+      _id: v._id,
+      name: v.name,
+      brand: v.brand,
+      model: v.model,
+      category: v.category,
+      year: v.year,
+      color: v.color,
+      seats: v.seats,
+      fuelType: v.fuelType,
+      transmission: v.transmission,
+      pricePerDay: v.pricePerDay,
+      imageUrl: v.imageUrl,
+      status: v.status,
+      licensePlate: v.licensePlate,
+    }));
   },
 });
 
@@ -271,48 +347,128 @@ export const listVehicleBookings = query({
   handler: async (ctx, args) => {
     const { vehicleId, userId, status } = args;
     
-    // Use a consistent query structure to avoid cursor conflicts
-    // Always start with the same base query and apply filters consistently
-    let bookingsQuery = ctx.db.query("vehicleBookings").order("desc");
+    // Use stable pagination structure
+    let paginationResult;
+    const limit = args.paginationOpts?.limit ?? 20;
     
-    // Apply filters based on available parameters
+    try {
+      paginationResult = await ctx.db
+        .query("vehicleBookings")
+        .order("desc")
+        .paginate({
+          cursor: args.paginationOpts?.cursor ?? null,
+          numItems: limit
+        });
+    } catch (error) {
+      console.warn("Pagination error in listVehicleBookings, starting fresh:", error);
+      paginationResult = await ctx.db
+        .query("vehicleBookings")
+        .order("desc")
+        .paginate({
+          cursor: null,
+          numItems: limit
+        });
+    }
+    
+    // Apply filters post-pagination for stability
+    let bookings = paginationResult.page;
+    
+    // Apply filters
     if (vehicleId) {
-      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("vehicleId"), vehicleId));
+      bookings = bookings.filter(booking => booking.vehicleId.toString() === vehicleId.toString());
     }
     
     if (userId) {
-      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("userId"), userId));
+      bookings = bookings.filter(booking => booking.userId.toString() === userId.toString());
     }
     
     if (status) {
-      bookingsQuery = bookingsQuery.filter((q) => q.eq(q.field("status"), status));
+      bookings = bookings.filter(booking => booking.status === status);
     }
     
-    // Apply pagination
-    const paginationResult = await bookingsQuery.paginate({
-      cursor: args.paginationOpts?.cursor ?? null,
-      numItems: args.paginationOpts?.limit ?? 10
-    });
-    
-    const bookings = paginationResult.page;
-    
-    // Fetch associated vehicles and users data
-    const bookingsWithRelations = await Promise.all(
+    // Enrich with vehicle and user data
+    const enrichedBookings = await Promise.all(
       bookings.map(async (booking) => {
         const vehicle = await ctx.db.get(booking.vehicleId);
         const user = await ctx.db.get(booking.userId);
         
         return {
           ...booking,
-          vehicle,
-          user,
+          vehicle: vehicle ? {
+            _id: vehicle._id,
+            _creationTime: vehicle._creationTime,
+            name: (vehicle as any).name,
+            brand: (vehicle as any).brand,
+            model: (vehicle as any).model,
+            category: (vehicle as any).category,
+            year: (vehicle as any).year,
+            status: (vehicle as any).status,
+            imageUrl: (vehicle as any).imageUrl,
+          } : null,
+          user: user ? {
+            _id: user._id,
+            _creationTime: user._creationTime,
+            name: (user as any).name,
+            email: (user as any).email,
+          } : null,
         };
       })
     );
     
     return {
-      bookings: bookingsWithRelations,
+      bookings: enrichedBookings,
       continueCursor: paginationResult.continueCursor,
     };
+  },
+});
+
+/**
+ * Get all vehicles with RBAC
+ */
+export const getAll = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    // Travelers (public) or unauthenticated users get all available vehicles
+    if (!currentUserId || role === "traveler") {
+      return await ctx.db
+        .query("vehicles")
+        .filter((q) => q.eq(q.field("status"), "available"))
+        .collect();
+    }
+
+    // Master sees everything
+    if (role === "master") {
+      return await ctx.db.query("vehicles").collect();
+    }
+
+    // Partner sees only own vehicles
+    if (role === "partner") {
+      return await ctx.db
+        .query("vehicles")
+        .withIndex("by_ownerId", (q) => q.eq("ownerId", currentUserId))
+        .collect();
+    }
+
+    // Employee sees vehicles they have explicit permission to view
+    if (role === "employee") {
+      const permissions = await ctx.db
+        .query("assetPermissions")
+        .withIndex("by_employee_asset_type", (q) =>
+          q.eq("employeeId", currentUserId).eq("assetType", "vehicles"),
+        )
+        .collect();
+
+      if (permissions.length === 0) return [];
+
+      const allowedIds = new Set(permissions.map((p) => p.assetId));
+      const allVehicles = await ctx.db.query("vehicles").collect();
+      return allVehicles.filter((v) => allowedIds.has(v._id.toString()));
+    }
+
+    return [];
   },
 }); 

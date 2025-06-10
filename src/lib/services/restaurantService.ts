@@ -118,9 +118,12 @@ export function useCreateRestaurant() {
   const createMutation = useMutation(api.domains.restaurants.mutations.create);
   
   return async (restaurantData: Restaurant, partnerId: Id<"users">) => {
+    // Remove internal Convex fields that shouldn't be sent to the mutation
+    const { _id, _creationTime, id, creator, ...cleanData } = restaurantData;
+    
     // Garantir que o restaurante tenha o partnerId
     const dataWithPartner = {
-      ...restaurantData,
+      ...cleanData,
       partnerId
     };
     
@@ -138,9 +141,12 @@ export function useUpdateRestaurant() {
       throw new Error("Restaurant ID is required for update");
     }
     
+    // Remove internal Convex fields that shouldn't be sent to the mutation
+    const { _id, _creationTime, id, creator, ...cleanData } = restaurantData;
+    
     const restaurantId = await updateMutation({
       id: restaurantData._id,
-      ...restaurantData
+      ...cleanData
     } as any);
     
     return restaurantId;
