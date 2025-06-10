@@ -17,6 +17,8 @@ import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
+import CreatePartnerModal from "@/components/dashboard/users/CreatePartnerModal";
+import UserDetailsModal from "@/components/dashboard/users/UserDetailsModal";
 import {
   Select,
   SelectContent,
@@ -97,6 +99,9 @@ export default function UsersManagementPage() {
 
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | null>(null);
+  const [isUserDetailsModalOpen, setIsUserDetailsModalOpen] = useState(false);
 
   // Queries
   const systemUsers = useQuery(api["domains/users/queries"].listAllUsers, {
@@ -105,6 +110,21 @@ export default function UsersManagementPage() {
   });
 
   const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics);
+
+  const handleCreatePartnerSuccess = () => {
+    // Refetch data would happen automatically due to Convex reactivity
+    toast.success("Dados atualizados!");
+  };
+
+  const handleViewUserDetails = (userId: Id<"users">) => {
+    setSelectedUserId(userId);
+    setIsUserDetailsModalOpen(true);
+  };
+
+  const handleCloseUserDetails = () => {
+    setIsUserDetailsModalOpen(false);
+    setSelectedUserId(null);
+  };
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return "N/A";
@@ -147,6 +167,17 @@ export default function UsersManagementPage() {
             </p>
           </div>
         </div>
+        
+        {/* Botão Criar Partner - apenas para masters */}
+        {user?.role === "master" && (
+          <Button
+            onClick={() => setIsCreatePartnerModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Criar Partner
+          </Button>
+        )}
       </div>
 
       {/* Estatísticas */}
@@ -327,7 +358,11 @@ export default function UsersManagementPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewUserDetails(user._id)}
+                          >
                             Ver Detalhes
                           </Button>
                           {user.role === "partner" && user.assetsCount > 0 && (
@@ -362,12 +397,11 @@ export default function UsersManagementPage() {
             <p className="text-sm text-gray-600 mb-4">
               Parceiros gerenciando {systemStats?.assets.total || 0} assets
             </p>
-            <Button variant="outline" className="w-full">
-              <Select value="partner" onValueChange={setSelectedRole}>
-                <SelectTrigger className="border-none p-0 h-auto">
-                  <SelectValue />
-                </SelectTrigger>
-              </Select>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => setSelectedRole("partner")}
+            >
               Ver Parceiros
             </Button>
           </CardContent>
@@ -413,6 +447,20 @@ export default function UsersManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Criação de Partner */}
+      <CreatePartnerModal
+        isOpen={isCreatePartnerModalOpen}
+        onClose={() => setIsCreatePartnerModalOpen(false)}
+        onSuccess={handleCreatePartnerSuccess}
+      />
+
+      {/* Modal de Detalhes do Usuário */}
+      <UserDetailsModal
+        isOpen={isUserDetailsModalOpen}
+        onClose={handleCloseUserDetails}
+        userId={selectedUserId}
+      />
     </div>
   );
 } 

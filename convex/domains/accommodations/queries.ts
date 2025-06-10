@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
-import { getCurrentUserRole, filterAccessibleAssets, hasAssetAccess } from "../rbac/utils";
+import { getCurrentUserRole, filterAccessibleAssets, hasAssetAccess, getCurrentUserConvexId, verifyPartnerAccess, verifyEmployeeAccess } from "../rbac/utils";
 import type { AccommodationWithCreator } from "./types";
 
 /**
@@ -420,5 +420,53 @@ export const getFeatured = query({
       },
       tags: accommodation.tags,
     }));
+  },
+});
+
+/**
+ * Get all accommodations with RBAC
+ */
+export const getAll = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    // Travelers (public) or unauthenticated users get all active accommodations
+    if (!currentUserId || role === "traveler") {
+      return await ctx.db.query("accommodations").collect();
+    }
+
+    // Master sees everything
+    if (role === "master") {
+      return await ctx.db.query("accommodations").collect();
+    }
+
+    // Partner sees only own accommodations
+    if (role === "partner") {
+      return await ctx.db
+        .query("accommodations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
+    }
+
+    // Employee sees accommodations they have explicit permission to view
+    if (role === "employee") {
+      const permissions = await ctx.db
+        .query("assetPermissions")
+        .withIndex("by_employee_asset_type", (q) =>
+          q.eq("employeeId", currentUserId).eq("assetType", "accommodations"),
+        )
+        .collect();
+
+      if (permissions.length === 0) return [];
+
+      const allowedIds = new Set(permissions.map((p) => p.assetId));
+      const allAccommodations = await ctx.db.query("accommodations").collect();
+      return allAccommodations.filter((a) => allowedIds.has(a._id.toString()));
+    }
+
+    return [];
   },
 }); 

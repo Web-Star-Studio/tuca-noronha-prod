@@ -33,6 +33,7 @@ import PackageRequestsSection from './components/PackageRequestsSection'
 import OverviewSection from './components/OverviewSection'
 import FloatingSupportButton from './components/FloatingSupportButton'
 import RecommendationCard from './components/RecommendationCard'
+import FavoritesSection from '@/components/profile/FavoritesSection'
 
 export default function Dashboard() {
   const { user } = useUser()
@@ -93,18 +94,7 @@ export default function Dashboard() {
           </div>
         )
       case 'favoritos':
-        return (
-          <div className="space-y-6">
-            <Card className="bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-pink-700">Meus Favoritos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Seus itens favoritos aparecerão aqui.</p>
-              </CardContent>
-            </Card>
-          </div>
-        )
+        return <FavoritesSection />
       case 'personalizacao':
         return <PreferencesSection />
       case 'ajuda':

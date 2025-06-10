@@ -366,7 +366,7 @@ export default defineSchema({
     userId: v.id("users"),                              // Usuário que fez a reserva
     date: v.string(),                                   // Data da reserva (YYYY-MM-DD)
     time: v.string(),                                   // Horário da reserva (HH:MM)
-    partySize: v.int64(),                               // Número de pessoas
+    partySize: v.number(),                              // Número de pessoas
     name: v.string(),                                   // Nome do responsável pela reserva
     email: v.string(),                                  // Email de contato
     phone: v.string(),                                  // Telefone de contato

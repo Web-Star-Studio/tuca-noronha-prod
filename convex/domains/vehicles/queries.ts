@@ -420,4 +420,55 @@ export const listVehicleBookings = query({
       continueCursor: paginationResult.continueCursor,
     };
   },
+});
+
+/**
+ * Get all vehicles with RBAC
+ */
+export const getAll = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    // Travelers (public) or unauthenticated users get all available vehicles
+    if (!currentUserId || role === "traveler") {
+      return await ctx.db
+        .query("vehicles")
+        .filter((q) => q.eq(q.field("status"), "available"))
+        .collect();
+    }
+
+    // Master sees everything
+    if (role === "master") {
+      return await ctx.db.query("vehicles").collect();
+    }
+
+    // Partner sees only own vehicles
+    if (role === "partner") {
+      return await ctx.db
+        .query("vehicles")
+        .withIndex("by_ownerId", (q) => q.eq("ownerId", currentUserId))
+        .collect();
+    }
+
+    // Employee sees vehicles they have explicit permission to view
+    if (role === "employee") {
+      const permissions = await ctx.db
+        .query("assetPermissions")
+        .withIndex("by_employee_asset_type", (q) =>
+          q.eq("employeeId", currentUserId).eq("assetType", "vehicles"),
+        )
+        .collect();
+
+      if (permissions.length === 0) return [];
+
+      const allowedIds = new Set(permissions.map((p) => p.assetId));
+      const allVehicles = await ctx.db.query("vehicles").collect();
+      return allVehicles.filter((v) => allowedIds.has(v._id.toString()));
+    }
+
+    return [];
+  },
 }); 

@@ -33,6 +33,14 @@ interface ChatButtonProps {
   bookingContext?: string;
 }
 
+// Função utilitária para garantir que temos um ID válido
+const ensureValidId = (id: string | undefined | null): string => {
+  if (!id || id === "undefined" || id === "null") {
+    throw new Error("Asset ID é obrigatório para iniciar uma conversa");
+  }
+  return id;
+};
+
 export const ChatButton: React.FC<ChatButtonProps> = ({
   assetId,
   assetType,
@@ -52,7 +60,27 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
   // Verificar se já existe uma sala de chat
   const contextType = bookingId ? "booking" : "asset";
-  const contextId = bookingId || assetId;
+  let contextId: string;
+  
+  try {
+    contextId = ensureValidId(bookingId || assetId);
+  } catch (error) {
+    // Se não temos um ID válido, renderizar um botão desabilitado
+    return (
+      <Button
+        disabled
+        variant={variant === "floating" ? "default" : variant}
+        size={size === "sm" ? "sm" : size === "lg" ? "lg" : "default"}
+        className={`${variant === "floating" 
+          ? `fixed bottom-6 right-6 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 ${className}`
+          : className} opacity-50 cursor-not-allowed`}
+        title="Informações insuficientes para iniciar conversa"
+      >
+        <MessageCircle className={`${size === "sm" ? "w-4 h-4" : size === "lg" ? "w-6 h-6" : "w-5 h-5"}`} />
+        {showLabel && <span className="ml-2">Indisponível</span>}
+      </Button>
+    );
+  }
   
   const existingChatRoom = useFindOrCreateChatRoom(
     contextType,

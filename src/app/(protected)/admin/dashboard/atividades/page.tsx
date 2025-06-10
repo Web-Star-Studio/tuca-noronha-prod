@@ -107,18 +107,20 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
                 </Link>
               </motion.div>
               
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-red-50 hover:bg-red-100 transition-colors duration-200 shadow-sm"
+              <button 
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 shadow-sm cursor-pointer",
+                  "bg-red-50 hover:bg-red-100 hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                )}
                 onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   onDelete(activity.id);
                 }}
+                aria-label="Excluir atividade"
               >
                 <Trash2 className="h-4 w-4 text-red-500" />
-                <span className="sr-only">Excluir</span>
-              </motion.button>
+              </button>
             </div>
           </div>
           
@@ -145,21 +147,23 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
                 <span className="line-clamp-1">Dificuldade: {activity.difficulty}</span>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm transition-all ${
+              <button
+                className={cn(
+                  "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 shadow-sm cursor-pointer",
+                  "hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   activity.isActive 
-                  ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
-                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-                }`}
+                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 focus-visible:ring-emerald-500' 
+                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100 focus-visible:ring-gray-500'
+                )}
                 onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
                   onToggleActive(activity.id, !activity.isActive);
                 }}
+                aria-label={activity.isActive ? "Desativar atividade" : "Ativar atividade"}
               >
                 {activity.isActive ? "Ativo" : "Inativo"}
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>

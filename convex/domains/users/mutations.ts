@@ -480,4 +480,49 @@ export const deleteUser = internalMutation({
     await ctx.db.delete(args.userId);
     return { success: true };
   },
+});
+
+/**
+ * Create a partner user (only available to Masters)
+ */
+export const createPartner = mutationWithRole(["master"])({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    phone: v.optional(v.string()),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args) => {
+    // Check if user with this email already exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (existingUser) {
+      throw new Error("Um usuário com este email já existe");
+    }
+
+    // First, create the user in Convex database
+    const userId = await ctx.db.insert("users", {
+      email: args.email,
+      name: args.name,
+      phone: args.phone,
+      role: "partner",
+      isAnonymous: false,
+      emailVerificationTime: Date.now(),
+    });
+
+    // Schedule the action to create the user in Clerk
+    await ctx.scheduler.runAfter(0, internal.domains.users.actions.createClerkPartner, {
+      userId,
+      name: args.name,
+      email: args.email,
+      password: args.password,
+      phone: args.phone,
+    });
+
+    return userId;
+  },
 }); 

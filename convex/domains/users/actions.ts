@@ -130,4 +130,58 @@ export const sendEmployeeInvitation = action({
       return { success: false, error: errorMessage };
     }
   },
+});
+
+/**
+ * Internal action to create a partner user in Clerk
+ */
+export const createClerkPartner = internalAction({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      // Import Clerk SDK
+      const { clerkClient } = await import('@clerk/clerk-sdk-node');
+      
+      if (!process.env.CLERK_SECRET_KEY) {
+        throw new Error("CLERK_SECRET_KEY is not configured");
+      }
+
+      // Create user in Clerk
+      const clerkUser = await clerkClient.users.createUser({
+        emailAddress: [args.email],
+        password: args.password,
+        firstName: args.name.split(' ')[0] || args.name,
+        lastName: args.name.split(' ').slice(1).join(' ') || undefined,
+        ...(args.phone ? { phoneNumber: [args.phone] } : {}),
+        skipPasswordChecks: false,
+        skipPasswordRequirement: false,
+      });
+
+      console.log(`Clerk partner created: ${clerkUser.id} for email: ${args.email}`);
+
+      // Update the Convex user with the Clerk ID
+      await ctx.runMutation(internal.domains.users.mutations.updateUserWithClerkId, {
+        userId: args.userId,
+        clerkId: clerkUser.id,
+      });
+
+      return { success: true, clerkId: clerkUser.id };
+    } catch (error) {
+      console.error("Error creating Clerk partner:", error);
+      
+      // If Clerk user creation fails, we should clean up the Convex user
+      await ctx.runMutation(internal.domains.users.mutations.deleteUser, {
+        userId: args.userId,
+      });
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to create partner in Clerk: ${errorMessage}`);
+    }
+  },
 }); 

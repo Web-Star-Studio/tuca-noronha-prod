@@ -111,59 +111,64 @@ export function EventCard({
           <div className="mb-2 flex justify-between items-start">
             <h3 className="text-lg font-medium line-clamp-1">{event.title}</h3>
             <div className="flex gap-1.5">
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-50 hover:bg-amber-100 transition-colors duration-200 shadow-md hover:shadow-lg"
+              <button 
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 shadow-sm cursor-pointer",
+                  "bg-amber-50 hover:bg-amber-100 hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleFeatured(event.id, !event.isFeatured);
                 }}
+                aria-label={event.isFeatured ? "Remover destaque" : "Destacar"}
               >
                 <Star className={`h-4 w-4 ${event.isFeatured ? "fill-amber-500 text-amber-500" : "text-amber-400"}`} />
-                <span className="sr-only">{event.isFeatured ? "Remover destaque" : "Destacar"}</span>
-              </motion.button>
+              </button>
               
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+              <Link 
+                href={isSyncedFromSympla && event.symplaUrl ? event.symplaUrl : `/eventos/${event.id}`} 
+                target="_blank"
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 shadow-sm cursor-pointer",
+                  "bg-blue-50 hover:bg-blue-100 hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                )}
+                aria-label="Ver página"
               >
-                <Link 
-                  href={isSyncedFromSympla && event.symplaUrl ? event.symplaUrl : `/eventos/${event.id}`} 
-                  target="_blank"
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors duration-200 shadow-md hover:shadow-lg"
-                >
-                  <ExternalLink className="h-4 w-4 text-blue-500" />
-                  <span className="sr-only">Ver página</span>
-                </Link>
-              </motion.div>
+                <ExternalLink className="h-4 w-4 text-blue-500" />
+              </Link>
               
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-green-50 hover:bg-green-100 transition-colors duration-200 shadow-md hover:shadow-lg"
+              <button 
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 shadow-sm cursor-pointer",
+                  "bg-green-50 hover:bg-green-100 hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(event);
                 }}
+                aria-label="Editar"
               >
                 <Pencil className="h-4 w-4 text-green-500" />
-                <span className="sr-only">Editar</span>
-              </motion.button>
+              </button>
               
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-red-50 hover:bg-red-100 transition-colors duration-200 shadow-md hover:shadow-lg"
+              <button 
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 shadow-sm cursor-pointer",
+                  "bg-red-50 hover:bg-red-100 hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(event.id);
                 }}
+                aria-label="Excluir"
               >
                 <Trash2 className="h-4 w-4 text-red-500" />
-                <span className="sr-only">Excluir</span>
-              </motion.button>
+              </button>
             </div>
           </div>
           
@@ -189,21 +194,23 @@ export function EventCard({
                 <span className="text-sm text-gray-500 line-clamp-1">{event.location}</span>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg transition-all ${
+              <button
+                className={cn(
+                  "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 shadow-sm cursor-pointer",
+                  "hover:shadow-md hover:scale-105 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   event.isActive 
-                  ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
-                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-                }`}
+                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 focus-visible:ring-emerald-500' 
+                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100 focus-visible:ring-gray-500'
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleActive(event.id, !event.isActive);
                 }}
+                aria-label={event.isActive ? "Desativar evento" : "Ativar evento"}
               >
                 {event.isActive ? "Ativo" : "Inativo"}
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>

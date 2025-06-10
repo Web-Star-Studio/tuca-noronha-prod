@@ -103,7 +103,7 @@ export function RestaurantReservationForm({
         restaurantId,
         date: format(date, "yyyy-MM-dd"),
         time,
-        partySize: BigInt(partySize),
+        partySize,
         customerInfo,
         specialRequests: specialRequests || undefined,
       });

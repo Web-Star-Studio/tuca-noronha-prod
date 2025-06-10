@@ -493,7 +493,7 @@ export const cancelVehicleBooking = mutation({
 export const confirmActivityBooking = mutation({
   args: { 
     bookingId: v.id("activityBookings"),
-    notes: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -541,7 +541,7 @@ export const confirmActivityBooking = mutation({
 
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.notes && { partnerNotes: args.notes }),
+      ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
 
@@ -568,7 +568,7 @@ export const confirmActivityBooking = mutation({
 export const confirmEventBooking = mutation({
   args: { 
     bookingId: v.id("eventBookings"),
-    notes: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -616,7 +616,7 @@ export const confirmEventBooking = mutation({
 
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.notes && { partnerNotes: args.notes }),
+      ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
 
@@ -643,7 +643,7 @@ export const confirmEventBooking = mutation({
 export const confirmRestaurantReservation = mutation({
   args: { 
     reservationId: v.id("restaurantReservations"),
-    notes: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -691,7 +691,7 @@ export const confirmRestaurantReservation = mutation({
 
     await ctx.db.patch(args.reservationId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.notes && { partnerNotes: args.notes }),
+      ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
     });
 
     // Schedule notification sending action
@@ -717,7 +717,7 @@ export const confirmRestaurantReservation = mutation({
 export const confirmVehicleBooking = mutation({
   args: { 
     bookingId: v.id("vehicleBookings"),
-    notes: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -765,7 +765,7 @@ export const confirmVehicleBooking = mutation({
 
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.notes && { partnerNotes: args.notes }),
+      ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
 
@@ -944,7 +944,7 @@ export const seedTestReservations = mutation({
         userId: travelerUser._id,
         date: new Date(tomorrow).toISOString().split('T')[0],
         time: "19:30",
-        partySize: BigInt(2),
+        partySize: 2,
         name: travelerUser.name || "João Silva",
         email: travelerUser.email || args.travelerEmail,
         phone: "+55 81 99999-9999",

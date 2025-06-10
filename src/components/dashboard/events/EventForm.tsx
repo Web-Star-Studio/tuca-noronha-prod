@@ -678,6 +678,7 @@ export function EventForm({
                 <Label htmlFor="hasMultipleTickets" className="font-medium">Habilitar múltiplos tipos de ingressos</Label>
                 <Switch 
                   id="hasMultipleTickets" 
+                  variant="primary"
                   checked={formData.hasMultipleTickets}
                   onCheckedChange={(checked) => {
                     setFormData({
@@ -905,6 +906,7 @@ export function EventForm({
                         <div className="flex items-center mt-4 pt-4 border-t border-gray-100">
                           <Switch 
                             id={`ticket-active-${ticketIndex}`}
+                            variant="success"
                             checked={ticket.isActive}
                             onCheckedChange={(checked) => updateTicket(ticketIndex, 'isActive', checked)}
                             className="mr-2"

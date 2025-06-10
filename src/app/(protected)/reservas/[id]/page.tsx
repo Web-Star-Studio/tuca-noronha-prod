@@ -1,393 +1,327 @@
 "use client"
 
-import { use } from "react";
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  CheckCircle,
-  Calendar,
-  Clock,
-  Users,
-  MapPin,
-  Phone,
-  Mail,
-  Home,
-  User,
-  Copy,
-  Share2,
-  ArrowLeft,
-  AlertCircle,
-} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Users, 
+  Phone, 
+  Mail, 
+  Copy, 
+  Check,
+  QrCode,
+  Star,
+  MessageCircle
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import Link from "next/link";
 import { cardStyles, buttonStyles, badgeStyles } from "@/lib/ui-config";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
 
-export default function BookingDetailsPage(props: { params: Promise<{ id: string }> }) {
-  const params = use(props.params);
-  
-  // Try to get booking from different types
-  const activityBooking = useQuery(api.domains.bookings.queries.getActivityBookingById, {
-    bookingId: params.id as any,
-  });
-  
-  const eventBooking = useQuery(api.domains.bookings.queries.getEventBookingById, {
-    bookingId: params.id as any,
-  });
-  
-  const restaurantReservation = useQuery(api.domains.bookings.queries.getRestaurantReservationById, {
-    reservationId: params.id as any,
-  });
-  
-  const vehicleBooking = useQuery(api.domains.bookings.queries.getVehicleBookingById, {
-    bookingId: params.id as any,
-  });
+interface ReservationDetailsPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  // Find which booking type we have
-  const booking = activityBooking || eventBooking || restaurantReservation || vehicleBooking;
-  const bookingType = activityBooking ? "activity" : 
-                     eventBooking ? "event" : 
-                     restaurantReservation ? "restaurant" : 
-                     vehicleBooking ? "vehicle" : null;
+export default function ReservationDetailsPage({ params }: ReservationDetailsPageProps) {
+  const resolvedParams = use(params);
+  const router = useRouter();
+  const [copiedCode, setCopiedCode] = useState(false);
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Copiado para a área de transferência");
-    } catch {
-      toast.error("Erro ao copiar");
+  // Fetch all user reservations and find the specific one
+  const reservationsData = useQuery(api.domains.bookings.queries.getUserReservations);
+  
+  const reservation = reservationsData?.find(r => r.id === resolvedParams.id);
+
+  const handleCopyCode = () => {
+    if (reservation?.confirmationCode) {
+      navigator.clipboard.writeText(reservation.confirmationCode);
+      setCopiedCode(true);
+      toast.success("Código copiado para a área de transferência!");
+      setTimeout(() => setCopiedCode(false), 2000);
     }
   };
 
-  const shareBooking = async () => {
-    if (navigator.share && booking) {
-      try {
-        await navigator.share({
-          title: "Detalhes da Reserva",
-          text: `Reserva ${booking.confirmationCode}`,
-          url: window.location.href,
-        });
-      } catch {
-        copyToClipboard(window.location.href);
-      }
-    } else {
-      copyToClipboard(window.location.href);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { variant: "secondary" as const, label: "Aguardando Confirmação", icon: AlertCircle, color: "text-yellow-600" },
-      confirmed: { variant: "default" as const, label: "Confirmada", icon: CheckCircle, color: "text-green-600" },
-      canceled: { variant: "destructive" as const, label: "Cancelada", icon: AlertCircle, color: "text-red-600" },
-      completed: { variant: "outline" as const, label: "Concluída", icon: CheckCircle, color: "text-blue-600" },
+  const getStatusConfig = (status: string) => {
+    const configs = {
+      pending: { 
+        variant: "secondary" as const, 
+        label: "Pendente", 
+        color: "bg-yellow-500" 
+      },
+      confirmed: { 
+        variant: "default" as const, 
+        label: "Confirmado", 
+        color: "bg-green-500" 
+      },
+      canceled: { 
+        variant: "destructive" as const, 
+        label: "Cancelado", 
+        color: "bg-red-500" 
+      },
+      completed: { 
+        variant: "outline" as const, 
+        label: "Concluído", 
+        color: "bg-blue-500" 
+      },
     };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    const IconComponent = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <IconComponent className="w-3 h-3" />
-        {config.label}
-      </Badge>
-    );
+    return configs[status as keyof typeof configs] || configs.pending;
   };
 
-  if (!booking || !bookingType) {
+  const getTypeLabel = (type: string) => {
+    const labels = {
+      activity: "Atividade",
+      event: "Evento", 
+      restaurant: "Restaurante",
+      vehicle: "Veículo",
+      accommodation: "Hospedagem"
+    };
+    return labels[type as keyof typeof labels] || type;
+  };
+
+  if (!reservationsData) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle className="w-8 h-8 text-gray-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reserva não encontrada</h1>
-            <p className="text-gray-600">
-              A reserva que você está procurando não foi encontrada.
-            </p>
-          </div>
-          <Link href="/">
-            <Button variant="outline">
-              <Home className="w-4 h-4 mr-2" />
-              Voltar ao Início
-            </Button>
-          </Link>
+      <div className="container mx-auto px-4 py-8 mt-20">
+        <div className="animate-pulse space-y-8">
+          <div className="h-10 w-40 bg-gray-200 rounded" />
+          <div className="h-96 w-full bg-gray-200 rounded-xl" />
         </div>
       </div>
     );
   }
 
+  if (!reservation) {
+    return (
+      <div className="container mx-auto px-4 py-8 mt-20">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Reserva não encontrada</h1>
+          <p className="text-gray-600 mb-6">A reserva solicitada não foi encontrada ou você não tem permissão para visualizá-la.</p>
+          <Button onClick={() => router.push('/meu-painel')} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Painel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const statusConfig = getStatusConfig(reservation.status);
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="w-5 h-5" />
-            Voltar
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Detalhes da Reserva</h1>
-            <p className="text-gray-600">
-              Informações completas da sua reserva
-            </p>
-          </div>
-        </div>
-        {getStatusBadge(booking.status)}
-      </div>
-
-      {/* Success/Pending Message */}
-      <div className={cn(cardStyles.base, "text-center")}>
-        <div className={cardStyles.content.default}>
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            {booking.status === "confirmed" ? (
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            ) : (
-              <Clock className="w-8 h-8 text-yellow-600" />
-            )}
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {booking.status === "confirmed" ? "Reserva Confirmada!" : "Reserva Recebida!"}
-          </h2>
-          <p className="text-gray-600 mb-4">
-            {booking.status === "confirmed" 
-              ? "Sua reserva foi confirmada e está pronta para ser utilizada"
-              : "Sua reserva foi recebida e está aguardando confirmação do parceiro"
-            }
-          </p>
+    <div className="min-h-screen bg-gray-50 py-8 mt-16">
+      <div className="container mx-auto px-4 max-w-4xl">
+        {/* Header */}
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push('/meu-painel')}
+            className="mb-4 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Meu Painel
+          </Button>
           
-          {/* Confirmation Code */}
-          <div className="bg-gray-50 p-4 rounded-lg inline-block">
-            <div className="text-sm text-gray-600 mb-1">Código de confirmação</div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-gray-900 tracking-wider">
-                {booking.confirmationCode}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => copyToClipboard(booking.confirmationCode)}
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{reservation.name}</h1>
+              <p className="text-gray-600 mt-1">{getTypeLabel(reservation.type)}</p>
             </div>
+            <Badge variant={statusConfig.variant} className="text-sm px-3 py-1">
+              {statusConfig.label}
+            </Badge>
           </div>
         </div>
-      </div>
 
-      {/* Booking Details */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Main Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações da Reserva</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {bookingType === "activity" && (
-              <>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-medium">Data e Hora</div>
-                    <div className="text-gray-600">{booking.date} {booking.time && `às ${booking.time}`}</div>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Image Card */}
+            <Card className={cardStyles.base}>
+              <CardContent className="p-0">
+                <div className="relative h-64 w-full">
+                  <Image
+                    src={reservation.imageUrl || "/images/default-reservation.jpg"}
+                    alt={reservation.name}
+                    fill
+                    className="object-cover rounded-t-lg"
+                  />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-medium">Participantes</div>
-                    <div className="text-gray-600">{booking.participants} pessoas</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded flex items-center justify-center">
-                    <span className="text-xs font-bold text-green-600">R$</span>
-                  </div>
-                  <div>
-                    <div className="font-medium">Valor Total</div>
-                    <div className="text-gray-600">R$ {booking.totalPrice.toFixed(2)}</div>
-                  </div>
-                </div>
-              </>
-            )}
+              </CardContent>
+            </Card>
 
-            {bookingType === "event" && (
-              <>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-purple-600" />
-                  <div>
-                    <div className="font-medium">Data e Hora do Evento</div>
-                    <div className="text-gray-600">Verificar detalhes do evento</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  <div>
-                    <div className="font-medium">Ingressos</div>
-                    <div className="text-gray-600">{booking.quantity} ingressos</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded flex items-center justify-center">
-                    <span className="text-xs font-bold text-green-600">R$</span>
-                  </div>
-                  <div>
-                    <div className="font-medium">Valor Total</div>
-                    <div className="text-gray-600">R$ {booking.totalPrice.toFixed(2)}</div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {bookingType === "restaurant" && (
-              <>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-orange-600" />
-                  <div>
-                    <div className="font-medium">Data e Hora</div>
-                    <div className="text-gray-600">{booking.date} às {booking.time}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-orange-600" />
-                  <div>
-                    <div className="font-medium">Número de Pessoas</div>
-                    <div className="text-gray-600">{booking.partySize} pessoas</div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {bookingType === "vehicle" && (
-              <>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-medium">Período</div>
-                    <div className="text-gray-600">
-                      {format(new Date(booking.startDate), "dd/MM/yyyy", { locale: ptBR })} até{" "}
-                      {format(new Date(booking.endDate), "dd/MM/yyyy", { locale: ptBR })}
+            {/* Date and Time Details */}
+            <Card className={cardStyles.base}>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                  Informações da Reserva
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {reservation.type === 'accommodation' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 mr-3 text-green-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Check-in</p>
+                        <p className="font-semibold">
+                          {reservation.checkIn && format(reservation.checkIn, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 mr-3 text-red-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Check-out</p>
+                        <p className="font-semibold">
+                          {reservation.checkOut && format(reservation.checkOut, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded flex items-center justify-center">
-                    <span className="text-xs font-bold text-green-600">R$</span>
+                ) : (
+                  <div className="flex items-center">
+                    <Calendar className="h-5 w-5 mr-3 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Data</p>
+                      <p className="font-semibold">
+                        {reservation.date && format(reservation.date, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                      </p>
+                      {reservation.type === 'restaurant' && reservation.date && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          às {format(reservation.date, "HH:mm", { locale: ptBR })}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                )}
+
+                <div className="flex items-center">
+                  <Users className="h-5 w-5 mr-3 text-purple-600" />
                   <div>
-                    <div className="font-medium">Valor Total</div>
-                    <div className="text-gray-600">R$ {booking.totalPrice.toFixed(2)}</div>
+                    <p className="text-sm text-gray-600">Pessoas</p>
+                    <p className="font-semibold">{reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}</p>
                   </div>
                 </div>
-              </>
-            )}
 
-            {(booking.specialRequests || booking.notes) && (
-              <div className="pt-4 border-t">
-                <div className="font-medium mb-2">Observações</div>
-                <div className="text-gray-600 text-sm">
-                  {booking.specialRequests || booking.notes}
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-3 text-orange-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Local</p>
+                    <p className="font-semibold">{reservation.location}</p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Contact Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações de Contato</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-gray-600" />
-              <div>
-                <div className="font-medium">Nome</div>
-                <div className="text-gray-600">
-                  {booking.customerInfo?.name || booking.name}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Confirmation Code */}
+            <Card className={`${cardStyles.base} border-blue-200 bg-blue-50`}>
+              <CardHeader>
+                <CardTitle className="flex items-center text-blue-800">
+                  <QrCode className="h-5 w-5 mr-2" />
+                  Código de Confirmação
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-white rounded-lg p-4 border-2 border-dashed border-blue-300">
+                  <div className="text-center">
+                    <div className="text-2xl font-mono font-bold text-blue-900 mb-2">
+                      {reservation.confirmationCode}
+                    </div>
+                    <p className="text-xs text-blue-700 mb-3">
+                      Apresente este código no local da reserva
+                    </p>
+                    <Button
+                      onClick={handleCopyCode}
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                    >
+                      {copiedCode ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copiar Código
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-600" />
-              <div>
-                <div className="font-medium">Email</div>
-                <div className="text-gray-600">
-                  {booking.customerInfo?.email || booking.email}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-gray-600" />
-              <div>
-                <div className="font-medium">Telefone</div>
-                <div className="text-gray-600">
-                  {booking.customerInfo?.phone || booking.phone}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link href="/">
-          <Button variant="outline" className="flex-1 sm:flex-none">
-            <Home className="w-4 h-4 mr-2" />
-            Voltar ao Início
-          </Button>
-        </Link>
-        
-        <Link href="/meu-painel">
-          <Button variant="default" className="flex-1 sm:flex-none">
-            <User className="w-4 h-4 mr-2" />
-            Minhas Reservas
-          </Button>
-        </Link>
-        
-        <Button 
-          variant="outline" 
-          onClick={shareBooking}
-          className="flex-1 sm:flex-none"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          Compartilhar
-        </Button>
-      </div>
+            {/* Status Card */}
+            <Card className={cardStyles.base}>
+              <CardHeader>
+                <CardTitle>Status da Reserva</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${statusConfig.color}`}></div>
+                  <span className="font-semibold">{statusConfig.label}</span>
+                </div>
+                
+                {reservation.status === 'confirmed' && (
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800">
+                      ✅ Sua reserva foi confirmada! Você pode apresentar o código de confirmação no local.
+                    </p>
+                  </div>
+                )}
+                
+                {reservation.status === 'pending' && (
+                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-800">
+                      ⏳ Sua reserva está aguardando confirmação do estabelecimento.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-      {/* Important Information */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-          <AlertCircle className="w-5 h-5" />
-          Informações Importantes
-        </h4>
-        <ul className="text-sm text-blue-800 space-y-2">
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-1">•</span>
-            <span>Guarde este código de confirmação para futuras consultas</span>
-          </li>
-          {booking.status === "pending" && (
-            <li className="flex items-start gap-2">
-              <span className="text-blue-600 mt-1">•</span>
-              <span>Você receberá uma notificação quando sua reserva for confirmada</span>
-            </li>
-          )}
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-1">•</span>
-            <span>Para alterações ou cancelamentos, entre em contato através do suporte</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-1">•</span>
-            <span>Chegue com 15 minutos de antecedência no local</span>
-          </li>
-        </ul>
+            {/* Actions */}
+            <Card className={cardStyles.base}>
+              <CardHeader>
+                <CardTitle>Ações</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Entrar em Contato
+                </Button>
+                
+                {reservation.status === 'confirmed' && (
+                  <Button variant="outline" className="w-full">
+                    <Star className="h-4 w-4 mr-2" />
+                    Avaliar Experiência
+                  </Button>
+                )}
+                
+                {(reservation.status === 'pending' || reservation.status === 'confirmed') && (
+                  <Button variant="destructive" className="w-full">
+                    Cancelar Reserva
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { mockNotifications } from '../data/mockData';
 import { Notification } from '../types/dashboard';
 
 export const useDashboard = () => {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
 
@@ -16,11 +18,12 @@ export const useDashboard = () => {
   const userStats = useQuery(api.domains.bookings.queries.getUserStats);
 
   const handleNewReservation = () => {
-    toast.success("Redirecionando para nova reserva...");
+    router.push('/');
+    toast.success("Redirecionando para explorar opções...");
   };
 
   const handleViewReservationDetails = (reservationId: string) => {
-    toast.info(`Visualizando detalhes da reserva ${reservationId}`);
+    router.push(`/reservas/${reservationId}`);
   };
 
   const handleCancelReservation = (reservationId: string) => {

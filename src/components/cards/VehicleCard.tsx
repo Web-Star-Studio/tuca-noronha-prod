@@ -1,10 +1,11 @@
-import { useState } from "react";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, Users, Fuel, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 import { cn } from "@/lib/utils";
 
 interface VehicleCardProps {
@@ -25,13 +26,6 @@ interface VehicleCardProps {
 }
 
 export default function VehicleCard({ vehicle }: VehicleCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  const toggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  };
 
   return (
     <Card className="overflow-hidden h-full transition-all hover:shadow-md">
@@ -47,20 +41,16 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
             className="object-cover"
           />
           <div className="absolute top-3 right-3">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
-              onClick={toggleFavorite}
-            >
-              <Heart
-                className={cn(
-                  "h-4 w-4",
-                  isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"
-                )}
+            <div onClick={(e) => e.preventDefault()}>
+              <WishlistButton
+                itemType="vehicle"
+                itemId={vehicle._id}
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
+                showText={false}
               />
-              <span className="sr-only">Adicionar aos favoritos</span>
-            </Button>
+            </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
             <div className="flex justify-between items-end">

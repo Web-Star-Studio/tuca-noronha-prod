@@ -185,7 +185,7 @@ export const getUserRestaurantReservations = query({
       restaurantAddress: v.string(),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
@@ -378,7 +378,7 @@ export const getBookingByConfirmationCode = query({
         restaurantName: v.string(),
         date: v.string(),
         time: v.string(),
-        partySize: v.int64(),
+        partySize: v.number(),
         status: v.string(),
         confirmationCode: v.string(),
         name: v.string(),
@@ -516,7 +516,7 @@ export const getPartnerBookings = query({
       restaurantName: v.string(),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       status: v.string(),
       name: v.string(),
       email: v.string(),
@@ -570,7 +570,7 @@ export const getPartnerBookings = query({
         restaurantName: string;
         date: string;
         time: string;
-        partySize: bigint;
+        partySize: number;
         status: string;
         name: string;
         email: string;
@@ -728,8 +728,8 @@ export const getActivityBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show bookings for their activities
@@ -776,7 +776,7 @@ export const getActivityBookings = query({
       };
     }
 
-    // Admin sees all bookings
+    // Admin and master see all bookings
     let query = ctx.db.query("activityBookings").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -831,6 +831,7 @@ export const getEventBookings = query({
         phone: v.string(),
       }),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),
@@ -849,8 +850,8 @@ export const getEventBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show bookings for their events
@@ -897,7 +898,7 @@ export const getEventBookings = query({
       };
     }
 
-    // Admin sees all bookings
+    // Admin and master see all bookings
     let query = ctx.db.query("eventBookings").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -941,15 +942,17 @@ export const getRestaurantReservations = query({
       _creationTime: v.number(),
       restaurantId: v.id("restaurants"),
       restaurantName: v.string(),
+      userId: v.id("users"),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
       status: v.string(),
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -965,8 +968,8 @@ export const getRestaurantReservations = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show reservations for their restaurants
@@ -1013,7 +1016,7 @@ export const getRestaurantReservations = query({
       };
     }
 
-    // Admin sees all reservations
+    // Admin and master see all reservations
     let query = ctx.db.query("restaurantReservations").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -1056,6 +1059,7 @@ export const getVehicleBookings = query({
       _id: v.id("vehicleBookings"),
       _creationTime: v.number(),
       vehicleId: v.id("vehicles"),
+      userId: v.id("users"),
       vehicleName: v.string(),
       vehicleBrand: v.string(),
       vehicleModel: v.string(),
@@ -1067,6 +1071,11 @@ export const getVehicleBookings = query({
       pickupLocation: v.optional(v.string()),
       returnLocation: v.optional(v.string()),
       notes: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      additionalDrivers: v.optional(v.number()),
+      additionalOptions: v.optional(v.array(v.string())),
+      createdAt: v.number(),
+      updatedAt: v.number(),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -1082,8 +1091,8 @@ export const getVehicleBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner")) {
-      throw new Error("Acesso negado - apenas admins e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas admins, masters e partners");
     }
 
     // For partners, only show bookings for their vehicles
@@ -1133,7 +1142,7 @@ export const getVehicleBookings = query({
       };
     }
 
-    // Admin sees all bookings
+    // Admin and master see all bookings
     let query = ctx.db.query("vehicleBookings").order("desc");
 
     if (args.status && typeof args.status === "string") {
@@ -1254,7 +1263,7 @@ export const getRestaurantReservationById = query({
       userId: v.id("users"),
       date: v.string(),
       time: v.string(),
-      partySize: v.int64(),
+      partySize: v.number(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
@@ -1352,7 +1361,7 @@ export const getUserReservations = query({
       const activity = await ctx.db.get(booking.activityId);
       if (activity) {
         reservations.push({
-          id: booking._id,
+          id: booking._id.toString(),
           type: 'activity',
           name: activity.title,
           date: new Date(booking.date).getTime(),
@@ -1376,7 +1385,7 @@ export const getUserReservations = query({
       const event = await ctx.db.get(booking.eventId);
       if (event) {
         reservations.push({
-          id: booking._id,
+          id: booking._id.toString(),
           type: 'event',
           name: event.title,
           date: new Date(event.date).getTime(),
@@ -1401,13 +1410,13 @@ export const getUserReservations = query({
       if (restaurant) {
         const reservationDateTime = new Date(`${reservation.date}T${reservation.time}`);
         reservations.push({
-          id: reservation._id,
+          id: reservation._id.toString(),
           type: 'restaurant',
           name: restaurant.name,
           date: reservationDateTime.getTime(),
           guests: reservation.partySize,
           status: reservation.status,
-          location: restaurant.address,
+          location: `${restaurant.address.neighborhood}, ${restaurant.address.city} - ${restaurant.address.state}`,
           imageUrl: restaurant.mainImage || '/images/restaurant-default.jpg',
           confirmationCode: reservation.confirmationCode,
           createdAt: reservation._creationTime,
@@ -1425,7 +1434,7 @@ export const getUserReservations = query({
       const vehicle = await ctx.db.get(booking.vehicleId);
       if (vehicle) {
         reservations.push({
-          id: booking._id,
+          id: booking._id.toString(),
           type: 'vehicle',
           name: `${vehicle.brand} ${vehicle.model}`,
           checkIn: booking.startDate,
@@ -1434,7 +1443,7 @@ export const getUserReservations = query({
           status: booking.status,
           location: booking.pickupLocation || 'Fernando de Noronha',
           imageUrl: vehicle.imageUrl || '/images/vehicle-default.jpg',
-          confirmationCode: booking._id, // Vehicle bookings might not have confirmation codes
+          confirmationCode: booking._id.toString(), // Vehicle bookings might not have confirmation codes
           createdAt: booking.createdAt,
         });
       }
@@ -1450,14 +1459,14 @@ export const getUserReservations = query({
       const accommodation = await ctx.db.get(booking.accommodationId);
       if (accommodation) {
         reservations.push({
-          id: booking._id,
+          id: booking._id.toString(),
           type: 'accommodation',
           name: accommodation.name,
           checkIn: new Date(booking.checkInDate).getTime(),
           checkOut: new Date(booking.checkOutDate).getTime(),
           guests: booking.guests,
           status: booking.status,
-          location: accommodation.address,
+          location: `${accommodation.address.neighborhood}, ${accommodation.address.city} - ${accommodation.address.state}`,
           imageUrl: accommodation.mainImage || '/images/accommodation-default.jpg',
           confirmationCode: booking.confirmationCode,
           createdAt: booking.createdAt,

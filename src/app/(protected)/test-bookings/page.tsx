@@ -13,7 +13,7 @@ import {
 
 // Mock data for testing
 const mockActivity = {
-  _id: "activity1" as any,
+  _id: "kn71yz8kjkjg7wmb3zz5zfy4jx7hk4d9" as any, // ID válido do Convex para testes
   title: "Mergulho com Tartarugas Marinhas",
   price: 150,
   minParticipants: 2,
@@ -22,7 +22,7 @@ const mockActivity = {
 };
 
 const mockEvent = {
-  _id: "event1" as any,
+  _id: "kn71yz8kjkjg7wmb3zz5zfy4jx7hk4da" as any, // ID válido do Convex para testes
   title: "Festival de Música Noronha 2024",
   date: "2024-07-15",
   time: "20:00",
@@ -32,7 +32,7 @@ const mockEvent = {
 };
 
 const mockRestaurant = {
-  _id: "restaurant1" as any,
+  _id: "kn71yz8kjkjg7wmb3zz5zfy4jx7hk4d8" as any, // ID válido do Convex para testes
   name: "Restaurante Maré Alta",
   address: {
     street: "Rua da Praia, 123",
@@ -53,7 +53,7 @@ const mockRestaurant = {
 };
 
 const mockVehicle = {
-  _id: "vehicle1" as any,
+  _id: "kn71yz8kjkjg7wmb3zz5zfy4jx7hk4db" as any, // ID válido do Convex para testes
   pricePerDay: 120,
 };
 

@@ -25,7 +25,15 @@ import {
   Activity,
   Calendar,
   Utensils,
-  UserCheck
+  UserCheck,
+  Database,
+  Shield,
+  BarChart3,
+  TrendingUp,
+  Globe,
+  AlertTriangle,
+  Clock,
+  Bookmark
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -38,7 +46,10 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  SidebarFooter
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -68,20 +79,26 @@ interface SidebarLinkProps {
   icon: LucideIcon
   label: string
   isActive: (path: string) => boolean
+  badge?: number
 }
 
-function SidebarLink({ href, icon: Icon, label, isActive }: SidebarLinkProps) {
+function SidebarLink({ href, icon: Icon, label, isActive, badge }: SidebarLinkProps) {
   return (
     <SidebarMenuItem>
       <Link
         href={href}
         className={cn(
-          "flex items-center h-10 gap-3 px-3 text-sm font-medium rounded-md hover:bg-slate-100",
+          "flex items-center h-10 gap-3 px-3 text-sm font-medium rounded-md hover:bg-slate-100 relative",
           isActive(href) ? "text-blue-600 bg-blue-50" : "text-slate-600"
         )}
       >
         <Icon className="h-5 w-5" />
-        <span>{label}</span>
+        <span className="flex-1">{label}</span>
+        {badge && badge > 0 && (
+          <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
       </Link>
     </SidebarMenuItem>
   )
@@ -207,6 +224,158 @@ const getOrganizationSpecificLinks = (organizationType: string): Array<{
   }
 }
 
+// Navegação específica para Master Admin
+function MasterSidebar() {
+  const pathname = usePathname()
+
+  const isActive = (path: string) => {
+    if (path === "/admin/dashboard") {
+      return pathname === path
+    }
+    return pathname.startsWith(path)
+  }
+
+  const masterSystemLinks = [
+    { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard Principal" },
+    { href: "/admin/dashboard/usuarios", icon: Users, label: "Gestão de Usuários" },
+    { href: "/admin/dashboard/organizacoes", icon: Building2, label: "Organizações" },
+    { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte", badge: 3 },
+    { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria" },
+  ]
+
+  const masterAssetLinks = [
+    { href: "/admin/dashboard/assets", icon: Database, label: "Todos os Assets" },
+    { href: "/admin/dashboard/restaurantes-master", icon: Utensils, label: "Restaurantes" },
+    { href: "/admin/dashboard/eventos-master", icon: Calendar, label: "Eventos" },
+    { href: "/admin/dashboard/atividades-master", icon: Activity, label: "Atividades" },
+    { href: "/admin/dashboard/veiculos-master", icon: Car, label: "Veículos" },
+    { href: "/admin/dashboard/hospedagens-master", icon: Bed, label: "Hospedagens" },
+  ]
+
+  const masterReportLinks = [
+    { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },
+    { href: "/admin/dashboard/metricas", icon: BarChart3, label: "Métricas do Sistema" },
+    { href: "/admin/dashboard/relatorios", icon: TrendingUp, label: "Relatórios" },
+    { href: "/admin/dashboard/favoritos", icon: Bookmark, label: "Favoritos" },
+    { href: "/admin/dashboard/solicitacoes-pacotes", icon: Package, label: "Solicitações de Pacotes" },
+  ]
+
+  const masterConfigLinks = [
+    { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
+    { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
+    { href: "/admin/dashboard/novo-empreendimento", icon: PlusCircle, label: "Novo Empreendimento" },
+  ]
+
+  return (
+    <Sidebar className="bg-white border-r border-slate-200 shadow-sm">
+      <SidebarHeader className="pb-5 border-b border-slate-200">
+        <div className="px-3 py-4">
+          <div className="flex items-center gap-2 w-full justify-start px-2 py-1.5">
+            <div className="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full">
+              <Shield className="h-4 w-4 text-purple-600" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium text-slate-900">Master Admin</span>
+              <span className="text-xs text-purple-600">Administração Total</span>
+            </div>
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="px-3 py-2">
+        {/* Seção Sistema */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Sistema
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {masterSystemLinks.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  icon={link.icon}
+                  label={link.label}
+                  isActive={isActive}
+                  badge={link.badge}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Seção Assets */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Assets
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {masterAssetLinks.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  icon={link.icon}
+                  label={link.label}
+                  isActive={isActive}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Seção Relatórios */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Relatórios
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {masterReportLinks.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  icon={link.icon}
+                  label={link.label}
+                  isActive={isActive}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Seção Configurações */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Configurações
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {masterConfigLinks.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  icon={link.icon}
+                  label={link.label}
+                  isActive={isActive}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-slate-200 mt-auto py-3 px-3">
+        <Link href="/" className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors">
+          <Home className="h-5 w-5 mr-3" />
+          Home
+        </Link>
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
+
+// Navegação para Partners/Employees
 function AdminSidebar() {
   const pathname = usePathname()
   const { activeOrganization } = useOrganization()
@@ -300,9 +469,12 @@ function AdminSidebar() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { user } = useCurrentUser()
+  
   return (
     <SidebarProvider>
-      <AdminSidebar />
+      {/* Usar sidebar específico para Master */}
+      {user?.role === "master" ? <MasterSidebar /> : <AdminSidebar />}
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-6 bg-white border-b border-slate-200">
           <div className="flex items-center gap-4">

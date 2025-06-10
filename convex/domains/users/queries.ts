@@ -320,9 +320,14 @@ export const listAllUsers = query({
     clerkId: v.optional(v.string()),
     name: v.optional(v.string()),
     email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    image: v.optional(v.string()),
+    isAnonymous: v.optional(v.boolean()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
     role: v.optional(v.string()),
-    createdAt: v.optional(v.number()),
-    updatedAt: v.optional(v.number()),
+    partnerId: v.optional(v.id("users")),
+    organizationId: v.optional(v.id("partnerOrganizations")),
     // Métricas agregadas
     organizationsCount: v.number(),
     assetsCount: v.number(),
@@ -627,5 +632,152 @@ export const listAllAssets = query({
 
     // Ordenar por data de criação (mais recentes primeiro)
     return enrichedAssets.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Get detailed user information by ID (masters only)
+ */
+export const getUserDetailsById = query({
+  args: {
+    userId: v.id("users"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      _creationTime: v.number(),
+      clerkId: v.optional(v.string()),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      role: v.optional(v.string()),
+      partnerId: v.optional(v.id("users")),
+      organizationId: v.optional(v.id("partnerOrganizations")),
+      emailVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+      // Dados enriquecidos
+      organizations: v.array(v.object({
+        _id: v.id("partnerOrganizations"),
+        name: v.string(),
+        type: v.string(),
+        isActive: v.boolean(),
+        _creationTime: v.number(),
+      })),
+      assets: v.object({
+        restaurants: v.number(),
+        events: v.number(),
+        activities: v.number(),
+        vehicles: v.number(),
+        accommodations: v.number(),
+        total: v.number(),
+      }),
+      partnerInfo: v.optional(v.object({
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+      })),
+      employeesCount: v.optional(v.number()),
+      lastActivity: v.optional(v.number()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // Verificar se o usuário atual é master
+    const currentUserRole = await getCurrentUserRole(ctx);
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas administradores master podem ver detalhes de usuários");
+    }
+
+    const user = await ctx.db.get(args.userId);
+    
+    if (!user) {
+      return null;
+    }
+
+    // Buscar organizações (se for partner)
+    let organizations: any[] = [];
+    if (user.role === "partner") {
+      organizations = await ctx.db
+        .query("partnerOrganizations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+        .collect();
+    }
+
+    // Buscar assets do usuário
+    let assets = {
+      restaurants: 0,
+      events: 0,
+      activities: 0,
+      vehicles: 0,
+      accommodations: 0,
+      total: 0,
+    };
+
+    if (user.role === "partner") {
+      const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+        ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+        ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+        ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+        ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", user._id)).collect(),
+        ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+      ]);
+
+      assets = {
+        restaurants: restaurants.length,
+        events: events.length,
+        activities: activities.length,
+        vehicles: vehicles.length,
+        accommodations: accommodations.length,
+        total: restaurants.length + events.length + activities.length + vehicles.length + accommodations.length,
+      };
+    }
+
+    // Buscar informações do partner (se for employee)
+    let partnerInfo: { name?: string; email?: string } | undefined = undefined;
+    if (user.role === "employee" && user.partnerId) {
+      const partner = await ctx.db.get(user.partnerId);
+      if (partner) {
+        partnerInfo = {
+          name: partner.name,
+          email: partner.email,
+        };
+      }
+    }
+
+    // Contar employees (se for partner)
+    let employeesCount: number | undefined = undefined;
+    if (user.role === "partner") {
+      const employees = await ctx.db
+        .query("users")
+        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+        .collect();
+      employeesCount = employees.filter(emp => emp.role === "employee").length;
+    }
+
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      phone: user.phone,
+      role: user.role,
+      partnerId: user.partnerId,
+      organizationId: user.organizationId,
+      emailVerificationTime: user.emailVerificationTime,
+      isAnonymous: user.isAnonymous,
+      organizations: organizations.map(org => ({
+        _id: org._id,
+        name: org.name,
+        type: org.type,
+        isActive: org.isActive,
+        _creationTime: org._creationTime,
+      })),
+      assets,
+      partnerInfo,
+      employeesCount,
+      lastActivity: user.emailVerificationTime, // Placeholder for last activity
+    };
   },
 }); 

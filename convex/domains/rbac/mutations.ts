@@ -974,7 +974,10 @@ export const createOrganizationWithRestaurant = mutationWithRole(["partner", "ma
         organizationId,
         assetId: restaurantId,
         assetType: "restaurants",
-        addedAt: now,
+        partnerId: currentUserId,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
       });
     }
 
