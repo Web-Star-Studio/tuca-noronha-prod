@@ -201,7 +201,6 @@ const getOrganizationSpecificLinks = (organizationType: string): Array<{
       ]
     case "accommodation":
       return [
-        { href: `${baseLink}/hospedagens`, icon: Bed, label: "Acomodações" },
         { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
       ]
     case "rental_service":
@@ -249,7 +248,6 @@ function MasterSidebar() {
     { href: "/admin/dashboard/eventos-master", icon: Calendar, label: "Eventos" },
     { href: "/admin/dashboard/atividades-master", icon: Activity, label: "Atividades" },
     { href: "/admin/dashboard/veiculos-master", icon: Car, label: "Veículos" },
-    { href: "/admin/dashboard/hospedagens-master", icon: Bed, label: "Hospedagens" },
   ]
 
   const masterReportLinks = [

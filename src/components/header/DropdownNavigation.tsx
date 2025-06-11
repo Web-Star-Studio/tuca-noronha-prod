@@ -48,7 +48,6 @@ const navigationItems: NavigationItem[] = [
   // Navegação Principal
   { path: '/', label: 'Home', icon: Home, category: 'main' },
   { path: '/atividades', label: 'Atividades', icon: Compass, category: 'main' },
-  { path: '/hospedagens', label: 'Hospedagens', icon: Hotel, category: 'main' },
   { path: '/pacotes', label: 'Pacotes', icon: Package, category: 'main' },
   { path: '/eventos', label: 'Eventos', icon: Calendar, category: 'main' },
   { path: '/restaurantes', label: 'Restaurantes', icon: UtensilsCrossed, category: 'main' },

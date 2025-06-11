@@ -26,7 +26,6 @@ import PreferencesSection from "./PreferencesSection"
 
 // Import our refactored components
 import { useDashboard } from './hooks/useDashboard'
-import { mockRecommendations } from './data/mockData'
 import { getReservationColor, getStatusVariant, getStatusLabel } from './utils/reservations'
 import ReservationsSection from './components/ReservationsSection'
 import PackageRequestsSection from './components/PackageRequestsSection'
@@ -34,6 +33,43 @@ import OverviewSection from './components/OverviewSection'
 import FloatingSupportButton from './components/FloatingSupportButton'
 import RecommendationCard from './components/RecommendationCard'
 import FavoritesSection from '@/components/profile/FavoritesSection'
+
+// Mock data para recomendações
+const mockRecommendations = [
+  {
+    id: '1',
+    type: 'restaurant',
+    name: 'Beijupirá',
+    description: 'Culinária regional de Fernando de Noronha',
+    rating: 4.8,
+    imageUrl: '/images/restaurants/beijupira.jpg',
+    tags: ['Frutos do Mar', 'Regional', 'Premium'],
+    isActive: true,
+    isFeatured: false
+  },
+  {
+    id: '2',
+    type: 'activity',
+    name: 'Mergulho com Cilindro',
+    description: 'Explore as águas cristalinas de Noronha',
+    rating: 4.9,
+    imageUrl: '/images/activities/diving.jpg',
+    tags: ['Aventura', 'Mergulho', 'Natureza'],
+    isActive: true,
+    isFeatured: true
+  },
+  {
+    id: '3',
+    type: 'accommodation',
+    name: 'Pousada Maravilha',
+    description: 'Vista incrível para o mar',
+    rating: 4.7,
+    imageUrl: '/images/accommodations/maravilha.jpg',
+    tags: ['Hospedagem Premium', 'Vista Mar', 'Luxo'],
+    isActive: true,
+    isFeatured: false
+  }
+];
 
 export default function Dashboard() {
   const { user } = useUser()
@@ -48,8 +84,13 @@ export default function Dashboard() {
     handleCancelReservation,
     reservations,
     stats,
-    isLoading
+    isLoadingReservations,
+    isLoadingNotifications,
+    isLoadingStats
   } = useDashboard()
+
+  // Show loading state while fetching data
+  const isLoading = isLoadingReservations || isLoadingNotifications || isLoadingStats;
 
   const renderPageContent = () => {
     switch (activeSection) {

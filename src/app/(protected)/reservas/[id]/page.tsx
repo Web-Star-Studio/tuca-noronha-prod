@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cardStyles, buttonStyles, badgeStyles } from "@/lib/ui-config";
+import { ChatButton } from "@/components/chat/ChatButton";
 import Image from "next/image";
 
 interface ReservationDetailsPageProps {
@@ -41,6 +42,15 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   const reservationsData = useQuery(api.domains.bookings.queries.getUserReservations);
   
   const reservation = reservationsData?.find(r => r.id === resolvedParams.id);
+  
+  // Fetch partner details for contact functionality
+  const partnerDetails = useQuery(
+    api.domains.bookings.queries.getReservationWithPartnerDetails,
+    reservation ? {
+      reservationId: reservation.id,
+      reservationType: reservation.type as any,
+    } : "skip"
+  );
 
   const handleCopyCode = () => {
     if (reservation?.confirmationCode) {
@@ -301,10 +311,25 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                 <CardTitle>Ações</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Entrar em Contato
-                </Button>
+                {partnerDetails ? (
+                  <ChatButton
+                    assetId={partnerDetails.assetId}
+                    assetType={partnerDetails.assetType as any}
+                    assetName={partnerDetails.assetName}
+                    partnerId={partnerDetails.partnerId}
+                    bookingId={reservation.id}
+                    bookingContext={`Reserva ${reservation.confirmationCode || reservation.id} - ${partnerDetails.assetName}`}
+                    variant="outline"
+                    className="w-full"
+                    showLabel={true}
+                    customLabel="Entrar em Contato"
+                  />
+                ) : (
+                  <Button variant="outline" className="w-full" disabled>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Carregando contato...
+                  </Button>
+                )}
                 
                 {reservation.status === 'confirmed' && (
                   <Button variant="outline" className="w-full">

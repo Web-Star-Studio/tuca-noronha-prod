@@ -34,31 +34,44 @@ export const sendBulkNotification = mutation({
     type: v.string(),
     title: v.string(),
     message: v.string(),
-    relatedId: v.optional(v.string()),
-    relatedType: v.optional(v.string()),
-    data: v.optional(v.object({
-      confirmationCode: v.optional(v.string()),
-      bookingType: v.optional(v.string()),
-      assetName: v.optional(v.string()),
-      partnerName: v.optional(v.string()),
-    })),
+    data: v.optional(v.any()),
   },
-  returns: v.array(v.id("notifications")),
+  returns: v.number(),
   handler: async (ctx, args) => {
-    const { userIds, ...notificationData } = args;
-    
-    const notificationIds = await Promise.all(
-      userIds.map(async (userId) => {
-        return await ctx.db.insert("notifications", {
-          userId,
-          ...notificationData,
-          isRead: false,
-          createdAt: Date.now(),
-        });
-      })
-    );
+    // Rate limiting: max 1000 notifications per bulk operation
+    if (args.userIds.length > 1000) {
+      throw new Error("Bulk notification limit exceeded. Maximum 1000 recipients per operation.");
+    }
 
-    return notificationIds;
+    let successCount = 0;
+    const batchSize = 100; // Process in batches to avoid timeout
+    
+    for (let i = 0; i < args.userIds.length; i += batchSize) {
+      const batch = args.userIds.slice(i, i + batchSize);
+      
+      const promises = batch.map(async (userId) => {
+        try {
+          await ctx.db.insert("notifications", {
+            userId,
+            type: args.type,
+            title: args.title,
+            message: args.message,
+            isRead: false,
+            data: args.data,
+            createdAt: Date.now(),
+          });
+          return true;
+        } catch (error) {
+          console.error(`Failed to send notification to user ${userId}:`, error);
+          return false;
+        }
+      });
+
+      const results = await Promise.all(promises);
+      successCount += results.filter(Boolean).length;
+    }
+
+    return successCount;
   },
 });
 
@@ -158,7 +171,7 @@ export const deleteNotification = mutation({
 });
 
 /**
- * Helper function to create booking confirmation notification
+ * Create booking confirmation notification with optimized data structure
  */
 export const createBookingConfirmationNotification = mutation({
   args: {
@@ -170,29 +183,36 @@ export const createBookingConfirmationNotification = mutation({
     relatedId: v.string(),
     relatedType: v.string(),
   },
-  returns: v.id("notifications"),
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const title = "Reserva Confirmada! 🎉";
-    const message = `Sua reserva para "${args.assetName}" foi confirmada! Código: ${args.confirmationCode}`;
+    try {
+      const title = "Reserva Confirmada! 🎉";
+      const message = `Sua reserva para "${args.assetName}" foi confirmada! Código: ${args.confirmationCode}${args.partnerName ? ` (${args.partnerName})` : ''}`;
 
-    const notificationId = await ctx.db.insert("notifications", {
-      userId: args.userId,
-      type: "booking_confirmed",
-      title,
-      message,
-      relatedId: args.relatedId,
-      relatedType: args.relatedType,
-      isRead: false,
-      data: {
-        confirmationCode: args.confirmationCode,
-        bookingType: args.bookingType,
-        assetName: args.assetName,
-        partnerName: args.partnerName,
-      },
-      createdAt: Date.now(),
-    });
+      await ctx.db.insert("notifications", {
+        userId: args.userId,
+        type: "booking_confirmed",
+        title,
+        message,
+        isRead: false,
+        relatedId: args.relatedId,
+        relatedType: args.relatedType,
+        data: {
+          confirmationCode: args.confirmationCode,
+          bookingType: args.bookingType,
+          assetName: args.assetName,
+          partnerName: args.partnerName,
+        },
+        createdAt: Date.now(),
+      });
 
-    return notificationId;
+      console.log(`✅ Booking confirmation notification created for user ${args.userId}`);
+    } catch (error) {
+      console.error(`❌ Failed to create booking confirmation notification:`, error);
+      throw error;
+    }
+
+    return null;
   },
 });
 
@@ -228,6 +248,107 @@ export const createBookingCanceledNotification = mutation({
         confirmationCode: args.confirmationCode,
         bookingType: args.bookingType,
         assetName: args.assetName,
+      },
+      createdAt: Date.now(),
+    });
+
+    return notificationId;
+  },
+});
+
+/**
+ * Helper function to create chat message notification
+ */
+export const createChatMessageNotification = mutation({
+  args: {
+    recipientId: v.id("users"),
+    senderId: v.id("users"),
+    senderName: v.string(),
+    chatRoomId: v.id("chatRooms"),
+    messagePreview: v.string(),
+    contextType: v.string(),
+    contextData: v.optional(v.object({
+      assetName: v.optional(v.string()),
+      assetType: v.optional(v.string()),
+      bookingCode: v.optional(v.string()),
+    })),
+  },
+  returns: v.id("notifications"),
+  handler: async (ctx, args) => {
+    // Não criar notificação para si mesmo
+    if (args.recipientId.toString() === args.senderId.toString()) {
+      throw new Error("Não é possível criar notificação para si mesmo");
+    }
+
+    const contextInfo = args.contextData?.assetName 
+      ? ` sobre ${args.contextData.assetName}`
+      : args.contextData?.bookingCode 
+        ? ` sobre reserva ${args.contextData.bookingCode}`
+        : '';
+
+    const title = "Nova Mensagem de Chat";
+    const message = `${args.senderName} enviou uma mensagem${contextInfo}: "${args.messagePreview}"`;
+
+    const notificationId = await ctx.db.insert("notifications", {
+      userId: args.recipientId,
+      type: "chat_message",
+      title,
+      message,
+      relatedId: args.chatRoomId.toString(),
+      relatedType: "chat_room",
+      isRead: false,
+      data: {
+        senderName: args.senderName,
+        messagePreview: args.messagePreview,
+        contextType: args.contextType,
+        ...args.contextData,
+      },
+      createdAt: Date.now(),
+    });
+
+    return notificationId;
+  },
+});
+
+/**
+ * Helper function to create chat room created notification
+ */
+export const createChatRoomCreatedNotification = mutation({
+  args: {
+    partnerId: v.id("users"),      // Partner que receberá a notificação
+    travelerId: v.id("users"),     // Traveler que iniciou o chat
+    travelerName: v.string(),
+    chatRoomId: v.id("chatRooms"),
+    contextType: v.string(),
+    contextData: v.optional(v.object({
+      assetName: v.optional(v.string()),
+      assetType: v.optional(v.string()),
+      bookingCode: v.optional(v.string()),
+    })),
+  },
+  returns: v.id("notifications"),
+  handler: async (ctx, args) => {
+    const contextInfo = args.contextData?.assetName 
+      ? ` sobre ${args.contextData.assetName}`
+      : args.contextData?.bookingCode 
+        ? ` sobre reserva ${args.contextData.bookingCode}`
+        : '';
+
+    const title = "Nova Conversa Iniciada";
+    const message = `${args.travelerName} iniciou uma conversa${contextInfo}`;
+
+    const notificationId = await ctx.db.insert("notifications", {
+      userId: args.partnerId,
+      type: "chat_room_created",
+      title,
+      message,
+      relatedId: args.chatRoomId.toString(),
+      relatedType: "chat_room",
+      isRead: false,
+      data: {
+        travelerName: args.travelerName,
+        contextType: args.contextType,
+        ...args.contextData,
       },
       createdAt: Date.now(),
     });

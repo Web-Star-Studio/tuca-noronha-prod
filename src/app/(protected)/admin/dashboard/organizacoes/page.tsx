@@ -220,7 +220,6 @@ export default function OrganizationsManagementPage() {
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="restaurant">Restaurantes</SelectItem>
-                <SelectItem value="accommodation">Hospedagens</SelectItem>
                 <SelectItem value="rental_service">Aluguel de Veículos</SelectItem>
                 <SelectItem value="activity_service">Atividades</SelectItem>
                 <SelectItem value="event_service">Eventos</SelectItem>

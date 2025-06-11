@@ -55,11 +55,7 @@ const Footer = () => {
                   Passeios
                 </Link>
               </li>
-              <li>
-                <Link href="/hospedagens" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
-                  Hospedagens
-                </Link>
-              </li>
+
               <li>
                 <Link href="/loja" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
                   Loja

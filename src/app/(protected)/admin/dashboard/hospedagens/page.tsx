@@ -1,250 +1,89 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useAllAccommodations, useCreateAccommodation, useUpdateAccommodation, useDeleteAccommodation, useToggleFeatured, useToggleActive } from "@/lib/services/accommodationService"
-import { Accommodation } from "@/lib/services/accommodationService"
-import type { Id } from "@/../convex/_generated/dataModel"
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
-import { toast } from "sonner"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { 
-  AccommodationsHeader, 
-  AccommodationsFilter, 
-  AccommodationsGrid, 
-  AccommodationsPagination, 
-  AccommodationForm
-} from "@/components/dashboard/accommodations"
-import { AnimatePresence, motion } from "framer-motion"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Home, Activity, Calendar, Utensils, Car } from "lucide-react";
 
 export default function AccommodationsPage() {
-  const { accommodations, isLoading } = useAllAccommodations()
-  const createAccommodation = useCreateAccommodation()
-  const updateAccommodation = useUpdateAccommodation()
-  const deleteAccommodation = useDeleteAccommodation()
-  const toggleFeatured = useToggleFeatured()
-  const toggleActive = useToggleActive()
-  const { user } = useCurrentUser()
-  
-  // State for dialog
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedAccommodation, setSelectedAccommodation] = useState<Accommodation | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // State for filtering and pagination
-  const [filter, setFilter] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [showMobileFilter, setShowMobileFilter] = useState(false)
-  const itemsPerPage = 6
-  
-  // Filter accommodations based on filter and search query
-  const filteredAccommodations = useMemo(() => {
-    if (!accommodations) return []
-    
-    return accommodations.filter(accommodation => {
-      // Filter by status
-      if (filter === "active" && !accommodation.isActive) return false
-      if (filter === "inactive" && accommodation.isActive) return false
-      if (filter === "featured" && !accommodation.isFeatured) return false
-      
-      // Filter by search query
-      if (searchQuery) {
-        const searchLower = searchQuery.toLowerCase()
-        return (
-          accommodation.name.toLowerCase().includes(searchLower) ||
-          accommodation.description.toLowerCase().includes(searchLower) ||
-          accommodation.address?.city?.toLowerCase().includes(searchLower) ||
-          accommodation.type.toLowerCase().includes(searchLower) ||
-          accommodation.amenities.some(amenity => amenity.toLowerCase().includes(searchLower))
-        )
-      }
-      
-      return true
-    })
-  }, [accommodations, filter, searchQuery])
-  
-  // Sort accommodations by name
-  const sortedAccommodations = useMemo(() => {
-    return [...filteredAccommodations].sort((a, b) => {
-      return a.name.localeCompare(b.name)
-    })
-  }, [filteredAccommodations])
-  
-  // Paginate accommodations
-  const totalPages = Math.ceil(sortedAccommodations.length / itemsPerPage)
-  const paginatedAccommodations = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return sortedAccommodations.slice(startIndex, startIndex + itemsPerPage)
-  }, [sortedAccommodations, currentPage])
-  
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    // Scroll to top on page change
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
-  
-  // Handle accommodation operations
-  const handleCreateAccommodation = async (accommodationData: Accommodation) => {
-    if (!user) {
-      toast.error("Você precisa estar logado para criar uma acomodação")
-      return
-    }
-    
-    try {
-      setIsSubmitting(true)
-      // Cast the string ID to the Convex Id<"users"> type
-      const userId = user.id as Id<"users"> 
-      await createAccommodation(accommodationData, userId)
-      toast.success("Acomodação criada com sucesso!")
-      setDialogOpen(false)
-      setSelectedAccommodation(null)
-    } catch (error) {
-      console.error("Erro ao criar acomodação:", error)
-      toast.error("Erro ao criar acomodação")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-  
-  const handleUpdateAccommodation = async (accommodationData: Accommodation) => {
-    try {
-      setIsSubmitting(true)
-      await updateAccommodation(accommodationData)
-      toast.success("Acomodação atualizada com sucesso!")
-      setDialogOpen(false)
-      setSelectedAccommodation(null)
-    } catch (error) {
-      console.error("Erro ao atualizar acomodação:", error)
-      toast.error("Erro ao atualizar acomodação")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-  
-  const handleDeleteAccommodation = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir esta acomodação?")) {
-      try {
-        await deleteAccommodation(id)
-        toast.success("Acomodação excluída com sucesso!")
-      } catch (error) {
-        console.error("Erro ao excluir acomodação:", error)
-        toast.error("Erro ao excluir acomodação")
-      }
-    }
-  }
-  
-  const handleToggleFeatured = async (id: string, featured: boolean) => {
-    try {
-      await toggleFeatured(id, featured)
-      toast.success(featured ? "Acomodação destacada!" : "Destaque removido!")
-    } catch (error) {
-      console.error("Erro ao alterar destaque da acomodação:", error)
-      toast.error("Erro ao alterar destaque")
-    }
-  }
-  
-  const handleToggleActive = async (id: string, active: boolean) => {
-    try {
-      await toggleActive(id, active)
-      toast.success(active ? "Acomodação ativada!" : "Acomodação desativada!")
-    } catch (error) {
-      console.error("Erro ao alterar status da acomodação:", error)
-      toast.error("Erro ao alterar status")
-    }
-  }
-  
-  // Dialog handlers
-  const openCreateDialog = () => {
-    setSelectedAccommodation(null)
-    setDialogOpen(true)
-  }
-  
-  const openEditDialog = (accommodation: Accommodation) => {
-    setSelectedAccommodation(accommodation)
-    setDialogOpen(true)
-  }
-  
-  const closeDialog = () => {
-    setDialogOpen(false)
-    setSelectedAccommodation(null)
-  }
-  
-  // Reset to first page when filter changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filter, searchQuery])
-  
   return (
-    <motion.div 
-      className="relative space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Background elements */}
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50 pointer-events-none -z-10" />
-      <div className="fixed top-1/4 right-1/3 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000 pointer-events-none -z-10" />
-      <div className="fixed bottom-1/4 left-1/3 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000 pointer-events-none -z-10" />
-
-      {/* Page content */}
-      <AccommodationsHeader openCreateDialog={openCreateDialog} />
-
-      {/* Filters and actions */}
-      <div className="bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-gray-100 shadow-sm">
-        <AccommodationsFilter 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filter={filter}
-          setFilter={setFilter}
-          showMobileFilter={showMobileFilter}
-          setShowMobileFilter={setShowMobileFilter}
-        />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent pb-1">
+            Hospedagens
+          </h1>
+          <p className="text-gray-600">
+            O módulo de hospedagens está temporariamente indisponível.
+          </p>
+        </div>
       </div>
 
-      {/* Accommodations grid */}
-      <div className="min-h-[300px]">
-        <AnimatePresence mode="wait">
-          <AccommodationsGrid
-            accommodations={paginatedAccommodations}
-            isLoading={isLoading}
-            searchQuery={searchQuery}
-            onEdit={openEditDialog}
-            onDelete={handleDeleteAccommodation}
-            onToggleFeatured={handleToggleFeatured}
-            onToggleActive={handleToggleActive}
-          />
-        </AnimatePresence>
-      </div>
-      
-      {/* Pagination */}
-      <AccommodationsPagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        handlePageChange={handlePageChange} 
-      />
+      {/* Main Content */}
+      <Card className="p-8">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-6">
+            <Home className="h-16 w-16 text-blue-600" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-gray-900 mb-4">
+            Módulo Temporariamente Indisponível
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="space-y-6 text-center">
+          <p className="text-lg text-gray-600 mb-8">
+            Estamos trabalhando para melhorar nossa plataforma de gestão de hospedagens. 
+            Enquanto isso, você pode gerenciar outros tipos de assets disponíveis.
+          </p>
 
-      {/* Create/Edit Accommodation Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[900px] bg-white/95 backdrop-blur-md border-none shadow-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-bold">
-              {selectedAccommodation ? "Editar Acomodação" : "Adicionar Nova Acomodação"}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedAccommodation 
-                ? "Atualize as informações da acomodação conforme necessário." 
-                : "Preencha as informações da nova acomodação. Clique em Criar Acomodação quando finalizar."}
-            </DialogDescription>
-          </DialogHeader>
-          <AccommodationForm 
-            accommodation={selectedAccommodation} 
-            onSubmit={selectedAccommodation ? handleUpdateAccommodation : handleCreateAccommodation}
-            onCancel={closeDialog}
-            loading={isSubmitting}
-          />
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+          {/* Alternative Management Options */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+            <Link href="/admin/dashboard/atividades">
+              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200">
+                <Activity className="h-6 w-6" />
+                <span className="text-sm font-medium">Atividades</span>
+              </Button>
+            </Link>
+
+            <Link href="/admin/dashboard/eventos">
+              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200">
+                <Calendar className="h-6 w-6" />
+                <span className="text-sm font-medium">Eventos</span>
+              </Button>
+            </Link>
+
+            <Link href="/admin/dashboard/restaurantes">
+              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200">
+                <Utensils className="h-6 w-6" />
+                <span className="text-sm font-medium">Restaurantes</span>
+              </Button>
+            </Link>
+
+            <Link href="/admin/dashboard/vehicles">
+              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200">
+                <Car className="h-6 w-6" />
+                <span className="text-sm font-medium">Veículos</span>
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Em breve:</strong> Voltaremos com ferramentas ainda melhores 
+              para gerenciar hospedagens e acomodações na plataforma.
+            </p>
+          </div>
+
+          <div className="mt-6">
+            <Link href="/admin/dashboard">
+              <Button variant="outline" className="w-full md:w-auto">
+                Voltar ao Dashboard Principal
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 } 

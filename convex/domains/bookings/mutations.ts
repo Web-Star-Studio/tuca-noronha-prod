@@ -24,6 +24,7 @@ import {
   isValidEmail,
   isValidPhone,
 } from "./utils";
+import { checkRateLimit, recordRateLimitAttempt } from "../../shared/rateLimiting";
 
 /**
  * Create activity booking
@@ -50,6 +51,15 @@ export const createActivityBooking = mutation({
 
     if (!user) {
       throw new Error("Usuário não encontrado");
+    }
+
+    // Check rate limit for booking creation
+    const rateLimitCheck = await checkRateLimit(ctx, user._id, "CREATE_BOOKING");
+    if (!rateLimitCheck.allowed) {
+      throw new Error(
+        `Limite de reservas excedido. ${rateLimitCheck.remainingAttempts} tentativas restantes. ` +
+        `Limite será resetado em ${new Date(rateLimitCheck.resetTime).toLocaleString()}`
+      );
     }
 
     // Validate customer info
@@ -109,6 +119,9 @@ export const createActivityBooking = mutation({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    // Record successful booking attempt for rate limiting
+    await recordRateLimitAttempt(ctx, user._id, "CREATE_BOOKING");
 
     return {
       bookingId,
@@ -392,7 +405,10 @@ export const updateActivityBooking = mutation({
  * Cancel activity booking
  */
 export const cancelActivityBooking = mutation({
-  args: { bookingId: v.id("activityBookings") },
+  args: { 
+    bookingId: v.id("activityBookings"),
+    reason: v.optional(v.string()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
@@ -404,9 +420,26 @@ export const cancelActivityBooking = mutation({
       throw new Error("Reserva já foi cancelada");
     }
 
+    const activity = await ctx.db.get(booking.activityId);
+    if (!activity) {
+      throw new Error("Atividade não encontrada");
+    }
+
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CANCELED,
       updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingCancellationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "activity",
+      assetName: activity.title,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      reason: args.reason,
     });
 
     return null;
@@ -417,7 +450,10 @@ export const cancelActivityBooking = mutation({
  * Cancel event booking
  */
 export const cancelEventBooking = mutation({
-  args: { bookingId: v.id("eventBookings") },
+  args: { 
+    bookingId: v.id("eventBookings"),
+    reason: v.optional(v.string()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
@@ -429,9 +465,26 @@ export const cancelEventBooking = mutation({
       throw new Error("Reserva já foi cancelada");
     }
 
+    const event = await ctx.db.get(booking.eventId);
+    if (!event) {
+      throw new Error("Evento não encontrado");
+    }
+
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CANCELED,
       updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingCancellationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "event",
+      assetName: event.title,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      reason: args.reason,
     });
 
     return null;
@@ -442,7 +495,10 @@ export const cancelEventBooking = mutation({
  * Cancel restaurant reservation
  */
 export const cancelRestaurantReservation = mutation({
-  args: { reservationId: v.id("restaurantReservations") },
+  args: { 
+    reservationId: v.id("restaurantReservations"),
+    reason: v.optional(v.string()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.reservationId);
@@ -454,8 +510,28 @@ export const cancelRestaurantReservation = mutation({
       throw new Error("Reserva já foi cancelada");
     }
 
+    const restaurant = await ctx.db.get(reservation.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
     await ctx.db.patch(args.reservationId, {
       status: BOOKING_STATUS.CANCELED,
+    });
+
+    // Schedule cancellation notification
+    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+      userId: reservation.userId,
+      type: "booking_canceled",
+      title: "Reserva de Restaurante Cancelada ❌",
+      message: `Sua reserva no "${restaurant.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      relatedId: reservation._id,
+      relatedType: "restaurant_booking",
+      data: {
+        confirmationCode: reservation.confirmationCode,
+        bookingType: "restaurant",
+        assetName: restaurant.name,
+      },
     });
 
     return null;
@@ -466,7 +542,10 @@ export const cancelRestaurantReservation = mutation({
  * Cancel vehicle booking
  */
 export const cancelVehicleBooking = mutation({
-  args: { bookingId: v.id("vehicleBookings") },
+  args: { 
+    bookingId: v.id("vehicleBookings"),
+    reason: v.optional(v.string()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
@@ -478,9 +557,28 @@ export const cancelVehicleBooking = mutation({
       throw new Error("Reserva já foi cancelada");
     }
 
+    const vehicle = await ctx.db.get(booking.vehicleId);
+    if (!vehicle) {
+      throw new Error("Veículo não encontrado");
+    }
+
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CANCELED,
       updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+      userId: booking.userId,
+      type: "booking_canceled",
+      title: "Reserva de Veículo Cancelada ❌",
+      message: `Sua reserva para "${vehicle.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      relatedId: booking._id,
+      relatedType: "vehicle_booking",
+      data: {
+        bookingType: "vehicle",
+        assetName: vehicle.name,
+      },
     });
 
     return null;
@@ -546,17 +644,16 @@ export const confirmActivityBooking = mutation({
     });
 
     // Schedule notification sending action
-    // TODO: Uncomment when notifications domain is implemented
-    // await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-    //   userId: booking.userId,
-    //   bookingId: booking._id,
-    //   bookingType: "activity",
-    //   assetName: activity.title,
-    //   confirmationCode: booking.confirmationCode,
-    //   customerEmail: booking.customerInfo.email,
-    //   customerName: booking.customerInfo.name,
-    //   partnerName: user.name,
-    // });
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "activity",
+      assetName: activity.title,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      partnerName: user.name,
+    });
 
     return null;
   },
@@ -621,17 +718,16 @@ export const confirmEventBooking = mutation({
     });
 
     // Schedule notification sending action
-    // TODO: Uncomment when notifications domain is implemented
-    // await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-    //   userId: booking.userId,
-    //   bookingId: booking._id,
-    //   bookingType: "event",
-    //   assetName: event.title,
-    //   confirmationCode: booking.confirmationCode,
-    //   customerEmail: booking.customerInfo.email,
-    //   customerName: booking.customerInfo.name,
-    //   partnerName: user.name,
-    // });
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "event",
+      assetName: event.title,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      partnerName: user.name,
+    });
 
     return null;
   },
@@ -695,17 +791,16 @@ export const confirmRestaurantReservation = mutation({
     });
 
     // Schedule notification sending action
-    // TODO: Uncomment when notifications domain is implemented
-    // await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-    //   userId: reservation.userId,
-    //   bookingId: reservation._id,
-    //   bookingType: "restaurant",
-    //   assetName: restaurant.name,
-    //   confirmationCode: reservation.confirmationCode,
-    //   customerEmail: reservation.email,
-    //   customerName: reservation.name,
-    //   partnerName: user.name,
-    // });
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+      userId: reservation.userId,
+      bookingId: reservation._id,
+      bookingType: "restaurant",
+      assetName: restaurant.name,
+      confirmationCode: reservation.confirmationCode,
+      customerEmail: reservation.email,
+      customerName: reservation.name,
+      partnerName: user.name,
+    });
 
     return null;
   },
@@ -770,20 +865,19 @@ export const confirmVehicleBooking = mutation({
     });
 
     // Create basic notification for vehicle bookings since they don't have confirmation codes or customer info fields
-    // TODO: Uncomment when notifications domain is implemented
-    // await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
-    //   userId: booking.userId,
-    //   type: "booking_confirmed",
-    //   title: "Reserva de Veículo Confirmada! 🎉",
-    //   message: `Sua reserva para "${vehicle.name}" foi confirmada!`,
-    //   relatedId: booking._id,
-    //   relatedType: "vehicle_booking",
-    //   data: {
-    //     bookingType: "vehicle",
-    //     assetName: vehicle.name,
-    //     partnerName: user.name,
-    //   },
-    // });
+    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+      userId: booking.userId,
+      type: "booking_confirmed",
+      title: "Reserva de Veículo Confirmada! 🎉",
+      message: `Sua reserva para "${vehicle.name}" foi confirmada!`,
+      relatedId: booking._id,
+      relatedType: "vehicle_booking",
+      data: {
+        bookingType: "vehicle",
+        assetName: vehicle.name,
+        partnerName: user.name,
+      },
+    });
 
     return null;
   },

@@ -720,6 +720,13 @@ export default defineSchema({
       bookingType: v.optional(v.string()),
       assetName: v.optional(v.string()),
       partnerName: v.optional(v.string()),
+      // Novos campos para chat
+      senderName: v.optional(v.string()),
+      messagePreview: v.optional(v.string()),
+      contextType: v.optional(v.string()),
+      assetType: v.optional(v.string()),
+      bookingCode: v.optional(v.string()),
+      travelerName: v.optional(v.string()),
     })),
     createdAt: v.number(),                      // When the notification was created
     readAt: v.optional(v.number()),             // When it was read (if applicable)
@@ -728,6 +735,18 @@ export default defineSchema({
     .index("by_user_unread", ["userId", "isRead"])
     .index("by_user_type", ["userId", "type"])
     .index("by_created", ["createdAt"]),
+
+  // Rate Limiting System
+  rateLimits: defineTable({
+    key: v.string(),                            // Unique identifier for the rate limit (userId_operation_identifier)
+    userId: v.id("users"),                      // User ID
+    operation: v.string(),                      // Type of operation being rate limited
+    timestamp: v.number(),                      // When the attempt was made
+    identifier: v.optional(v.string()),         // Additional identifier (e.g., IP address)
+  })
+    .index("by_key_timestamp", ["key", "timestamp"])
+    .index("by_user", ["userId"])
+    .index("by_timestamp", ["timestamp"]),
 
   // Packages System
   packages: defineTable({

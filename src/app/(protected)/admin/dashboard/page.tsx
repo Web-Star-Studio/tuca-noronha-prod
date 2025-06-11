@@ -16,7 +16,13 @@ import {
   Shield,
   MessageSquare,
   Database,
-  AlertTriangle
+  AlertTriangle,
+  MessageCircle,
+  Star,
+  DollarSign,
+  BarChart3,
+  PieChart,
+  Bell
 } from "lucide-react"
 import { useOrganization, useOrganizationAssets } from "@/lib/providers/organization-context"
 import { ChatList } from "@/components/chat/ChatList"
@@ -24,6 +30,7 @@ import Link from "next/link"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
+import { ChatNotifications } from "@/components/dashboard/ChatNotifications"
 
 // Master Dashboard Component for system-wide view
 function MasterDashboard() {
@@ -470,14 +477,194 @@ function OrganizationDashboard() {
   )
 }
 
+function PartnerDashboard() {
+  const { activeOrganization, organizations } = useOrganization();
+  
+  // Buscar estatísticas gerais do partner
+  const partnerStats = useQuery(api.domains.rbac.queries.getPartnerStats);
+  
+  // Se não tem organização ativa, mostrar página de seleção
+  if (!activeOrganization) {
+    return <EmptyStateCard />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">
+            Bem-vindo ao painel de controle - {activeOrganization.name}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/dashboard/chat">
+            <Button variant="outline" className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Chat
+            </Button>
+          </Link>
+          <Link href="/admin/dashboard/novo-empreendimento">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Empreendimento
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      {partnerStats && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Assets</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{partnerStats.totalAssets}</div>
+              <p className="text-xs text-muted-foreground">
+                +{partnerStats.recentAssets} este mês
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Reservas do Mês</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{partnerStats.monthlyBookings}</div>
+              <p className="text-xs text-muted-foreground">
+                +{partnerStats.bookingGrowth}% vs mês anterior
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">R$ {partnerStats.monthlyRevenue?.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                +{partnerStats.revenueGrowth}% vs mês anterior
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avaliação Média</CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{partnerStats.averageRating}</div>
+              <p className="text-xs text-muted-foreground">
+                De {partnerStats.totalReviews} avaliações
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Chat Notifications */}
+        <div className="lg:col-span-1">
+          <ChatNotifications 
+            maxItems={5} 
+            showTitle={true}
+            className="h-fit"
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Ações Rápidas</CardTitle>
+            <CardDescription>
+              Acesso rápido às principais funcionalidades
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <Link href={`/admin/dashboard/${activeOrganization.type === 'restaurant' ? 'restaurantes' : 
+                          activeOrganization.type === 'event_service' ? 'eventos' :
+                          activeOrganization.type === 'activity_service' ? 'atividades' :
+                          activeOrganization.type === 'rental_service' ? 'veiculos' :
+                          activeOrganization.type === 'accommodation' ? 'hospedagens' : 'assets'}`}>
+              <Button variant="outline" className="w-full justify-start">
+                <Building2 className="mr-2 h-4 w-4" />
+                Gerenciar Assets
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/reservas">
+              <Button variant="outline" className="w-full justify-start">
+                <Calendar className="mr-2 h-4 w-4" />
+                Ver Reservas
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/colaboradores">
+              <Button variant="outline" className="w-full justify-start">
+                <Users className="mr-2 h-4 w-4" />
+                Colaboradores
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/metricas">
+              <Button variant="outline" className="w-full justify-start">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Relatórios
+              </Button>
+            </Link>
+
+            <Link href="/admin/dashboard/chat">
+              <Button variant="outline" className="w-full justify-start">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Central de Chat
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/configuracoes">
+              <Button variant="outline" className="w-full justify-start">
+                <Building2 className="mr-2 h-4 w-4" />
+                Configurações
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useCurrentUser()
+  const { activeOrganization } = useOrganization()
+  
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
 
-  // Se o usuário for master, mostrar dashboard master
-  if (user?.role === "master") {
+  // Masters get the system-wide view
+  if (user.role === "master") {
     return <MasterDashboard />
   }
 
-  // Caso contrário, mostrar dashboard normal baseado em organização
-  return <OrganizationDashboard />
+  // Partners and employees get organization-specific dashboards
+  if (user.role === "partner" || user.role === "employee") {
+    return <PartnerDashboard />
+  }
+
+  // Fallback - shouldn't happen
+  return <EmptyStateCard />
 }

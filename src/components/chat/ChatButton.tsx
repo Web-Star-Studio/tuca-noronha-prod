@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { ChatWindow } from "./ChatWindow";
 import {
   useFindOrCreateChatRoom,
@@ -27,6 +28,7 @@ interface ChatButtonProps {
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
   className?: string;
+  customLabel?: string; // Custom text for the button
   
   // Props de contexto (opcional - para reservas)
   bookingId?: string;
@@ -50,6 +52,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   size = "md",
   showLabel = true,
   className = "",
+  customLabel,
   bookingId,
   bookingContext,
 }) => {
@@ -169,7 +172,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         className={buttonClasses}
       >
         {getButtonIcon()}
-        {showLabel && <span className="ml-2">{getButtonText()}</span>}
+        {showLabel && <span className="ml-2">{customLabel || getButtonText()}</span>}
       </Button>
 
       {/* Diálogo para nova conversa */}
@@ -237,6 +240,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
       {/* Janela de chat */}
       <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] p-0">
+          <VisuallyHidden>
+            <DialogHeader>
+              <DialogTitle>Chat com Partner</DialogTitle>
+            </DialogHeader>
+          </VisuallyHidden>
           {activeChatRoomId && (
             <ChatWindow
               chatRoomId={activeChatRoomId}

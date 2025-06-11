@@ -87,6 +87,7 @@ import type * as packages from "../packages.js";
 import type * as rbac from "../rbac.js";
 import type * as reviews from "../reviews.js";
 import type * as shared_index from "../shared/index.js";
+import type * as shared_rateLimiting from "../shared/rateLimiting.js";
 import type * as shared_rbac from "../shared/rbac.js";
 import type * as shared_validators from "../shared/validators.js";
 import type * as types from "../types.js";
@@ -176,6 +177,7 @@ declare const fullApi: ApiFromModules<{
   rbac: typeof rbac;
   reviews: typeof reviews;
   "shared/index": typeof shared_index;
+  "shared/rateLimiting": typeof shared_rateLimiting;
   "shared/rbac": typeof shared_rbac;
   "shared/validators": typeof shared_validators;
   types: typeof types;

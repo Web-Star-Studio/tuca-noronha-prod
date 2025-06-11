@@ -244,10 +244,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
         </div>
       </div>
 

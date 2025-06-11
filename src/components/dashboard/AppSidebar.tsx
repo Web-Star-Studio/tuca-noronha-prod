@@ -53,11 +53,7 @@ const data = {
       url: "/admin/dashboard/restaurantes",
       icon: Utensils,
     },
-    {
-      title: "Hospedagens",
-      url: "/admin/dashboard/hospedagens",
-      icon: Building,
-    },
+
     {
       title: "Eventos",
       url: "/admin/dashboard/eventos",

@@ -16,7 +16,6 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
     { path: "/meu-painel", label: "Meu Painel", icon: User },
     { path: "/", label: "Home", icon: Home },
     { path: "/atividades", label: "Atividades", icon: Compass },
-    { path: "/hospedagens", label: "Hospedagens", icon: Hotel },
     { path: "/pacotes", label: "Pacotes", icon: Package },
     { path: "/eventos", label: "Eventos", icon: Calendar },
     { path: "/restaurantes", label: "Restaurantes", icon: UtensilsCrossed },
