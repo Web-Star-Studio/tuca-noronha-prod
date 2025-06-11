@@ -64,6 +64,8 @@ import type * as domains_rbac_query from "../domains/rbac/query.js";
 import type * as domains_rbac_test from "../domains/rbac/test.js";
 import type * as domains_rbac_types from "../domains/rbac/types.js";
 import type * as domains_rbac_utils from "../domains/rbac/utils.js";
+import type * as domains_recommendations_index from "../domains/recommendations/index.js";
+import type * as domains_recommendations_queries from "../domains/recommendations/queries.js";
 import type * as domains_restaurants_index from "../domains/restaurants/index.js";
 import type * as domains_restaurants_mutations from "../domains/restaurants/mutations.js";
 import type * as domains_restaurants_queries from "../domains/restaurants/queries.js";
@@ -82,6 +84,7 @@ import type * as domains_vehicles_mutations from "../domains/vehicles/mutations.
 import type * as domains_vehicles_queries from "../domains/vehicles/queries.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
+import type * as openaiActions from "../openaiActions.js";
 import type * as packageComparison from "../packageComparison.js";
 import type * as packages from "../packages.js";
 import type * as rbac from "../rbac.js";
@@ -154,6 +157,8 @@ declare const fullApi: ApiFromModules<{
   "domains/rbac/test": typeof domains_rbac_test;
   "domains/rbac/types": typeof domains_rbac_types;
   "domains/rbac/utils": typeof domains_rbac_utils;
+  "domains/recommendations/index": typeof domains_recommendations_index;
+  "domains/recommendations/queries": typeof domains_recommendations_queries;
   "domains/restaurants/index": typeof domains_restaurants_index;
   "domains/restaurants/mutations": typeof domains_restaurants_mutations;
   "domains/restaurants/queries": typeof domains_restaurants_queries;
@@ -172,6 +177,7 @@ declare const fullApi: ApiFromModules<{
   "domains/vehicles/queries": typeof domains_vehicles_queries;
   functions: typeof functions;
   http: typeof http;
+  openaiActions: typeof openaiActions;
   packageComparison: typeof packageComparison;
   packages: typeof packages;
   rbac: typeof rbac;

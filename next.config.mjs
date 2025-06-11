@@ -4,6 +4,8 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   trailingSlash: true,
+  // Timeout de geração de páginas estáticas (em segundos)
+  staticPageGenerationTimeout: 1000,
   images: {
     remotePatterns: [
       {

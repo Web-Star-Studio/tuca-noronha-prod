@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:openai": "node scripts/test-openai.js",
+    "test:integration": "node scripts/test-convex-integration.js",
     "browser-tools-server": "npx @agentdeskai/browser-tools-server@latest"
   },
   "dependencies": {
@@ -48,10 +50,12 @@
     "convex-helpers": "^0.1.86",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
+    "dotenv": "^16.5.0",
     "framer-motion": "^12.16.0",
     "lucide-react": "^0.507.0",
     "next": "15.3.2",
     "next-themes": "^0.4.6",
+    "openai": "^4.78.0",
     "react": "19.1.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "19.1.0",

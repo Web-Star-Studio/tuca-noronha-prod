@@ -18,6 +18,56 @@ export type TravelPreferences = {
   specialRequirements?: string;
 };
 
+// Tipo para dados do PersonalizationChatbot
+export type SmartPreferences = {
+  tripDuration: string;
+  companions: string;
+  interests: string[];
+  budget: number;
+  personalityProfile: {
+    adventureLevel: number;
+    luxuryPreference: number;
+    socialLevel: number;
+    activityIntensity: number;
+  };
+  moodTags: string[];
+  experienceGoals: string[];
+};
+
+// Função para converter SmartPreferences para TravelPreferences
+function convertSmartToTravelPreferences(smartPrefs: SmartPreferences): TravelPreferences {
+  // Mapear moodTags e experienceGoals para preferências específicas
+  const accommodation = smartPrefs.personalityProfile.luxuryPreference > 70 ? 'resort' :
+                       smartPrefs.personalityProfile.luxuryPreference > 40 ? 'pousada' : 'casa';
+                       
+  const dining: string[] = [];
+  if (smartPrefs.moodTags.includes('tranquil')) dining.push('frutos_mar');
+  if (smartPrefs.moodTags.includes('adventure')) dining.push('regional');
+  if (smartPrefs.moodTags.includes('romantic')) dining.push('jantar_especial');
+  if (smartPrefs.experienceGoals.includes('culinary-discovery')) dining.push('gastronomia_local');
+  
+  const activities: string[] = [];
+  if (smartPrefs.personalityProfile.adventureLevel > 60) activities.push('mergulho');
+  if (smartPrefs.moodTags.includes('adventure')) activities.push('trilhas_guiadas');
+  if (smartPrefs.moodTags.includes('tranquil')) activities.push('passeio_barco');
+  if (smartPrefs.experienceGoals.includes('adventure-memories')) activities.push('atividades_radicais');
+  if (smartPrefs.experienceGoals.includes('relaxation')) activities.push('contemplacao');
+
+  return {
+    tripDuration: smartPrefs.tripDuration,
+    tripDate: new Date().toISOString().split('T')[0], // Data atual como fallback
+    companions: smartPrefs.companions,
+    interests: smartPrefs.interests,
+    budget: smartPrefs.budget,
+    preferences: {
+      accommodation,
+      dining: dining.length > 0 ? dining : ['regional'],
+      activities: activities.length > 0 ? activities : ['passeio_barco']
+    },
+    specialRequirements: undefined
+  };
+}
+
 export function useConvexPreferences() {
   const { user } = useUser();
   const clerkId = user?.id;
@@ -45,20 +95,41 @@ export function useConvexPreferences() {
   // Mutação para excluir as preferências do usuário
   const deletePreferences = useMutation(api.userPreferences.deleteUserPreferences);
   
-  // Função para salvar as preferências
-  const saveUserPreferences = useCallback(async (preferencesData: TravelPreferences) => {
+  // Função para salvar as preferências (aceita ambos os formatos)
+  const saveUserPreferences = useCallback(async (preferencesData: TravelPreferences | SmartPreferences) => {
     if (!convexUserId) {
       setError("É necessário estar logado para salvar preferências");
       return null;
     }
     
     try {
+      console.log('🔍 Dados recebidos:', preferencesData);
+      
+      // Detectar o tipo de dados e converter se necessário
+      let travelPrefs: TravelPreferences;
+      
+      if ('personalityProfile' in preferencesData) {
+        // É SmartPreferences, precisa converter
+        console.log('🔄 Convertendo SmartPreferences para TravelPreferences');
+        travelPrefs = convertSmartToTravelPreferences(preferencesData);
+        console.log('✅ Dados convertidos:', travelPrefs);
+      } else {
+        // Já é TravelPreferences
+        console.log('✅ Dados já estão no formato TravelPreferences');
+        travelPrefs = preferencesData;
+      }
+      
+      console.log('📤 Enviando para Convex:', { userId: convexUserId, preferences: travelPrefs });
+      
       const result = await savePreferences({ 
         userId: convexUserId, 
-        preferences: preferencesData 
+        preferences: travelPrefs 
       });
+      
+      console.log('✅ Resultado do Convex:', result);
       return result;
     } catch (err) {
+      console.error('❌ Erro ao salvar preferências:', err);
       setError(err instanceof Error ? err.message : "Erro ao salvar preferências");
       return null;
     }

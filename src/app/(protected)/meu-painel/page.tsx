@@ -33,6 +33,7 @@ import OverviewSection from './components/OverviewSection'
 import FloatingSupportButton from './components/FloatingSupportButton'
 import RecommendationCard from './components/RecommendationCard'
 import FavoritesSection from '@/components/profile/FavoritesSection'
+import AIRecommendationsSection from '@/components/AIRecommendationsSection'
 
 // Mock data para recomendações
 const mockRecommendations = [
@@ -118,22 +119,7 @@ export default function Dashboard() {
       case 'pacotes':
         return <PackageRequestsSection />
       case 'recomendacoes':
-        return (
-          <div className="space-y-6">
-            <Card className="bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-purple-700">Recomendações Personalizadas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockRecommendations.map((item) => (
-                    <RecommendationCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
+        return <AIRecommendationsSection />
       case 'favoritos':
         return <FavoritesSection />
       case 'personalizacao':
