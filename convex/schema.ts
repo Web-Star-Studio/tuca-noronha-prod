@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { cachedRecommendationsTable } from "./domains/recommendations/schema";
 
 export default defineSchema({
   authAccounts: defineTable({
@@ -1026,4 +1027,7 @@ export default defineSchema({
     .index("by_asset", ["assetId", "assetType"])
     .index("by_organization_type", ["organizationId", "assetType"])
     .index("by_partner_type", ["partnerId", "assetType"]),
+
+  // Cache de Recomendações
+  cachedRecommendations: cachedRecommendationsTable,
 });

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useAction, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useConvexPreferences, SmartPreferences } from './useConvexPreferences';
+import { useCachedRecommendations } from './useCachedRecommendations';
 
 // Usar o tipo SmartPreferences como UserPreferences para consistência
 type UserPreferences = SmartPreferences;
@@ -49,13 +50,28 @@ export const useAIRecommendations = () => {
   const [personalizedMessage, setPersonalizedMessage] = useState<string>('');
   const [processingTime, setProcessingTime] = useState<number>(0);
   const [isUsingAI, setIsUsingAI] = useState<boolean>(false);
+  const [isCacheHit, setIsCacheHit] = useState<boolean>(false);
+  const [cacheAge, setCacheAge] = useState<number>(0);
   const { preferences } = useConvexPreferences();
+  
+  // Hook de cache para otimização
+  const {
+    getRecommendationsWithCache,
+    invalidateOnPreferenceChange,
+    cacheStats,
+    cacheHitRate,
+    isCheckingCache,
+  } = useCachedRecommendations({
+    enableCache: true,
+    cacheDurationHours: 24,
+    autoInvalidateOnPreferenceChange: true,
+  });
   
   // Hook do Convex para chamar a action OpenAI
   const generateAIRecommendationsAction = useAction(api.openaiActions.generateAIRecommendations);
   
   // Query para buscar assets reais do Convex
-  const realAssets = useQuery(api.domains.recommendations.queries.getAssetsForRecommendations, {
+  const realAssets = useQuery(api.recommendations.getAssetsForRecommendations, {
     limit: 50,
   });
 
@@ -278,113 +294,122 @@ export const useAIRecommendations = () => {
     category?: string,
     limit: number = 6
   ) => {
-    const startTime = Date.now();
     setIsLoading(true);
     setError(null);
-    setIsUsingAI(false);
+    setIsCacheHit(false);
+    setCacheAge(0);
 
     try {
       // Converter perfil para formato correto se necessário
       const smartProfile = convertTravelToSmartPreferences(userProfile);
+      
       // Verificar se temos assets reais disponíveis
       if (!realAssets || realAssets.length === 0) {
         setError('Nenhum asset disponível no momento. Tente novamente mais tarde.');
         return [];
       }
 
-      // 1. Gerar recomendações base com algoritmo tradicional usando assets reais
-      const baseRecommendations = transformRealAssets(realAssets, smartProfile, category)
-        .slice(0, limit);
+      // Usar o sistema de cache inteligente
+      const result = await getRecommendationsWithCache(
+        smartProfile,
+        async () => {
+          // Esta função só executa se NÃO houver cache válido
+          const startTime = Date.now();
 
-      if (baseRecommendations.length === 0) {
-        const fallbackMessage = category 
-          ? `Nenhum ${category} encontrado que corresponda ao seu perfil` 
-          : 'Nenhuma recomendação encontrada para seu perfil';
-        
-        setPersonalizedMessage(fallbackMessage);
-        setRecommendations([]);
-        return [];
-      }
+          // 1. Gerar recomendações base com algoritmo tradicional usando assets reais
+          const baseRecommendations = transformRealAssets(realAssets, smartProfile, category)
+            .slice(0, limit);
 
-      // 2. Tentar melhorar com OpenAI (se disponível)
-      try {
-        setIsUsingAI(true);
-        
-        const aiResult = await generateAIRecommendationsAction({
-          userPreferences: smartProfile,
-          baseRecommendations,
-        });
+          if (baseRecommendations.length === 0) {
+            const fallbackMessage = category 
+              ? `Nenhum ${category} encontrado que corresponda ao seu perfil` 
+              : 'Nenhuma recomendação encontrada para seu perfil';
+            
+            throw new Error(fallbackMessage);
+          }
 
-        const totalTime = Date.now() - startTime;
-        setProcessingTime(totalTime);
-        
-        // Mesclar insights da IA com dados reais
-        console.log('🤖 IA retornou:', aiResult.recommendations.length, 'recomendações processadas');
-        console.log('📊 Base tinha:', baseRecommendations.length, 'recomendações');
-        
-        // As recomendações já vêm processadas da OpenAI action sem duplicação
-        const enhancedRecommendations = aiResult.recommendations;
-        
-        setRecommendations(enhancedRecommendations);
-        setPersonalizedMessage(aiResult.personalizedMessage || '🌊 Recomendações inteligentes baseadas em dados reais!');
-        
-        return enhancedRecommendations;
-        
-      } catch (aiError) {
-        console.log("OpenAI indisponível, usando algoritmo tradicional:", aiError);
-        
-        // Fallback para algoritmo tradicional com dados reais
-        console.log('🔄 Fallback para algoritmo tradicional');
-        console.log('📊 Recomendações base (sem IA):', baseRecommendations.length);
-        
-        // Verificar se há duplicação mesmo sem IA
-        const baseIds = baseRecommendations.map(rec => rec.id);
-        const uniqueBaseIds = [...new Set(baseIds)];
-        if (baseIds.length !== uniqueBaseIds.length) {
-          console.error('❌ PROBLEMA: Duplicação já existe nas recomendações base!');
-          console.error('- Base IDs:', baseIds);
-          console.error('- Únicos:', uniqueBaseIds);
-        }
-        
-        setIsUsingAI(false);
-        setRecommendations(baseRecommendations);
-        
-        const avgScore = Math.round(
-          baseRecommendations.reduce((acc, rec) => acc + rec.matchScore, 0) / baseRecommendations.length
-        );
-        
-        setPersonalizedMessage(
-          `🎯 ${baseRecommendations.length} recomendações encontradas com ${avgScore}% de compatibilidade baseadas em dados reais do sistema!`
-        );
-        
-        return baseRecommendations;
-      }
+          // 2. Tentar melhorar com OpenAI (se disponível)
+          try {
+            const aiResult = await generateAIRecommendationsAction({
+              userPreferences: smartProfile,
+              baseRecommendations,
+            });
+
+            const totalTime = Date.now() - startTime;
+            
+            console.log('🤖 IA retornou:', aiResult.recommendations.length, 'recomendações processadas');
+            console.log('📊 Base tinha:', baseRecommendations.length, 'recomendações');
+            
+            return {
+              recommendations: aiResult.recommendations,
+              personalizedMessage: aiResult.personalizedMessage || '🌊 Recomendações inteligentes baseadas em dados reais!',
+              processingTime: totalTime,
+              isUsingAI: true,
+              confidenceScore: aiResult.confidenceScore,
+            };
+            
+          } catch (aiError) {
+            console.log("OpenAI indisponível, usando algoritmo tradicional:", aiError);
+            
+            const totalTime = Date.now() - startTime;
+            const avgScore = Math.round(
+              baseRecommendations.reduce((acc, rec) => acc + rec.matchScore, 0) / baseRecommendations.length
+            );
+            
+            return {
+              recommendations: baseRecommendations,
+              personalizedMessage: `🎯 ${baseRecommendations.length} recomendações encontradas com ${avgScore}% de compatibilidade baseadas em dados reais do sistema!`,
+              processingTime: totalTime,
+              isUsingAI: false,
+            };
+          }
+        },
+        category
+      );
+
+      // Atualizar states com resultado (do cache ou recém-gerado)
+      setRecommendations(result.recommendations);
+      setPersonalizedMessage(result.personalizedMessage);
+      setProcessingTime(result.processingTime);
+      setIsUsingAI(result.isUsingAI);
+      setIsCacheHit(result.isCacheHit);
+      setCacheAge(result.cacheAge);
+
+      return result.recommendations;
 
     } catch (err) {
-      const errorMessage = 'Erro ao gerar recomendações. Verifique sua conexão e tente novamente.';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao gerar recomendações. Verifique sua conexão e tente novamente.';
       setError(errorMessage);
+      setPersonalizedMessage('');
+      setRecommendations([]);
       throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
-      const totalTime = Date.now() - startTime;
-      setProcessingTime(totalTime);
     }
-  }, [realAssets, transformRealAssets, generateAIRecommendationsAction, convertTravelToSmartPreferences]);
+  }, [realAssets, transformRealAssets, generateAIRecommendationsAction, convertTravelToSmartPreferences, getRecommendationsWithCache]);
 
   return {
     recommendations,
-    isLoading: isLoading || realAssets === undefined,
+    isLoading: isLoading || realAssets === undefined || isCheckingCache,
     error,
     personalizedMessage,
     processingTime,
     isUsingAI,
     generateRecommendations,
+    // Funcionalidades de cache
+    invalidateCache: invalidateOnPreferenceChange,
+    isCacheHit,
+    cacheAge,
+    cacheStats,
+    cacheHitRate,
     clearRecommendations: () => {
       setRecommendations([]);
       setPersonalizedMessage('');
       setError(null);
       setProcessingTime(0);
       setIsUsingAI(false);
+      setIsCacheHit(false);
+      setCacheAge(0);
     },
     // Adicionar estatísticas dos assets reais
     assetsStats: {

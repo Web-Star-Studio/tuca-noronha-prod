@@ -89,7 +89,12 @@ export default function AIRecommendations({ className }: AIRecommendationsProps)
     isUsingAI, 
     generateRecommendations,
     clearRecommendations,
-    assetsStats
+    assetsStats,
+    // Novas propriedades de cache
+    isCacheHit,
+    cacheAge,
+    cacheStats,
+    cacheHitRate
   } = useAIRecommendations();
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -424,10 +429,23 @@ export default function AIRecommendations({ className }: AIRecommendationsProps)
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Recomendações Inteligentes</h2>
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-gray-900">Recomendações Inteligentes</h2>
+            {isCacheHit && (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                <Clock className="h-3 w-3 mr-1" />
+                Cache {cacheAge}min
+              </Badge>
+            )}
+          </div>
           {personalizedMessage && (
             <p className="text-gray-600 mt-1">{personalizedMessage}</p>
+          )}
+          {isCacheHit && cacheAge > 0 && (
+            <p className="text-xs text-blue-600 mt-1">
+              ⚡ Carregado instantaneamente do cache (atualizado há {cacheAge} minutos)
+            </p>
           )}
         </div>
         <Button 
@@ -442,7 +460,7 @@ export default function AIRecommendations({ className }: AIRecommendationsProps)
 
       {/* Estatísticas */}
       {recommendations.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
@@ -465,6 +483,14 @@ export default function AIRecommendations({ className }: AIRecommendationsProps)
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-orange-600">{stats.aiEnhanced}</div>
               <p className="text-sm text-gray-600">IA Enhanced</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-cyan-600">
+                {cacheHitRate > 0 ? `${cacheHitRate.toFixed(0)}%` : '0%'}
+              </div>
+              <p className="text-sm text-gray-600">Cache Hit Rate</p>
             </CardContent>
           </Card>
         </div>

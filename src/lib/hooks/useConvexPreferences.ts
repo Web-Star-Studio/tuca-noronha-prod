@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 import { useUser } from '@clerk/nextjs';
 import type { Id } from '@/../convex/_generated/dataModel';
+import { toast } from 'sonner';
 
 export type TravelPreferences = {
   tripDuration: string;
@@ -95,6 +96,9 @@ export function useConvexPreferences() {
   // Mutação para excluir as preferências do usuário
   const deletePreferences = useMutation(api.userPreferences.deleteUserPreferences);
   
+  // Mutação para invalidar cache de recomendações
+  const invalidateRecommendationsCache = useMutation(api.recommendations.invalidateUserCache);
+  
   // Função para salvar as preferências (aceita ambos os formatos)
   const saveUserPreferences = useCallback(async (preferencesData: TravelPreferences | SmartPreferences) => {
     if (!convexUserId) {
@@ -127,13 +131,28 @@ export function useConvexPreferences() {
       });
       
       console.log('✅ Resultado do Convex:', result);
+      
+      // Invalidar cache de recomendações quando preferências são atualizadas
+      try {
+        await invalidateRecommendationsCache({});
+        console.log('🗑️ Cache de recomendações invalidado após atualização de preferências');
+        
+        toast.success('Cache atualizado!', {
+          description: 'Suas próximas recomendações refletirão as novas preferências',
+          duration: 2000,
+        });
+      } catch (cacheError) {
+        console.warn('⚠️ Erro ao invalidar cache:', cacheError);
+        // Não falha o processo principal
+      }
+      
       return result;
     } catch (err) {
       console.error('❌ Erro ao salvar preferências:', err);
       setError(err instanceof Error ? err.message : "Erro ao salvar preferências");
       return null;
     }
-  }, [convexUserId, savePreferences]);
+  }, [convexUserId, savePreferences, invalidateRecommendationsCache]);
   
   // Função para excluir as preferências
   const removeUserPreferences = useCallback(async () => {
