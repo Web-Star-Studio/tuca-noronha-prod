@@ -69,6 +69,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { OrganizationProvider, useOrganization } from "@/lib/providers/organization-context"
+import type { Organization } from "@/lib/providers/organization-context"
 import { useMutation } from "convex/react"
 import { api } from "../../../../../convex/_generated/api"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
@@ -108,7 +109,25 @@ function OrganizationSwitcher() {
   const { organizations, activeOrganization, setActiveOrganization } = useOrganization()
   const [open, setOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useCurrentUser()
+
+  // Função para trocar organização e redirecionar para o dashboard
+  const handleOrganizationChange = (org: Organization) => {
+    setActiveOrganization(org)
+    setOpen(false)
+    
+    // Se estiver na página de reservas ou em qualquer página específica,
+    // redirecionar para o dashboard principal da nova organização
+    if (pathname.includes('/reservas') || 
+        pathname.includes('/restaurantes') || 
+        pathname.includes('/eventos') || 
+        pathname.includes('/atividades') || 
+        pathname.includes('/vehicles') ||
+        pathname.includes('/hospedagens')) {
+      router.push('/admin/dashboard')
+    }
+  }
 
   if (!activeOrganization) {
     return (
@@ -147,10 +166,7 @@ function OrganizationSwitcher() {
             <DropdownMenuCheckboxItem
               key={org._id}
               checked={org._id === activeOrganization._id}
-              onCheckedChange={() => {
-                setActiveOrganization(org)
-                setOpen(false)
-              }}
+              onCheckedChange={() => handleOrganizationChange(org)}
               className="focus:bg-slate-100 focus:text-slate-900 cursor-pointer"
             >
               <Avatar className="h-5 w-5 mr-2">
@@ -395,7 +411,6 @@ function AdminSidebar() {
     { href: "/admin/dashboard/colaboradores", icon: UserCheck, label: "Colaboradores", requiresRole: ["partner", "master"] },
     { href: "/admin/dashboard/usuarios", icon: Users, label: "Usuários", requiresRole: ["partner", "master"] },
     { href: "/admin/dashboard/midias", icon: Image, label: "Mídias" },
-    { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria", requiresRole: ["partner", "master"] },
     { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações" },
   ]
 

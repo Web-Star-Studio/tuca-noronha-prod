@@ -854,4 +854,167 @@ export const listUserOrganizations = queryWithRole(["partner", "master", "employ
 
     return [];
   },
+});
+
+/**
+ * Obtém estatísticas de dashboard para partners
+ */
+export const getPartnerStats = queryWithRole(["partner", "master"])({
+  args: {},
+  returns: v.object({
+    totalAssets: v.number(),
+    recentAssets: v.number(),
+    monthlyBookings: v.number(),
+    bookingGrowth: v.number(),
+    monthlyRevenue: v.number(),
+    revenueGrowth: v.number(),
+    averageRating: v.number(),
+    totalReviews: v.number(),
+  }),
+  handler: async (ctx) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Busca todos os assets do partner
+    const activities = await ctx.db
+      .query("activities")
+      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+      .collect();
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+      .collect();
+
+    const restaurants = await ctx.db
+      .query("restaurants")
+      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+      .collect();
+
+    const accommodations = await ctx.db
+      .query("accommodations")
+      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+      .collect();
+
+    // Para veículos, usa ownerId em vez de partnerId
+    const vehicles = await ctx.db
+      .query("vehicles")
+      .withIndex("by_ownerId", (q) => q.eq("ownerId", currentUserId))
+      .collect();
+
+    const totalAssets = activities.length + events.length + restaurants.length + accommodations.length + vehicles.length;
+
+    // Assets criados no último mês
+    const lastMonth = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const recentAssets = [...activities, ...events, ...restaurants, ...accommodations, ...vehicles]
+      .filter(asset => asset._creationTime > lastMonth).length;
+
+    // Busca reservas do partner (aproximação usando assets IDs)
+    const assetIds = [
+      ...activities.map(a => a._id),
+      ...events.map(e => e._id),
+      ...restaurants.map(r => r._id),
+      ...accommodations.map(a => a._id),
+      ...vehicles.map(v => v._id),
+    ];
+
+    // Reservas do mês atual
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+    const currentMonthTime = currentMonthStart.getTime();
+
+    let monthlyBookings = 0;
+    let monthlyRevenue = 0;
+
+    // Conta bookings de atividades
+    const activityBookings = await ctx.db.query("activityBookings").collect();
+    const partnerActivityBookings = activityBookings.filter(booking => 
+      activities.some(activity => activity._id === booking.activityId) &&
+      booking.createdAt >= currentMonthTime
+    );
+    monthlyBookings += partnerActivityBookings.length;
+    monthlyRevenue += partnerActivityBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+
+    // Conta bookings de eventos
+    const eventBookings = await ctx.db.query("eventBookings").collect();
+    const partnerEventBookings = eventBookings.filter(booking => 
+      events.some(event => event._id === booking.eventId) &&
+      booking.createdAt >= currentMonthTime
+    );
+    monthlyBookings += partnerEventBookings.length;
+    monthlyRevenue += partnerEventBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+
+    // Conta reservas de restaurantes (não têm preço)
+    const restaurantReservations = await ctx.db.query("restaurantReservations").collect();
+    const partnerRestaurantReservations = restaurantReservations.filter(reservation => 
+      restaurants.some(restaurant => restaurant._id === reservation.restaurantId) &&
+      reservation._creationTime >= currentMonthTime
+    );
+    monthlyBookings += partnerRestaurantReservations.length;
+
+    // Conta bookings de acomodações
+    const accommodationBookings = await ctx.db.query("accommodationBookings").collect();
+    const partnerAccommodationBookings = accommodationBookings.filter(booking => 
+      accommodations.some(accommodation => accommodation._id === booking.accommodationId) &&
+      booking.createdAt >= currentMonthTime
+    );
+    monthlyBookings += partnerAccommodationBookings.length;
+    monthlyRevenue += partnerAccommodationBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+
+    // Conta bookings de veículos
+    const vehicleBookings = await ctx.db.query("vehicleBookings").collect();
+    const partnerVehicleBookings = vehicleBookings.filter(booking => 
+      vehicles.some(vehicle => vehicle._id === booking.vehicleId) &&
+      booking.createdAt >= currentMonthTime
+    );
+    monthlyBookings += partnerVehicleBookings.length;
+    monthlyRevenue += partnerVehicleBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+
+    // Calcula crescimento (simulado por enquanto - seria baseado em dados históricos)
+    const bookingGrowth = Math.floor(Math.random() * 20); // Placeholder
+    const revenueGrowth = Math.floor(Math.random() * 15); // Placeholder
+
+    // Calcula avaliação média
+    let totalRating = 0;
+    let totalReviews = 0;
+
+    activities.forEach(activity => {
+      totalRating += activity.rating;
+      totalReviews += 1;
+    });
+
+    events.forEach(event => {
+      // Eventos não têm rating individual, usa rating padrão
+      totalRating += 4.5;
+      totalReviews += 1;
+    });
+
+    restaurants.forEach(restaurant => {
+      totalRating += restaurant.rating.overall;
+      totalReviews += Number(restaurant.rating.totalReviews);
+    });
+
+    accommodations.forEach(accommodation => {
+      totalRating += accommodation.rating.overall;
+      totalReviews += Number(accommodation.rating.totalReviews);
+    });
+
+    const averageRating = totalReviews > 0 ? Number((totalRating / totalAssets).toFixed(1)) : 0;
+
+    return {
+      totalAssets,
+      recentAssets,
+      monthlyBookings,
+      bookingGrowth,
+      monthlyRevenue: Math.round(monthlyRevenue),
+      revenueGrowth,
+      averageRating,
+      totalReviews,
+    };
+  },
 }); 

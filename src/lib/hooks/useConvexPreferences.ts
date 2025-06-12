@@ -107,7 +107,7 @@ export function useConvexPreferences() {
     }
     
     try {
-      console.log('🔍 Dados recebidos:', preferencesData);
+      
       
       // Detectar o tipo de dados e converter se necessário
       let travelPrefs: TravelPreferences;
@@ -116,14 +116,14 @@ export function useConvexPreferences() {
         // É SmartPreferences, precisa converter
         console.log('🔄 Convertendo SmartPreferences para TravelPreferences');
         travelPrefs = convertSmartToTravelPreferences(preferencesData);
-        console.log('✅ Dados convertidos:', travelPrefs);
+
       } else {
         // Já é TravelPreferences
         console.log('✅ Dados já estão no formato TravelPreferences');
         travelPrefs = preferencesData;
       }
       
-      console.log('📤 Enviando para Convex:', { userId: convexUserId, preferences: travelPrefs });
+
       
       const result = await savePreferences({ 
         userId: convexUserId, 
@@ -135,7 +135,7 @@ export function useConvexPreferences() {
       // Invalidar cache de recomendações quando preferências são atualizadas
       try {
         await invalidateRecommendationsCache({});
-        console.log('🗑️ Cache de recomendações invalidado após atualização de preferências');
+
         
         toast.success('Cache atualizado!', {
           description: 'Suas próximas recomendações refletirão as novas preferências',

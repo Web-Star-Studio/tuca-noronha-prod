@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { mockedActivities } from "../mocked/activitiesMockedData";
+
 
 export interface ActivityTicket {
   id: string;
@@ -59,12 +59,16 @@ type ActivitiesStore = {
 
 
 const activitiesStore = create<ActivitiesStore>((set) => ({
-  activities: mockedActivities,
-  setActivities: (activities: Activity[]) => set({ activities }),
-  filteredActivities: mockedActivities, // Inicializa com os mesmos dados
+  activities: [],
+  setActivities: (activities: Activity[]) => set({ 
+    activities,
+    filteredActivities: activities,
+    featuredActivities: activities.filter((activity) => activity.isFeatured)
+  }),
+  filteredActivities: [],
   setFilteredActivities: (filteredActivities: Activity[]) => set({ filteredActivities }),
   categories: ['Aquático', 'Mergulho', 'Barco', 'Ecológico', 'Histórico', 'Terrestre', 'Trilha'],
-  featuredActivities: mockedActivities.filter((activity) => activity.isFeatured),
+  featuredActivities: [],
 }));
 
 export default activitiesStore;

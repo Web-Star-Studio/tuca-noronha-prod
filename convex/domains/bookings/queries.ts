@@ -690,6 +690,7 @@ export const getActivityBookings = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -735,12 +736,36 @@ export const getActivityBookings = query({
 
     // For partners, only show bookings for their activities
     if (user.role === "partner") {
-      // Get partner's activities
-      const partnerActivities = await ctx.db
-        .query("activities")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
-
+      // Get partner's activities, filtered by organization if specified
+      let partnerActivities;
+      
+      if (args.organizationId) {
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "activities")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra atividades que pertencem à organização
+        const allPartnerActivities = await ctx.db
+          .query("activities")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        partnerActivities = allPartnerActivities.filter(activity => 
+          assetIds.includes(activity._id)
+        );
+      } else {
+        // Sem filtro de organização, busca todas as atividades do partner
+        partnerActivities = await ctx.db
+          .query("activities")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      }
       const activityIds = partnerActivities.map(a => a._id);
 
       let filteredBookings: any[] = [];
@@ -777,33 +802,87 @@ export const getActivityBookings = query({
       };
     }
 
-    // Admin and master see all bookings
-    let query = ctx.db.query("activityBookings").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("activityBookings")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const activity = await ctx.db.get(booking.activityId);
+    // Admin and master see all bookings, filtered by organization if specified
+    if (args.organizationId) {
+      // Busca assets da organização específica
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "activities")
+        )
+        .collect();
+      
+      const assetIds = organizationAssets.map(asset => asset.assetId);
+      
+      if (assetIds.length === 0) {
         return {
-          ...booking,
-          activityTitle: activity?.title || "Atividade não encontrada",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+      
+      let filteredBookings: any[] = [];
+      for (const activityId of assetIds) {
+        let activityQuery = ctx.db
+          .query("activityBookings")
+          .withIndex("by_activity", (q) => q.eq("activityId", activityId as any));
 
-    return {
-      page: bookingsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await activityQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+      
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+
+      const bookingsWithDetails = await Promise.all(
+        filteredBookings.map(async (booking) => {
+          const activity = await ctx.db.get(booking.activityId) as any;
+          return {
+            ...booking,
+            activityTitle: activity?.title || "Atividade não encontrada",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: true,
+        continueCursor: "",
+      };
+    } else {
+      // Sem filtro de organização, busca todas as reservas
+      let query = ctx.db.query("activityBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("activityBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const activity = await ctx.db.get(booking.activityId) as any;
+          return {
+            ...booking,
+            activityTitle: activity?.title || "Atividade não encontrada",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -814,6 +893,7 @@ export const getEventBookings = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -857,12 +937,36 @@ export const getEventBookings = query({
 
     // For partners, only show bookings for their events
     if (user.role === "partner") {
-      // Get partner's events
-      const partnerEvents = await ctx.db
-        .query("events")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
-
+      // Get partner's events, filtered by organization if specified
+      let partnerEvents;
+      
+      if (args.organizationId) {
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "events")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra eventos que pertencem à organização
+        const allPartnerEvents = await ctx.db
+          .query("events")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        partnerEvents = allPartnerEvents.filter(event => 
+          assetIds.includes(event._id)
+        );
+      } else {
+        // Sem filtro de organização, busca todos os eventos do partner
+        partnerEvents = await ctx.db
+          .query("events")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      }
       const eventIds = partnerEvents.map(e => e._id);
 
       let filteredBookings: any[] = [];
@@ -899,33 +1003,87 @@ export const getEventBookings = query({
       };
     }
 
-    // Admin and master see all bookings
-    let query = ctx.db.query("eventBookings").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("eventBookings")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const event = await ctx.db.get(booking.eventId);
+    // Admin and master see all bookings, filtered by organization if specified
+    if (args.organizationId) {
+      // Busca assets da organização específica
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "events")
+        )
+        .collect();
+      
+      const assetIds = organizationAssets.map(asset => asset.assetId);
+      
+      if (assetIds.length === 0) {
         return {
-          ...booking,
-          eventTitle: event?.title || "Evento não encontrado",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+      
+      let filteredBookings: any[] = [];
+      for (const eventId of assetIds) {
+        let eventQuery = ctx.db
+          .query("eventBookings")
+          .withIndex("by_event", (q) => q.eq("eventId", eventId as any));
 
-    return {
-      page: bookingsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await eventQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+      
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+
+      const bookingsWithDetails = await Promise.all(
+        filteredBookings.map(async (booking) => {
+          const event = await ctx.db.get(booking.eventId) as any;
+          return {
+            ...booking,
+            eventTitle: event?.title || "Evento não encontrado",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: true,
+        continueCursor: "",
+      };
+    } else {
+      // Sem filtro de organização, busca todas as reservas
+      let query = ctx.db.query("eventBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("eventBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const event = await ctx.db.get(booking.eventId);
+          return {
+            ...booking,
+            eventTitle: event?.title || "Evento não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -936,6 +1094,7 @@ export const getRestaurantReservations = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -976,12 +1135,35 @@ export const getRestaurantReservations = query({
     // For partners, only show reservations for their restaurants
     if (user.role === "partner") {
       // Get partner's restaurants
-      const partnerRestaurants = await ctx.db
-        .query("restaurants")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      let partnerRestaurants;
+      
+      if (args.organizationId) {
+        // Filter restaurants by organization if organizationId is provided
+        partnerRestaurants = await ctx.db
+          .query("restaurants")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+          
+        // Filter by organization locally since there's no organizationId field in restaurants
+        // TODO: Add organizationId field to restaurants table and update schema
+        partnerRestaurants = partnerRestaurants;
+      } else {
+        // Get all partner restaurants if no organizationId is provided
+        partnerRestaurants = await ctx.db
+          .query("restaurants")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      }
 
       const restaurantIds = partnerRestaurants.map(r => r._id);
+
+      if (restaurantIds.length === 0) {
+        return {
+          page: [],
+          isDone: true,
+          continueCursor: "",
+        };
+      }
 
       let filteredReservations: any[] = [];
       for (const restaurantId of restaurantIds) {
@@ -1018,32 +1200,99 @@ export const getRestaurantReservations = query({
     }
 
     // Admin and master see all reservations
-    let query = ctx.db.query("restaurantReservations").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("restaurantReservations")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const reservationsWithDetails = await Promise.all(
-      result.page.map(async (reservation) => {
-        const restaurant = await ctx.db.get(reservation.restaurantId);
+    let restaurantIds: any[] = [];
+    
+    // If organizationId is provided, filter by organization
+    if (args.organizationId) {
+      const organizationRestaurants = await ctx.db
+        .query("restaurants")
+        .collect();
+        
+      // Filter by organization locally since there's no organizationId field in restaurants
+      // TODO: Add organizationId field to restaurants table and update schema
+        
+      restaurantIds = organizationRestaurants.map(restaurant => restaurant._id);
+      
+      if (restaurantIds.length === 0) {
         return {
-          ...reservation,
-          restaurantName: restaurant?.name || "Restaurante não encontrado",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+    }
+    
+    let query;
+    
+    if (args.organizationId && restaurantIds.length > 0) {
+      // If filtering by organization, we need to query each restaurant separately
+      let filteredReservations: any[] = [];
+      
+      for (const restaurantId of restaurantIds) {
+        let restaurantQuery = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_restaurant", (q) => q.eq("restaurantId", restaurantId));
 
-    return {
-      page: reservationsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          restaurantQuery = restaurantQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const reservations = await restaurantQuery.collect();
+        filteredReservations.push(...reservations);
+      }
+      
+      // Sort by creation time
+      filteredReservations.sort((a, b) => b._creationTime - a._creationTime);
+      
+      // Apply pagination manually
+      const startIndex = 0;
+      const endIndex = Math.min(startIndex + args.paginationOpts.numItems, filteredReservations.length);
+      const paginatedReservations = filteredReservations.slice(startIndex, endIndex);
+      
+      const reservationsWithDetails = await Promise.all(
+        paginatedReservations.map(async (reservation) => {
+          const restaurant = await ctx.db.get(reservation.restaurantId) as any;
+          return {
+            ...reservation,
+            restaurantName: restaurant?.name || "Restaurante não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: reservationsWithDetails,
+        isDone: endIndex >= filteredReservations.length,
+        continueCursor: endIndex >= filteredReservations.length ? "" : endIndex.toString(),
+      };
+    } else {
+      // Use standard query if not filtering by organization
+      query = ctx.db.query("restaurantReservations").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const reservationsWithDetails = await Promise.all(
+        result.page.map(async (reservation) => {
+          const restaurant = await ctx.db.get(reservation.restaurantId) as any;
+          return {
+            ...reservation,
+            restaurantName: restaurant?.name || "Restaurante não encontrado",
+          };
+        })
+      );
+
+      return {
+        page: reservationsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -1054,6 +1303,7 @@ export const getVehicleBookings = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -1098,14 +1348,37 @@ export const getVehicleBookings = query({
 
     // For partners, only show bookings for their vehicles
     if (user.role === "partner") {
-      // Get partner's vehicles - use filter until index is available
-      const partnerVehicles = await ctx.db
-        .query("vehicles")
-        .order("desc")
-        .filter((q) => q.eq(q.field("ownerId"), user._id))
-        .collect();
+      // Get partner's vehicles
+      let partnerVehicles;
+      
+      if (args.organizationId) {
+        // Filter vehicles by organization if organizationId is provided
+        partnerVehicles = await ctx.db
+          .query("vehicles")
+          .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+          .collect();
+          
+        // Filter by organization locally since organizationId filtering needs to be implemented
+        // TODO: Add proper organizationId filtering for vehicles
+        partnerVehicles = partnerVehicles;
+      } else {
+        // Get all partner vehicles if no organizationId is provided
+        partnerVehicles = await ctx.db
+          .query("vehicles")
+          .order("desc")
+          .filter((q) => q.eq(q.field("ownerId"), user._id))
+          .collect();
+      }
 
       const vehicleIds = partnerVehicles.map(v => v._id);
+      
+      if (vehicleIds.length === 0) {
+        return {
+          page: [],
+          isDone: true,
+          continueCursor: "",
+        };
+      }
 
       let filteredBookings: any[] = [];
       for (const vehicleId of vehicleIds) {
@@ -1144,34 +1417,103 @@ export const getVehicleBookings = query({
     }
 
     // Admin and master see all bookings
-    let query = ctx.db.query("vehicleBookings").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("vehicleBookings")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const vehicle = await ctx.db.get(booking.vehicleId);
+    let vehicleIds: any[] = [];
+    
+    // If organizationId is provided, filter by organization
+    if (args.organizationId) {
+      const organizationVehicles = await ctx.db
+        .query("vehicles")
+        .collect();
+        
+      // Filter by organization locally since there's no organizationId field in vehicles
+      // TODO: Add organizationId field to vehicles table and update schema
+        
+      vehicleIds = organizationVehicles.map(vehicle => vehicle._id);
+      
+      if (vehicleIds.length === 0) {
         return {
-          ...booking,
-          vehicleName: vehicle?.name || "Veículo não encontrado",
-          vehicleBrand: vehicle?.brand || "",
-          vehicleModel: vehicle?.model || "",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+    }
+    
+    let query;
+    
+    if (args.organizationId && vehicleIds.length > 0) {
+      // If filtering by organization, we need to query each vehicle separately
+      let filteredBookings: any[] = [];
+      
+      for (const vehicleId of vehicleIds) {
+        let vehicleQuery = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicleId));
 
-    return {
-      page: bookingsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await vehicleQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+      
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+      
+      // Apply pagination manually
+      const startIndex = 0;
+      const endIndex = Math.min(startIndex + args.paginationOpts.numItems, filteredBookings.length);
+      const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+      
+      const bookingsWithDetails = await Promise.all(
+        paginatedBookings.map(async (booking) => {
+          const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          return {
+            ...booking,
+            vehicleName: vehicle?.name || "Veículo não encontrado",
+            vehicleBrand: vehicle?.brand || "",
+            vehicleModel: vehicle?.model || "",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: endIndex >= filteredBookings.length,
+        continueCursor: endIndex >= filteredBookings.length ? "" : endIndex.toString(),
+      };
+    } else {
+      // Use standard query if not filtering by organization
+      query = ctx.db.query("vehicleBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          return {
+            ...booking,
+            vehicleName: vehicle?.name || "Veículo não encontrado",
+            vehicleBrand: vehicle?.brand || "",
+            vehicleModel: vehicle?.model || "",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 

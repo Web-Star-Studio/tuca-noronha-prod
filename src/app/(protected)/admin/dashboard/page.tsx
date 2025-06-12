@@ -284,6 +284,8 @@ const getOrganizationTypeInfo = (type: string) => {
         mainMetric: "Reservas",
         assets: "Mesas e Cardápio"
       }
+    // Temporariamente desabilitado - accommodation
+    /*
     case "accommodation":
       return {
         label: "Hospedagem",
@@ -292,6 +294,7 @@ const getOrganizationTypeInfo = (type: string) => {
         mainMetric: "Ocupação",
         assets: "Quartos e Suítes"
       }
+    */
     case "rental_service":
       return {
         label: "Aluguel de Veículos",

@@ -42,11 +42,13 @@ import {
   Check,
   X,
   MessageCircle,
+  Building2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { ui } from "@/lib/ui-config";
+import { useOrganization } from "@/lib/providers/organization-context";
 
 export default function AdminBookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,25 +67,32 @@ export default function AdminBookingsPage() {
   const cancelEventBooking = useMutation(api.domains.bookings.mutations.cancelEventBooking);
   const cancelRestaurantReservation = useMutation(api.domains.bookings.mutations.cancelRestaurantReservation);
 
+  // Get active organization from context
+  const { activeOrganization } = useOrganization();
+
   // Fetch all bookings for admin dashboard
   const activityBookings = useQuery(api.domains.bookings.queries.getActivityBookings, {
     paginationOpts: { numItems: 100, cursor: null },
     ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(activeOrganization && { organizationId: activeOrganization._id }),
   });
   
   const eventBookings = useQuery(api.domains.bookings.queries.getEventBookings, {
     paginationOpts: { numItems: 100, cursor: null },
     ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(activeOrganization && { organizationId: activeOrganization._id }),
   });
   
   const restaurantReservations = useQuery(api.domains.bookings.queries.getRestaurantReservations, {
     paginationOpts: { numItems: 100, cursor: null },
     ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(activeOrganization && { organizationId: activeOrganization._id }),
   });
   
   const vehicleBookings = useQuery(api.domains.bookings.queries.getVehicleBookings, {
     paginationOpts: { numItems: 100, cursor: null },
     ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(activeOrganization && { organizationId: activeOrganization._id }),
   });
 
   // Handle booking confirmation
@@ -235,11 +244,22 @@ export default function AdminBookingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-          Gerenciamento de Reservas
-        </h1>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
+            Gerenciamento de Reservas
+          </h1>
+          {activeOrganization && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
+              <Building2 className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">{activeOrganization.name}</span>
+            </div>
+          )}
+        </div>
         <p className={ui.colors.text.secondary}>
-          Visualize e gerencie todas as reservas dos parceiros
+          {activeOrganization 
+            ? `Visualize e gerencie as reservas do empreendimento ${activeOrganization.name}` 
+            : "Visualize e gerencie todas as reservas dos parceiros"
+          }
         </p>
       </div>
 

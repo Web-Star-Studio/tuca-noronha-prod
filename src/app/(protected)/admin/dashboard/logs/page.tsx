@@ -75,80 +75,33 @@ export default function LogsPage() {
   const [timeRange, setTimeRange] = useState("24h")
   const [refreshing, setRefreshing] = useState(false)
 
-  // Buscar logs de auditoria (precisa criar esta query)
-  const logsResult = useQuery(api["domains/audit/queries"].getAuditLogs, {
+  // Buscar logs de auditoria
+  const logsResult = useQuery(api.domains.audit.queries.getAuditLogs, {
+    paginationOpts: { numItems: 50, cursor: null },
     searchTerm: searchTerm || undefined,
-    type: selectedType !== "all" ? selectedType : undefined,
-    userId: selectedUser !== "all" ? selectedUser : undefined,
+    eventType: selectedType !== "all" ? selectedType : undefined,
+    userRole: selectedUser !== "all" ? selectedUser : undefined,
     timeRange: timeRange,
   })
 
   const logs = logsResult?.page || []
   const logStats = logsResult?.stats || { total: 0, errors: 0, warnings: 0, today: 0 }
 
-  // Dados mockados para exemplo
-  const mockLogs = [
-    {
-      _id: "1",
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      type: "create",
-      action: "Usuário criado",
-      user: { name: "Maria Santos", email: "maria@example.com", role: "partner" },
-      details: "Novo usuário registrado no sistema",
-      resource: "users",
-      resourceId: "user_123",
-      ipAddress: "192.168.1.100",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    },
-    {
-      _id: "2",
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      type: "update",
-      action: "Restaurante atualizado",
-      user: { name: "João Silva", email: "joao@example.com", role: "partner" },
-      details: "Informações do restaurante foram modificadas",
-      resource: "restaurants",
-      resourceId: "rest_456",
-      ipAddress: "192.168.1.101",
-      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-    },
-    {
-      _id: "3",
-      timestamp: new Date(Date.now() - 10800000).toISOString(),
-      type: "error",
-      action: "Falha no pagamento",
-      user: { name: "Ana Costa", email: "ana@example.com", role: "traveler" },
-      details: "Erro ao processar pagamento da reserva",
-      resource: "payments",
-      resourceId: "pay_789",
-      ipAddress: "192.168.1.102",
-      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15"
-    },
-    {
-      _id: "4",
-      timestamp: new Date(Date.now() - 14400000).toISOString(),
-      type: "login",
-      action: "Login realizado",
-      user: { name: "Admin Master", email: "admin@tucanoronha.com", role: "master" },
-      details: "Usuário fez login no sistema",
-      resource: "auth",
-      resourceId: "session_101",
-      ipAddress: "192.168.1.1",
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    },
-    {
-      _id: "5",
-      timestamp: new Date(Date.now() - 18000000).toISOString(),
-      type: "delete",
-      action: "Asset removido",
-      user: { name: "Pedro Admin", email: "pedro@example.com", role: "partner" },
-      details: "Evento foi removido do sistema",
-      resource: "events",
-      resourceId: "event_202",
-      ipAddress: "192.168.1.103",
-      userAgent: "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36"
-    }
-  ]
+  // Buscar estatísticas detalhadas
+  const statsResult = useQuery(api.domains.audit.queries.getAuditLogStats, {
+    timeRange: timeRange,
+  })
+
+  const detailedStats = statsResult || {
+    total: 0,
+    errors: 0,
+    warnings: 0,
+    criticalEvents: 0,
+    todayCount: 0,
+    byEventType: {},
+    byCategory: {},
+    recentActivity: []
+  }
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -223,8 +176,8 @@ export default function LogsPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
-            <p className="text-xs text-muted-foreground">nas últimas 24h</p>
+            <div className="text-2xl font-bold">{detailedStats.total.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">nas últimas {timeRange === "1h" ? "1 hora" : timeRange === "24h" ? "24 horas" : timeRange === "7d" ? "7 dias" : "30 dias"}</p>
           </CardContent>
         </Card>
 
@@ -234,7 +187,7 @@ export default function LogsPage() {
             <XCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">23</div>
+            <div className="text-2xl font-bold text-red-600">{detailedStats.errors}</div>
             <p className="text-xs text-muted-foreground">requer atenção</p>
           </CardContent>
         </Card>
@@ -245,19 +198,19 @@ export default function LogsPage() {
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">56</div>
+            <div className="text-2xl font-bold text-yellow-600">{detailedStats.warnings}</div>
             <p className="text-xs text-muted-foreground">para monitorar</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
-            <Users className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Eventos Críticos</CardTitle>
+            <Shield className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">89</div>
-            <p className="text-xs text-muted-foreground">online agora</p>
+            <div className="text-2xl font-bold text-red-600">{detailedStats.criticalEvents}</div>
+            <p className="text-xs text-muted-foreground">alta prioridade</p>
           </CardContent>
         </Card>
       </div>
@@ -336,63 +289,80 @@ export default function LogsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockLogs.map((log) => {
-                const IconComponent = logTypeIcons[log.type as keyof typeof logTypeIcons] || Info
-                return (
-                  <TableRow key={log._id}>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3 text-gray-400" />
-                        <span>{formatTimestamp(log.timestamp)}</span>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(log.timestamp).toLocaleString('pt-BR')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="secondary" 
-                        className={logTypeColors[log.type as keyof typeof logTypeColors] || "bg-gray-100 text-gray-800"}
-                      >
-                        <IconComponent className="h-3 w-3 mr-1" />
-                        {log.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{log.action}</div>
-                      <div className="text-sm text-gray-500">{log.details}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="bg-gray-200 text-xs">
-                            {log.user.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="text-sm font-medium">{log.user.name}</div>
-                          <div className="text-xs text-gray-500">{log.user.role}</div>
+              {logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    {logsResult === undefined ? "Carregando logs..." : "Nenhum log encontrado"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                logs.map((log) => {
+                  const IconComponent = logTypeIcons[log.event.type as keyof typeof logTypeIcons] || Info
+                  return (
+                    <TableRow key={log._id}>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span>{formatTimestamp(log.timestamp)}</span>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div className="font-medium">{log.resource}</div>
-                        <div className="text-gray-500 font-mono text-xs">{log.resourceId}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-mono">{log.ipAddress}</div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="gap-1">
-                        <Eye className="h-3 w-3" />
-                        Ver
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
+                        <div className="text-xs text-gray-500">
+                          {new Date(log.timestamp).toLocaleString('pt-BR')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary" 
+                          className={logTypeColors[log.event.type as keyof typeof logTypeColors] || "bg-gray-100 text-gray-800"}
+                        >
+                          <IconComponent className="h-3 w-3 mr-1" />
+                          {log.event.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{log.event.action}</div>
+                        <div className="text-sm text-gray-500">{log.event.category}</div>
+                        {log.event.severity === "high" || log.event.severity === "critical" ? (
+                          <div className="flex items-center gap-1 mt-1">
+                            <AlertTriangle className="h-3 w-3 text-orange-500" />
+                            <span className="text-xs text-orange-500 font-medium">
+                              {log.event.severity === "critical" ? "Crítico" : "Alto risco"}
+                            </span>
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="bg-gray-200 text-xs">
+                              {log.actor.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium">{log.actor.name}</div>
+                            <div className="text-xs text-gray-500">{log.actor.role}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">{log.resource?.type || "N/A"}</div>
+                          <div className="text-gray-500 font-mono text-xs">{log.resource?.id || "N/A"}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-mono">{log.source.ipAddress}</div>
+                        <div className="text-xs text-gray-500">{log.source.platform}</div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" className="gap-1">
+                          <Eye className="h-3 w-3" />
+                          Ver
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -411,7 +381,10 @@ export default function LogsPage() {
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span className="text-sm">Criações</span>
               </div>
-              <div className="text-sm font-medium">156</div>
+              <div className="text-sm font-medium">
+                {(detailedStats.byEventType?.["create"] || 0) + 
+                 (detailedStats.byEventType?.["asset_create"] || 0)}
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
@@ -419,7 +392,10 @@ export default function LogsPage() {
                 <Edit className="h-4 w-4 text-blue-600" />
                 <span className="text-sm">Atualizações</span>
               </div>
-              <div className="text-sm font-medium">89</div>
+              <div className="text-sm font-medium">
+                {(detailedStats.byEventType?.["update"] || 0) + 
+                 (detailedStats.byEventType?.["asset_update"] || 0)}
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
@@ -427,7 +403,10 @@ export default function LogsPage() {
                 <Trash2 className="h-4 w-4 text-red-600" />
                 <span className="text-sm">Exclusões</span>
               </div>
-              <div className="text-sm font-medium">12</div>
+              <div className="text-sm font-medium">
+                {(detailedStats.byEventType?.["delete"] || 0) + 
+                 (detailedStats.byEventType?.["asset_delete"] || 0)}
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
@@ -435,7 +414,10 @@ export default function LogsPage() {
                 <User className="h-4 w-4 text-purple-600" />
                 <span className="text-sm">Autenticação</span>
               </div>
-              <div className="text-sm font-medium">234</div>
+              <div className="text-sm font-medium">
+                {(detailedStats.byEventType?.["login"] || 0) + 
+                 (detailedStats.byEventType?.["logout"] || 0)}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -449,17 +431,21 @@ export default function LogsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-600" />
-                <span className="text-sm">Usuários</span>
+                <span className="text-sm">Gestão de Usuários</span>
               </div>
-              <div className="text-sm font-medium">345 eventos</div>
+              <div className="text-sm font-medium">
+                {detailedStats.byCategory?.["user_management"] || 0} eventos
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Database className="h-4 w-4 text-green-600" />
-                <span className="text-sm">Assets</span>
+                <span className="text-sm">Gestão de Assets</span>
               </div>
-              <div className="text-sm font-medium">189 eventos</div>
+              <div className="text-sm font-medium">
+                {detailedStats.byCategory?.["asset_management"] || 0} eventos
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
@@ -467,15 +453,19 @@ export default function LogsPage() {
                 <Shield className="h-4 w-4 text-purple-600" />
                 <span className="text-sm">Autenticação</span>
               </div>
-              <div className="text-sm font-medium">234 eventos</div>
+              <div className="text-sm font-medium">
+                {detailedStats.byCategory?.["authentication"] || 0} eventos
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-orange-600" />
-                <span className="text-sm">Configurações</span>
+                <span className="text-sm">Administração</span>
               </div>
-              <div className="text-sm font-medium">67 eventos</div>
+              <div className="text-sm font-medium">
+                {detailedStats.byCategory?.["system_admin"] || 0} eventos
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -55,6 +55,30 @@ type Asset = {
   bookingsCount?: number;
   rating?: number;
   price?: number;
+  // Campos adicionais que podem existir nos assets
+  title?: string;
+  description?: string;
+  shortDescription?: string;
+  category?: string;
+  location?: string;
+  address?: string;
+  imageUrl?: string;
+  galleryImages?: string[];
+  includes?: string[];
+  additionalInfo?: string[];
+  highlights?: string[];
+  isFeatured?: boolean;
+  maxParticipants?: number;
+  hasMultipleTickets?: boolean;
+  date?: string;
+  time?: string;
+  speaker?: string;
+  speakerBio?: string;
+  whatsappContact?: string;
+  pricePerDay?: number;
+  pricePerNight?: number;
+  status?: string;
+  ownerId?: Id<"users">;
 };
 
 const assetTypeLabels: Record<string, string> = {
@@ -62,7 +86,7 @@ const assetTypeLabels: Record<string, string> = {
   events: "Evento",
   activities: "Atividade",
   vehicles: "Veículo",
-  accommodations: "Hospedagem",
+  // accommodations: "Hospedagem", // Temporariamente desabilitado
 };
 
 const assetTypeColors: Record<string, string> = {
@@ -70,7 +94,7 @@ const assetTypeColors: Record<string, string> = {
   events: "bg-blue-100 text-blue-800",
   activities: "bg-green-100 text-green-800",
   vehicles: "bg-purple-100 text-purple-800",
-  accommodations: "bg-pink-100 text-pink-800",
+  // accommodations: "bg-pink-100 text-pink-800", // Temporariamente desabilitado
 };
 
 const assetTypeIcons: Record<string, any> = {
@@ -78,7 +102,7 @@ const assetTypeIcons: Record<string, any> = {
   events: Calendar,
   activities: Activity,
   vehicles: Car,
-  accommodations: Building2,
+  // accommodations: Building2, // Temporariamente desabilitado
 };
 
 export default function AssetsManagementPage() {
@@ -228,6 +252,7 @@ export default function AssetsManagementPage() {
             </CardContent>
           </Card>
 
+          {/* Temporariamente desabilitado - Hospedagens
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Hospedagens</CardTitle>
@@ -237,6 +262,7 @@ export default function AssetsManagementPage() {
               <div className="text-2xl font-bold text-pink-600">{systemStats.assets.accommodations}</div>
             </CardContent>
           </Card>
+          */}
         </div>
       )}
 

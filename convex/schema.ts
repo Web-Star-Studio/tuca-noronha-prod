@@ -60,6 +60,13 @@ export default defineSchema({
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    
+    // Campos de onboarding para travelers
+    fullName: v.optional(v.string()),
+    dateOfBirth: v.optional(v.string()), // Formato ISO string (YYYY-MM-DD)
+    phoneNumber: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
@@ -73,9 +80,38 @@ export default defineSchema({
     permissions: v.array(v.string()), // Array of permissions like ["view", "edit", "manage"]
     grantedAt: v.number(),
     grantedBy: v.id("users"), // Partner who granted the permissions
+    partnerId: v.id("users"), // Add partnerId field for backwards compatibility
   })
     .index("by_employee_asset_type", ["employeeId", "assetType"])
-    .index("by_asset_type", ["assetType", "assetId"]),
+    .index("by_asset_type", ["assetType", "assetId"])
+    .index("by_partner", ["partnerId"]) // Add missing index
+    .index("by_employee", ["employeeId"]) // Add missing index
+    .index("by_employee_partner", ["employeeId", "partnerId"]), // Add missing index
+
+  // Employee creation requests for partners
+  employeeCreationRequests: defineTable({
+    employeeId: v.id("users"),              // Reference to created employee record
+    partnerId: v.id("users"),               // Partner who initiated the creation
+    email: v.string(),                      // Employee email
+    password: v.string(),                   // Temporary password storage
+    name: v.string(),                       // Employee name
+    phone: v.optional(v.string()),          // Employee phone
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organization assignment
+    status: v.union(                        // Request status
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    clerkId: v.optional(v.string()),        // Clerk user ID when created
+    errorMessage: v.optional(v.string()),   // Error message if creation failed
+    createdAt: v.number(),                  // Creation timestamp
+    processedAt: v.optional(v.number()),    // When processing completed
+  })
+    .index("by_partner", ["partnerId"])
+    .index("by_status", ["status"])
+    .index("by_employee", ["employeeId"])
+    .index("by_email", ["email"]),
     
   // Mensagens de suporte do botão flutuante
   supportMessages: defineTable({
@@ -993,7 +1029,7 @@ export default defineSchema({
   partnerOrganizations: defineTable({
     name: v.string(),                        // Nome do empreendimento
     description: v.optional(v.string()),     // Descrição do empreendimento
-    type: v.string(),                        // Tipo: "restaurant", "accommodation", "rental_service", "activity_service", "event_service"
+    type: v.string(),                        // Tipo: "restaurant", "rental_service", "activity_service", "event_service"
     image: v.optional(v.string()),           // Logo/imagem do empreendimento
     partnerId: v.id("users"),                // ID do partner dono
     isActive: v.boolean(),                   // Se está ativo
@@ -1016,7 +1052,7 @@ export default defineSchema({
   partnerAssets: defineTable({
     organizationId: v.id("partnerOrganizations"), // ID da organização
     assetId: v.string(),                          // ID do asset (pode ser de qualquer tabela)
-    assetType: v.string(),                        // Tipo do asset (restaurants, events, activities, vehicles, accommodations)
+    assetType: v.string(),                        // Tipo do asset (restaurants, events, activities, vehicles)
     partnerId: v.id("users"),                     // ID do partner (para facilitar queries)
     isActive: v.boolean(),                        // Se o asset está ativo nesta organização
     createdAt: v.number(),
@@ -1027,6 +1063,193 @@ export default defineSchema({
     .index("by_asset", ["assetId", "assetType"])
     .index("by_organization_type", ["organizationId", "assetType"])
     .index("by_partner_type", ["partnerId", "assetType"]),
+
+  // Sistema de Logs de Auditoria
+  auditLogs: defineTable({
+    // Actor - Quem executou a ação
+    actor: v.object({
+      userId: v.id("users"),                    // ID do usuário que executou a ação
+      role: v.union(
+        v.literal("traveler"), 
+        v.literal("partner"), 
+        v.literal("employee"), 
+        v.literal("master")
+      ),                                        // Role do usuário no momento da ação
+      name: v.string(),                         // Nome do usuário (snapshot para auditoria)
+      email: v.optional(v.string()),            // Email do usuário (snapshot)
+    }),
+    
+    // Event - O que aconteceu
+    event: v.object({
+      type: v.union(
+        // CRUD Operations
+        v.literal("create"),
+        v.literal("update"), 
+        v.literal("delete"),
+        // Authentication Events
+        v.literal("login"),
+        v.literal("logout"),
+        v.literal("password_change"),
+        // Asset Management
+        v.literal("asset_create"),
+        v.literal("asset_update"),
+        v.literal("asset_delete"),
+        v.literal("asset_feature_toggle"),
+        v.literal("asset_status_change"),
+        // Permission Management
+        v.literal("permission_grant"),
+        v.literal("permission_revoke"),
+        v.literal("permission_update"),
+        v.literal("role_change"),
+        // Booking Operations
+        v.literal("booking_create"),
+        v.literal("booking_update"),
+        v.literal("booking_cancel"),
+        v.literal("booking_confirm"),
+        // Organization Management
+        v.literal("organization_create"),
+        v.literal("organization_update"),
+        v.literal("organization_delete"),
+        // System Operations
+        v.literal("system_config_change"),
+        v.literal("bulk_operation"),
+        // Media Operations
+        v.literal("media_upload"),
+        v.literal("media_delete"),
+        // Chat Operations
+        v.literal("chat_room_create"),
+        v.literal("chat_message_send"),
+        v.literal("chat_status_change"),
+        // Other
+        v.literal("other")
+      ),
+      action: v.string(),                       // Descrição legível da ação
+      category: v.union(
+        v.literal("authentication"),
+        v.literal("authorization"),
+        v.literal("data_access"),
+        v.literal("data_modification"),
+        v.literal("system_admin"),
+        v.literal("user_management"),
+        v.literal("asset_management"),
+        v.literal("booking_management"),
+        v.literal("communication"),
+        v.literal("security"),
+        v.literal("compliance"),
+        v.literal("other")
+      ),                                        // Categoria do evento para agrupamento
+      severity: v.union(
+        v.literal("low"),
+        v.literal("medium"), 
+        v.literal("high"),
+        v.literal("critical")
+      ),                                        // Nível de severidade
+    }),
+
+    // Resource - Sobre o que a ação foi executada
+    resource: v.optional(v.object({
+      type: v.string(),                         // Tipo do recurso (restaurants, events, users, etc)
+      id: v.string(),                           // ID do recurso
+      name: v.optional(v.string()),             // Nome/título do recurso (snapshot)
+      organizationId: v.optional(v.id("partnerOrganizations")), // Organização relacionada
+      partnerId: v.optional(v.id("users")),     // Partner dono do recurso (se aplicável)
+    })),
+
+    // Source - De onde veio a ação
+    source: v.object({
+      ipAddress: v.string(),                    // Endereço IP
+      userAgent: v.optional(v.string()),        // User agent do browser/app
+      platform: v.union(
+        v.literal("web"),
+        v.literal("mobile"),
+        v.literal("api"),
+        v.literal("system"),
+        v.literal("unknown")
+      ),                                        // Plataforma de origem
+      location: v.optional(v.object({           // Geolocalização (opcional)
+        country: v.optional(v.string()),
+        city: v.optional(v.string()),
+        region: v.optional(v.string()),
+      })),
+    }),
+
+    // Status - Resultado da operação
+    status: v.union(
+      v.literal("success"),
+      v.literal("failure"),
+      v.literal("partial"),
+      v.literal("pending")
+    ),
+
+    // Metadata - Dados adicionais específicos do evento
+    metadata: v.optional(v.object({
+      // Dados antes/depois para operações de atualização
+      before: v.optional(v.any()),             // Estado anterior (para updates)
+      after: v.optional(v.any()),              // Estado posterior (para updates)
+      
+      // Informações específicas do contexto
+      reason: v.optional(v.string()),          // Motivo da ação (para operações críticas)
+      batchId: v.optional(v.string()),         // ID do lote (para operações em massa)
+      duration: v.optional(v.number()),        // Duração da operação em ms
+      errorMessage: v.optional(v.string()),    // Mensagem de erro (se status === "failure")
+      
+      // Dados específicos por tipo de evento
+      bookingCode: v.optional(v.string()),     // Código de reserva
+      amount: v.optional(v.number()),          // Valor monetário (para transações)
+      quantity: v.optional(v.number()),        // Quantidade (para bookings)
+      permissions: v.optional(v.array(v.string())), // Permissões concedidas/revogadas
+      
+      // Contexto adicional
+      sessionId: v.optional(v.string()),       // ID da sessão
+      referrer: v.optional(v.string()),        // Página/tela de origem
+      feature: v.optional(v.string()),         // Feature específica usada
+      experiment: v.optional(v.string()),      // Experimento A/B ativo
+      
+      // Arquivamento
+      archived: v.optional(v.boolean()),       // Se o log foi arquivado
+      archivedAt: v.optional(v.number()),      // Timestamp do arquivamento
+    })),
+
+    // Risk Assessment - Avaliação de risco automática
+    riskAssessment: v.optional(v.object({
+      score: v.number(),                        // Score de risco (0-100)
+      factors: v.array(v.string()),             // Fatores que contribuíram para o score
+      isAnomalous: v.boolean(),                 // Se a ação foi considerada anômala
+      recommendation: v.optional(v.string()),   // Recomendação de ação
+    })),
+
+    // Compliance - Informações de conformidade
+    compliance: v.optional(v.object({
+      regulations: v.array(v.string()),         // Regulamentações aplicáveis (LGPD, GDPR, etc)
+      retentionPeriod: v.number(),              // Período de retenção em dias
+      isPersonalData: v.boolean(),              // Se envolve dados pessoais
+      dataClassification: v.optional(v.union(
+        v.literal("public"),
+        v.literal("internal"),
+        v.literal("confidential"),
+        v.literal("restricted")
+      )),
+    })),
+
+    // Timestamps
+    timestamp: v.number(),                      // Timestamp preciso da ação
+    expiresAt: v.optional(v.number()),          // Data de expiração do log (para limpeza automática)
+  })
+    .index("by_actor", ["actor.userId"])
+    .index("by_actor_timestamp", ["actor.userId", "timestamp"])
+    .index("by_event_type", ["event.type"])
+    .index("by_event_category", ["event.category"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_resource", ["resource.type", "resource.id"])
+    .index("by_partner", ["resource.partnerId"])
+    .index("by_organization", ["resource.organizationId"])
+    .index("by_status", ["status"])
+    .index("by_severity", ["event.severity"])
+    .index("by_platform", ["source.platform"])
+    .index("by_ip", ["source.ipAddress"])
+    .index("by_expires", ["expiresAt"])
+    .index("by_partner_timestamp", ["resource.partnerId", "timestamp"])
+    .index("by_organization_timestamp", ["resource.organizationId", "timestamp"]),
 
   // Cache de Recomendações
   cachedRecommendations: cachedRecommendationsTable,

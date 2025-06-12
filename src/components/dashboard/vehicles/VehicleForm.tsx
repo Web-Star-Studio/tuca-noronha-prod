@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import Image from "next/image";
+import { MediaSelector } from "@/components/dashboard/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +19,12 @@ type VehicleFormProps = {
   editMode: Id<"vehicles"> | null;
 };
 
+// Get current year safely
+const getCurrentYear = () => {
+  const now = new Date();
+  return now.getFullYear();
+};
+
 export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFormProps) {
   // Get vehicle data if in edit mode
   const { vehicle, isLoading: isLoadingVehicle } = useVehicle(editMode);
@@ -29,7 +37,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     brand: "",
     model: "",
     category: "",
-    year: new Date().getFullYear(),
+    year: getCurrentYear(),
     licensePlate: "",
     color: "",
     seats: 5,
@@ -43,6 +51,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   // Load vehicle data when in edit mode
   useEffect(() => {
@@ -71,7 +80,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         brand: "",
         model: "",
         category: "",
-        year: new Date().getFullYear(),
+        year: getCurrentYear(),
         licensePlate: "",
         color: "",
         seats: 5,
@@ -115,7 +124,15 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     e.preventDefault();
     
     // Validation
-    if (!vehicleData.name || !vehicleData.brand || !vehicleData.model || !vehicleData.category || !vehicleData.pricePerDay) {
+    if (!vehicleData.name || 
+        !vehicleData.brand || 
+        !vehicleData.model || 
+        !vehicleData.category || 
+        !vehicleData.licensePlate ||
+        !vehicleData.color ||
+        !vehicleData.fuelType ||
+        !vehicleData.transmission ||
+        vehicleData.pricePerDay <= 0) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -237,7 +254,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                 value={vehicleData.year}
                 onChange={handleNumberChange}
                 min={2000}
-                max={new Date().getFullYear() + 1}
+                max={getCurrentYear() + 1}
                 required
               />
             </div>
@@ -355,17 +372,38 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="imageUrl">URL da Imagem</Label>
-            <Input
-              id="imageUrl"
-              name="imageUrl"
-              value={vehicleData.imageUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Informe a URL de uma imagem do veículo (ideal: 800x600px)</p>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Imagem do Veículo</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={vehicleData.imageUrl}
+                placeholder="Nenhuma imagem selecionada"
+                className="flex-1"
+              />
+              <Button type="button" onClick={() => setMediaPickerOpen(true)}>
+                Selecionar da Biblioteca
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Informe ou selecione uma imagem do veículo (ideal: 800x600px)</p>
+            {vehicleData.imageUrl && (
+              <div className="mt-2 relative h-40 w-full overflow-hidden rounded-md">
+                <Image
+                  src={vehicleData.imageUrl}
+                  alt={vehicleData.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
           </div>
+          {/* Seletor de mídia para veículos */}
+          <MediaSelector
+            open={mediaPickerOpen}
+            onOpenChange={setMediaPickerOpen}
+            initialSelected={vehicleData.imageUrl ? [vehicleData.imageUrl] : []}
+            onSelect={([url]) => setVehicleData(prev => ({ ...prev, imageUrl: url }))}
+          />
           
           <div>
             <Label htmlFor="description">Descrição</Label>

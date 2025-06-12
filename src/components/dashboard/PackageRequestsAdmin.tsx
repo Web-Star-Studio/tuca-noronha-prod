@@ -82,10 +82,9 @@ export default function PackageRequestsAdmin() {
 
     try {
       await updateRequestStatus({
-        requestId: selectedRequest,
+        id: selectedRequest,
         status: updateForm.status as any,
-        adminNotes: updateForm.adminNotes || undefined,
-        proposalDetails: updateForm.proposalDetails || undefined,
+        note: updateForm.adminNotes || undefined,
       });
       setIsUpdateDialogOpen(false);
       setUpdateForm({ status: "", adminNotes: "", proposalDetails: "" });

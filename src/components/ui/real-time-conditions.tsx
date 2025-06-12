@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { weatherService } from "@/lib/services/weather-service";
 
 interface WeatherData {
   temperature: number;
@@ -63,79 +64,21 @@ export function RealTimeConditions({ beachName, coordinates, className }: RealTi
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  // Simular dados em tempo real (em produção, seria integração com APIs reais)
+  // Integração com serviços reais de clima e condições
   const fetchWeatherData = async (): Promise<WeatherData> => {
-    // Simular delay da API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Dados simulados baseados em Fernando de Noronha
-    const baseTemp = 26 + Math.random() * 4; // 26-30°C
-    const isRainy = Math.random() > 0.7; // 30% chance de chuva
-    
-    return {
-      temperature: Math.round(baseTemp * 10) / 10,
-      humidity: Math.round((65 + Math.random() * 20)), // 65-85%
-      windSpeed: Math.round((8 + Math.random() * 12)), // 8-20 km/h
-      windDirection: ['NE', 'E', 'SE', 'S'][Math.floor(Math.random() * 4)],
-      visibility: Math.round((15 + Math.random() * 10)), // 15-25 km
-      conditions: isRainy ? 'Parcialmente nublado' : 'Ensolarado',
-      uvIndex: Math.round(8 + Math.random() * 3), // 8-11
-      rainChance: isRainy ? Math.round(30 + Math.random() * 40) : Math.round(Math.random() * 20),
-      lastUpdated: new Date().toISOString()
-    };
+    return await weatherService.getWeatherData(coordinates);
   };
 
   const fetchTideData = async (): Promise<TideData> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const now = new Date();
-    const nextHour = new Date(now.getTime() + (3 + Math.random() * 4) * 60 * 60 * 1000);
-    
-    return {
-      height: Math.round((1.2 + Math.random() * 0.8) * 10) / 10, // 1.2-2.0m
-      time: now.toISOString(),
-      type: Math.random() > 0.5 ? 'high' : 'low',
-      nextTide: {
-        time: nextHour.toISOString(),
-        type: Math.random() > 0.5 ? 'high' : 'low',
-        height: Math.round((1.0 + Math.random() * 1.0) * 10) / 10
-      }
-    };
+    return await weatherService.getTideData();
   };
 
   const fetchSeaConditions = async (): Promise<SeaConditions> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
-    const waveHeight = Math.round((0.5 + Math.random() * 1.5) * 10) / 10; // 0.5-2.0m
-    let seaState: SeaConditions['seaState'] = 'calm';
-    
-    if (waveHeight > 1.5) seaState = 'moderate';
-    else if (waveHeight > 1.0) seaState = 'slight';
-    
-    return {
-      waveHeight,
-      seaState,
-      waterTemperature: Math.round((26 + Math.random() * 2) * 10) / 10, // 26-28°C
-      visibility: Math.round((20 + Math.random() * 10)), // 20-30m
-      swellDirection: ['NE', 'E', 'SE'][Math.floor(Math.random() * 3)]
-    };
+    return await weatherService.getSeaConditions();
   };
 
   const fetchBeachStatus = async (): Promise<BeachStatus> => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const alerts: string[] = [];
-    const crowdLevel = ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as BeachStatus['crowdLevel'];
-    
-    if (Math.random() > 0.8) alerts.push('Período de desova de tartarugas - mantenha distância');
-    if (Math.random() > 0.9) alerts.push('Ventos fortes - cuidado com atividades aquáticas');
-    
-    return {
-      isOpen: Math.random() > 0.05, // 95% chance de estar aberta
-      alerts,
-      crowdLevel,
-      parkingAvailable: Math.random() > 0.3 // 70% chance de ter vaga
-    };
+    return await weatherService.getBeachStatus(beachName);
   };
 
   const fetchAllData = async () => {

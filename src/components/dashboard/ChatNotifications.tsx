@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { format } from "date-fns";
@@ -29,8 +29,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ui } from "@/lib/ui-config";
 import { ChatWindow } from "@/components/chat/ChatWindow";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Id } from "../../../convex/_generated/dataModel";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface ChatNotificationsProps {
   className?: string;
@@ -275,6 +276,9 @@ export function ChatNotifications({
       {/* Dialog de Chat */}
       <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] p-0">
+          <VisuallyHidden>
+            <DialogTitle>Conversa com Cliente</DialogTitle>
+          </VisuallyHidden>
           {selectedChatRoomId && (
             <ChatWindow
               chatRoomId={selectedChatRoomId}

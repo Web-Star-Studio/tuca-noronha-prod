@@ -38,14 +38,14 @@ import {
 type SystemUser = {
   _id: Id<"users">;
   _creationTime: number;
-  clerkId: string;
+  clerkId?: string;
   name?: string;
   email?: string;
   role?: string;
   createdAt?: number;
   updatedAt?: number;
-  organizationsCount: number;
-  assetsCount: number;
+  organizationsCount?: number;
+  assetsCount?: number;
 };
 
 const roleLabels: Record<string, string> = {
@@ -143,7 +143,7 @@ export default function UsersManagementPage() {
     return (
       user.name?.toLowerCase().includes(searchLower) ||
       user.email?.toLowerCase().includes(searchLower) ||
-      user.clerkId.toLowerCase().includes(searchLower)
+      user.clerkId?.toLowerCase().includes(searchLower)
     );
   }) || [];
 
@@ -322,7 +322,7 @@ export default function UsersManagementPage() {
                               {user.name || "Nome não informado"}
                             </div>
                             <div className="text-sm text-gray-500">
-                              ID: {user.clerkId.slice(0, 8)}...
+                              ID: {user.clerkId?.slice(0, 8) || "N/A"}...
                             </div>
                           </div>
                         </div>
@@ -341,13 +341,13 @@ export default function UsersManagementPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-gray-400" />
-                          {user.organizationsCount}
+                          {user.organizationsCount ?? 0}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Store className="h-4 w-4 text-gray-400" />
-                          {user.assetsCount}
+                          {user.assetsCount ?? 0}
                         </div>
                       </TableCell>
                       <TableCell>

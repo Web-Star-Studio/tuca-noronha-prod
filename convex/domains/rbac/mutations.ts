@@ -96,9 +96,11 @@ export const grantAssetPermission = mutationWithRole(["partner", "master"])({
     return await ctx.db.insert("assetPermissions", {
       employeeId: args.employeeId,
       partnerId: currentUserId,
+      grantedBy: currentUserId, // Keep for backwards compatibility
       assetId: args.assetId,
       assetType: args.assetType,
       permissions: args.permissions,
+      grantedAt: Date.now(),
       note: args.note,
     });
   },
@@ -421,7 +423,7 @@ export const createOrganization = mutationWithRole(["partner", "master"])({
     }
 
     // Valida o tipo de organização
-    const validTypes = ["restaurant", "accommodation", "rental_service", "activity_service", "event_service"];
+    const validTypes = ["restaurant", "rental_service", "activity_service", "event_service"];
     if (!validTypes.includes(args.type)) {
       throw new Error("Tipo de organização inválido");
     }
@@ -890,7 +892,7 @@ export const createOrganizationWithRestaurant = mutationWithRole(["partner", "ma
     }
 
     // Valida o tipo de organização
-    const validTypes = ["restaurant", "accommodation", "rental_service", "activity_service", "event_service"];
+    const validTypes = ["restaurant", "rental_service", "activity_service", "event_service"];
     if (!validTypes.includes(args.organizationType)) {
       throw new Error("Tipo de organização inválido");
     }
@@ -986,4 +988,37 @@ export const createOrganizationWithRestaurant = mutationWithRole(["partner", "ma
       restaurantId,
     };
   },
-}); 
+});
+
+/**
+ * Migration function to populate partnerId field from grantedBy for existing records
+ * This should be run once after the schema change
+ */
+export const migrateAssetPermissionsPartnerField = mutationWithRole(["master"])({
+  args: {},
+  returns: v.object({
+    updated: v.number(),
+    message: v.string(),
+  }),
+  handler: async (ctx) => {
+    const permissions = await ctx.db.query("assetPermissions").collect();
+    let updated = 0;
+
+    for (const permission of permissions) {
+      // If partnerId doesn't exist but grantedBy does, copy it over
+      if (!(permission as any).partnerId && (permission as any).grantedBy) {
+        await ctx.db.patch(permission._id, {
+          partnerId: (permission as any).grantedBy,
+        });
+        updated++;
+      }
+    }
+
+    return {
+      updated,
+      message: `Migration completed. Updated ${updated} permission records.`,
+    };
+  },
+});
+
+ 

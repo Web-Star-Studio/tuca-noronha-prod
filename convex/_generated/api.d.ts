@@ -25,6 +25,11 @@ import type * as domains_activities_mutations from "../domains/activities/mutati
 import type * as domains_activities_queries from "../domains/activities/queries.js";
 import type * as domains_activities_types from "../domains/activities/types.js";
 import type * as domains_activities_utils from "../domains/activities/utils.js";
+import type * as domains_audit_cron from "../domains/audit/cron.js";
+import type * as domains_audit_mutations from "../domains/audit/mutations.js";
+import type * as domains_audit_queries from "../domains/audit/queries.js";
+import type * as domains_audit_types from "../domains/audit/types.js";
+import type * as domains_audit_utils from "../domains/audit/utils.js";
 import type * as domains_bookings_index from "../domains/bookings/index.js";
 import type * as domains_bookings_mutations from "../domains/bookings/mutations.js";
 import type * as domains_bookings_queries from "../domains/bookings/queries.js";
@@ -69,6 +74,8 @@ import type * as domains_recommendations_cacheQueries from "../domains/recommend
 import type * as domains_recommendations_index from "../domains/recommendations/index.js";
 import type * as domains_recommendations_mutations from "../domains/recommendations/mutations.js";
 import type * as domains_recommendations_queries from "../domains/recommendations/queries.js";
+import type * as domains_reports_actions from "../domains/reports/actions.js";
+import type * as domains_reports_queries from "../domains/reports/queries.js";
 import type * as domains_restaurants_index from "../domains/restaurants/index.js";
 import type * as domains_restaurants_mutations from "../domains/restaurants/mutations.js";
 import type * as domains_restaurants_queries from "../domains/restaurants/queries.js";
@@ -122,6 +129,11 @@ declare const fullApi: ApiFromModules<{
   "domains/activities/queries": typeof domains_activities_queries;
   "domains/activities/types": typeof domains_activities_types;
   "domains/activities/utils": typeof domains_activities_utils;
+  "domains/audit/cron": typeof domains_audit_cron;
+  "domains/audit/mutations": typeof domains_audit_mutations;
+  "domains/audit/queries": typeof domains_audit_queries;
+  "domains/audit/types": typeof domains_audit_types;
+  "domains/audit/utils": typeof domains_audit_utils;
   "domains/bookings/index": typeof domains_bookings_index;
   "domains/bookings/mutations": typeof domains_bookings_mutations;
   "domains/bookings/queries": typeof domains_bookings_queries;
@@ -166,6 +178,8 @@ declare const fullApi: ApiFromModules<{
   "domains/recommendations/index": typeof domains_recommendations_index;
   "domains/recommendations/mutations": typeof domains_recommendations_mutations;
   "domains/recommendations/queries": typeof domains_recommendations_queries;
+  "domains/reports/actions": typeof domains_reports_actions;
+  "domains/reports/queries": typeof domains_reports_queries;
   "domains/restaurants/index": typeof domains_restaurants_index;
   "domains/restaurants/mutations": typeof domains_restaurants_mutations;
   "domains/restaurants/queries": typeof domains_restaurants_queries;

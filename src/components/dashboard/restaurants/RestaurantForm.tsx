@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { MediaSelector } from "@/components/dashboard/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
@@ -33,6 +34,9 @@ export function RestaurantForm({
   loading,
 }: RestaurantFormProps) {
   const isEditing = !!restaurant;
+  const [mainMediaPickerOpen, setMainMediaPickerOpen] = useState(false);
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
+  const [menuPickerOpen, setMenuPickerOpen] = useState(false);
 
   // Convert BigInt values from Convex to regular numbers for the form
   const prepareRestaurantForForm = (restaurant: Restaurant | null | undefined) => {
@@ -390,6 +394,13 @@ export function RestaurantForm({
             </div>
           </div>
 
+          {/* Seletor de mídia para imagem principal */}
+          <MediaSelector
+            open={mainMediaPickerOpen}
+            onOpenChange={setMainMediaPickerOpen}
+            initialSelected={watch("mainImage") ? [watch("mainImage")] : []}
+            onSelect={([url]) => setValue("mainImage", url)}
+          />
           <div className="space-y-2">
             <Label htmlFor="description">Descrição Curta *</Label>
             <Textarea
@@ -513,26 +524,26 @@ export function RestaurantForm({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="mainImage">Imagem Principal *</Label>
-            <Input
-              id="mainImage"
-              placeholder="URL da imagem principal"
-              {...register("mainImage", { required: "Imagem principal é obrigatória" })}
-              error={errors.mainImage?.message}
-            />
+            <Label className="text-sm font-medium">Imagem Principal *</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={watch("mainImage") || ""}
+                placeholder="Nenhuma imagem selecionada"
+                className="flex-1"
+              />
+              <Button type="button" onClick={() => setMainMediaPickerOpen(true)}>
+                Selecionar da Biblioteca
+              </Button>
+            </div>
             {errors.mainImage && <p className="text-sm text-red-500">{errors.mainImage.message}</p>}
             {watch("mainImage") && (
               <div className="mt-2 relative h-40 w-full overflow-hidden rounded-md">
-                <Image 
-                  src={watch("mainImage")} 
-                  alt="Preview" 
+                <Image
+                  src={watch("mainImage")!}
+                  alt="Preview"
                   className="object-cover"
                   fill
-                  sizes="100vw"
-                  onError={() => {
-                    // Na eventualidade de um erro, não podemos modificar o src com Image
-                    // O fallback é implementado pelo componente de erro do Next.js
-                  }}
                 />
               </div>
             )}
@@ -1028,7 +1039,14 @@ export function RestaurantForm({
         </TabsContent>
 
         {/* Tab de mídia */}
-        <TabsContent value="media" className="space-y-4">
+          <TabsContent value="media" className="space-y-4">
+          {/* Seletor de mídia para galeria */}
+          <MediaSelector
+            open={galleryPickerOpen}
+            onOpenChange={setGalleryPickerOpen}
+            multiple
+            onSelect={(urls) => setGalleryImages([...galleryImages, ...urls])}
+          />
           <div className="space-y-2">
             <Label>Galeria de Imagens</Label>
             <div className="flex gap-2">
@@ -1040,6 +1058,9 @@ export function RestaurantForm({
               />
               <Button type="button" onClick={addGalleryImage} variant="outline">
                 Adicionar
+              </Button>
+              <Button type="button" onClick={() => setGalleryPickerOpen(true)} variant="outline">
+                Selecionar da Biblioteca
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
@@ -1085,6 +1106,9 @@ export function RestaurantForm({
               <Button type="button" onClick={addMenuImage} variant="outline">
                 Adicionar
               </Button>
+              <Button type="button" onClick={() => setMenuPickerOpen(true)} variant="outline">
+                Selecionar da Biblioteca
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
               {menuImages.map((url, index) => (
@@ -1116,7 +1140,22 @@ export function RestaurantForm({
               ))}
             </div>
           </div>
-        </TabsContent>
+          </TabsContent>
+          {/* Seletor de mídia para galeria e menu */}
+          <MediaSelector
+            open={galleryPickerOpen}
+            onOpenChange={setGalleryPickerOpen}
+            multiple
+            initialSelected={galleryImages}
+            onSelect={(urls) => setGalleryImages((prev) => [...prev, ...urls])}
+          />
+          <MediaSelector
+            open={menuPickerOpen}
+            onOpenChange={setMenuPickerOpen}
+            multiple
+            initialSelected={menuImages}
+            onSelect={(urls) => setMenuImages((prev) => [...prev, ...urls])}
+          />
       </Tabs>
 
       <Separator />

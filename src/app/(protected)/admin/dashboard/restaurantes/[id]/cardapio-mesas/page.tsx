@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Loader2, Plus, Edit, Trash2, Users, MapPin, Eye, Star, Utensils, Clock, Leaf, Flame, ArrowLeft } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
@@ -66,33 +66,32 @@ interface MenuItem {
 
 export default function CardapioMesasPage() {
   const { id } = useParams()
-  const { toast } = useToast()
   const { user } = useCurrentUser()
   
   const restaurantId = id as Id<"restaurants">
   
   // Buscar o restaurante pelo ID
-  const restaurant = useQuery(api.domains.restaurants.getById, 
+  const restaurant = useQuery(api.domains.restaurants.queries.getById, 
     restaurantId ? { id: restaurantId } : "skip"
   )
   
   // Queries para mesas e cardápio
-  const tables = useQuery(api.domains.restaurants.getRestaurantTables, 
+  const tables = useQuery(api.domains.restaurants.queries.getRestaurantTables, 
     restaurantId ? { restaurantId } : "skip"
   )
-  const categories = useQuery(api.domains.restaurants.getMenuCategories, 
+  const categories = useQuery(api.domains.restaurants.queries.getMenuCategories, 
     restaurantId ? { restaurantId } : "skip"
   )
-  const fullMenu = useQuery(api.domains.restaurants.getFullMenu, 
+  const fullMenu = useQuery(api.domains.restaurants.queries.getFullMenu, 
     restaurantId ? { restaurantId } : "skip"
   )
 
   // Mutations
-  const createTable = useMutation(api.domains.restaurants.createTable)
-  const updateTable = useMutation(api.domains.restaurants.updateTable)
-  const deleteTable = useMutation(api.domains.restaurants.deleteTable)
-  const createCategory = useMutation(api.domains.restaurants.createMenuCategory)
-  const createMenuItem = useMutation(api.domains.restaurants.createMenuItem)
+  const createTable = useMutation(api.domains.restaurants.mutations.createTable)
+  const updateTable = useMutation(api.domains.restaurants.mutations.updateTable)
+  const deleteTable = useMutation(api.domains.restaurants.mutations.deleteTable)
+  const createCategory = useMutation(api.domains.restaurants.mutations.createMenuCategory)
+  const createMenuItem = useMutation(api.domains.restaurants.mutations.createMenuItem)
 
   // Estados para diálogos e formulários
   const [isTableDialogOpen, setIsTableDialogOpen] = useState(false)
@@ -107,10 +106,8 @@ export default function CardapioMesasPage() {
     if (restaurant && user) {
       // Verificar se o usuário tem acesso a este restaurante
       if (user.role === "partner" && restaurant.partnerId !== user.id) {
-        toast({
-          title: "Acesso negado",
+        toast.error("Acesso negado", {
           description: "Você não tem permissão para gerenciar este restaurante.",
-          variant: "destructive",
         })
         // Redirecionar para a página de restaurantes
         window.location.href = "/admin/dashboard/restaurantes"
@@ -195,8 +192,7 @@ export default function CardapioMesasPage() {
         notes: tableForm.notes || undefined,
       })
       
-      toast({
-        title: "Mesa criada com sucesso!",
+      toast.success("Mesa criada com sucesso!", {
         description: `A mesa ${tableForm.name} foi adicionada ao restaurante.`,
       })
       
@@ -204,10 +200,8 @@ export default function CardapioMesasPage() {
       resetTableForm()
     } catch (error) {
       console.error("Erro ao criar mesa:", error)
-      toast({
-        title: "Erro ao criar mesa",
+      toast.error("Erro ao criar mesa", {
         description: "Ocorreu um erro ao criar a mesa. Tente novamente.",
-        variant: "destructive",
       })
     } finally {
       setIsLoading(false)
@@ -232,8 +226,7 @@ export default function CardapioMesasPage() {
         notes: tableForm.notes || undefined,
       })
       
-      toast({
-        title: "Mesa atualizada com sucesso!",
+      toast.success("Mesa atualizada com sucesso!", {
         description: `A mesa ${tableForm.name} foi atualizada.`,
       })
       
@@ -241,10 +234,8 @@ export default function CardapioMesasPage() {
       resetTableForm()
     } catch (error) {
       console.error("Erro ao atualizar mesa:", error)
-      toast({
-        title: "Erro ao atualizar mesa",
+      toast.error("Erro ao atualizar mesa", {
         description: "Ocorreu um erro ao atualizar a mesa. Tente novamente.",
-        variant: "destructive",
       })
     } finally {
       setIsLoading(false)
@@ -256,16 +247,13 @@ export default function CardapioMesasPage() {
     
     try {
       await deleteTable({ tableId: table._id })
-      toast({
-        title: "Mesa excluída",
+      toast.success("Mesa excluída", {
         description: `A mesa ${table.name} foi removida.`,
       })
     } catch (error) {
       console.error("Erro ao excluir mesa:", error)
-      toast({
-        title: "Erro ao excluir mesa",
+      toast.error("Erro ao excluir mesa", {
         description: "Ocorreu um erro ao excluir a mesa. Verifique se não há reservas associadas.",
-        variant: "destructive",
       })
     }
   }
@@ -283,8 +271,7 @@ export default function CardapioMesasPage() {
         order: categoryForm.order,
       })
       
-      toast({
-        title: "Categoria criada com sucesso!",
+      toast.success("Categoria criada com sucesso!", {
         description: `A categoria ${categoryForm.name} foi adicionada ao cardápio.`,
       })
       
@@ -292,10 +279,8 @@ export default function CardapioMesasPage() {
       setCategoryForm({ name: "", description: "", order: 1 })
     } catch (error) {
       console.error("Erro ao criar categoria:", error)
-      toast({
-        title: "Erro ao criar categoria",
+      toast.error("Erro ao criar categoria", {
         description: "Ocorreu um erro ao criar a categoria. Tente novamente.",
-        variant: "destructive",
       })
     } finally {
       setIsLoading(false)
@@ -328,8 +313,7 @@ export default function CardapioMesasPage() {
         notes: itemForm.notes || undefined,
       })
       
-      toast({
-        title: "Item criado com sucesso!",
+      toast.success("Item criado com sucesso!", {
         description: `O item ${itemForm.name} foi adicionado ao cardápio.`,
       })
       
@@ -355,10 +339,8 @@ export default function CardapioMesasPage() {
       })
     } catch (error) {
       console.error("Erro ao criar item:", error)
-      toast({
-        title: "Erro ao criar item",
+      toast.error("Erro ao criar item", {
         description: "Ocorreu um erro ao criar o item. Tente novamente.",
-        variant: "destructive",
       })
     } finally {
       setIsLoading(false)
@@ -1011,4 +993,4 @@ export default function CardapioMesasPage() {
       </Tabs>
     </div>
   )
-} 
+}

@@ -10,6 +10,7 @@ import type {
   EventTicketUpdates
 } from "./types";
 import { internalMutation } from "../../_generated/server";
+import { logAssetOperation } from "../audit/utils";
 
 /**
  * Create a new event
@@ -57,6 +58,27 @@ export const create = mutationWithRole(["partner", "master"])({
       maxParticipants,
       hasMultipleTickets: args.hasMultipleTickets || false, // valor padrão é false
     });
+
+    // Log the event creation for audit
+    try {
+      await logAssetOperation(
+        ctx,
+        "create",
+        "events",
+        eventId,
+        args.title,
+        {
+          category: args.category,
+          price: args.price,
+          maxParticipants: Number(maxParticipants),
+          isActive: args.isActive,
+          isFeatured: args.isFeatured,
+        }
+      );
+    } catch (error) {
+      console.error("Failed to log event creation:", error);
+      // Don't fail the main operation if logging fails
+    }
     
     return eventId;
   },
@@ -141,6 +163,27 @@ export const update = mutationWithRole(["partner", "master"])({
     }
     
     await ctx.db.patch(id, updates);
+
+    // Log the event update for audit
+    try {
+      const event = await ctx.db.get(id);
+      await logAssetOperation(
+        ctx,
+        "update",
+        "events",
+        id,
+        event?.title || args.title,
+        {
+          updatedFields: Object.keys(updates).filter(key => updates[key as keyof typeof updates] !== undefined),
+          isActive: args.isActive,
+          isFeatured: args.isFeatured,
+        }
+      );
+    } catch (error) {
+      console.error("Failed to log event update:", error);
+      // Don't fail the main operation if logging fails
+    }
+
     return id;
   },
 });
@@ -152,14 +195,39 @@ export const remove = mutationWithRole(["partner", "master"])({
   args: { id: v.id("events") },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
+    const event = await ctx.db.get(args.id);
+    
     if (role === "partner") {
       const currentUserId = await getCurrentUserConvexId(ctx);
-      const event = await ctx.db.get(args.id);
       if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
         throw new Error("Unauthorized");
       }
     }
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
     await ctx.db.delete(args.id);
+
+    // Log the event deletion for audit
+    try {
+      await logAssetOperation(
+        ctx,
+        "delete",
+        "events",
+        args.id,
+        event.title,
+        {
+          category: event.category,
+          wasActive: event.isActive,
+          wasFeatured: event.isFeatured,
+        }
+      );
+    } catch (error) {
+      console.error("Failed to log event deletion:", error);
+      // Don't fail the main operation if logging fails
+    }
   },
 });
 
@@ -173,14 +241,40 @@ export const toggleFeatured = mutationWithRole(["partner", "master"])({
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
+    const event = await ctx.db.get(args.id);
+    
     if (role === "partner") {
       const currentUserId = await getCurrentUserConvexId(ctx);
-      const event = await ctx.db.get(args.id);
       if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
         throw new Error("Unauthorized");
       }
     }
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
     await ctx.db.patch(args.id, { isFeatured: args.isFeatured });
+
+    // Log the featured toggle for audit
+    try {
+      await logAssetOperation(
+        ctx,
+        "feature_toggle",
+        "events",
+        args.id,
+        event.title,
+        {
+          previousValue: event.isFeatured,
+          newValue: args.isFeatured,
+          action: args.isFeatured ? "featured" : "unfeatured",
+        }
+      );
+    } catch (error) {
+      console.error("Failed to log event featured toggle:", error);
+      // Don't fail the main operation if logging fails
+    }
+
     return args.id;
   },
 });
@@ -196,14 +290,40 @@ export const toggleActive = mutationWithRole(["partner", "master"])({
   returns: v.null(),
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
+    const event = await ctx.db.get(args.id);
+    
     if (role === "partner") {
       const currentUserId = await getCurrentUserConvexId(ctx);
-      const event = await ctx.db.get(args.id);
       if (!event || event.partnerId.toString() !== currentUserId?.toString()) {
         throw new Error("Unauthorized");
       }
     }
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
     await ctx.db.patch(args.id, { isActive: args.isActive });
+
+    // Log the active status toggle for audit
+    try {
+      await logAssetOperation(
+        ctx,
+        "status_change",
+        "events",
+        args.id,
+        event.title,
+        {
+          previousValue: event.isActive,
+          newValue: args.isActive,
+          action: args.isActive ? "activated" : "deactivated",
+        }
+      );
+    } catch (error) {
+      console.error("Failed to log event status toggle:", error);
+      // Don't fail the main operation if logging fails
+    }
+
     return null;
   },
 });

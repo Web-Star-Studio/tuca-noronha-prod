@@ -130,73 +130,15 @@ export default function EventosMasterPage() {
     return true
   })
 
-  // Dados mockados para exemplo
-  const mockEvents = [
-    {
-      _id: "1",
-      name: "Festival de Música na Praia",
-      organizer: "Cultural Noronha",
-      type: "music",
-      location: "Praia do Sancho",
-      date: "2024-02-15",
-      time: "20:00",
-      status: "upcoming",
-      participants: 150,
-      maxParticipants: 200,
-      price: 85,
-      rating: 4.8,
-      image: "/images/events/music-festival.jpg",
-      _creationTime: Date.now() - 86400000
-    },
-    {
-      _id: "2",
-      name: "Noite Gastronômica do Mar",
-      organizer: "Chefs Unidos FN",
-      type: "gastronomy", 
-      location: "Vila dos Remédios",
-      date: "2024-02-20",
-      time: "19:30",
-      status: "upcoming",
-      participants: 45,
-      maxParticipants: 50,
-      price: 120,
-      rating: 4.9,
-      image: "/images/events/gastronomy-night.jpg",
-      _creationTime: Date.now() - 172800000
-    },
-    {
-      _id: "3",
-      name: "Mergulho com Tartarugas",
-      organizer: "Aventura Marinha",
-      type: "nature",
-      location: "Baía dos Porcos",
-      date: "2024-02-12",
-      time: "08:00",
-      status: "finished",
-      participants: 25,
-      maxParticipants: 30,
-      price: 95,
-      rating: 4.7,
-      image: "/images/events/diving.jpg",
-      _creationTime: Date.now() - 259200000
-    },
-    {
-      _id: "4",
-      name: "Trilha do Piquinho",
-      organizer: "EcoTurismo FN",
-      type: "nature",
-      location: "Morro do Piquinho",
-      date: "2024-02-18",
-      time: "06:00",
-      status: "upcoming",
-      participants: 18,
-      maxParticipants: 20,
-      price: 45,
-      rating: 4.6,
-      image: "/images/events/hiking.jpg",
-      _creationTime: Date.now() - 345600000
-    }
-  ]
+  // Calculate event statistics from real data
+  const eventStats = {
+    upcoming: allEvents.filter((event: any) => {
+      const eventDate = new Date(event.date)
+      return eventDate > new Date()
+    }).length,
+    totalParticipants: 0, // TODO: Calculate from bookings when available
+    averageRating: 4.7 // TODO: Calculate from real ratings when available
+  }
 
   if (!systemStats) {
     return (
@@ -275,7 +217,7 @@ export default function EventosMasterPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {mockEvents.filter(e => e.status === "upcoming").length}
+              {eventStats.upcoming}
             </div>
             <p className="text-xs text-muted-foreground">eventos programados</p>
           </CardContent>
@@ -288,7 +230,7 @@ export default function EventosMasterPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {mockEvents.reduce((acc, event) => acc + event.participants, 0)}
+              {eventStats.totalParticipants}
             </div>
             <p className="text-xs text-muted-foreground">inscrições confirmadas</p>
           </CardContent>
@@ -300,7 +242,7 @@ export default function EventosMasterPage() {
             <Star className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">4.7</div>
+            <div className="text-2xl font-bold text-yellow-600">{eventStats.averageRating}</div>
             <p className="text-xs text-muted-foreground">de 5 estrelas</p>
           </CardContent>
         </Card>
@@ -372,7 +314,7 @@ export default function EventosMasterPage() {
       {/* Tabela de Eventos */}
       <Card>
         <CardHeader>
-          <CardTitle>Eventos ({mockEvents.length})</CardTitle>
+          <CardTitle>Eventos ({allEvents.length})</CardTitle>
           <CardDescription>
             Lista completa de todos os eventos cadastrados no sistema
           </CardDescription>
@@ -393,36 +335,36 @@ export default function EventosMasterPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockEvents.map((event) => (
+              {events.map((event: any) => (
                 <TableRow key={event._id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={event.image} alt={event.name} />
+                        <AvatarImage src={event.imageUrl || event.image} alt={event.title || event.name} />
                         <AvatarFallback className="bg-blue-600 text-white">
-                          {event.name.substring(0, 2).toUpperCase()}
+                          {(event.title || event.name).substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{event.name}</div>
+                        <div className="font-medium">{event.title || event.name}</div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                          {event.rating}
+                          {event.rating || 4.5}
                         </div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div className="font-medium">{event.organizer}</div>
+                      <div className="font-medium">{event.organizer || event.creatorName || "Organizador"}</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge 
                       variant="secondary" 
-                      className={eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-800"}
+                      className={eventTypeColors[(event.type || event.category) as keyof typeof eventTypeColors] || "bg-gray-100 text-gray-800"}
                     >
-                      {getTypeLabel(event.type)}
+                      {getTypeLabel(event.type || event.category || 'general')}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -430,7 +372,7 @@ export default function EventosMasterPage() {
                       <div className="font-medium">{formatDate(event.date)}</div>
                       <div className="text-gray-500 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {event.time}
+                        {event.time || event.start_time || "Não informado"}
                       </div>
                     </div>
                   </TableCell>
@@ -443,22 +385,22 @@ export default function EventosMasterPage() {
                   <TableCell>
                     <Badge 
                       variant="secondary"
-                      className={eventStatusColors[event.status as keyof typeof eventStatusColors] || "bg-gray-100 text-gray-800"}
+                      className="bg-green-100 text-green-800"
                     >
-                      {getStatusLabel(event.status)}
+                      {event.isActive ? "Ativo" : "Inativo"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div className="font-medium">{event.participants}/{event.maxParticipants}</div>
+                      <div className="font-medium">-/-</div>
                       <div className="text-gray-500">
-                        {Math.round((event.participants / event.maxParticipants) * 100)}% ocupação
+                        A implementar
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm font-medium">
-                      R$ {event.price}
+                      R$ {event.price || 0}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -497,75 +439,43 @@ export default function EventosMasterPage() {
         </CardContent>
       </Card>
 
-      {/* Eventos em Destaque */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Eventos em Destaque</CardTitle>
-          <CardDescription>
-            Os eventos com melhor desempenho este mês
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-purple-200 bg-purple-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src="/images/events/music-festival.jpg" alt="Festival de Música" />
-                    <AvatarFallback className="bg-purple-600 text-white">FM</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">Festival de Música na Praia</h3>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                      <span className="text-sm">4.8 · 150 participantes</span>
+      {/* Eventos em Destaque - Será implementado quando houver dados de desempenho */}
+      {allEvents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Eventos Recentes</CardTitle>
+            <CardDescription>
+              Os eventos cadastrados mais recentemente no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {allEvents.slice(0, 3).map((event: any) => (
+                <Card key={event._id} className="border-blue-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={event.imageUrl} alt={event.title} />
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {event.title.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold text-sm">{event.title}</h3>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-gray-500" />
+                          <span className="text-xs text-gray-600">{event.location}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <Badge className="bg-purple-600">🎵 Mais Popular</Badge>
-              </CardContent>
-            </Card>
-
-            <Card className="border-orange-200 bg-orange-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src="/images/events/gastronomy-night.jpg" alt="Noite Gastronômica" />
-                    <AvatarFallback className="bg-orange-600 text-white">NG</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">Noite Gastronômica</h3>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                      <span className="text-sm">4.9 · 45 participantes</span>
-                    </div>
-                  </div>
-                </div>
-                <Badge className="bg-orange-600">⭐ Melhor Avaliado</Badge>
-              </CardContent>
-            </Card>
-
-            <Card className="border-emerald-200 bg-emerald-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src="/images/events/diving.jpg" alt="Mergulho com Tartarugas" />
-                    <AvatarFallback className="bg-emerald-600 text-white">MT</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">Mergulho com Tartarugas</h3>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                      <span className="text-sm">4.7 · 25 participantes</span>
-                    </div>
-                  </div>
-                </div>
-                <Badge className="bg-emerald-600">🌿 Eco-Turismo</Badge>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+                    <Badge className="bg-blue-600">{event.category || "Evento"}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 } 

@@ -39,12 +39,6 @@ const organizationTypes = [
     icon: Store
   },
   {
-    value: "accommodation",
-    label: "Hospedagem",
-    description: "Pousadas, hotéis e acomodações",
-    icon: Building2
-  },
-  {
     value: "rental_service",
     label: "Aluguel de Veículos",
     description: "Serviço de locação de carros e veículos",

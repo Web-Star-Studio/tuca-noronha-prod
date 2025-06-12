@@ -385,7 +385,7 @@ export const createTable = mutationWithRole(["partner", "master", "employee"])({
     const tableId = await ctx.db.insert("restaurantTables", {
       restaurantId: args.restaurantId,
       name: args.name,
-      capacity: args.capacity,
+      capacity: BigInt(args.capacity),
       location: args.location,
       type: args.type,
       shape: args.shape,
@@ -469,7 +469,7 @@ export const updateTable = mutationWithRole(["partner", "master", "employee"])({
     };
 
     if (args.name !== undefined) updateData.name = args.name;
-    if (args.capacity !== undefined) updateData.capacity = args.capacity;
+    if (args.capacity !== undefined) updateData.capacity = BigInt(args.capacity);
     if (args.location !== undefined) updateData.location = args.location;
     if (args.type !== undefined) updateData.type = args.type;
     if (args.shape !== undefined) updateData.shape = args.shape;

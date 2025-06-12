@@ -25,6 +25,9 @@ const PackageRequestsSection: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Get all user package requests
+  const myPackageRequests = useQuery(api.packages.getMyPackageRequests);
+
   const getPackageRequestByNumber = useQuery(
     api.packages.getPackageRequestByNumber,
     trackingNumber.trim() ? { requestNumber: trackingNumber.trim() } : "skip"
@@ -76,11 +79,88 @@ const PackageRequestsSection: React.FC = () => {
       case "pending": return "Pendente";
       case "in_review": return "Em Análise";
       case "proposal_sent": return "Proposta Enviada";
-      case "confirmed": return "Confirmado";
+      case "confirmed": return "Confirmado";  
       case "cancelled": return "Cancelado";
       default: return status;
     }
   };
+
+  if (myPackageRequests === undefined) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando suas solicitações...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const renderPackageRequestCard = (request: any) => (
+    <Card key={request._id} className="hover:shadow-md transition-shadow">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">Solicitação {request.requestNumber}</CardTitle>
+          <Badge className={getStatusColor(request.status)}>
+            {getStatusLabel(request.status)}
+          </Badge>
+        </div>
+        <p className="text-sm text-gray-500">
+          Criado em {format(new Date(request._creationTime), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Trip Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-500" />
+              <span>{request.tripDetails.destination}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <span>
+                {format(new Date(request.tripDetails.startDate), "dd/MM/yyyy", { locale: ptBR })} - {" "}
+                {format(new Date(request.tripDetails.endDate), "dd/MM/yyyy", { locale: ptBR })}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-500" />
+              <span>{request.tripDetails.groupSize} pessoas</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-gray-500" />
+              <span>R$ {request.tripDetails.budget.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Notes */}
+        {request.adminNotes && (
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <h5 className="font-medium text-blue-900 mb-1">Nota da Administração</h5>
+            <p className="text-sm text-blue-800">{request.adminNotes}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t">
+          <Button variant="outline" size="sm">
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Entrar em Contato
+          </Button>
+          {request.status === "proposal_sent" && (
+            <Button size="sm">
+              <Eye className="w-4 h-4 mr-2" />
+              Ver Proposta
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -99,7 +179,7 @@ const PackageRequestsSection: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="w-5 h-5" />
-            Acompanhar Solicitação
+            Buscar Solicitação Específica
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -159,7 +239,7 @@ const PackageRequestsSection: React.FC = () => {
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Histórico de Status</h4>
                 <div className="space-y-3">
-                  {searchResults.statusHistory.map((history: any, index: number) => (
+                  {searchResults.statusHistory?.map((history: any, index: number) => (
                     <div key={index} className="flex items-start gap-3">
                       <div className={`w-2 h-2 rounded-full mt-2 ${
                         history.status === searchResults.status ? 'bg-blue-600' : 'bg-gray-300'
@@ -198,21 +278,29 @@ const PackageRequestsSection: React.FC = () => {
         </Card>
       )}
 
-      {/* No requests found message */}
-      {!searchResults && !isSearching && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma solicitação encontrada</h3>
-          <p className="text-gray-500 mb-6">
-            Digite um número de acompanhamento para visualizar os detalhes da sua solicitação de pacote.
-          </p>
-          <Button asChild>
-            <Link href="/pacotes">
-              Solicitar Novo Pacote
-            </Link>
-          </Button>
-        </div>
-      )}
+      {/* My Package Requests */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Minhas Solicitações</h3>
+        
+        {myPackageRequests && myPackageRequests.length > 0 ? (
+          <div className="space-y-4">
+            {myPackageRequests.map((request) => renderPackageRequestCard(request))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma solicitação encontrada</h3>
+            <p className="text-gray-500 mb-6">
+              Você ainda não fez nenhuma solicitação de pacote personalizado.
+            </p>
+            <Button asChild>
+              <Link href="/pacotes">
+                Solicitar Novo Pacote
+              </Link>
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

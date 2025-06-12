@@ -36,6 +36,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "images.sympla.com.br"
+      },
+      {
+        protocol: "https",
+        hostname: "gregarious-civet-174.convex.cloud",
+        pathname: "/api/storage/**"
       }
     ]
   }

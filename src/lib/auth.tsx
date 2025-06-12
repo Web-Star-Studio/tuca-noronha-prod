@@ -30,7 +30,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUserId(clerkUser.id);
       
       // Log para depuração (pode ser removido em produção)
-      console.log("Autenticado com Clerk ID:", clerkUser.id);
+
     } else if (!isAuthenticated) {
       setUserId(null);
     }

@@ -363,28 +363,23 @@ export default function SupportPage() {
                   )}
                 </DialogTitle>
                 <DialogDescription>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <strong>Categoria:</strong> {categoryLabels[selectedMessage.category]}
-                    </div>
-                    <div>
-                      <strong>Usuário:</strong> {selectedMessage.user.name || "Usuário"} ({selectedMessage.userRole})
-                    </div>
-                    <div>
-                      <strong>Email:</strong> {selectedMessage.contactEmail}
-                    </div>
-                    <div>
-                      <strong>Criado em:</strong> {formatDate(selectedMessage.createdAt)}
-                    </div>
-                    <div>
-                      <strong>Status:</strong> 
-                      <Badge className={`ml-2 text-xs ${statusColors[selectedMessage.status]}`}>
-                        {statusLabels[selectedMessage.status]}
-                      </Badge>
-                    </div>
-                  </div>
+                  Categoria: {categoryLabels[selectedMessage.category]} • 
+                  Usuário: {selectedMessage.user.name || "Usuário"} ({selectedMessage.userRole}) • 
+                  Criado em: {formatDate(selectedMessage.createdAt)}
                 </DialogDescription>
               </DialogHeader>
+
+              <div className="space-y-2 text-sm mb-4">
+                <div>
+                  <strong>Email:</strong> {selectedMessage.contactEmail}
+                </div>
+                <div className="flex items-center gap-2">
+                  <strong>Status:</strong> 
+                  <Badge className={`text-xs ${statusColors[selectedMessage.status]}`}>
+                    {statusLabels[selectedMessage.status]}
+                  </Badge>
+                                 </div>
+               </div>
 
               <div className="space-y-4">
                 <div>

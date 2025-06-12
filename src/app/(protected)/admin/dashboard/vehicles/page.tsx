@@ -25,7 +25,6 @@ export default function VehiclesPage() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<Id<"vehicles"> | null>(null);
   const [vehicleToRemove, setVehicleToRemove] = useState<Id<"vehicles"> | null>(null);
-  const [tab, setTab] = useState("vehicles");
   // State for filters
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -125,9 +124,9 @@ export default function VehiclesPage() {
 
       <Tabs defaultValue="vehicles" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="vehicles" className={`${tab === "vehicles" ? "bg-blue-500 text-white" : "bg-white text-black"}`} onClick={() => setTab("vehicles")}>Veículos</TabsTrigger>
-          <TabsTrigger value="bookings" className={`${tab === "bookings" ? "bg-blue-500 text-white" : "bg-white text-black"}`} onClick={() => setTab("bookings")}>Reservas</TabsTrigger>
-          <TabsTrigger value="stats" className={`${tab === "stats" ? "bg-blue-500 text-white" : "bg-white text-black"}`} onClick={() => setTab("stats")}>Estatísticas</TabsTrigger>
+          <TabsTrigger value="vehicles" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Veículos</TabsTrigger>
+          <TabsTrigger value="bookings" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Reservas</TabsTrigger>
+          <TabsTrigger value="stats" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Estatísticas</TabsTrigger>
         </TabsList>
         
         <TabsContent value="vehicles" className="mt-6">

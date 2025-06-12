@@ -520,8 +520,8 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     hasMultipleTickets: activity.hasMultipleTickets,
                   }}
                   onBookingSuccess={(booking) => {
-                    // Redirect to confirmation page
-                    window.location.href = `/test-bookings/confirmation?code=${booking.confirmationCode}&type=activity`;
+                    // Redirect to user dashboard reservations page
+                    window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
                   }}
                 />
 

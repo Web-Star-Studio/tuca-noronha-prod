@@ -385,8 +385,8 @@ export default function EventDetails({ event }: EventDetailsProps) {
                   hasMultipleTickets: event.hasMultipleTickets,
                 }}
                 onBookingSuccess={(booking) => {
-                  // Redirect to confirmation page
-                  window.location.href = `/test-bookings/confirmation?code=${booking.confirmationCode}&type=event`;
+                  // Redirect to user dashboard reservations page
+                  window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
                 }}
               />
             )}

@@ -208,8 +208,6 @@ export const useAIRecommendations = () => {
     const recommendations = filteredAssets.map(asset => {
       const matchScore = calculateMatchScore(asset, userProfile);
       
-      console.log('🔍 Asset ID gerado:', asset.id, 'para asset:', asset.name);
-      
       return {
         id: asset.id,
         type: asset.type as 'accommodation' | 'activity' | 'restaurant' | 'experience',
@@ -238,29 +236,7 @@ export const useAIRecommendations = () => {
       .filter(rec => rec.isActive !== false)
       .sort((a, b) => b.matchScore - a.matchScore);
     
-    // Debug: verificar IDs duplicados e informações detalhadas
-    const ids = finalRecommendations.map(rec => rec.id);
-    const uniqueIds = [...new Set(ids)];
-    
-    console.log('🔍 Debug de Recomendações:');
-    console.log('- Total de assets filtrados:', filteredAssets.length);
-    console.log('- Assets após transformação:', recommendations.length);
-    console.log('- Recomendações finais:', finalRecommendations.length);
-    console.log('- IDs gerados:', ids);
-    
-    // Verificar detalhes das recomendações
-    finalRecommendations.forEach((rec, index) => {
-      console.log(`${index + 1}. ID: ${rec.id}, Título: ${rec.title}, Tipo: ${rec.type}, Score: ${rec.matchScore}%`);
-    });
-    
-    if (ids.length !== uniqueIds.length) {
-      console.error('❌ IDs duplicados detectados!');
-      console.error('- Total IDs:', ids.length);
-      console.error('- IDs únicos:', uniqueIds.length);
-      console.error('- Duplicados:', ids.filter((id, index) => ids.indexOf(id) !== index));
-    } else {
-      console.log('✅ Todos os IDs são únicos');
-    }
+
     
     return finalRecommendations;
   }, [calculateMatchScore]);
@@ -337,8 +313,7 @@ export const useAIRecommendations = () => {
 
             const totalTime = Date.now() - startTime;
             
-            console.log('🤖 IA retornou:', aiResult.recommendations.length, 'recomendações processadas');
-            console.log('📊 Base tinha:', baseRecommendations.length, 'recomendações');
+
             
             return {
               recommendations: aiResult.recommendations,
@@ -349,7 +324,7 @@ export const useAIRecommendations = () => {
             };
             
           } catch (aiError) {
-            console.log("OpenAI indisponível, usando algoritmo tradicional:", aiError);
+            // OpenAI indisponível, usando algoritmo tradicional
             
             const totalTime = Date.now() - startTime;
             const avgScore = Math.round(
