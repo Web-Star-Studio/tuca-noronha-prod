@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
@@ -40,7 +40,6 @@ import ChatsSection from './components/ChatsSection'
 
 
 
-
 export default function Dashboard() {
   const { user } = useUser()
   
@@ -59,13 +58,19 @@ export default function Dashboard() {
     isLoadingStats
   } = useDashboard()
 
-  const [activeTab, setActiveTab] = useState("overview")
+  // Sync activeSection with local state
+  const [activeTab, setActiveTab] = useState(activeSection)
+
+  // Keep activeTab in sync with activeSection from useDashboard hook
+  useEffect(() => {
+    setActiveTab(activeSection)
+  }, [activeSection])
 
   // Show loading state while fetching data
   const isLoading = isLoadingReservations || isLoadingNotifications || isLoadingStats;
 
   const renderPageContent = () => {
-    switch (activeTab) {
+    switch (activeSection) {
       case 'overview':
         return (
           <OverviewSection 
@@ -205,9 +210,11 @@ export default function Dashboard() {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="space-y-6 md:space-y-8"
         >
+
+          
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab}
+              key={activeSection}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -221,8 +228,6 @@ export default function Dashboard() {
 
       {/* Floating Support Button */}
       <FloatingSupportButton />
-
-      
     </div>
   )
 }
