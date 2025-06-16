@@ -36,7 +36,6 @@ const ProfileHeroNavigation: React.FC<ProfileHeroNavigationProps> = ({
     { id: 'pacotes', label: 'Solicitações', icon: Package, shortLabel: 'Solicitações' },
     { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles, shortLabel: 'Dicas' },
     { id: 'favoritos', label: 'Favoritos', icon: Heart, shortLabel: 'Favoritos' },
-    { id: 'personalizacao', label: 'Preferências', icon: Settings, shortLabel: 'Config' },
     { id: 'ajuda', label: 'Ajuda', icon: HelpCircle, shortLabel: 'Ajuda' },
   ];
 

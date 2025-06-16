@@ -679,6 +679,35 @@ export const getPartnerBookings = query({
       }
     }
 
+    // Get partner's vehicles reservations
+    if (!args.assetType || args.assetType === "vehicles") {
+      const vehicles = await ctx.db
+        .query("vehicles")
+        .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+        .collect();
+
+      for (const vehicle of vehicles) {
+        let query = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicle._id));
+
+        if (args.status) {
+          query = query.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await query.collect();
+        
+        result.vehicles.push(...bookings.map(booking => ({
+          _id: booking._id,
+          vehicleName: vehicle.name,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          totalPrice: booking.totalPrice,
+          status: booking.status,
+        })));
+      }
+    }
+
     return result;
   },
 });

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Authenticated, Unauthenticated } from "convex/react";
 import { ChatWindow } from "./ChatWindow";
 import {
   useFindOrCreateChatRoom,
@@ -61,14 +62,30 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const [activeChatRoomId, setActiveChatRoomId] = useState<Id<"chatRooms"> | null>(null);
   const [initialMessage, setInitialMessage] = useState("");
 
-  // Verificar se já existe uma sala de chat
+  // Sempre chamar todos os hooks no topo do componente
   const contextType = bookingId ? "booking" : "asset";
   let contextId: string;
+  let hasValidId = false;
   
   try {
     contextId = ensureValidId(bookingId || assetId);
+    hasValidId = true;
   } catch (error) {
-    // Se não temos um ID válido, renderizar um botão desabilitado
+    contextId = ""; // valor padrão para evitar problemas
+  }
+
+  // Sempre chamar os hooks, mesmo quando não há ID válido
+  const existingChatRoom = useFindOrCreateChatRoom(
+    contextType,
+    hasValidId ? contextId : "",
+    partnerId,
+    contextType === "asset" ? assetType : undefined
+  );
+
+  const createChatRoom = useCreateChatRoom();
+
+  // Se não temos um ID válido, renderizar um botão desabilitado
+  if (!hasValidId) {
     return (
       <Button
         disabled
@@ -84,15 +101,12 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
       </Button>
     );
   }
-  
-  const existingChatRoom = useFindOrCreateChatRoom(
-    contextType,
-    contextId,
-    partnerId,
-    contextType === "asset" ? assetType : undefined
-  );
 
-  const createChatRoom = useCreateChatRoom();
+  // Se houver erro na query ou não estiver autenticado, não mostrar botão de chat
+  if (existingChatRoom === undefined) {
+    // Ainda carregando
+    return null;
+  }
 
   const getButtonText = () => {
     if (bookingId) {
@@ -165,19 +179,36 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
 
   return (
     <>
-      <Button
-        onClick={handleStartChat}
-        variant={getButtonVariant()}
-        size={getButtonSize()}
-        className={buttonClasses}
-      >
-        {getButtonIcon()}
-        {showLabel && <span className="ml-2">{customLabel || getButtonText()}</span>}
-      </Button>
+      <Authenticated>
+        <Button
+          onClick={handleStartChat}
+          variant={getButtonVariant()}
+          size={getButtonSize()}
+          className={buttonClasses}
+        >
+          {getButtonIcon()}
+          {showLabel && <span className="ml-2">{customLabel || getButtonText()}</span>}
+        </Button>
+      </Authenticated>
+      
+      <Unauthenticated>
+        {/* Botão desabilitado para usuários não autenticados */}
+        <Button
+          disabled
+          variant={getButtonVariant()}
+          size={getButtonSize()}
+          className={`${buttonClasses} opacity-50 cursor-not-allowed`}
+          title="Faça login para conversar"
+        >
+          {getButtonIcon()}
+          {showLabel && <span className="ml-2">Login Necessário</span>}
+        </Button>
+      </Unauthenticated>
 
       {/* Diálogo para nova conversa */}
-      <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
-        <DialogContent className="max-w-md">
+      <Authenticated>
+        <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
+        <DialogContent className="max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <MessageCircle className="w-5 h-5" />
@@ -236,9 +267,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+      </Authenticated>
 
       {/* Janela de chat */}
-      <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
+      <Authenticated>
+        <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] p-0">
           <VisuallyHidden>
             <DialogHeader>
@@ -254,6 +287,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           )}
         </DialogContent>
       </Dialog>
+      </Authenticated>
     </>
   );
 }; 

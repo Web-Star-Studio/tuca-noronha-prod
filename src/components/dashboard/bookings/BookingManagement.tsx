@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Car, CalendarDays } from "lucide-react";
 import { ChatButton } from "@/components/chat/ChatButton";
 import { toast } from "sonner";
 
@@ -292,6 +292,126 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
   );
 }
 
+interface VehicleBookingCardProps {
+  booking: any;
+  onRefresh: () => void;
+}
+
+function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
+  const confirmVehicleBooking = useMutation(api.domains.bookings.mutations.confirmVehicleBooking);
+  const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "confirmed": return "bg-green-100 text-green-800";
+      case "canceled": return "bg-red-100 text-red-800";
+      case "completed": return "bg-blue-100 text-blue-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleConfirm = async () => {
+    try {
+      await confirmVehicleBooking({ bookingId: booking._id });
+      toast.success("Reserva confirmada com sucesso!");
+      onRefresh();
+    } catch (error) {
+      toast.error("Erro ao confirmar reserva");
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await cancelVehicleBooking({ 
+        bookingId: booking._id,
+        reason: "Cancelada pelo partner"
+      });
+      toast.success("Reserva cancelada com sucesso!");
+      onRefresh();
+    } catch (error) {
+      toast.error("Erro ao cancelar reserva");
+    }
+  };
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg flex items-center">
+              <Car className="h-5 w-5 mr-2 text-blue-600" />
+              {booking.vehicleName}
+            </CardTitle>
+            <Badge className={getStatusColor(booking.status)}>
+              {booking.status === "pending" && "Pendente"}
+              {booking.status === "confirmed" && "Confirmada"}
+              {booking.status === "canceled" && "Cancelada"}
+              {booking.status === "completed" && "Concluída"}
+            </Badge>
+          </div>
+          <div className="flex space-x-2">
+            {booking.status === "pending" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleConfirm}
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Confirmar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Cancelar
+                </Button>
+              </>
+            )}
+
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center">
+            <CalendarDays className="h-4 w-4 mr-2 text-gray-500" />
+            <span>
+              {new Date(booking.startDate).toLocaleDateString('pt-BR')} - {new Date(booking.endDate).toLocaleDateString('pt-BR')}
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="font-medium">Total: R$ {booking.totalPrice.toFixed(2)}</span>
+          </div>
+        </div>
+        {booking.pickupLocation && (
+          <div className="mt-3">
+            <span className="font-medium">Local de retirada:</span>
+            <p className="text-gray-600 mt-1">{booking.pickupLocation}</p>
+          </div>
+        )}
+        {booking.notes && (
+          <div className="mt-3">
+            <span className="font-medium">Observações do cliente:</span>
+            <p className="text-gray-600 mt-1">{booking.notes}</p>
+          </div>
+        )}
+        {booking.partnerNotes && (
+          <div className="mt-3">
+            <span className="font-medium">Observações do parceiro:</span>
+            <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function BookingManagement() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -301,21 +421,11 @@ export default function BookingManagement() {
     status: selectedStatus === "all" ? undefined : selectedStatus,
   });
 
-  const activityBookings = useQuery(api.domains.bookings.queries.getActivityBookings, {
-    paginationOpts: { numItems: 50, cursor: null },
-    status: selectedStatus === "all" ? undefined : selectedStatus,
-  });
-
-  const restaurantReservations = useQuery(api.domains.bookings.queries.getRestaurantReservations, {
-    paginationOpts: { numItems: 50, cursor: null },
-    status: selectedStatus === "all" ? undefined : selectedStatus,
-  });
-
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
 
-  if (!activityBookings || !restaurantReservations) {
+  if (!partnerBookings) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -367,20 +477,23 @@ export default function BookingManagement() {
       </div>
 
       <Tabs defaultValue="activities" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="activities">
-            Atividades ({activityBookings.page.length})
+            Atividades ({partnerBookings.activities.length})
           </TabsTrigger>
           <TabsTrigger value="restaurants">
-            Restaurantes ({restaurantReservations.page.length})
+            Restaurantes ({partnerBookings.restaurants.length})
+          </TabsTrigger>
+          <TabsTrigger value="vehicles">
+            Veículos ({partnerBookings.vehicles.length})
           </TabsTrigger>
           <TabsTrigger value="events">
-            Eventos (0)
+            Eventos ({partnerBookings.events.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="activities" className="mt-6">
-          {activityBookings.page.length === 0 ? (
+          {partnerBookings.activities.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -394,7 +507,7 @@ export default function BookingManagement() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {activityBookings.page.map((booking) => (
+              {partnerBookings.activities.map((booking) => (
                 <ActivityBookingCard
                   key={booking._id}
                   booking={booking}
@@ -406,7 +519,7 @@ export default function BookingManagement() {
         </TabsContent>
 
         <TabsContent value="restaurants" className="mt-6">
-          {restaurantReservations.page.length === 0 ? (
+          {partnerBookings.restaurants.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -420,7 +533,7 @@ export default function BookingManagement() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {restaurantReservations.page.map((reservation) => (
+              {partnerBookings.restaurants.map((reservation) => (
                 <RestaurantReservationCard
                   key={reservation._id}
                   reservation={reservation}
@@ -431,18 +544,56 @@ export default function BookingManagement() {
           )}
         </TabsContent>
 
+        <TabsContent value="vehicles" className="mt-6">
+          {partnerBookings.vehicles.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhuma reserva encontrada
+                </h3>
+                <p className="text-gray-600">
+                  Você ainda não recebeu reservas para seus veículos.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {partnerBookings.vehicles.map((booking) => (
+                <VehicleBookingCard
+                  key={booking._id}
+                  booking={booking}
+                  onRefresh={handleRefresh}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="events" className="mt-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Em desenvolvimento
-              </h3>
-              <p className="text-gray-600">
-                A gestão de reservas de eventos estará disponível em breve.
-              </p>
-            </CardContent>
-          </Card>
+          {partnerBookings.events.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhuma reserva encontrada
+                </h3>
+                <p className="text-gray-600">
+                  Você ainda não recebeu reservas para seus eventos.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {partnerBookings.events.map((booking) => (
+                <ActivityBookingCard
+                  key={booking._id}
+                  booking={booking}
+                  onRefresh={handleRefresh}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

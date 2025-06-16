@@ -57,12 +57,6 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
         gradient: "from-pink-500 to-pink-600", 
         image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
       },
-      personalizacao: {
-        title: "Preferências",
-        subtitle: "Configure suas preferências de viagem",
-        gradient: "from-cyan-500 to-cyan-600",
-        image: "https://images.unsplash.com/photo-1614723141070-2eec18977122?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-      },
       ajuda: {
         title: "Ajuda e Suporte", 
         subtitle: "Encontre respostas e suporte quando precisar",

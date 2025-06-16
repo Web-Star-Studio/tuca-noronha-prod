@@ -98,12 +98,16 @@ export const useFindOrCreateChatRoom = (
   partnerId: Id<"users">,
   assetType?: string
 ) => {
-  return useQuery(api.domains.chat.queries.findOrCreateChatRoom, {
-    contextType,
-    contextId,
-    assetType,
-    partnerId,
-  });
+  return useQuery(
+    api.domains.chat.queries.findOrCreateChatRoom,
+    // Se os parâmetros não são válidos, não fazer a query
+    contextId && partnerId ? {
+      contextType,
+      contextId,
+      assetType,
+      partnerId,
+    } : "skip"
+  );
 };
 
 // Chat Mutations

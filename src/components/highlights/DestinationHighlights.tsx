@@ -88,7 +88,8 @@ export default function DestinationHighlight() {
               ))}
             </motion.div>
 
-            <motion.div
+            {/*
+             * <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
@@ -104,6 +105,8 @@ export default function DestinationHighlight() {
                 </Button>
               </Link>
             </motion.div>
+             */}
+
           </motion.div>
 
           {/* Grid de imagens à direita */}

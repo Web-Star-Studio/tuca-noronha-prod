@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
@@ -22,7 +22,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import ProfileHeroSection from "@/components/hero/ProfileHeroSection"
-import PreferencesSection from "./PreferencesSection"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useQuery } from "convex/react"
+import { api } from "../../../../convex/_generated/api"
 
 // Import our refactored components
 import { useDashboard } from './hooks/useDashboard'
@@ -35,6 +37,7 @@ import RecommendationCard from './components/RecommendationCard'
 import FavoritesSection from '@/components/profile/FavoritesSection'
 import AIRecommendationsSection from '@/components/AIRecommendationsSection'
 import ChatsSection from './components/ChatsSection'
+
 
 
 
@@ -56,11 +59,13 @@ export default function Dashboard() {
     isLoadingStats
   } = useDashboard()
 
+  const [activeTab, setActiveTab] = useState("overview")
+
   // Show loading state while fetching data
   const isLoading = isLoadingReservations || isLoadingNotifications || isLoadingStats;
 
   const renderPageContent = () => {
-    switch (activeSection) {
+    switch (activeTab) {
       case 'overview':
         return (
           <OverviewSection 
@@ -90,8 +95,6 @@ export default function Dashboard() {
         return <AIRecommendationsSection />
       case 'favoritos':
         return <FavoritesSection />
-      case 'personalizacao':
-        return <PreferencesSection />
       case 'ajuda':
         return (
           <div className="space-y-6 max-w-3xl">
@@ -204,7 +207,7 @@ export default function Dashboard() {
         >
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeSection}
+              key={activeTab}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -218,6 +221,8 @@ export default function Dashboard() {
 
       {/* Floating Support Button */}
       <FloatingSupportButton />
+
+      
     </div>
   )
 }

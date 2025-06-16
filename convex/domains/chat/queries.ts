@@ -37,12 +37,23 @@ export const listChatRooms = query({
     unreadCount: v.number(),
   })),
   handler: async (ctx, args) => {
-    const currentUserId = await getCurrentUserConvexId(ctx);
-    const currentUserRole = await getCurrentUserRole(ctx);
-
-    if (!currentUserId) {
+    // Verificação de autenticação mais robusta
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Usuário não autenticado");
     }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const currentUserId = user._id;
+    const currentUserRole = user.role;
 
     // Busca as salas de chat do usuário
     let chatRooms;
@@ -168,10 +179,22 @@ export const getChatRoom = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const currentUserId = await getCurrentUserConvexId(ctx);
-    if (!currentUserId) {
+    // Verificação de autenticação mais robusta
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Usuário não autenticado");
     }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const currentUserId = user._id;
 
     const chatRoom = await ctx.db.get(args.chatRoomId);
     if (!chatRoom) {
@@ -258,10 +281,22 @@ export const listChatMessages = query({
     }),
   })),
   handler: async (ctx, args) => {
-    const currentUserId = await getCurrentUserConvexId(ctx);
-    if (!currentUserId) {
+    // Verificação de autenticação mais robusta
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Usuário não autenticado");
     }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const currentUserId = user._id;
 
     // Verificar acesso à sala de chat
     const chatRoom = await ctx.db.get(args.chatRoomId);
@@ -325,17 +360,35 @@ export const findOrCreateChatRoom = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const currentUserId = await getCurrentUserConvexId(ctx);
-    const currentUserRole = await getCurrentUserRole(ctx);
-
-    if (!currentUserId) {
-      throw new Error("Usuário não autenticado");
+    // Primeiro verificar se o usuário está autenticado
+    const identity = await ctx.auth.getUserIdentity();
+    
+    if (!identity) {
+      // Em vez de quebrar, vamos retornar null para que o frontend saiba que não há autenticação
+      console.log("findOrCreateChatRoom: Usuário não autenticado, retornando null");
+      return null;
     }
+
+    // Buscar o usuário no banco usando o identity
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      // Se o usuário não existe no banco, também retornar null
+      console.log("findOrCreateChatRoom: Usuário não encontrado no banco, retornando null");
+      return null;
+    }
+
+    const currentUserId = user._id;
+    const currentUserRole = user.role;
 
     // Para chats relacionados a assets (páginas públicas), permitir acesso a todos os usuários
     // Para outros contextos como bookings, manter a restrição apenas para travelers
     if (args.contextType === "booking" && currentUserRole !== "traveler") {
-      throw new Error("Apenas viajantes podem iniciar conversas sobre reservas");
+      console.log("findOrCreateChatRoom: Acesso negado para bookings - usuário não é traveler");
+      return null;
     }
 
     // Verificar se já existe uma sala de chat para este contexto
@@ -361,4 +414,4 @@ export const findOrCreateChatRoom = query({
 
     return null;
   },
-}); 
+});

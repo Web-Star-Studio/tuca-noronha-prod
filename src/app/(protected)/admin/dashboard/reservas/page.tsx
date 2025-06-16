@@ -564,7 +564,7 @@ export default function AdminBookingsPage() {
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Confirmar Reserva</DialogTitle>
             <DialogDescription>

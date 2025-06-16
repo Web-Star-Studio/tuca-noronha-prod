@@ -94,17 +94,18 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
               <span className="text-xs md:text-sm font-medium leading-tight">Recomendações</span>
             </Button>
             
-            <Button 
-              onClick={() => onSectionChange('personalizacao')} 
-              variant="outline" 
-              className="h-auto flex flex-col items-center justify-center py-3 md:py-4 px-2 gap-2 text-center border-gradient-to-r from-blue-200 to-purple-200 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 min-h-[80px] md:min-h-[90px] relative overflow-hidden"
-            >
-              <div className="absolute top-1 right-1">
-                <Sparkles className="h-3 w-3 text-purple-500 animate-pulse" />
-              </div>
-              <User className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
-              <span className="text-xs md:text-sm font-medium leading-tight text-purple-700">Personalização IA</span>
-            </Button>
+            <Link href="/personalizacao">
+              <Button 
+                variant="outline" 
+                className="h-auto flex flex-col items-center justify-center py-3 md:py-4 px-2 gap-2 text-center border-gradient-to-r from-blue-200 to-purple-200 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 min-h-[80px] md:min-h-[90px] relative overflow-hidden w-full"
+              >
+                <div className="absolute top-1 right-1">
+                  <Sparkles className="h-3 w-3 text-purple-500 animate-pulse" />
+                </div>
+                <User className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                <span className="text-xs md:text-sm font-medium leading-tight text-purple-700">Preferências</span>
+              </Button>
+            </Link>
             
             <Button 
               onClick={() => onSectionChange('ajuda')} 
