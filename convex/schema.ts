@@ -955,7 +955,16 @@ export default defineSchema({
     expectedHighlights: v.optional(v.string()), // What are they most excited about?
     
     // Status and Management
-    status: v.string(), // pending, in_review, proposal_sent, confirmed, cancelled
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_review"),
+      v.literal("proposal_sent"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("completed")
+    ),
     adminNotes: v.optional(v.string()),
     proposalSent: v.optional(v.boolean()),
     proposalDetails: v.optional(v.string()),
@@ -970,6 +979,36 @@ export default defineSchema({
     .index("by_email", ["customerInfo.email"])
     .index("by_request_number", ["requestNumber"])
     .index("by_assigned_to", ["assignedTo"])
+    .index("by_created_date", ["createdAt"]),
+
+  // Messages de contato para solicitações de pacotes
+  packageRequestMessages: defineTable({
+    packageRequestId: v.id("packageRequests"),
+    userId: v.id("users"),
+    senderName: v.string(),
+    senderEmail: v.string(),
+    subject: v.string(),
+    message: v.string(),
+    status: v.union(
+      v.literal("sent"),
+      v.literal("read"),
+      v.literal("replied")
+    ),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    readAt: v.optional(v.number()),
+    repliedAt: v.optional(v.number()),
+  })
+    .index("by_package_request", ["packageRequestId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_priority", ["priority"])
     .index("by_created_date", ["createdAt"]),
 
   // Reviews System (for packages, accommodations, restaurants, activities, events)

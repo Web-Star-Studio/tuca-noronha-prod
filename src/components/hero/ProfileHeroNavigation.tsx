@@ -33,7 +33,7 @@ const ProfileHeroNavigation: React.FC<ProfileHeroNavigationProps> = ({
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard, shortLabel: 'Início' },
     { id: 'reservas', label: 'Reservas', icon: Calendar, shortLabel: 'Reservas' },
     { id: 'chats', label: 'Conversas', icon: MessageCircle, shortLabel: 'Chats' },
-    { id: 'pacotes', label: 'Pacotes', icon: Package, shortLabel: 'Pacotes' },
+    { id: 'pacotes', label: 'Solicitações', icon: Package, shortLabel: 'Solicitações' },
     { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles, shortLabel: 'Dicas' },
     { id: 'favoritos', label: 'Favoritos', icon: Heart, shortLabel: 'Favoritos' },
     { id: 'personalizacao', label: 'Preferências', icon: Settings, shortLabel: 'Config' },

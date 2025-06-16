@@ -38,11 +38,13 @@ import {
   type PackageRequest
 } from "../../../convex/domains/packages/types";
 import { Id } from "@/../convex/_generated/dataModel";
+import PackageRequestDetailsModal from "./PackageRequestDetailsModal";
 
 export default function PackageRequestsAdmin() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedRequest, setSelectedRequest] = useState<Id<"packageRequests"> | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
 
@@ -52,10 +54,6 @@ export default function PackageRequestsAdmin() {
     paginationOpts: { numItems: itemsPerPage, cursor: null },
     status: selectedStatus || undefined,
   });
-  const requestDetails = useQuery(
-    api.packages.getPackageRequestDetails,
-    selectedRequest ? { requestId: selectedRequest } : "skip"
-  );
 
   // Mutations
   const updateRequestStatus = useMutation(api.packages.updatePackageRequestStatus);
@@ -102,6 +100,16 @@ export default function PackageRequestsAdmin() {
       proposalDetails: "",
     });
     setIsUpdateDialogOpen(true);
+  };
+
+  const openDetailsModal = (requestId: Id<"packageRequests">) => {
+    setSelectedRequest(requestId);
+    setIsDetailsModalOpen(true);
+  };
+
+  const closeDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedRequest(null);
   };
 
   if (!requestsStats || !requestsResult) {
@@ -242,30 +250,20 @@ export default function PackageRequestsAdmin() {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedRequest(request._id)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-white max-w-3xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Detalhes da Solicitação #{request.requestNumber}</DialogTitle>
-                          </DialogHeader>
-                          {requestDetails && (
-                            <RequestDetailsContent request={requestDetails} />
-                          )}
-                        </DialogContent>
-                      </Dialog>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openDetailsModal(request._id)}
+                        title="Ver detalhes completos e mensagens"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => openUpdateDialog(request)}
+                        title="Editar status"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -366,148 +364,13 @@ export default function PackageRequestsAdmin() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
 
-// Component for displaying request details
-function RequestDetailsContent({ request }: { request: any }) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  return (
-    <div className="space-y-6 ">
-      {/* Customer Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Informações do Cliente</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div><strong>Nome:</strong> {request.customerInfo.name}</div>
-          <div><strong>Email:</strong> {request.customerInfo.email}</div>
-          <div><strong>Telefone:</strong> {request.customerInfo.phone}</div>
-          {request.customerInfo.age && (
-            <div><strong>Idade:</strong> {request.customerInfo.age} anos</div>
-          )}
-          {request.customerInfo.occupation && (
-            <div><strong>Profissão:</strong> {request.customerInfo.occupation}</div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Trip Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Detalhes da Viagem</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div><strong>Destino:</strong> {request.tripDetails.destination}</div>
-          <div><strong>Data de Início:</strong> {formatDate(request.tripDetails.startDate)}</div>
-          <div><strong>Data de Fim:</strong> {formatDate(request.tripDetails.endDate)}</div>
-          <div><strong>Duração:</strong> {request.tripDetails.duration} dias</div>
-          <div><strong>Tamanho do Grupo:</strong> {request.tripDetails.groupSize} pessoas</div>
-          <div><strong>Acompanhantes:</strong> {request.tripDetails.companions}</div>
-          <div><strong>Orçamento:</strong> {formatCurrency(request.tripDetails.budget)}</div>
-          <div><strong>Flexibilidade do Orçamento:</strong> {request.tripDetails.budgetFlexibility}</div>
-        </CardContent>
-      </Card>
-
-      {/* Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Preferências</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div>
-            <strong>Tipo de Hospedagem:</strong> 
-            <span className="ml-2">{request.preferences.accommodationType.join(", ")}</span>
-          </div>
-          <div>
-            <strong>Atividades:</strong> 
-            <span className="ml-2">{request.preferences.activities.join(", ")}</span>
-          </div>
-          <div>
-            <strong>Transporte:</strong> 
-            <span className="ml-2">{request.preferences.transportation.join(", ")}</span>
-          </div>
-          <div>
-            <strong>Preferências Alimentares:</strong> 
-            <span className="ml-2">{request.preferences.foodPreferences.join(", ")}</span>
-          </div>
-          {request.preferences.accessibility && request.preferences.accessibility.length > 0 && (
-            <div>
-              <strong>Acessibilidade:</strong> 
-              <span className="ml-2">{request.preferences.accessibility.join(", ")}</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Additional Information */}
-      {(request.specialRequirements || request.previousExperience || request.expectedHighlights) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Informações Adicionais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {request.specialRequirements && (
-              <div>
-                <strong>Requisitos Especiais:</strong> 
-                <p className="ml-2 mt-1">{request.specialRequirements}</p>
-              </div>
-            )}
-            {request.previousExperience && (
-              <div>
-                <strong>Experiência Anterior:</strong> 
-                <p className="ml-2 mt-1">{request.previousExperience}</p>
-              </div>
-            )}
-            {request.expectedHighlights && (
-              <div>
-                <strong>Expectativas:</strong> 
-                <p className="ml-2 mt-1">{request.expectedHighlights}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Admin Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Informações Administrativas</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div>
-            <strong>Status:</strong> 
-            <Badge className={`ml-2 ${STATUS_COLORS[request.status as keyof typeof STATUS_COLORS]}`}>
-              {STATUS_LABELS[request.status as keyof typeof STATUS_LABELS]}
-            </Badge>
-          </div>
-          <div><strong>Criado em:</strong> {formatDate(new Date(request.createdAt).toISOString())}</div>
-          <div><strong>Atualizado em:</strong> {formatDate(new Date(request.updatedAt).toISOString())}</div>
-          {request.adminNotes && (
-            <div>
-              <strong>Notas Administrativas:</strong> 
-              <p className="ml-2 mt-1">{request.adminNotes}</p>
-            </div>
-          )}
-          {request.proposalDetails && (
-            <div>
-              <strong>Detalhes da Proposta:</strong> 
-              <p className="ml-2 mt-1">{request.proposalDetails}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Details Modal with Tabs */}
+      <PackageRequestDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={closeDetailsModal}
+        requestId={selectedRequest}
+      />
     </div>
   );
 } 

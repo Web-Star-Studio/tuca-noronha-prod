@@ -349,7 +349,7 @@ export default function SupportPage() {
 
       {/* Dialog para visualizar/responder mensagem */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-white max-w-2xl max-h-[80vh] overflow-y-auto">
           {selectedMessage && (
             <>
               <DialogHeader>

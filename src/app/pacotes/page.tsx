@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CitySelector } from "@/components/ui/city-selector"
 import { useMutation } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { toast } from "sonner"
@@ -99,7 +100,7 @@ export default function PackagesPage() {
       const endDate = new Date(formData.endDate);
       const durationInDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      const result = await createPackageRequest({
+      const requestData = {
         customerInfo: {
           name: formData.name,
           email: formData.email,
@@ -127,7 +128,9 @@ export default function PackagesPage() {
         specialRequirements: formData.specialRequirements || undefined,
         previousExperience: formData.travelExperience || undefined,
         expectedHighlights: formData.howDidYouHear || undefined
-      })
+      };
+
+      const result = await createPackageRequest(requestData);
 
       setRequestNumber(result.requestNumber)
       setIsSubmitted(true)
@@ -217,11 +220,36 @@ export default function PackagesPage() {
                       Nossa equipe entrará em contato em até 24 horas para discutir os detalhes do seu pacote personalizado.
                     </p>
 
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-900 mb-1">
+                            Acompanhe sua solicitação
+                          </p>
+                          <p className="text-sm text-blue-700 mb-3">
+                            Você pode acompanhar o status da sua solicitação a qualquer momento no seu painel pessoal.
+                          </p>
+                          <Link 
+                            href="/meu-painel" 
+                            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+                          >
+                            Ir para meu painel
+                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                       <Button asChild variant="outline" size="lg" className="shadow-lg hover:shadow-xl transition-all">
                         <Link href="/meu-painel">
                           <Target className="w-4 h-4 mr-2" />
-                          Acompanhar Status
+                          Ver Minhas Solicitações
                         </Link>
                       </Button>
                       <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all">
@@ -491,19 +519,17 @@ export default function PackagesPage() {
                   >
                     <Label htmlFor="destination" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <Globe className="w-4 h-4" />
-                      Destino Principal *
+                      🎯 Destino Principal *
                     </Label>
-                    <Select value={formData.destination} onValueChange={(value) => handleInputChange("destination", value)}>
-                      <SelectTrigger className="border-2 hover:border-gray-300 transition-colors">
-                        <SelectValue placeholder="Selecione o destino" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fernando-noronha">🏝️ Fernando de Noronha</SelectItem>
-                        <SelectItem value="recife">✈️ Recife + Fernando de Noronha</SelectItem>
-                        <SelectItem value="natal">🌊 Natal + Fernando de Noronha</SelectItem>
-                        <SelectItem value="outros">🌍 Outros destinos</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <CitySelector
+                      value={formData.destination}
+                      onValueChange={(value) => handleInputChange("destination", value)}
+                      placeholder="Escolha qualquer cidade do Brasil..."
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500">
+                      💡 Agora você pode escolher qualquer cidade do Brasil como destino!
+                    </p>
                   </motion.div>
 
                   <motion.div

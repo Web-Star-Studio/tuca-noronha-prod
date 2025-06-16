@@ -40,8 +40,8 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
         image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
       },
       pacotes: {
-        title: "Pacotes Solicitados",
-        subtitle: "Acompanhe suas solicitações de pacotes personalizados", 
+        title: "Minhas Solicitações",
+        subtitle: "Acompanhe o status das suas solicitações de pacotes personalizados", 
         gradient: "from-orange-500 to-orange-600",
         image: "https://images.unsplash.com/photo-1540979388789-6cee28a1cdc9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
       },

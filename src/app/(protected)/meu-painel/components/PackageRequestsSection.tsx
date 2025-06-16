@@ -18,15 +18,70 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import Link from "next/link";
+import PackageRequestChatModal from "@/components/customer/PackageRequestChatModal";
 
 const PackageRequestsSection: React.FC = () => {
   const { user } = useUser();
   const [trackingNumber, setTrackingNumber] = useState("");
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Chat modal state
+  const [chatModal, setChatModal] = useState<{
+    isOpen: boolean;
+    requestId?: string;
+    requestNumber?: string;
+  }>({
+    isOpen: false,
+  });
+
+  // Debug user info
+  React.useEffect(() => {
+    console.log("👤 PackageRequestsSection: User info:", {
+      isSignedIn: !!user,
+      email: user?.emailAddresses?.[0]?.emailAddress,
+      id: user?.id,
+      firstName: user?.firstName
+    });
+  }, [user]);
 
   // Get all user package requests
   const myPackageRequests = useQuery(api.packages.getMyPackageRequests);
+  
+  // Fallback: Try to get requests by user matching (name similarity)
+  const myPackageRequestsByMatch = useQuery(api.packages.getMyPackageRequestsByUserMatch);
+  
+  // Debug: Get all package requests to see if any exist
+  const allPackageRequests = useQuery(api.packages.getAllPackageRequests);
+
+  // Use the main query result, but if empty, fallback to the match-based query
+  const finalPackageRequests = React.useMemo(() => {
+    if (myPackageRequests && myPackageRequests.length > 0) {
+      return myPackageRequests;
+    }
+    if (myPackageRequestsByMatch && myPackageRequestsByMatch.length > 0) {
+      console.log("🔄 Usando requests encontradas por correspondência:", myPackageRequestsByMatch);
+      return myPackageRequestsByMatch;
+    }
+    return myPackageRequests || [];
+  }, [myPackageRequests, myPackageRequestsByMatch]);
+
+  // Debug logs
+  React.useEffect(() => {
+    console.log("🔍 PackageRequestsSection: myPackageRequests state changed:", {
+      isLoading: myPackageRequests === undefined,
+      data: myPackageRequests,
+      length: myPackageRequests?.length
+    });
+  }, [myPackageRequests]);
+
+  React.useEffect(() => {
+    console.log("🔍 PackageRequestsSection: allPackageRequests state changed:", {
+      isLoading: allPackageRequests === undefined,
+      data: allPackageRequests,
+      length: allPackageRequests?.length
+    });
+  }, [allPackageRequests]);
 
   const getPackageRequestByNumber = useQuery(
     api.packages.getPackageRequestByNumber,
@@ -63,6 +118,20 @@ const PackageRequestsSection: React.FC = () => {
     }
   }, [getPackageRequestByNumber, trackingNumber]);
 
+  const openChatModal = (requestId: string, requestNumber: string) => {
+    setChatModal({
+      isOpen: true,
+      requestId,
+      requestNumber,
+    });
+  };
+
+  const closeChatModal = () => {
+    setChatModal({
+      isOpen: false,
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -85,12 +154,18 @@ const PackageRequestsSection: React.FC = () => {
     }
   };
 
-  if (myPackageRequests === undefined) {
+  if (myPackageRequests === undefined && myPackageRequestsByMatch === undefined) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando suas solicitações...</p>
+          <p className="text-xs text-gray-400 mt-2">
+            {allPackageRequests === undefined 
+              ? "Conectando ao banco de dados..." 
+              : `${allPackageRequests?.length || 0} solicitações no total`
+            }
+          </p>
         </div>
       </div>
     );
@@ -147,9 +222,13 @@ const PackageRequestsSection: React.FC = () => {
 
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => openChatModal(request._id, request.requestNumber)}
+          >
             <MessageCircle className="w-4 h-4 mr-2" />
-            Entrar em Contato
+            Chat com a Equipe
           </Button>
           {request.status === "proposal_sent" && (
             <Button size="sm">
@@ -164,14 +243,19 @@ const PackageRequestsSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Pacotes Solicitados</h2>
-        <Button asChild variant="outline">
-          <Link href="/pacotes">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Solicitação
-          </Link>
-        </Button>
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Minhas Solicitações de Pacotes</h2>
+          <Button asChild>
+            <Link href="/pacotes">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Solicitação
+            </Link>
+          </Button>
+        </div>
+        <p className="text-gray-600">
+          Aqui você pode acompanhar todas as suas solicitações de pacotes personalizados enviadas para nossa equipe.
+        </p>
       </div>
 
       {/* Search Section */}
@@ -263,9 +347,13 @@ const PackageRequestsSection: React.FC = () => {
 
             {/* Actions */}
             <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => openChatModal(searchResults._id, searchResults.requestNumber)}
+              >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Entrar em Contato
+                Chat com a Equipe
               </Button>
               {searchResults.status === "proposal_sent" && (
                 <Button size="sm">
@@ -282,25 +370,75 @@ const PackageRequestsSection: React.FC = () => {
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Minhas Solicitações</h3>
         
-        {myPackageRequests && myPackageRequests.length > 0 ? (
+        {finalPackageRequests && finalPackageRequests.length > 0 ? (
           <div className="space-y-4">
-            {myPackageRequests.map((request) => renderPackageRequestCard(request))}
+            <div className="flex items-center gap-2 mb-4">
+                              <Badge variant="secondary" className="text-sm">
+                  {finalPackageRequests.length} solicitação{finalPackageRequests.length !== 1 ? 'ões' : ''} encontrada{finalPackageRequests.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+              {finalPackageRequests.map((request) => renderPackageRequestCard(request))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-800 mb-1">Nenhuma solicitação encontrada</h3>
-            <p className="text-gray-500 mb-6">
-              Você ainda não fez nenhuma solicitação de pacote personalizado.
-            </p>
-            <Button asChild>
-              <Link href="/pacotes">
-                Solicitar Novo Pacote
-              </Link>
-            </Button>
+          <div className="space-y-4">
+            {/* Email mismatch warning */}
+            {allPackageRequests && allPackageRequests.length > 0 && (
+              <Card className="border-orange-200 bg-orange-50">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-orange-900 mb-1">
+                        Solicitações feitas com outro email?
+                      </p>
+                      <p className="text-sm text-orange-700 mb-3">
+                        Encontramos {allPackageRequests.length} solicitação{allPackageRequests.length !== 1 ? 'ões' : ''} no sistema, 
+                        mas elas podem ter sido feitas com um email diferente do atual ({user?.emailAddresses?.[0]?.emailAddress}).
+                      </p>
+                      <p className="text-xs text-orange-600">
+                        Se você fez solicitações com outro email, entre em contato conosco para vinculá-las à sua conta.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="border-dashed border-2 border-gray-300">
+              <CardContent className="text-center py-12">
+                <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">
+                  Você ainda não fez nenhuma solicitação
+                </h3>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                  Crie sua primeira solicitação de pacote personalizado e nossa equipe entrará em contato com uma proposta única para você!
+                </p>
+                <div className="space-y-3">
+                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+                    <Link href="/pacotes">
+                      <Plus className="h-5 w-5 mr-2" />
+                      Fazer primeira solicitação
+                    </Link>
+                  </Button>
+                  <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded">
+                    💡 <strong>Dica:</strong> Após enviar a solicitação, ela aparecerá aqui para acompanhamento do status
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
+
+      {/* Chat Modal */}
+      <PackageRequestChatModal
+        isOpen={chatModal.isOpen}
+        onClose={closeChatModal}
+        requestId={chatModal.requestId as any}
+        requestNumber={chatModal.requestNumber || ""}
+      />
     </div>
   );
 };

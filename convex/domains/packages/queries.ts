@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { query, mutation } from "../../_generated/server";
 import { api } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import type { PackageWithDetails, PackageFilters, PackageBookingWithDetails } from "./types";
@@ -602,13 +602,22 @@ export const getPackageRequestStats = query({
 export const listPackageRequests = query({
   args: {
     paginationOpts: paginationOptsValidator,
-    status: v.optional(v.string()),
+    status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("in_review"),
+      v.literal("proposal_sent"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("completed")
+    )),
   },
   handler: async (ctx, args) => {
-    if (args.status && args.status.trim() !== "") {
+    if (args.status) {
       return await ctx.db
         .query("packageRequests")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
         .paginate(args.paginationOpts);
     } else {
       return await ctx.db
@@ -702,25 +711,291 @@ export const getRecentPackageRequests = query({
 });
 
 /**
- * Get package requests for current authenticated user
+ * Get package requests by matching Clerk user data
  */
-export const getMyPackageRequests = query({
+export const getMyPackageRequestsByUserMatch = query({
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
+    console.log("🔍 getMyPackageRequestsByUserMatch: Iniciando busca alternativa");
+    
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
     }
 
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      console.log("❌ getMyPackageRequestsByUserMatch: Usuário não encontrado no banco");
+      return [];
+    }
+
+    console.log("👤 getMyPackageRequestsByUserMatch: Dados do usuário:", {
+      name: user.name,
+      email: user.email,
+      clerkId: user.clerkId
+    });
+
+    const requests = await ctx.db.query("packageRequests").collect();
+    
+    // Try to match by name similarity or email
+    const nameFromIdentity = identity.name?.toLowerCase() || '';
+    const nameFromUser = user.name?.toLowerCase() || '';
+    
+    const matchedRequests = requests.filter(request => {
+      const requestName = request.customerInfo.name.toLowerCase();
+      const requestEmail = request.customerInfo.email.toLowerCase();
+      
+      // Match by exact email
+      if (requestEmail === identity.email?.toLowerCase() || requestEmail === user.email?.toLowerCase()) {
+        return true;
+      }
+      
+      // Match by name similarity (same first and last name)
+      const nameParts = requestName.split(' ');
+      const identityParts = nameFromIdentity.split(' ');
+      const userParts = nameFromUser.split(' ');
+      
+      if (nameParts.length >= 2 && identityParts.length >= 2) {
+        const firstNameMatch = nameParts[0] === identityParts[0];
+        const lastNameMatch = nameParts[nameParts.length - 1] === identityParts[identityParts.length - 1];
+        if (firstNameMatch && lastNameMatch) return true;
+      }
+      
+      if (nameParts.length >= 2 && userParts.length >= 2) {
+        const firstNameMatch = nameParts[0] === userParts[0];
+        const lastNameMatch = nameParts[nameParts.length - 1] === userParts[userParts.length - 1];
+        if (firstNameMatch && lastNameMatch) return true;
+      }
+      
+      return false;
+    });
+    
+    console.log("🎯 getMyPackageRequestsByUserMatch: Requests encontradas por correspondência:", matchedRequests.length);
+    
+    return matchedRequests.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Get all package requests (for debugging)
+ */
+export const getAllPackageRequests = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    console.log("🔍 getAllPackageRequests: Buscando todas as requests");
+    const requests = await ctx.db.query("packageRequests").collect();
+    console.log("📊 getAllPackageRequests: Total encontrado:", requests.length);
+    return requests;
+  },
+});
+
+/**
+ * Get package requests for current authenticated user
+ */
+export const getMyPackageRequests = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("packageRequests"),
+    _creationTime: v.number(),
+    requestNumber: v.string(),
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      age: v.optional(v.number()),
+      occupation: v.optional(v.string()),
+    }),
+    tripDetails: v.object({
+      destination: v.string(),
+      startDate: v.string(),
+      endDate: v.string(),
+      duration: v.number(),
+      groupSize: v.number(),
+      companions: v.string(),
+      budget: v.number(),
+      budgetFlexibility: v.string(),
+    }),
+    preferences: v.object({
+      accommodationType: v.array(v.string()),
+      activities: v.array(v.string()),
+      transportation: v.array(v.string()),
+      foodPreferences: v.array(v.string()),
+      accessibility: v.optional(v.array(v.string())),
+    }),
+    specialRequirements: v.optional(v.string()),
+    status: v.string(),
+    adminNotes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })),
+  handler: async (ctx) => {
+    console.log("🔍 getMyPackageRequests: Iniciando query");
+    
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      console.error("❌ getMyPackageRequests: Usuário não autenticado");
+      throw new Error("Not authenticated");
+    }
+
+    console.log("👤 getMyPackageRequests: Identity encontrada:", {
+      subject: identity.subject,
+      email: identity.email,
+      name: identity.name,
+      emailVerified: identity.emailVerified,
+      // Try to get additional emails if available
+      externalAccounts: identity.externalAccounts
+    });
+
     const userEmail = identity.email;
     if (!userEmail) {
+      console.error("❌ getMyPackageRequests: Email do usuário não encontrado");
       throw new Error("User email not found");
     }
 
+    // Get user from our database to check for alternative emails
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    const possibleEmails = [userEmail];
+    if (user?.email && !possibleEmails.includes(user.email)) {
+      possibleEmails.push(user.email);
+    }
+
+    console.log("📧 getMyPackageRequests: Emails possíveis para busca:", possibleEmails);
+
     const requests = await ctx.db.query("packageRequests").collect();
-    return requests
-      .filter(request => request.customerInfo.email === userEmail)
-      .sort((a, b) => b._creationTime - a._creationTime); // Most recent first
+    console.log("📊 getMyPackageRequests: Total de requests no banco:", requests.length);
+    
+    if (requests.length > 0) {
+      console.log("📋 getMyPackageRequests: Sample request:", requests[0]);
+      console.log("📋 getMyPackageRequests: Todos os emails das requests:", 
+        requests.map(r => r.customerInfo.email)
+      );
+    }
+    
+    // Filter by any of the possible emails
+    const filteredRequests = requests.filter(request => 
+      possibleEmails.includes(request.customerInfo.email)
+    );
+    console.log("🎯 getMyPackageRequests: Requests filtradas para o usuário:", filteredRequests.length);
+    
+    if (filteredRequests.length > 0) {
+      console.log("✅ getMyPackageRequests: Requests encontradas:", filteredRequests);
+    } else {
+      console.log("❌ getMyPackageRequests: Nenhuma request encontrada para emails:", possibleEmails);
+      console.log("📋 getMyPackageRequests: Emails únicos no banco:", 
+        [...new Set(requests.map(r => r.customerInfo.email))]
+      );
+    }
+    
+    return filteredRequests.sort((a, b) => b._creationTime - a._creationTime);
   },
-}); 
+});
+
+/**
+ * Get package request messages by request ID
+ */
+export const getPackageRequestMessages = query({
+  args: { packageRequestId: v.id("packageRequests") },
+  returns: v.array(v.object({
+    _id: v.id("packageRequestMessages"),
+    _creationTime: v.number(),
+    packageRequestId: v.id("packageRequests"),
+    userId: v.id("users"),
+    senderName: v.string(),
+    senderEmail: v.string(),
+    subject: v.string(),
+    message: v.string(),
+    status: v.union(
+      v.literal("sent"),
+      v.literal("read"),
+      v.literal("replied")
+    ),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    readAt: v.optional(v.number()),
+    repliedAt: v.optional(v.number()),
+  })),
+  handler: async (ctx, args) => {
+    // Get current user identity
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Verify package request exists
+    const packageRequest = await ctx.db.get(args.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Package request not found");
+    }
+
+    // Check if user has access to this package request
+    const userEmail = identity.email || user.email;
+    
+    // Check if user is admin/master (they can see messages for any request)
+    const isAdmin = user.role === "master" || user.role === "employee";
+    
+    if (!isAdmin) {
+      // For regular users, check email/name match
+      const normalizeEmail = (email: string | undefined) => 
+        email ? email.trim().toLowerCase() : '';
+      
+      const normalizedPackageEmail = normalizeEmail(packageRequest.customerInfo.email);
+      
+      // Build list of possible emails for this user
+      const possibleEmails: string[] = [];
+      if (identity.email) possibleEmails.push(normalizeEmail(identity.email));
+      if (user.email && !possibleEmails.includes(normalizeEmail(user.email))) {
+        possibleEmails.push(normalizeEmail(user.email));
+      }
+      if (userEmail && !possibleEmails.includes(normalizeEmail(userEmail))) {
+        possibleEmails.push(normalizeEmail(userEmail));
+      }
+      
+      // Check if package request email matches any of the user's possible emails
+      const hasEmailAccess = possibleEmails.includes(normalizedPackageEmail);
+      
+      // Also check if the user name matches (could be same person with different email)
+      const normalizedPackageName = packageRequest.customerInfo.name.toLowerCase().trim();
+      const normalizedUserName = (user.name || identity.name || '').toLowerCase().trim();
+      const hasNameMatch = normalizedPackageName === normalizedUserName && normalizedUserName !== '';
+      
+      if (!hasEmailAccess && !hasNameMatch) {
+        throw new Error(`Access denied to this package request. This request belongs to ${packageRequest.customerInfo.email}, but you are logged in as ${userEmail}.`);
+      }
+    }
+    
+    const messages = await ctx.db
+      .query("packageRequestMessages")
+      .withIndex("by_package_request", (q) => q.eq("packageRequestId", args.packageRequestId))
+      .order("desc")
+      .collect();
+    
+    return messages;
+  },
+});
+

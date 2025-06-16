@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, DollarSign, Clock, Send, CheckCircle } from "lucide-react";
+import { CitySelector } from "@/components/ui/city-selector";
+import { Calendar, Users, MapPin, DollarSign, Clock, Send, CheckCircle, Heart } from "lucide-react";
 import { 
   COMPANIONS_OPTIONS,
   BUDGET_FLEXIBILITY_OPTIONS,
@@ -149,35 +150,67 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Progress Indicator */}
-      <div className="flex justify-center space-x-4 mb-8">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold ${
-              i <= step
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-600"
-            }`}
-          >
-            {i}
-          </div>
-        ))}
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Enhanced Progress Indicator */}
+      <div className="relative">
+        <div className="flex justify-center space-x-8 mb-12">
+          {[
+            { step: 1, label: "Pessoal", icon: Users },
+            { step: 2, label: "Viagem", icon: MapPin },
+            { step: 3, label: "Preferências", icon: Heart },
+            { step: 4, label: "Finalizar", icon: Send }
+          ].map(({ step: stepNum, label, icon: Icon }) => (
+            <div key={stepNum} className="flex flex-col items-center">
+              <div
+                className={`relative flex items-center justify-center w-16 h-16 rounded-2xl shadow-lg transition-all duration-300 ${
+                  stepNum <= step
+                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white scale-110"
+                    : "bg-white border-2 border-gray-200 text-gray-400"
+                }`}
+              >
+                <Icon className="w-6 h-6" />
+                {stepNum < step && (
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
+              <span className={`mt-3 text-sm font-medium ${
+                stepNum <= step ? "text-blue-600" : "text-gray-400"
+              }`}>
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Progress Line */}
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-3/4 h-0.5 bg-gray-200 -z-10">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
+            style={{ width: `${((step - 1) / 3) * 100}%` }}
+          />
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Step 1: Customer Information */}
         {step === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Informações Pessoais
-              </CardTitle>
-              <CardDescription>
-                Conte-nos um pouco sobre você para personalizarmos sua experiência.
-              </CardDescription>
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-blue-50/30">
+            <CardHeader className="pb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl font-bold text-gray-900">
+                    Informações Pessoais
+                  </CardTitle>
+                  <CardDescription className="text-base text-gray-600 mt-1">
+                    Conte-nos um pouco sobre você para personalizarmos sua experiência ✨
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -233,82 +266,122 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
 
         {/* Step 2: Trip Details */}
         {step === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Detalhes da Viagem
-              </CardTitle>
-              <CardDescription>
-                Planeje os detalhes da sua viagem dos sonhos.
-              </CardDescription>
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-emerald-50/30">
+            <CardHeader className="pb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg">
+                  <MapPin className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl font-bold text-gray-900">
+                    Detalhes da Viagem
+                  </CardTitle>
+                  <CardDescription className="text-base text-gray-600 mt-1">
+                    Planeje os detalhes da sua viagem dos sonhos 🗺️
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="destination">Destino *</Label>
-                <Input
-                  id="destination"
+                <Label htmlFor="destination" className="text-sm font-medium text-gray-700 mb-3 block">
+                  🎯 Destino Principal *
+                </Label>
+                <CitySelector
                   value={formData.tripDetails.destination}
-                  onChange={(e) => updateFormData("tripDetails", "destination", e.target.value)}
-                  placeholder="Ex: Fernando de Noronha, Chapada Diamantina..."
-                  required
+                  onValueChange={(value) => updateFormData("tripDetails", "destination", value)}
+                  placeholder="Escolha qualquer cidade do Brasil..."
+                  className="w-full"
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Selecione a cidade principal do seu destino dos sonhos
+                </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="startDate">Data de Início *</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.tripDetails.startDate}
-                    onChange={(e) => updateFormData("tripDetails", "startDate", e.target.value)}
-                    required
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    📅 Data de Início *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={formData.tripDetails.startDate}
+                      onChange={(e) => updateFormData("tripDetails", "startDate", e.target.value)}
+                      className="pl-12 h-12 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors"
+                      required
+                    />
+                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="endDate">Data de Fim *</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formData.tripDetails.endDate}
-                    onChange={(e) => updateFormData("tripDetails", "endDate", e.target.value)}
-                    required
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="endDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    🏁 Data de Fim *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={formData.tripDetails.endDate}
+                      onChange={(e) => updateFormData("tripDetails", "endDate", e.target.value)}
+                      className="pl-12 h-12 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors"
+                      required
+                    />
+                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  </div>
                 </div>
               </div>
 
               {formData.tripDetails.duration > 0 && (
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    Duração: {formData.tripDetails.duration} dias
-                  </p>
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border-2 border-emerald-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 rounded-full">
+                      <Clock className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-emerald-800">
+                        Duração da viagem
+                      </p>
+                      <p className="text-lg font-bold text-emerald-900">
+                        {formData.tripDetails.duration} {formData.tripDetails.duration === 1 ? 'dia' : 'dias'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="groupSize">Número de Pessoas *</Label>
-                  <Input
-                    id="groupSize"
-                    type="number"
-                    min="1"
-                    value={formData.tripDetails.groupSize}
-                    onChange={(e) => updateFormData("tripDetails", "groupSize", parseInt(e.target.value))}
-                    required
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="groupSize" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    👥 Número de Pessoas *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="groupSize"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={formData.tripDetails.groupSize}
+                      onChange={(e) => updateFormData("tripDetails", "groupSize", parseInt(e.target.value))}
+                      className="pl-12 h-12 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors"
+                      required
+                    />
+                    <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="companions">Tipo de Companhia *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="companions" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    💫 Tipo de Companhia *
+                  </Label>
                   <select
                     id="companions"
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full h-12 p-4 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors bg-white"
                     value={formData.tripDetails.companions}
                     onChange={(e) => updateFormData("tripDetails", "companions", e.target.value)}
                     required
                   >
-                    <option value="">Selecione...</option>
+                    <option value="">Selecione o tipo...</option>
                     {COMPANIONS_OPTIONS.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -318,28 +391,39 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="budget">Orçamento Aproximado (R$) *</Label>
-                  <Input
-                    id="budget"
-                    type="number"
-                    min="0"
-                    value={formData.tripDetails.budget}
-                    onChange={(e) => updateFormData("tripDetails", "budget", parseFloat(e.target.value))}
-                    required
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="budget" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    💰 Orçamento Aproximado *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="budget"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={formData.tripDetails.budget}
+                      onChange={(e) => updateFormData("tripDetails", "budget", parseFloat(e.target.value))}
+                      className="pl-12 h-12 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors"
+                      placeholder="Ex: 5000"
+                      required
+                    />
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  </div>
+                  <p className="text-xs text-gray-500">💡 Valor em reais por pessoa</p>
                 </div>
-                <div>
-                  <Label htmlFor="budgetFlexibility">Flexibilidade no Orçamento *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="budgetFlexibility" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    📊 Flexibilidade no Orçamento *
+                  </Label>
                   <select
                     id="budgetFlexibility"
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    className="w-full h-12 p-4 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors bg-white"
                     value={formData.tripDetails.budgetFlexibility}
                     onChange={(e) => updateFormData("tripDetails", "budgetFlexibility", e.target.value)}
                     required
                   >
-                    <option value="">Selecione...</option>
+                    <option value="">Selecione a flexibilidade...</option>
                     {BUDGET_FLEXIBILITY_OPTIONS.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -476,26 +560,40 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
           </Card>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between">
-          {step > 1 && (
-            <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
-              Anterior
+        {/* Enhanced Navigation Buttons */}
+        <div className="flex justify-between items-center pt-8">
+          {step > 1 ? (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setStep(step - 1)}
+              className="flex items-center gap-2 h-12 px-6 border-2 border-gray-300 hover:border-gray-400 rounded-xl transition-all duration-200"
+            >
+              ← Anterior
             </Button>
+          ) : (
+            <div />
           )}
           
           {step < 4 ? (
-            <Button type="button" onClick={() => setStep(step + 1)} className="ml-auto">
-              Próximo
+            <Button 
+              type="button" 
+              onClick={() => setStep(step + 1)}
+              className="flex items-center gap-2 h-12 px-8 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Próximo →
             </Button>
           ) : (
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="ml-auto flex items-center gap-2"
+              className="flex items-center gap-2 h-12 px-8 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
             >
               {isLoading ? (
-                "Enviando..."
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Enviando...
+                </>
               ) : (
                 <>
                   <Send className="h-4 w-4" />

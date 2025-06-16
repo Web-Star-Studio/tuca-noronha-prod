@@ -697,16 +697,20 @@ export const createPackageRequest = mutation({
 export const updatePackageRequestStatus = mutation({
   args: {
     id: v.id("packageRequests"),
-    status: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_review"),
+      v.literal("proposal_sent"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("completed")
+    ),
     note: v.optional(v.string()),
   },
   returns: v.id("packageRequests"),
   handler: async (ctx, args) => {
-    const validStatuses = ["pending", "in_review", "approved", "rejected", "completed"];
-    if (!validStatuses.includes(args.status)) {
-      throw new Error("Invalid status");
-    }
-
     const request = await ctx.db.get(args.id);
     if (!request) {
       throw new Error("Package request not found");
@@ -835,5 +839,245 @@ export const updateCustomerInfo = mutation({
     });
 
     return args.requestId;
+  },
+});
+
+/**
+ * Create a contact message for a package request
+ */
+export const createPackageRequestMessage = mutation({
+  args: {
+    packageRequestId: v.id("packageRequests"),
+    subject: v.string(),
+    message: v.string(),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+  },
+  returns: v.id("packageRequestMessages"),
+  handler: async (ctx, args) => {
+    // Get current user identity
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Verify package request exists and belongs to user
+    const packageRequest = await ctx.db.get(args.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Package request not found");
+    }
+
+    // Check if user has access to this package request
+    const userEmail = identity.email || user.email;
+    
+    // Debug logging
+    console.log("🔍 createPackageRequestMessage: Email verification", {
+      userEmails: {
+        identity: identity.email,
+        user: user.email,
+        final: userEmail
+      },
+      packageEmail: packageRequest.customerInfo.email,
+      userId: user._id,
+      packageRequestId: args.packageRequestId,
+      userRole: user.role
+    });
+    
+    // Check if user is admin/master (they can send messages for any request)
+    const isAdmin = user.role === "master" || user.role === "employee";
+    
+    if (isAdmin) {
+      console.log("✅ createPackageRequestMessage: Access granted (admin user)");
+    } else {
+      // For regular users, check email match
+      const normalizeEmail = (email: string | undefined) => 
+        email ? email.trim().toLowerCase() : '';
+      
+      const normalizedPackageEmail = normalizeEmail(packageRequest.customerInfo.email);
+      
+      // Build list of possible emails for this user
+      const possibleEmails: string[] = [];
+      if (identity.email) possibleEmails.push(normalizeEmail(identity.email));
+      if (user.email && !possibleEmails.includes(normalizeEmail(user.email))) {
+        possibleEmails.push(normalizeEmail(user.email));
+      }
+      if (userEmail && !possibleEmails.includes(normalizeEmail(userEmail))) {
+        possibleEmails.push(normalizeEmail(userEmail));
+      }
+      
+      // Check if package request email matches any of the user's possible emails
+      const hasEmailAccess = possibleEmails.includes(normalizedPackageEmail);
+      
+      // Also check if the user name matches (could be same person with different email)
+      const normalizedPackageName = packageRequest.customerInfo.name.toLowerCase().trim();
+      const normalizedUserName = (user.name || identity.name || '').toLowerCase().trim();
+      const hasNameMatch = normalizedPackageName === normalizedUserName && normalizedUserName !== '';
+      
+      if (!hasEmailAccess && !hasNameMatch) {
+        console.error("❌ createPackageRequestMessage: Access denied", {
+          normalizedPackageEmail,
+          possibleEmails,
+          normalizedPackageName,
+          normalizedUserName,
+          hasNameMatch,
+          originalPackageEmail: packageRequest.customerInfo.email,
+          originalUserEmail: userEmail
+        });
+        throw new Error(`Access denied to this package request. This request was made with email ${packageRequest.customerInfo.email}, but you are logged in with ${userEmail}. If this is your request, please contact support to link it to your current account.`);
+      }
+      
+      if (hasNameMatch && !hasEmailAccess) {
+        console.log("✅ createPackageRequestMessage: Access granted (name match - possible email change)");
+      } else {
+        console.log("✅ createPackageRequestMessage: Access granted (email match)");
+      }
+    }
+
+    // Create the message
+    const messageId = await ctx.db.insert("packageRequestMessages", {
+      packageRequestId: args.packageRequestId,
+      userId: user._id,
+      senderName: user.name || identity.name || packageRequest.customerInfo.name,
+      senderEmail: userEmail!,
+      subject: args.subject,
+      message: args.message,
+      status: "sent",
+      priority: args.priority,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return messageId;
+  },
+});
+
+/**
+ * Mark package request message as read
+ */
+export const markPackageRequestMessageAsRead = mutation({
+  args: { messageId: v.id("packageRequestMessages") },
+  returns: v.id("packageRequestMessages"),
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) {
+      throw new Error("Message not found");
+    }
+
+    await ctx.db.patch(args.messageId, {
+      status: "read",
+      readAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return args.messageId;
+  },
+});
+
+/**
+ * Mark package request message as replied
+ */
+export const markPackageRequestMessageAsReplied = mutation({
+  args: { messageId: v.id("packageRequestMessages") },
+  returns: v.id("packageRequestMessages"),
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) {
+      throw new Error("Message not found");
+    }
+
+    await ctx.db.patch(args.messageId, {
+      status: "replied",
+      repliedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return args.messageId;
+  },
+});
+
+/**
+ * Send admin reply to package request message
+ */
+export const sendPackageRequestReply = mutation({
+  args: {
+    packageRequestId: v.id("packageRequests"),
+    originalMessageId: v.optional(v.id("packageRequestMessages")),
+    subject: v.string(),
+    message: v.string(),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+  },
+  returns: v.id("packageRequestMessages"),
+  handler: async (ctx, args) => {
+    // Get current user identity
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user is admin/master
+    const isAdmin = user.role === "master" || user.role === "employee";
+    if (!isAdmin) {
+      throw new Error("Only admins can send replies");
+    }
+
+    // Verify package request exists
+    const packageRequest = await ctx.db.get(args.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Package request not found");
+    }
+
+    // Create the reply message
+    const messageId = await ctx.db.insert("packageRequestMessages", {
+      packageRequestId: args.packageRequestId,
+      userId: user._id,
+      senderName: user.name || identity.name || "Admin",
+      senderEmail: user.email || identity.email || "admin@tournarrays.com",
+      subject: args.subject,
+      message: args.message,
+      status: "sent",
+      priority: args.priority,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // If replying to a specific message, mark it as replied
+    if (args.originalMessageId) {
+      await ctx.db.patch(args.originalMessageId, {
+        status: "replied",
+        repliedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    return messageId;
   },
 }); 
