@@ -691,4 +691,104 @@ export const createMenuItem = mutationWithRole(["partner", "master", "employee"]
 
     return itemId;
   },
+});
+
+/**
+ * Atribui uma reserva a uma mesa específica
+ */
+export const assignReservationToTable = mutationWithRole(["partner", "master", "employee"])({
+  args: {
+    reservationId: v.id("restaurantReservations"),
+    tableId: v.optional(v.id("restaurantTables")), // null para remover atribuição
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verificar se a reserva existe
+    const reservation = await ctx.db.get(args.reservationId);
+    if (!reservation) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(reservation.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    if (currentUserRole === "partner") {
+      if (restaurant.partnerId.toString() !== currentUserId.toString()) {
+        throw new Error("Você não tem permissão para gerenciar reservas neste restaurante");
+      }
+    } else if (currentUserRole === "employee") {
+      // Verificar se o employee tem acesso a este restaurante através das organizações
+      const hasAccess = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+        .filter((q) => {
+          return q.eq(q.field("partnerId"), restaurant.partnerId);
+        })
+        .first();
+
+      if (!hasAccess) {
+        throw new Error("Você não tem permissão para gerenciar reservas neste restaurante");
+      }
+    }
+
+    // Se está atribuindo a uma mesa, verificar se a mesa existe e pertence ao restaurante
+    if (args.tableId) {
+      const table = await ctx.db.get(args.tableId);
+      if (!table) {
+        throw new Error("Mesa não encontrada");
+      }
+
+      if (table.restaurantId.toString() !== reservation.restaurantId.toString()) {
+        throw new Error("A mesa não pertence ao restaurante da reserva");
+      }
+
+      if (!table.isActive) {
+        throw new Error("A mesa não está ativa para reservas");
+      }
+
+      // Verificar se a mesa tem capacidade suficiente
+      if (Number(table.capacity) < reservation.partySize) {
+        throw new Error(`A mesa ${table.name} tem capacidade para ${table.capacity} pessoas, mas a reserva é para ${reservation.partySize} pessoas`);
+      }
+
+      // Verificar se a mesa já está ocupada no mesmo horário e data
+      const conflictingReservation = await ctx.db
+        .query("restaurantReservations")
+        .withIndex("by_table", (q) => q.eq("tableId", args.tableId))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("date"), reservation.date),
+            q.eq(q.field("time"), reservation.time),
+            q.neq(q.field("_id"), args.reservationId),
+            q.or(
+              q.eq(q.field("status"), "confirmed"),
+              q.eq(q.field("status"), "pending")
+            )
+          )
+        )
+        .first();
+
+      if (conflictingReservation) {
+        throw new Error(`A mesa ${table.name} já está reservada para este horário`);
+      }
+    }
+
+    // Atualizar a reserva
+    await ctx.db.patch(args.reservationId, {
+      tableId: args.tableId,
+    });
+
+    return true;
+  },
 }); 

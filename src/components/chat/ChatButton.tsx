@@ -13,7 +13,7 @@ import {
   useCreateChatRoom,
   generateChatTitle,
 } from "@/lib/services/chatService";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 interface ChatButtonProps {

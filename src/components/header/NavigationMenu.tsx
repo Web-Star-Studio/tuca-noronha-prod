@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed, User, Car } from "lucide-react";
+import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed, User, Car, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface NavigationMenuProps {
@@ -14,6 +14,7 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
   const pathname = usePathname();
   const navigationItems = [
     { path: "/meu-painel", label: "Meu Painel", icon: User },
+    { path: "/meu-painel/chats", label: "Conversas", icon: MessageCircle },
     { path: "/", label: "Home", icon: Home },
     { path: "/atividades", label: "Atividades", icon: Compass },
     { path: "/pacotes", label: "Pacotes", icon: Package },

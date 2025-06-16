@@ -187,7 +187,7 @@ export default function AIRecommendationsSection() {
                     {recommendation.rating && recommendation.rating > 0 && (
                       <div className="flex items-center space-x-1">
                         <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                        <span className="text-xs font-medium text-gray-700">{recommendation.rating.toFixed(1)}</span>
+                        <span className="text-xs font-medium text-gray-700">{recommendation.rating && typeof recommendation.rating === 'number' ? recommendation.rating.toFixed(1) : 'N/A'}</span>
                       </div>
                     )}
                   </div>

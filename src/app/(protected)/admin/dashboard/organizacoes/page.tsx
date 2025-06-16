@@ -134,12 +134,7 @@ export default function OrganizationsManagementPage() {
             </p>
           </div>
         </div>
-        <Link href="/admin/dashboard/novo-empreendimento">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Organização
-          </Button>
-        </Link>
+        {/* Master admins não precisam criar organizações através desta interface */}
       </div>
 
       {/* Estatísticas Globais */}

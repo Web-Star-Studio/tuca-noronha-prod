@@ -24,7 +24,7 @@ import {
   getChatStatusText,
   type ChatMessage 
 } from "@/lib/services/chatService";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 interface ChatWindowProps {

@@ -43,14 +43,12 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { useAuth } from "@/lib/auth"
-import { useUser } from "@clerk/nextjs"
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 
 type TimeRange = "7d" | "30d" | "90d" | "1y";
 
 export default function RelatoriosPage() {
-  const { isAuthenticated } = useAuth()
-  const { user } = useUser()
+  const { user } = useCurrentUser()
   const [timeRange, setTimeRange] = useState<TimeRange>("30d")
   const [refreshing, setRefreshing] = useState(false)
 
@@ -128,9 +126,8 @@ export default function RelatoriosPage() {
     return "text-gray-600"
   }
 
-  // Verificar permissões
-  const userRole = user?.publicMetadata?.role || user?.unsafeMetadata?.role;
-  if (userRole !== "master") {
+  // Verificar permissões usando o sistema correto
+  if (user?.role !== "master") {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -493,7 +490,7 @@ export default function RelatoriosPage() {
                           {destination.averageRating > 0 && (
                             <>
                               <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                              <span>{destination.averageRating.toFixed(1)}</span>
+                              <span>{destination.averageRating && typeof destination.averageRating === 'number' ? destination.averageRating.toFixed(1) : 'N/A'}</span>
                             </>
                           )}
                           {getTrendIcon(destination.growthRate)}

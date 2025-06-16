@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/../convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";

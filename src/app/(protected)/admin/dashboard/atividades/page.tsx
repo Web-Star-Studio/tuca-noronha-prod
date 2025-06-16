@@ -138,7 +138,7 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center">
                   <span className="text-yellow-500 mr-1">★</span>
-                  <span>{activity.rating.toFixed(1)}</span>
+                  <span>{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -932,13 +932,13 @@ export default function ActivitiesPage() {
     
     try {
       // Use the clerk ID for user identification
-      const clerkId = user.id;
+      const clerkId = user._id;
       
       // Save the creator information
       await createActivity(newActivity);
       
       // Log the creation for audit purposes
-      console.log(`Activity created by user ${user.id} at ${new Date().toISOString()}`);
+      console.log(`Activity created by user ${user._id} at ${new Date().toISOString()}`);
       toast.success("Atividade criada com sucesso");
       setAddDialogOpen(false);
     } catch (error) {

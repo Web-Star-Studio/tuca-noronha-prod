@@ -55,7 +55,7 @@ export function AssetPermissions({ assetId, assetType, assetName }: AssetPermiss
   
   // Buscar lista de employees do parceiro atual
   const employees = useQuery(api.domains.rbac.queries.listEmployees)
-  const permissions = useQuery(api.domains.rbac.queries.listEmployeePermissions)
+  const permissions = useQuery(api.domains.rbac.queries.listAllAssetPermissions)
   
   // Mutations para adicionar/remover permissões
   const grantPermission = useMutation(api.domains.rbac.mutations.grantAssetPermission)

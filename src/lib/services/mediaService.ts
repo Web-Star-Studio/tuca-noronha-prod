@@ -11,11 +11,11 @@ export type Media = {
   storageId: string;
   fileName: string;
   fileType: string;
-  fileSize: number;
+  fileSize: bigint;
   description?: string;
   category?: string;
-  height?: number;
-  width?: number;
+  height?: bigint;
+  width?: bigint;
   uploadedBy: Id<"users">;
   isPublic: boolean;
   tags?: string[];
@@ -144,7 +144,7 @@ export function useUploadMedia() {
       isPublic?: boolean;
       tags?: string[];
     }) => {
-      if (!user?.id) {
+      if (!user?._id) {
         throw new Error("Usuário não autenticado");
       }
 
@@ -175,14 +175,14 @@ export function useUploadMedia() {
         fileSize: BigInt(file.size),
         description,
         category,
-        uploadedBy: user.id as Id<"users">,
+        uploadedBy: user._id,
         isPublic: isPublic ?? true,
         tags,
       });
 
       return mediaId;
     },
-    [generateUploadUrl, storeMedia, user?.id]
+    [generateUploadUrl, storeMedia, user?._id]
   );
 
   return uploadMedia;

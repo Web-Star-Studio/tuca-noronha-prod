@@ -34,6 +34,7 @@ import FloatingSupportButton from './components/FloatingSupportButton'
 import RecommendationCard from './components/RecommendationCard'
 import FavoritesSection from '@/components/profile/FavoritesSection'
 import AIRecommendationsSection from '@/components/AIRecommendationsSection'
+import ChatsSection from './components/ChatsSection'
 
 
 
@@ -83,6 +84,8 @@ export default function Dashboard() {
         )
       case 'pacotes':
         return <PackageRequestsSection />
+      case 'chats':
+        return <ChatsSection />
       case 'recomendacoes':
         return <AIRecommendationsSection />
       case 'favoritos':

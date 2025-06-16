@@ -634,6 +634,24 @@ export const updateEmployeeClerkId = internalMutation({
 });
 
 /**
+ * Update user clerk ID (internal helper for fixing failed user sync)
+ */
+export const updateUserClerkId = internalMutation({
+  args: {
+    userId: v.id("users"),
+    clerkId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      clerkId: args.clerkId,
+      emailVerificationTime: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
  * Mark employee creation as failed (Internal)
  */
 export const markEmployeeCreationFailed = internalMutation({
@@ -666,6 +684,8 @@ export const markEmployeeCreationFailed = internalMutation({
     return null;
   },
 });
+
+
 
 /**
  * Completar o onboarding do usuário traveler

@@ -6,7 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin, Utensils, MessageCircle } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/../convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";

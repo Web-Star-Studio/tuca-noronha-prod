@@ -691,6 +691,7 @@ export const getActivityBookings = query({
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    activityId: v.optional(v.id("activities")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -736,6 +737,38 @@ export const getActivityBookings = query({
 
     // For partners, only show bookings for their activities
     if (user.role === "partner") {
+      // If specific activity is requested, check ownership first
+      if (args.activityId) {
+        const activity = await ctx.db.get(args.activityId);
+        if (!activity || activity.partnerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas desta atividade");
+        }
+
+        let activityQuery = ctx.db
+          .query("activityBookings")
+          .withIndex("by_activity", (q) => q.eq("activityId", args.activityId!));
+
+        if (args.status && typeof args.status === "string") {
+          activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await activityQuery.collect();
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              activityTitle: activity.title,
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
       // Get partner's activities, filtered by organization if specified
       let partnerActivities;
       
@@ -759,6 +792,18 @@ export const getActivityBookings = query({
         partnerActivities = allPartnerActivities.filter(activity => 
           assetIds.includes(activity._id)
         );
+        
+        // Se não encontrar atividades na organização, mas a organização existe,
+        // mostra todas as atividades do partner (fallback)
+        if (partnerActivities.length === 0) {
+          const organization = await ctx.db.get(args.organizationId);
+          if (organization && organization.partnerId.toString() === user._id.toString()) {
+            partnerActivities = await ctx.db
+              .query("activities")
+              .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+              .collect();
+          }
+        }
       } else {
         // Sem filtro de organização, busca todas as atividades do partner
         partnerActivities = await ctx.db
@@ -894,6 +939,7 @@ export const getEventBookings = query({
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    eventId: v.optional(v.id("events")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -937,6 +983,38 @@ export const getEventBookings = query({
 
     // For partners, only show bookings for their events
     if (user.role === "partner") {
+      // If specific event is requested, check ownership first
+      if (args.eventId) {
+        const event = await ctx.db.get(args.eventId);
+        if (!event || event.partnerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas deste evento");
+        }
+
+        let eventQuery = ctx.db
+          .query("eventBookings")
+          .withIndex("by_event", (q) => q.eq("eventId", args.eventId!));
+
+        if (args.status && typeof args.status === "string") {
+          eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await eventQuery.collect();
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              eventTitle: event.title,
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
       // Get partner's events, filtered by organization if specified
       let partnerEvents;
       
@@ -960,6 +1038,18 @@ export const getEventBookings = query({
         partnerEvents = allPartnerEvents.filter(event => 
           assetIds.includes(event._id)
         );
+        
+        // Se não encontrar eventos na organização, mas a organização existe,
+        // mostra todos os eventos do partner (fallback)
+        if (partnerEvents.length === 0) {
+          const organization = await ctx.db.get(args.organizationId);
+          if (organization && organization.partnerId.toString() === user._id.toString()) {
+            partnerEvents = await ctx.db
+              .query("events")
+              .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+              .collect();
+          }
+        }
       } else {
         // Sem filtro de organização, busca todos os eventos do partner
         partnerEvents = await ctx.db
@@ -1095,6 +1185,7 @@ export const getRestaurantReservations = query({
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    restaurantId: v.optional(v.id("restaurants")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -1113,6 +1204,7 @@ export const getRestaurantReservations = query({
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      tableId: v.optional(v.id("restaurantTables")),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -1134,19 +1226,61 @@ export const getRestaurantReservations = query({
 
     // For partners, only show reservations for their restaurants
     if (user.role === "partner") {
+      // If specific restaurant is requested, check ownership first
+      if (args.restaurantId) {
+        const restaurant = await ctx.db.get(args.restaurantId);
+        if (!restaurant || restaurant.partnerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas deste restaurante");
+        }
+
+        let restaurantQuery = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId!));
+
+        if (args.status && typeof args.status === "string") {
+          restaurantQuery = restaurantQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const reservations = await restaurantQuery.collect();
+        const reservationsWithDetails = await Promise.all(
+          reservations.map(async (reservation) => {
+            return {
+              ...reservation,
+              restaurantName: restaurant.name,
+            };
+          })
+        );
+
+        return {
+          page: reservationsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
       // Get partner's restaurants
       let partnerRestaurants;
       
       if (args.organizationId) {
-        // Filter restaurants by organization if organizationId is provided
-        partnerRestaurants = await ctx.db
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "restaurants")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra restaurantes que pertencem à organização
+        const allPartnerRestaurants = await ctx.db
           .query("restaurants")
           .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
           .collect();
-          
-        // Filter by organization locally since there's no organizationId field in restaurants
-        // TODO: Add organizationId field to restaurants table and update schema
-        partnerRestaurants = partnerRestaurants;
+        
+        partnerRestaurants = allPartnerRestaurants.filter(restaurant => 
+          assetIds.includes(restaurant._id)
+        );
       } else {
         // Get all partner restaurants if no organizationId is provided
         partnerRestaurants = await ctx.db
@@ -1204,14 +1338,14 @@ export const getRestaurantReservations = query({
     
     // If organizationId is provided, filter by organization
     if (args.organizationId) {
-      const organizationRestaurants = await ctx.db
-        .query("restaurants")
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "restaurants")
+        )
         .collect();
         
-      // Filter by organization locally since there's no organizationId field in restaurants
-      // TODO: Add organizationId field to restaurants table and update schema
-        
-      restaurantIds = organizationRestaurants.map(restaurant => restaurant._id);
+      restaurantIds = organizationAssets.map(asset => asset.assetId);
       
       if (restaurantIds.length === 0) {
         return {
@@ -1304,6 +1438,7 @@ export const getVehicleBookings = query({
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    vehicleId: v.optional(v.id("vehicles")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -1348,25 +1483,68 @@ export const getVehicleBookings = query({
 
     // For partners, only show bookings for their vehicles
     if (user.role === "partner") {
+      // If specific vehicle is requested, check ownership first
+      if (args.vehicleId) {
+        const vehicle = await ctx.db.get(args.vehicleId);
+        if (!vehicle || !vehicle.ownerId || vehicle.ownerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas deste veículo");
+        }
+
+        let vehicleQuery = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", args.vehicleId!));
+
+        if (args.status && typeof args.status === "string") {
+          vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await vehicleQuery.collect();
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              vehicleName: vehicle.name,
+              vehicleBrand: vehicle.brand,
+              vehicleModel: vehicle.model,
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
       // Get partner's vehicles
       let partnerVehicles;
       
       if (args.organizationId) {
-        // Filter vehicles by organization if organizationId is provided
-        partnerVehicles = await ctx.db
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "vehicles")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra veículos que pertencem à organização
+        const allPartnerVehicles = await ctx.db
           .query("vehicles")
           .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
           .collect();
-          
-        // Filter by organization locally since organizationId filtering needs to be implemented
-        // TODO: Add proper organizationId filtering for vehicles
-        partnerVehicles = partnerVehicles;
+        
+        partnerVehicles = allPartnerVehicles.filter(vehicle => 
+          assetIds.includes(vehicle._id)
+        );
       } else {
         // Get all partner vehicles if no organizationId is provided
         partnerVehicles = await ctx.db
           .query("vehicles")
-          .order("desc")
-          .filter((q) => q.eq(q.field("ownerId"), user._id))
+          .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
           .collect();
       }
 
@@ -1421,14 +1599,14 @@ export const getVehicleBookings = query({
     
     // If organizationId is provided, filter by organization
     if (args.organizationId) {
-      const organizationVehicles = await ctx.db
-        .query("vehicles")
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "vehicles")
+        )
         .collect();
         
-      // Filter by organization locally since there's no organizationId field in vehicles
-      // TODO: Add organizationId field to vehicles table and update schema
-        
-      vehicleIds = organizationVehicles.map(vehicle => vehicle._id);
+      vehicleIds = organizationAssets.map(asset => asset.assetId);
       
       if (vehicleIds.length === 0) {
         return {
@@ -1614,6 +1792,7 @@ export const getRestaurantReservationById = query({
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      tableId: v.optional(v.id("restaurantTables")),
     }),
     v.null()
   ),
@@ -2485,3 +2664,4 @@ export const getReservationWithPartnerDetails = query({
     };
   },
 });
+

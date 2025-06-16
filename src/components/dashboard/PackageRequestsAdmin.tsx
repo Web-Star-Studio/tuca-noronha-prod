@@ -37,7 +37,7 @@ import {
   type PackageRequestSummary,
   type PackageRequest
 } from "../../../convex/domains/packages/types";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 
 export default function PackageRequestsAdmin() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");

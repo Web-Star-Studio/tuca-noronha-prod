@@ -11,7 +11,7 @@ export function useEmployees() {
   const stats = useQuery(api.domains.users.queries.getPartnerEmployeeStats);
 
   // Mutations
-  const createEmployeeMutation = useMutation(api.domains.users.mutations.createEmployee);
+  const createEmployeeDirectlyMutation = useMutation(api.domains.rbac.mutations.createEmployeeDirectly);
 
   // Create employee function
   const createEmployee = useCallback(async (data: {
@@ -24,7 +24,12 @@ export function useEmployees() {
     setIsCreating(true);
     
     try {
-      const result = await createEmployeeMutation(data);
+      const result = await createEmployeeDirectlyMutation({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        organizationId: data.organizationId,
+      });
       
       toast.success("Colaborador criado com sucesso!", {
         description: "O colaborador já pode fazer login com as credenciais fornecidas.",
@@ -46,7 +51,7 @@ export function useEmployees() {
     } finally {
       setIsCreating(false);
     }
-  }, [createEmployeeMutation]);
+  }, [createEmployeeDirectlyMutation]);
 
   // Filter employees by search term
   const filterEmployees = useCallback((searchTerm: string) => {

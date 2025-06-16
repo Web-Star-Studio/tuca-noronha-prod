@@ -32,7 +32,7 @@ export function useIsAuthenticated(): {
   isLoading: boolean;
 } {
   const { isAuthenticated, isLoading } = CurrentUserHook();
-  return { isAuthenticated, isLoading };
+  return { isAuthenticated: !!isAuthenticated, isLoading };
 }
 
 /**

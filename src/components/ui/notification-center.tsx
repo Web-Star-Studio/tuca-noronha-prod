@@ -45,12 +45,13 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     limit: 50,
   });
 
+  // Get unread count efficiently
+  const unreadCount = useQuery(api.domains.notifications.queries.getUnreadNotificationCount);
+
   // Mutations
   const markAsRead = useMutation(api.domains.notifications.mutations.markAsRead);
   const markAllAsRead = useMutation(api.domains.notifications.mutations.markAllAsRead);
   const deleteNotification = useMutation(api.domains.notifications.mutations.deleteNotification);
-
-  const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
@@ -63,10 +64,13 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
 
   const handleMarkAllAsRead = async () => {
     try {
-      const user = await fetch('/api/get-user-id').then(res => res.json());
-      if (!user.userId) throw new Error("Usuário não encontrado");
+      // Buscar o userId do usuário logado
+      const userIdResult = await fetch('/api/get-user-id').then(res => res.json());
+      if (!userIdResult?.userId) {
+        throw new Error("Usuário não encontrado");
+      }
       
-      await markAllAsRead({ userId: user.userId });
+      await markAllAsRead({ userId: userIdResult.userId });
       toast.success("Todas as notificações foram marcadas como lidas");
     } catch (error) {
       toast.error("Erro ao marcar todas as notificações como lidas");

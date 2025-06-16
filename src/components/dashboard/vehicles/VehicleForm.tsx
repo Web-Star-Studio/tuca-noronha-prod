@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from "@/lib/services/vehicleService";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 
 type VehicleFormProps = {
   onSubmit: () => void;
@@ -123,17 +123,23 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Debug: Check which fields are missing
+    const missingFields: string[] = [];
+    if (!vehicleData.name) missingFields.push("name");
+    if (!vehicleData.brand) missingFields.push("brand");
+    if (!vehicleData.model) missingFields.push("model");
+    if (!vehicleData.category) missingFields.push("category");
+    if (!vehicleData.licensePlate) missingFields.push("licensePlate");
+    if (!vehicleData.color) missingFields.push("color");
+    if (!vehicleData.fuelType) missingFields.push("fuelType");
+    if (!vehicleData.transmission) missingFields.push("transmission");
+    if (vehicleData.pricePerDay <= 0) missingFields.push("pricePerDay");
+    
     // Validation
-    if (!vehicleData.name || 
-        !vehicleData.brand || 
-        !vehicleData.model || 
-        !vehicleData.category || 
-        !vehicleData.licensePlate ||
-        !vehicleData.color ||
-        !vehicleData.fuelType ||
-        !vehicleData.transmission ||
-        vehicleData.pricePerDay <= 0) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (missingFields.length > 0) {
+      console.log("Missing fields:", missingFields);
+      console.log("Vehicle data:", vehicleData);
+      toast.error(`Preencha todos os campos obrigatórios. Campos faltando: ${missingFields.join(", ")}`);
       return;
     }
 

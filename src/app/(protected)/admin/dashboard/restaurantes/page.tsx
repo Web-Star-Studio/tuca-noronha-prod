@@ -6,7 +6,9 @@ import { Restaurant } from "@/lib/services/restaurantService"
 import type { Id } from "@/../convex/_generated/dataModel"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { toast } from "sonner"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Trash2 } from "lucide-react"
 import { 
   RestaurantsHeader, 
   RestaurantsFilter, 
@@ -29,6 +31,7 @@ export default function RestaurantsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   
   // State for filtering and pagination
   const [filter, setFilter] = useState("all")
@@ -94,7 +97,7 @@ export default function RestaurantsPage() {
     try {
       setIsSubmitting(true)
       // Cast the string ID to the Convex Id<"users"> type
-      const userId = user.id as Id<"users"> 
+      const userId = user._id 
       await createRestaurant(restaurantData, userId)
       toast.success("Restaurante criado com sucesso!")
       setDialogOpen(false)
@@ -123,14 +126,13 @@ export default function RestaurantsPage() {
   }
   
   const handleDeleteRestaurant = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este restaurante?")) {
-      try {
-        await deleteRestaurant(id)
-        toast.success("Restaurante excluído com sucesso!")
-      } catch (error) {
-        console.error("Erro ao excluir restaurante:", error)
-        toast.error("Erro ao excluir restaurante")
-      }
+    try {
+      await deleteRestaurant(id)
+      toast.success("Restaurante excluído com sucesso!")
+      setConfirmDeleteId(null)
+    } catch (error) {
+      console.error("Erro ao excluir restaurante:", error)
+      toast.error("Erro ao excluir restaurante")
     }
   }
   
@@ -210,7 +212,7 @@ export default function RestaurantsPage() {
             isLoading={isLoading}
             searchQuery={searchQuery}
             onEdit={openEditDialog}
-            onDelete={handleDeleteRestaurant}
+            onDelete={(id) => setConfirmDeleteId(id)}
             onToggleFeatured={handleToggleFeatured}
             onToggleActive={handleToggleActive}
           />
@@ -245,6 +247,38 @@ export default function RestaurantsPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      {confirmDeleteId && (
+        <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+          <DialogContent className="bg-white/95 backdrop-blur-md border-none shadow-xl max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" /> Confirmar Exclusão
+              </DialogTitle>
+              <DialogDescription>
+                Esta ação não pode ser desfeita. Tem certeza que deseja excluir este restaurante?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200 text-red-700 text-sm">
+              Ao excluir este restaurante, todos os dados associados também serão removidos.
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setConfirmDeleteId(null)} className="border-slate-200 hover:bg-slate-100 transition-colors">
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => handleDeleteRestaurant(confirmDeleteId)} 
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 border-none"
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </motion.div>
   )
 }

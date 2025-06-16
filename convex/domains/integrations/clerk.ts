@@ -1,6 +1,7 @@
 "use node";
 
 import { internalAction } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import { v } from "convex/values";
 
 /**
@@ -155,5 +156,154 @@ export const deleteUser = internalAction({
       console.error("EXCEÇÃO ao excluir usuário:", error);
       return false;
     }
+  },
+});
+
+/**
+ * Action interna que cria um usuário diretamente no Clerk com senha
+ * Não envia email de convite, o usuário pode fazer login imediatamente
+ */
+export const createEmployeeDirectly = internalAction({
+  args: {
+    email: v.string(),
+    password: v.string(),
+    name: v.string(),
+    employeeId: v.id("users"),
+  },
+  returns: v.null(),
+  handler: async (ctx, { email, password, name, employeeId }) => {
+    console.log(`=== INÍCIO: createEmployeeDirectly chamado para email=${email}, name=${name} ===`);
+    const clerkSecret = process.env.CLERK_SECRET_KEY;
+    if (!clerkSecret) {
+      console.error("ERRO CRÍTICO: CLERK_SECRET_KEY não configurada – pulando criação direta Clerk");
+      
+      // Marca o usuário como falha na criação
+      await ctx.runMutation(internal.domains.users.mutations.updateUserClerkId, {
+        userId: employeeId,
+        clerkId: `failed_${Date.now()}_no_clerk_key`,
+      });
+      return null;
+    }
+    console.log(`CLERK_SECRET_KEY configurada: ${clerkSecret.substring(0, 5)}...`);
+
+    const headers = {
+      Authorization: `Bearer ${clerkSecret}`,
+      "Content-Type": "application/json",
+    } as const;
+
+    // Primeiro verifica se já existe usuário com esse email
+    console.log(`Verificando se usuário com email ${email} já existe no Clerk...`);
+    try {
+      const existingRes = await fetch(`https://api.clerk.com/v1/users?email_address=${encodeURIComponent(email)}`, {
+        method: "GET",
+        headers,
+      });
+      
+      if (!existingRes.ok) {
+        const txt = await existingRes.text();
+        console.error("Erro ao consultar usuário no Clerk", existingRes.status, txt);
+        throw new Error(`Erro ao consultar usuário: ${existingRes.status}`);
+      }
+      
+      const existing = (await existingRes.json()) as Array<{ id: string }>;
+      console.log(`Clerk existing users count for ${email}: ${existing.length}`);
+
+      if (existing.length > 0) {
+        console.log(`Usuário já existe no Clerk para ${email}, usando ID existente`);
+        const existingUserId = existing[0].id;
+        
+        // Atualiza metadata para garantir role employee
+        await fetch(`https://api.clerk.com/v1/users/${existingUserId}/metadata`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ 
+            public_metadata: { role: "employee", name }
+          }),
+        });
+        
+        // Atualiza o Convex com o Clerk ID existente
+        await ctx.runMutation(internal.domains.users.mutations.updateUserClerkId, {
+          userId: employeeId,
+          clerkId: existingUserId,
+        });
+        
+        console.log(`=== FIM: createEmployeeDirectly (usuário existente) para ${email} ===`);
+        return null;
+      }
+
+      // Cria novo usuário diretamente com senha
+      console.log(`Criando novo usuário no Clerk para ${email} com senha...`);
+      const requestBody = {
+        email_address: [email],
+        password: password,
+        first_name: name.split(' ')[0] || name,
+        last_name: name.split(' ').slice(1).join(' ') || '',
+        public_metadata: { 
+          role: "employee", 
+          name: name 
+        },
+        // Essas configurações são importantes para garantir que o usuário seja criado corretamente
+        skip_password_checks: false, // Valida a senha
+        skip_password_requirement: false, // Senha é obrigatória
+      };
+      
+      console.log(`Request body para Clerk:`, JSON.stringify(requestBody, null, 2));
+      
+      const createRes = await fetch("https://api.clerk.com/v1/users", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+      
+      const createTxt = await createRes.text();
+      console.log(`Resposta do Clerk para criação de ${email}:`, createRes.status, createTxt);
+      
+      if (!createRes.ok) {
+        console.error("ERRO ao criar usuário no Clerk", createRes.status, createTxt);
+        
+        // Tenta analisar o erro do Clerk
+        try {
+          const errorResponse = JSON.parse(createTxt);
+          console.error("Detalhes do erro do Clerk:", errorResponse);
+          
+          if (errorResponse.errors) {
+            console.error("Erros específicos:", errorResponse.errors);
+          }
+        } catch (parseError) {
+          console.error("Não foi possível parsear resposta de erro do Clerk");
+        }
+        
+        // Marca o usuário como falha na criação
+        await ctx.runMutation(internal.domains.users.mutations.updateUserClerkId, {
+          userId: employeeId,
+          clerkId: `failed_${Date.now()}_${createRes.status}`,
+        });
+        
+        throw new Error(`Erro ao criar usuário no Clerk: ${createRes.status} - ${createTxt}`);
+      }
+      
+      const createdUser = JSON.parse(createTxt) as { id: string };
+      console.log(`SUCESSO: Usuário criado no Clerk com ID ${createdUser.id} para ${email}`);
+      
+      // Atualiza o Convex com o Clerk ID real
+      await ctx.runMutation(internal.domains.users.mutations.updateUserClerkId, {
+        userId: employeeId,
+        clerkId: createdUser.id,
+      });
+      
+    } catch (error) {
+      console.error("EXCEÇÃO ao criar usuário diretamente:", error);
+      
+      // Marca o usuário como falha na criação
+      await ctx.runMutation(internal.domains.users.mutations.updateUserClerkId, {
+        userId: employeeId,
+        clerkId: `failed_${Date.now()}_exception`,
+      });
+      
+      throw error;
+    }
+
+    console.log(`=== FIM: createEmployeeDirectly para ${email} ===`);
+    return null;
   },
 }); 

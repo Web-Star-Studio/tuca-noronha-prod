@@ -41,7 +41,12 @@ const nextConfig = {
         protocol: "https",
         hostname: "gregarious-civet-174.convex.cloud",
         pathname: "/api/storage/**"
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co"
       }
+
     ]
   }
 };

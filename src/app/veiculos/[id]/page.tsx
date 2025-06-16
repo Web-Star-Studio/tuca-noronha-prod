@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useQuery } from "convex/react";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "@/../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
 import {
   MapPin,

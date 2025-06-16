@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { ui } from "@/lib/ui-config";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface ChatNotificationsProps {

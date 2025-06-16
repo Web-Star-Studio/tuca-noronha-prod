@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -43,12 +42,17 @@ import {
   X,
   MessageCircle,
   Building2,
+  Store,
+  Activity,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { ui } from "@/lib/ui-config";
-import { useOrganization } from "@/lib/providers/organization-context";
+import { useAsset } from "@/lib/providers/asset-context";
+import { AssetSelector } from "@/components/dashboard/AssetSelector";
 
 export default function AdminBookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,62 +61,132 @@ export default function AdminBookingsPage() {
   const [partnerNotes, setPartnerNotes] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [actionType, setActionType] = useState<"confirm" | "cancel">("confirm");
+
+  // Asset context
+  const { selectedAsset } = useAsset();
 
   // Mutations for booking actions
   const confirmActivityBooking = useMutation(api.domains.bookings.mutations.confirmActivityBooking);
   const confirmEventBooking = useMutation(api.domains.bookings.mutations.confirmEventBooking);
   const confirmRestaurantReservation = useMutation(api.domains.bookings.mutations.confirmRestaurantReservation);
+  const confirmVehicleBooking = useMutation(api.domains.bookings.mutations.confirmVehicleBooking);
   const cancelActivityBooking = useMutation(api.domains.bookings.mutations.cancelActivityBooking);
   const cancelEventBooking = useMutation(api.domains.bookings.mutations.cancelEventBooking);
   const cancelRestaurantReservation = useMutation(api.domains.bookings.mutations.cancelRestaurantReservation);
+  const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
 
-  // Get active organization from context
-  const { activeOrganization } = useOrganization();
+  // Fetch bookings based on selected asset type
+  // Now we pass organizationId instead of specific asset IDs since selectedAsset is an organization
+  const activityBookings = useQuery(
+    selectedAsset?.assetType === "activities" 
+      ? api.domains.bookings.queries.getActivityBookings
+      : "skip",
+    selectedAsset?.assetType === "activities" ? {
+      paginationOpts: { numItems: 100, cursor: null },
+      ...(statusFilter !== "all" && { status: statusFilter }),
+      ...(selectedAsset && { organizationId: selectedAsset._id }),
+    } : "skip"
+  );
+  
+  const eventBookings = useQuery(
+    selectedAsset?.assetType === "events"
+      ? api.domains.bookings.queries.getEventBookings
+      : "skip",
+    selectedAsset?.assetType === "events" ? {
+      paginationOpts: { numItems: 100, cursor: null },
+      ...(statusFilter !== "all" && { status: statusFilter }),
+      ...(selectedAsset && { organizationId: selectedAsset._id }),
+    } : "skip"
+  );
+  
+  const restaurantReservations = useQuery(
+    selectedAsset?.assetType === "restaurants"
+      ? api.domains.bookings.queries.getRestaurantReservations
+      : "skip",
+    selectedAsset?.assetType === "restaurants" ? {
+      paginationOpts: { numItems: 100, cursor: null },
+      ...(statusFilter !== "all" && { status: statusFilter }),
+      ...(selectedAsset && { organizationId: selectedAsset._id }),
+    } : "skip"
+  );
+  
+  const vehicleBookings = useQuery(
+    selectedAsset?.assetType === "vehicles"
+      ? api.domains.bookings.queries.getVehicleBookings
+      : "skip",
+    selectedAsset?.assetType === "vehicles" ? {
+      paginationOpts: { numItems: 100, cursor: null },
+      ...(statusFilter !== "all" && { status: statusFilter }),
+      ...(selectedAsset && { organizationId: selectedAsset._id }),
+    } : "skip"
+  );
 
-  // Fetch all bookings for admin dashboard
-  const activityBookings = useQuery(api.domains.bookings.queries.getActivityBookings, {
-    paginationOpts: { numItems: 100, cursor: null },
-    ...(statusFilter !== "all" && { status: statusFilter }),
-    ...(activeOrganization && { organizationId: activeOrganization._id }),
-  });
-  
-  const eventBookings = useQuery(api.domains.bookings.queries.getEventBookings, {
-    paginationOpts: { numItems: 100, cursor: null },
-    ...(statusFilter !== "all" && { status: statusFilter }),
-    ...(activeOrganization && { organizationId: activeOrganization._id }),
-  });
-  
-  const restaurantReservations = useQuery(api.domains.bookings.queries.getRestaurantReservations, {
-    paginationOpts: { numItems: 100, cursor: null },
-    ...(statusFilter !== "all" && { status: statusFilter }),
-    ...(activeOrganization && { organizationId: activeOrganization._id }),
-  });
-  
-  const vehicleBookings = useQuery(api.domains.bookings.queries.getVehicleBookings, {
-    paginationOpts: { numItems: 100, cursor: null },
-    ...(statusFilter !== "all" && { status: statusFilter }),
-    ...(activeOrganization && { organizationId: activeOrganization._id }),
-  });
+  // Get current bookings based on asset type
+  const currentBookings = useMemo(() => {
+    if (!selectedAsset) return [];
+    
+    switch (selectedAsset.assetType) {
+      case "activities":
+        return activityBookings?.page || [];
+      case "events":
+        return eventBookings?.page || [];
+      case "restaurants":
+        return restaurantReservations?.page || [];
+      case "vehicles":
+        return vehicleBookings?.page || [];
+      default:
+        return [];
+    }
+  }, [selectedAsset, activityBookings, eventBookings, restaurantReservations, vehicleBookings]);
+
+  // Filter bookings based on search term
+  const filteredBookings = useMemo(() => {
+    if (!searchTerm) return currentBookings;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return currentBookings.filter((booking: any) => {
+      const customerName = booking.customerInfo?.name || booking.name || "";
+      const customerEmail = booking.customerInfo?.email || booking.email || "";
+      const confirmationCode = booking.confirmationCode || "";
+      
+      return (
+        customerName.toLowerCase().includes(searchLower) ||
+        customerEmail.toLowerCase().includes(searchLower) ||
+        confirmationCode.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [currentBookings, searchTerm]);
 
   // Handle booking confirmation
-  const handleConfirmBooking = async (booking: any, type: string) => {
+  const handleConfirmBooking = async (booking: any) => {
+    if (!selectedAsset) return;
+    
     try {
-      if (type === "activity") {
-        await confirmActivityBooking({
-          bookingId: booking._id,
-          partnerNotes: partnerNotes || undefined,
-        });
-      } else if (type === "event") {
-        await confirmEventBooking({
-          bookingId: booking._id,
-          partnerNotes: partnerNotes || undefined,
-        });
-      } else if (type === "restaurant") {
-        await confirmRestaurantReservation({
-          reservationId: booking._id,
-          partnerNotes: partnerNotes || undefined,
-        });
+      switch (selectedAsset.assetType) {
+        case "activities":
+          await confirmActivityBooking({
+            bookingId: booking._id,
+            partnerNotes: partnerNotes || undefined,
+          });
+          break;
+        case "events":
+          await confirmEventBooking({
+            bookingId: booking._id,
+            partnerNotes: partnerNotes || undefined,
+          });
+          break;
+        case "restaurants":
+          await confirmRestaurantReservation({
+            reservationId: booking._id,
+            partnerNotes: partnerNotes || undefined,
+          });
+          break;
+        case "vehicles":
+          await confirmVehicleBooking({
+            bookingId: booking._id,
+            partnerNotes: partnerNotes || undefined,
+          });
+          break;
       }
       
       toast.success("Reserva confirmada com sucesso!");
@@ -126,23 +200,35 @@ export default function AdminBookingsPage() {
   };
 
   // Handle booking cancellation
-  const handleCancelBooking = async (booking: any, type: string) => {
+  const handleCancelBooking = async (booking: any) => {
+    if (!selectedAsset) return;
+    
     try {
-      if (type === "activity") {
-        await cancelActivityBooking({
-          bookingId: booking._id,
-          reason: partnerNotes || "Cancelada pelo admin",
-        });
-      } else if (type === "event") {
-        await cancelEventBooking({
-          bookingId: booking._id,
-          reason: partnerNotes || "Cancelada pelo admin",
-        });
-      } else if (type === "restaurant") {
-        await cancelRestaurantReservation({
-          reservationId: booking._id,
-          reason: partnerNotes || "Cancelada pelo admin",
-        });
+      switch (selectedAsset.assetType) {
+        case "activities":
+          await cancelActivityBooking({
+            bookingId: booking._id,
+            reason: partnerNotes || "Cancelada pelo admin",
+          });
+          break;
+        case "events":
+          await cancelEventBooking({
+            bookingId: booking._id,
+            reason: partnerNotes || "Cancelada pelo admin",
+          });
+          break;
+        case "restaurants":
+          await cancelRestaurantReservation({
+            reservationId: booking._id,
+            reason: partnerNotes || "Cancelada pelo admin",
+          });
+          break;
+        case "vehicles":
+          await cancelVehicleBooking({
+            bookingId: booking._id,
+            reason: partnerNotes || "Cancelada pelo admin",
+          });
+          break;
       }
       
       toast.success("Reserva cancelada com sucesso!");
@@ -155,24 +241,17 @@ export default function AdminBookingsPage() {
     }
   };
 
-  // Stats calculation
+  // Stats calculation for current asset
   const calculateStats = () => {
-    if (!activityBookings || !eventBookings || !restaurantReservations || !vehicleBookings) {
+    if (filteredBookings.length === 0) {
       return { total: 0, pending: 0, confirmed: 0, revenue: 0 };
     }
     
-    const allBookings = [
-      ...activityBookings.page,
-      ...eventBookings.page,
-      ...restaurantReservations.page.map(r => ({ ...r, totalPrice: 0 })), // Restaurants don't have price
-      ...vehicleBookings.page,
-    ];
-
     return {
-      total: allBookings.length,
-      pending: allBookings.filter(b => b.status === "pending").length,
-      confirmed: allBookings.filter(b => b.status === "confirmed").length,
-      revenue: allBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+      total: filteredBookings.length,
+      pending: filteredBookings.filter((b: any) => b.status === "pending").length,
+      confirmed: filteredBookings.filter((b: any) => b.status === "confirmed").length,
+      revenue: filteredBookings.reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0),
     };
   };
 
@@ -198,46 +277,66 @@ export default function AdminBookingsPage() {
   };
 
   // Action buttons for each booking
-  const renderActionButtons = (booking: any, type: string) => {
+  const renderActionButtons = (booking: any) => {
     if (booking.status === "pending") {
       return (
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant="default"
             onClick={() => {
-              setSelectedBooking({ ...booking, type });
-              setActionType("confirm");
+              setSelectedBooking(booking);
               setShowConfirmDialog(true);
             }}
-            className={`${ui.buttons.confirm.className} flex items-center gap-1`}
+            className={ui.buttons.confirm.className}
           >
-            <Check className="w-3 h-3" />
+            <Check className="w-4 h-4 mr-1" />
             Confirmar
           </Button>
           <Button
             size="sm"
             variant="destructive"
             onClick={() => {
-              setSelectedBooking({ ...booking, type });
-              setActionType("cancel");
+              setSelectedBooking(booking);
               setShowCancelDialog(true);
             }}
-            className="flex items-center gap-1"
           >
-            <X className="w-3 h-3" />
+            <X className="w-4 h-4 mr-1" />
             Cancelar
           </Button>
         </div>
       );
     }
     
-    return (
-      <Badge variant="outline" className="text-xs">
-        {booking.status === "confirmed" ? "Confirmada" : 
-         booking.status === "canceled" ? "Cancelada" : "Concluída"}
-      </Badge>
-    );
+    if (booking.status === "confirmed") {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setSelectedBooking(booking);
+            setShowCancelDialog(true);
+          }}
+        >
+          <X className="w-4 h-4 mr-1" />
+          Cancelar
+        </Button>
+      );
+    }
+    
+    return null;
+  };
+
+  const getAssetIcon = (assetType: string) => {
+    const icons = {
+      restaurants: Store,
+      events: Calendar,
+      activities: Activity,
+      vehicles: Car,
+      accommodations: Building2,
+    };
+    
+    const Icon = icons[assetType as keyof typeof icons] || Building2;
+    return <Icon className="h-4 w-4" />;
   };
 
   return (
@@ -248,305 +347,220 @@ export default function AdminBookingsPage() {
           <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
             Gerenciamento de Reservas
           </h1>
-          {activeOrganization && (
+          {selectedAsset && (
             <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
-              <Building2 className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700">{activeOrganization.name}</span>
+              {getAssetIcon(selectedAsset.assetType)}
+              <span className="text-sm font-medium text-blue-700">{selectedAsset.name}</span>
             </div>
           )}
         </div>
         <p className={ui.colors.text.secondary}>
-          {activeOrganization 
-            ? `Visualize e gerencie as reservas do empreendimento ${activeOrganization.name}` 
-            : "Visualize e gerencie todas as reservas dos parceiros"
+          {selectedAsset 
+            ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
+            : "Selecione um asset para visualizar suas reservas"
           }
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Total de Reservas</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <Calendar className={`h-8 w-8 ${ui.colors.primary}`} />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Asset Selector */}
+      <AssetSelector compact={true} showDetails={false} />
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Pendentes</p>
-                <p className={`text-2xl font-bold ${ui.colors.warning}`}>{stats.pending}</p>
-              </div>
-              <Clock className={`h-8 w-8 ${ui.colors.warning}`} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Confirmadas</p>
-                <p className={`text-2xl font-bold ${ui.colors.success}`}>{stats.confirmed}</p>
-              </div>
-              <CheckCircle className={`h-8 w-8 ${ui.colors.success}`} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Receita Total</p>
-                <p className={`text-2xl font-bold ${ui.colors.success}`}>
-                  R$ {stats.revenue.toFixed(2)}
-                </p>
-              </div>
-              <TrendingUp className={`h-8 w-8 ${ui.colors.success}`} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${ui.colors.text.muted} w-4 h-4`} />
-          <Input
-            placeholder="Buscar por nome do cliente, atividade, evento..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="confirmed">Confirmado</SelectItem>
-            <SelectItem value="canceled">Cancelado</SelectItem>
-            <SelectItem value="completed">Concluído</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Bookings by Type */}
-      <Tabs defaultValue="activities" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activities" className="flex items-center gap-2">
-            <Ticket className="w-4 h-4" />
-            Atividades ({activityBookings?.page.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="events" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Eventos ({eventBookings?.page.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="restaurants" className="flex items-center gap-2">
-            <Utensils className="w-4 h-4" />
-            Restaurantes ({restaurantReservations?.page.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="vehicles" className="flex items-center gap-2">
-            <Car className="w-4 h-4" />
-            Veículos ({vehicleBookings?.page.length || 0})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Activities Tab */}
-        <TabsContent value="activities" className="space-y-4">
-          {activityBookings?.page.map((booking) => (
-            <Card key={booking._id}>
+      {/* Show content only if asset is selected */}
+      {selectedAsset ? (
+        <>
+          {/* Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{booking.activityTitle}</h3>
-                      {getStatusBadge(booking.status)}
-                    </div>
-                    <div className={`space-y-1 text-sm ${ui.colors.text.secondary}`}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {booking.date}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        {booking.participants} participantes
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          R$ {booking.totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono">
-                          #{booking.confirmationCode}
-                        </span>
-                      </div>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Total de Reservas</p>
+                    <p className={`text-2xl font-bold ${ui.colors.text.primary}`}>
+                      {stats.total}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <div className="mb-3">
-                      <p className="font-medium">{booking.customerInfo.name}</p>
-                      <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo.email}</p>
-                      <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo.phone}</p>
-                    </div>
-                    {renderActionButtons(booking, "activity")}
+                  <div className="flex items-center gap-1">
+                    {getAssetIcon(selectedAsset.assetType)}
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-          {activityBookings?.page.length === 0 && (
-            <div className={`text-center py-8 ${ui.colors.text.muted}`}>
-              Nenhuma reserva de atividade encontrada
-            </div>
-          )}
-        </TabsContent>
 
-        {/* Events Tab */}
-        <TabsContent value="events" className="space-y-4">
-          {eventBookings?.page.map((booking) => (
-            <Card key={booking._id}>
+            <Card>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{booking.eventTitle}</h3>
-                      {getStatusBadge(booking.status)}
-                    </div>
-                    <div className={`space-y-1 text-sm ${ui.colors.text.secondary}`}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Data do evento
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Ticket className="w-4 h-4" />
-                        {booking.quantity} ingressos
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          R$ {booking.totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono">
-                          #{booking.confirmationCode}
-                        </span>
-                      </div>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Pendentes</p>
+                    <p className={`text-2xl font-bold ${ui.colors.warning}`}>
+                      {stats.pending}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <div className="mb-3">
-                      <p className="font-medium">{booking.customerInfo.name}</p>
-                      <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo.email}</p>
-                      <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo.phone}</p>
-                    </div>
-                    {renderActionButtons(booking, "event")}
-                  </div>
+                  <Clock className={`h-8 w-8 ${ui.colors.warning}`} />
                 </div>
               </CardContent>
             </Card>
-          ))}
-          {eventBookings?.page.length === 0 && (
-            <div className={`text-center py-8 ${ui.colors.text.muted}`}>
-              Nenhuma reserva de evento encontrada
-            </div>
-          )}
-        </TabsContent>
 
-        {/* Restaurants Tab */}
-        <TabsContent value="restaurants" className="space-y-4">
-          {restaurantReservations?.page.map((reservation) => (
-            <Card key={reservation._id}>
+            <Card>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{reservation.restaurantName}</h3>
-                      {getStatusBadge(reservation.status)}
-                    </div>
-                    <div className={`space-y-1 text-sm ${ui.colors.text.secondary}`}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {reservation.date} às {reservation.time}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        {Number(reservation.partySize)} pessoas
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono">
-                          #{reservation.confirmationCode}
-                        </span>
-                      </div>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Confirmadas</p>
+                    <p className={`text-2xl font-bold ${ui.colors.success}`}>
+                      {stats.confirmed}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <div className="mb-3">
-                      <p className="font-medium">{reservation.name}</p>
-                      <p className={`text-sm ${ui.colors.text.secondary}`}>{reservation.email}</p>
-                      <p className={`text-sm ${ui.colors.text.secondary}`}>{reservation.phone}</p>
-                    </div>
-                    {renderActionButtons(reservation, "restaurant")}
-                  </div>
+                  <CheckCircle className={`h-8 w-8 ${ui.colors.success}`} />
                 </div>
               </CardContent>
             </Card>
-          ))}
-          {restaurantReservations?.page.length === 0 && (
-            <div className={`text-center py-8 ${ui.colors.text.muted}`}>
-              Nenhuma reserva de restaurante encontrada
-            </div>
-          )}
-        </TabsContent>
 
-        {/* Vehicles Tab */}
-        <TabsContent value="vehicles" className="space-y-4">
-          {vehicleBookings?.page.map((booking) => (
-            <Card key={booking._id}>
+            <Card>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{booking.vehicleName}</h3>
-                      {getStatusBadge(booking.status)}
-                    </div>
-                    <div className={`space-y-1 text-sm ${ui.colors.text.secondary}`}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {format(new Date(booking.startDate), "PPP", { locale: ptBR })} - {format(new Date(booking.endDate), "PPP", { locale: ptBR })}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          R$ {booking.totalPrice.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Receita Total</p>
+                    <p className={`text-2xl font-bold ${ui.colors.success}`}>
+                      R$ {stats.revenue.toFixed(2)}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    {renderActionButtons(booking, "vehicle")}
-                  </div>
+                  <TrendingUp className={`h-8 w-8 ${ui.colors.success}`} />
                 </div>
               </CardContent>
             </Card>
-          ))}
-          {vehicleBookings?.page.length === 0 && (
-            <div className={`text-center py-8 ${ui.colors.text.muted}`}>
-              Nenhuma locação de veículo encontrada
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${ui.colors.text.muted} w-4 h-4`} />
+              <Input
+                placeholder="Buscar por nome do cliente, email, código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="confirmed">Confirmado</SelectItem>
+                <SelectItem value="canceled">Cancelado</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Bookings List */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {getAssetIcon(selectedAsset.assetType)}
+                  Reservas - {selectedAsset.name}
+                  {filteredBookings.length > 0 && (
+                    <Badge variant="secondary">
+                      {filteredBookings.length} {filteredBookings.length === 1 ? "reserva" : "reservas"}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {filteredBookings.length === 0 ? (
+                  <div className={`text-center py-8 ${ui.colors.text.muted}`}>
+                    {searchTerm 
+                      ? `Nenhuma reserva encontrada para "${searchTerm}"`
+                      : "Nenhuma reserva encontrada para este asset"
+                    }
+                  </div>
+                ) : (
+                  filteredBookings.map((booking: any) => (
+                    <Card key={booking._id} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold">
+                                {selectedAsset.assetType === "restaurants" 
+                                  ? `Mesa para ${booking.partySize || booking.participants} pessoas`
+                                  : booking.activityTitle || booking.eventTitle || booking.vehicleName || "Reserva"
+                                }
+                              </h3>
+                              {getStatusBadge(booking.status)}
+                            </div>
+                            <div className={`space-y-1 text-sm ${ui.colors.text.secondary}`}>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                {selectedAsset.assetType === "restaurants" 
+                                  ? `${booking.date} às ${booking.time}`
+                                  : selectedAsset.assetType === "vehicles"
+                                  ? `${format(new Date(booking.startDate), "PPP", { locale: ptBR })} - ${format(new Date(booking.endDate), "PPP", { locale: ptBR })}`
+                                  : booking.date
+                                }
+                              </div>
+                              {(booking.participants || booking.partySize) && (
+                                <div className="flex items-center gap-2">
+                                  <Users className="w-4 h-4" />
+                                  {booking.participants || booking.partySize} {selectedAsset.assetType === "restaurants" ? "pessoas" : "participantes"}
+                                </div>
+                              )}
+                              {booking.totalPrice && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">
+                                    R$ {booking.totalPrice.toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono">
+                                  #{booking.confirmationCode}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="mb-3">
+                              <p className="font-medium">{booking.customerInfo?.name || booking.name}</p>
+                              <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo?.email || booking.email}</p>
+                              <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo?.phone || booking.phone}</p>
+                            </div>
+                            {renderActionButtons(booking)}
+                          </div>
+                        </div>
+                        {booking.specialRequests && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-sm font-medium">Solicitações especiais:</p>
+                            <p className="text-sm text-gray-600">{booking.specialRequests}</p>
+                          </div>
+                        )}
+                        {booking.partnerNotes && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-sm font-medium">Observações do parceiro:</p>
+                            <p className="text-sm text-gray-600">{booking.partnerNotes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Selecione um Asset</h3>
+            <p className="text-gray-600">
+              Escolha um asset acima para visualizar e gerenciar suas reservas.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -584,7 +598,7 @@ export default function AdminBookingsPage() {
               Cancelar
             </Button>
             <Button
-              onClick={() => selectedBooking && handleConfirmBooking(selectedBooking, selectedBooking.type)}
+              onClick={() => selectedBooking && handleConfirmBooking(selectedBooking)}
               className={ui.buttons.confirm.className}
             >
               <Check className="w-4 h-4 mr-2" />
@@ -631,7 +645,7 @@ export default function AdminBookingsPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => selectedBooking && handleCancelBooking(selectedBooking, selectedBooking.type)}
+              onClick={() => selectedBooking && handleCancelBooking(selectedBooking)}
             >
               <X className="w-4 h-4 mr-2" />
               Cancelar Reserva
@@ -639,31 +653,6 @@ export default function AdminBookingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Instructions for Testing */}
-      <Card className={ui.colors.background.accent}>
-        <CardHeader>
-          <CardTitle>Sistema de Confirmação de Reservas</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <h4 className="font-semibold">✅ Funcionalidades Implementadas:</h4>
-            <ul className={`text-sm ${ui.colors.text.secondary} space-y-1 ml-4`}>
-              <li>• Visualização de todas as reservas por categoria</li>
-              <li>• Botões de confirmação e cancelamento para reservas pendentes</li>
-              <li>• Modais de confirmação com possibilidade de adicionar observações</li>
-              <li>• Notificações automáticas para clientes quando reservas são confirmadas</li>
-              <li>• Estatísticas em tempo real no dashboard</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold">🔔 Sistema de Notificações:</h4>
-            <p className={`text-sm ${ui.colors.text.secondary}`}>
-              Quando uma reserva é confirmada ou cancelada, o cliente recebe automaticamente uma notificação no sistema.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -26,7 +26,7 @@ import {
   getChatStatusText,
   type ChatRoom,
 } from "@/lib/services/chatService";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 interface ChatListProps {

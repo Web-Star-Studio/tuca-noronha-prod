@@ -381,7 +381,7 @@ export default function ActivitiesMasterPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500">⭐</span>
-                            <span className="text-sm">{activity.rating.toFixed(1)}</span>
+                            <span className="text-sm">{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
                           </div>
                         </div>
                       </TableCell>

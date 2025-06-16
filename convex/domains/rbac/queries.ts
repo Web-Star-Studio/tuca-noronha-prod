@@ -282,24 +282,114 @@ export const listEmployeePermissions = queryWithRole(["partner", "master"])({
     // Verifica se o employee existe
     const employee = await ctx.db.get(args.employeeId);
     if (!employee) {
-      throw new Error("Employee não encontrado");
+      // Log more details for debugging
+      console.error("Employee not found in listEmployeePermissions:", {
+        employeeId: args.employeeId,
+        currentUserId,
+        currentUserRole,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Return empty array instead of throwing error to prevent UI breaks
+      return [];
     }
+
+    let permissions: any[] = [];
 
     // Se for master, retorna todas as permissões do employee
     if (currentUserRole === "master") {
-      return await ctx.db
+      permissions = await ctx.db
         .query("assetPermissions")
         .withIndex("by_employee", (q) => q.eq("employeeId", args.employeeId))
         .collect();
+    } else {
+      // Se for partner, retorna apenas as permissões do employee criadas por este partner
+      permissions = await ctx.db
+        .query("assetPermissions")
+        .withIndex("by_employee_partner", (q) => 
+          q.eq("employeeId", args.employeeId).eq("partnerId", currentUserId)
+        )
+        .collect();
     }
 
-    // Se for partner, retorna apenas as permissões do employee criadas por este partner
-    return await ctx.db
-      .query("assetPermissions")
-      .withIndex("by_employee_partner", (q) => 
-        q.eq("employeeId", args.employeeId).eq("partnerId", currentUserId)
-      )
-      .collect();
+    // Para cada permissão, busca os detalhes do asset
+    const permissionsWithAssets = await Promise.all(
+             permissions.map(async (permission) => {
+         let asset: any = null;
+        
+                 try {
+           // Busca o asset baseado no tipo
+           if (permission.assetType === "restaurants") {
+             const restaurantAsset = await ctx.db.get(permission.assetId as Id<"restaurants">);
+             if (restaurantAsset) {
+               asset = {
+                 name: restaurantAsset.name,
+                 description: restaurantAsset.description,
+                 isActive: restaurantAsset.isActive,
+                 location: restaurantAsset.address?.city || "Não informado"
+               };
+             }
+           }
+           else if (permission.assetType === "events") {
+             const eventAsset = await ctx.db.get(permission.assetId as Id<"events">);
+             if (eventAsset) {
+               asset = {
+                 title: eventAsset.title,
+                 description: eventAsset.description,
+                 isActive: eventAsset.isActive,
+                 date: eventAsset.date,
+                 location: eventAsset.location || "Não informado"
+               };
+             }
+           }
+           else if (permission.assetType === "activities") {
+             const activityAsset = await ctx.db.get(permission.assetId as Id<"activities">);
+             if (activityAsset) {
+               asset = {
+                 title: activityAsset.title,
+                 description: activityAsset.description,
+                 isActive: activityAsset.isActive,
+                 duration: activityAsset.duration,
+                 difficulty: activityAsset.difficulty
+               };
+             }
+           }
+           else if (permission.assetType === "vehicles") {
+             const vehicleAsset = await ctx.db.get(permission.assetId as Id<"vehicles">);
+             if (vehicleAsset) {
+               asset = {
+                 name: vehicleAsset.name,
+                 brand: vehicleAsset.brand,
+                 model: vehicleAsset.model,
+                 status: vehicleAsset.status,
+                 year: vehicleAsset.year
+               };
+             }
+           }
+           else if (permission.assetType === "accommodations") {
+             const accommodationAsset = await ctx.db.get(permission.assetId as Id<"accommodations">);
+             if (accommodationAsset) {
+               asset = {
+                 name: accommodationAsset.name,
+                 description: accommodationAsset.description,
+                 isActive: accommodationAsset.isActive,
+                 location: accommodationAsset.address?.city || "Não informado"
+               };
+             }
+           }
+        } catch (error) {
+          console.error(`Error fetching asset ${permission.assetId}:`, error);
+          // Asset pode ter sido deletado, mantém a permissão sem detalhes
+        }
+
+        return {
+          ...permission,
+          asset
+        };
+      })
+    );
+
+    return permissionsWithAssets;
   },
 });
 
@@ -802,6 +892,42 @@ export const getEmployeeOrganizationPermission = queryWithRole(["partner", "mast
 });
 
 /**
+ * Obtém informações do usuário atual incluindo seu papel
+ */
+export const getCurrentUser = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.optional(v.string()),
+      name: v.optional(v.string()),
+      email: v.optional(v.string()),
+      image: v.optional(v.string()),
+      role: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) return null;
+    
+    const user = await ctx.db.get(currentUserId);
+    if (!user) return null;
+    
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role || "traveler",
+    };
+  },
+});
+
+
+
+/**
  * Lista organizações baseado no role do usuário:
  * - Masters: todas as organizações
  * - Partners: suas próprias organizações  
@@ -811,48 +937,60 @@ export const listUserOrganizations = queryWithRole(["partner", "master", "employ
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
-    const currentUserId = await getCurrentUserConvexId(ctx);
-    const currentUserRole = await getCurrentUserRole(ctx);
+    try {
+      const currentUserId = await getCurrentUserConvexId(ctx);
+      const currentUserRole = await getCurrentUserRole(ctx);
 
-    if (!currentUserId) {
-      throw new Error("Usuário não autenticado");
-    }
-
-    // Se for master, retorna todas as organizações
-    if (currentUserRole === "master") {
-      return await ctx.db.query("partnerOrganizations").collect();
-    }
-
-    // Se for partner, retorna apenas suas organizações
-    if (currentUserRole === "partner") {
-      return await ctx.db
-        .query("partnerOrganizations")
-        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-        .collect();
-    }
-
-    // Se for employee, retorna organizações que tem permissão para acessar
-    if (currentUserRole === "employee") {
-      const permissions = await ctx.db
-        .query("organizationPermissions")
-        .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
-        .collect();
-
-      if (permissions.length === 0) {
+      if (!currentUserId) {
         return [];
       }
 
-      // Busca as organizações para as quais o employee tem permissão
-      const organizationIds = permissions.map(p => p.organizationId);
-      const organizations = await Promise.all(
-        organizationIds.map(id => ctx.db.get(id))
-      );
+      // Se for master, retorna todas as organizações
+      if (currentUserRole === "master") {
+        return await ctx.db.query("partnerOrganizations").collect();
+      }
 
-      // Filtra organizações que existem e estão ativas
-      return organizations.filter(org => org && org.isActive);
+      // Se for partner, retorna apenas suas organizações
+      if (currentUserRole === "partner") {
+        return await ctx.db
+          .query("partnerOrganizations")
+          .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+          .collect();
+      }
+
+      // Se for employee, retorna organizações que tem permissão para acessar
+      if (currentUserRole === "employee") {
+        const permissions = await ctx.db
+          .query("organizationPermissions")
+          .withIndex("by_employee", (q) => q.eq("employeeId", currentUserId))
+          .collect();
+
+        if (permissions.length === 0) {
+          return [];
+        }
+
+        // Busca as organizações para as quais o employee tem permissão
+        const organizationIds = permissions.map(p => p.organizationId);
+        
+        const organizations = await Promise.all(
+          organizationIds.map(async id => {
+            try {
+              return await ctx.db.get(id);
+            } catch (error) {
+              return null;
+            }
+          })
+        );
+
+        // Filtra organizações que existem e estão ativas
+        return organizations.filter(org => org && org.isActive);
+      }
+
+      return [];
+    } catch (error) {
+      // Instead of throwing, return empty array to prevent UI crashes
+      return [];
     }
-
-    return [];
   },
 });
 
@@ -931,49 +1069,59 @@ export const getPartnerStats = queryWithRole(["partner", "master"])({
     let monthlyBookings = 0;
     let monthlyRevenue = 0;
 
-    // Conta bookings de atividades
-    const activityBookings = await ctx.db.query("activityBookings").collect();
-    const partnerActivityBookings = activityBookings.filter(booking => 
-      activities.some(activity => activity._id === booking.activityId) &&
-      booking.createdAt >= currentMonthTime
-    );
-    monthlyBookings += partnerActivityBookings.length;
-    monthlyRevenue += partnerActivityBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    // Conta bookings de atividades de forma eficiente
+    for (const activity of activities) {
+      const bookings = await ctx.db
+        .query("activityBookings")
+        .withIndex("by_activity", (q) => q.eq("activityId", activity._id))
+        .filter((q) => q.gte(q.field("createdAt"), currentMonthTime))
+        .collect();
+      monthlyBookings += bookings.length;
+      monthlyRevenue += bookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    }
 
-    // Conta bookings de eventos
-    const eventBookings = await ctx.db.query("eventBookings").collect();
-    const partnerEventBookings = eventBookings.filter(booking => 
-      events.some(event => event._id === booking.eventId) &&
-      booking.createdAt >= currentMonthTime
-    );
-    monthlyBookings += partnerEventBookings.length;
-    monthlyRevenue += partnerEventBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    // Conta bookings de eventos de forma eficiente
+    for (const event of events) {
+      const bookings = await ctx.db
+        .query("eventBookings")
+        .withIndex("by_event", (q) => q.eq("eventId", event._id))
+        .filter((q) => q.gte(q.field("createdAt"), currentMonthTime))
+        .collect();
+      monthlyBookings += bookings.length;
+      monthlyRevenue += bookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    }
 
-    // Conta reservas de restaurantes (não têm preço)
-    const restaurantReservations = await ctx.db.query("restaurantReservations").collect();
-    const partnerRestaurantReservations = restaurantReservations.filter(reservation => 
-      restaurants.some(restaurant => restaurant._id === reservation.restaurantId) &&
-      reservation._creationTime >= currentMonthTime
-    );
-    monthlyBookings += partnerRestaurantReservations.length;
+    // Conta reservas de restaurantes de forma eficiente (não têm preço)
+    for (const restaurant of restaurants) {
+      const reservations = await ctx.db
+        .query("restaurantReservations")
+        .withIndex("by_restaurant", (q) => q.eq("restaurantId", restaurant._id))
+        .filter((q) => q.gte(q.field("_creationTime"), currentMonthTime))
+        .collect();
+      monthlyBookings += reservations.length;
+    }
 
-    // Conta bookings de acomodações
-    const accommodationBookings = await ctx.db.query("accommodationBookings").collect();
-    const partnerAccommodationBookings = accommodationBookings.filter(booking => 
-      accommodations.some(accommodation => accommodation._id === booking.accommodationId) &&
-      booking.createdAt >= currentMonthTime
-    );
-    monthlyBookings += partnerAccommodationBookings.length;
-    monthlyRevenue += partnerAccommodationBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    // Conta bookings de acomodações de forma eficiente
+    for (const accommodation of accommodations) {
+      const bookings = await ctx.db
+        .query("accommodationBookings")
+        .withIndex("by_accommodation", (q) => q.eq("accommodationId", accommodation._id))
+        .filter((q) => q.gte(q.field("createdAt"), currentMonthTime))
+        .collect();
+      monthlyBookings += bookings.length;
+      monthlyRevenue += bookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    }
 
-    // Conta bookings de veículos
-    const vehicleBookings = await ctx.db.query("vehicleBookings").collect();
-    const partnerVehicleBookings = vehicleBookings.filter(booking => 
-      vehicles.some(vehicle => vehicle._id === booking.vehicleId) &&
-      booking.createdAt >= currentMonthTime
-    );
-    monthlyBookings += partnerVehicleBookings.length;
-    monthlyRevenue += partnerVehicleBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    // Conta bookings de veículos de forma eficiente
+    for (const vehicle of vehicles) {
+      const bookings = await ctx.db
+        .query("vehicleBookings")
+        .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicle._id))
+        .filter((q) => q.gte(q.field("createdAt"), currentMonthTime))
+        .collect();
+      monthlyBookings += bookings.length;
+      monthlyRevenue += bookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+    }
 
     // Calcula crescimento (simulado por enquanto - seria baseado em dados históricos)
     const bookingGrowth = Math.floor(Math.random() * 20); // Placeholder

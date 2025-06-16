@@ -28,8 +28,10 @@ export function MediaSelector({ open, onOpenChange, multiple = false, initialSel
 
   // Reset selection when opening
   useEffect(() => {
-    if (open) setSelected(initialSelected)
-  }, [open, initialSelected])
+    if (open) {
+      setSelected([...initialSelected])
+    }
+  }, [open])
 
   const toggleSelect = (url: string) => {
     if (multiple) {

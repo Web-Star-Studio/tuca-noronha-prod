@@ -1,10 +1,177 @@
 import { v } from "convex/values";
 import { query, internalQuery } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import type { User, UserWithRole } from "./types";
 import { queryWithRole } from "../../domains/rbac";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
 import { UserRole } from "../rbac/types";
+
+/**
+ * Utility function for dynamic validation based on asset type
+ */
+export const validateAssetByType = (asset: any, expectedType: string): boolean => {
+  if (asset.assetType !== expectedType) {
+    return false;
+  }
+
+  // Dynamic validation based on asset type
+  switch (expectedType) {
+    case "restaurants":
+      return (
+        typeof asset.slug === "string" &&
+        typeof asset.phone === "string" &&
+        Array.isArray(asset.cuisine) &&
+        typeof asset.acceptsReservations === "boolean"
+      );
+    case "events":
+      return (
+        typeof asset.title === "string" ||
+        typeof asset.name === "string"
+      );
+    case "activities":
+      return true; // Add specific validation logic as needed
+    case "vehicles":
+      return (
+        typeof asset.ownerId === "string" &&
+        (asset.status === "available" || asset.status === "maintenance" || asset.status === "rented")
+      );
+    case "accommodations":
+      return (
+        typeof asset.slug === "string" &&
+        typeof asset.phone === "string" &&
+        typeof asset.pricePerNight === "number"
+      );
+    default:
+      return false;
+  }
+};
+
+/**
+ * Standardized asset transformation utility
+ */
+export const standardizeAsset = (asset: any, assetType: string) => {
+  const baseFields = {
+    _id: asset._id.toString(),
+    _creationTime: asset._creationTime,
+    name: asset.name || asset.title,
+    assetType,
+    isActive: assetType === "vehicles" ? asset.status === "available" : asset.isActive,
+    partnerId: assetType === "vehicles" ? asset.ownerId : asset.partnerId,
+  };
+
+  // Return type-specific standardized object
+  switch (assetType) {
+    case "restaurants":
+      return {
+        ...baseFields,
+        ...asset,
+        assetType: "restaurants" as const,
+      };
+    case "events":
+      return {
+        ...baseFields,
+        ...asset,
+        name: asset.title || asset.name,
+        assetType: "events" as const,
+      };
+    case "activities":
+      return {
+        ...baseFields,
+        ...asset,
+        assetType: "activities" as const,
+      };
+    case "vehicles":
+      return {
+        ...baseFields,
+        ...asset,
+        partnerId: asset.ownerId, // Map ownerId to partnerId for consistency
+        isActive: asset.status === "available",
+        assetType: "vehicles" as const,
+      };
+    case "accommodations":
+      return {
+        ...baseFields,
+        ...asset,
+        assetType: "accommodations" as const,
+      };
+    default:
+      return {
+        ...baseFields,
+        ...asset,
+      };
+  }
+};
+
+/**
+ * Helper function to verify if a traveler has confirmed bookings with a partner's assets
+ */
+async function verifyTravelerBookingAccess(ctx: any, partnerId: Id<"users">, travelerId: Id<"users">): Promise<boolean> {
+  // Get all assets belonging to the partner
+  const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+    ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+    ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+    ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+    ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", partnerId)).collect(),
+    ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+  ]);
+
+  // Check for confirmed bookings with any of the partner's assets
+  
+  // Check event bookings
+  for (const event of events) {
+    const booking = await ctx.db
+      .query("eventBookings")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .filter((q) => q.and(
+        q.eq(q.field("userId"), travelerId),
+        q.eq(q.field("status"), "confirmed")
+      ))
+      .first();
+    if (booking) return true;
+  }
+
+  // Check activity bookings
+  for (const activity of activities) {
+    const booking = await ctx.db
+      .query("activityBookings")
+      .withIndex("by_activity", (q) => q.eq("activityId", activity._id))
+      .filter((q) => q.and(
+        q.eq(q.field("userId"), travelerId),
+        q.eq(q.field("status"), "confirmed")
+      ))
+      .first();
+    if (booking) return true;
+  }
+
+  // Check restaurant reservations
+  for (const restaurant of restaurants) {
+    const reservation = await ctx.db
+      .query("restaurantReservations")
+      .withIndex("by_restaurant", (q) => q.eq("restaurantId", restaurant._id))
+      .filter((q) => q.and(
+        q.eq(q.field("userId"), travelerId),
+        q.eq(q.field("status"), "confirmed")
+      ))
+      .first();
+    if (reservation) return true;
+  }
+
+  // Check vehicle bookings
+  for (const vehicle of vehicles) {
+    const booking = await ctx.db
+      .query("vehicleBookings")
+      .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicle._id))
+      .filter((q) => q.and(
+        q.eq(q.field("userId"), travelerId),
+        q.eq(q.field("status"), "confirmed")
+      ))
+      .first();
+    if (booking) return true;
+  }
+
+  return false;
+}
 
 /**
  * Get the current authenticated user's information
@@ -37,6 +204,36 @@ export const getCurrentUser = query({
     
     if (users.length === 0) {
       console.log("User not found for subject:", identity.subject);
+      
+      // Try to find user by email if available in identity
+      if (identity.email) {
+        const usersByEmail = await ctx.db
+          .query("users")
+          .withIndex("email", (q) => q.eq("email", identity.email))
+          .collect();
+        
+        if (usersByEmail.length > 0) {
+          const user = usersByEmail[0];
+          
+          // If user has failed clerk_id or no clerk_id, return with corrected data
+          if (!user.clerkId || user.clerkId.startsWith("failed_") || user.clerkId.startsWith("temp_")) {
+            console.log(`Found user ${user._id} with failed/temp clerk_id: ${user.clerkId}`);
+            
+            // Return user data with the corrected clerkId
+            // The UI will show the corrected data and can trigger a repair action
+            return {
+              _id: user._id,
+              id: user._id,
+              clerkId: identity.subject,
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: user.role || "traveler",
+            };
+          }
+        }
+      }
+      
       return null;
     }
     
@@ -114,51 +311,7 @@ export const getUserByClerkId = query({
   },
 });
 
-/**
- * Get a user by their Convex ID
- */
-export const getUserById = query({
-  args: {
-    userId: v.id("users"),
-  },
-  returns: v.union(
-    v.object({
-      _id: v.id("users"),
-      _creationTime: v.number(),
-      clerkId: v.string(),
-      email: v.optional(v.string()),
-      name: v.optional(v.string()),
-      image: v.optional(v.string()),
-      phone: v.optional(v.string()),
-      role: v.optional(v.string()),
-      partnerId: v.optional(v.id("users")),
-      emailVerificationTime: v.optional(v.number()),
-      isAnonymous: v.optional(v.boolean()),
-    }),
-    v.null()
-  ),
-  handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    
-    if (!user || !user.clerkId) {
-      return null;
-    }
-    
-    return {
-      _id: user._id,
-      _creationTime: user._creationTime,
-      clerkId: user.clerkId,
-      email: user.email,
-      name: user.name,
-      image: user.image,
-      phone: user.phone,
-      role: user.role,
-      partnerId: user.partnerId,
-      emailVerificationTime: user.emailVerificationTime,
-      isAnonymous: user.isAnonymous,
-    };
-  },
-});
+
 
 /**
  * Get all users (admin only)
@@ -171,12 +324,18 @@ export const getAllUsers = query({
     clerkId: v.string(),
     email: v.optional(v.string()),
     name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
     image: v.optional(v.string()),
     phone: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     emailVerificationTime: v.optional(v.number()),
+    phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
+    dateOfBirth: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
   })),
   handler: async (ctx) => {
     // Note: In a production environment, you might want to add role-based access control here
@@ -220,12 +379,18 @@ export const getUsersByRole = query({
     clerkId: v.string(),
     email: v.optional(v.string()),
     name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
     image: v.optional(v.string()),
     phone: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     emailVerificationTime: v.optional(v.number()),
+    phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
+    dateOfBirth: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
   })),
   handler: async (ctx, args) => {
     // Using a filter since there's no 'by_role' index in the schema yet
@@ -265,13 +430,19 @@ export const getEmployeesByOrganization = query({
     clerkId: v.optional(v.string()),
     email: v.optional(v.string()),
     name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
     image: v.optional(v.string()),
     phone: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
     emailVerificationTime: v.optional(v.number()),
+    phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
+    dateOfBirth: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
   })),
   handler: async (ctx, args) => {
     // Use the new index to efficiently query employees by organization
@@ -319,15 +490,20 @@ export const listAllUsers = query({
     _creationTime: v.number(),
     clerkId: v.optional(v.string()),
     name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
     email: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
     image: v.optional(v.string()),
     isAnonymous: v.optional(v.boolean()),
     phone: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
     phoneVerificationTime: v.optional(v.number()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    dateOfBirth: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
     // Métricas agregadas
     organizationsCount: v.number(),
     assetsCount: v.number(),
@@ -760,6 +936,187 @@ export const getSystemStatistics = query({
 /**
  * Listar todos os assets do sistema (apenas para masters)
  */
+// Common asset base fields
+const baseAssetFields = {
+  _id: v.string(),
+  _creationTime: v.number(),
+  name: v.string(),
+  assetType: v.string(),
+  isActive: v.boolean(),
+  partnerId: v.id("users"),
+  partnerName: v.optional(v.string()),
+  partnerEmail: v.optional(v.string()),
+  bookingsCount: v.optional(v.number()),
+  rating: v.optional(v.number()),
+  price: v.optional(v.number()),
+  description: v.optional(v.string()),
+  imageUrl: v.optional(v.string()),
+  mainImage: v.optional(v.string()),
+  galleryImages: v.optional(v.array(v.string())),
+  isFeatured: v.optional(v.boolean()),
+  tags: v.optional(v.array(v.string())),
+};
+
+// Address object validator
+const addressValidator = v.object({
+  street: v.string(),
+  city: v.string(),
+  state: v.string(),
+  zipCode: v.string(),
+  neighborhood: v.string(),
+  coordinates: v.object({
+    latitude: v.number(),
+    longitude: v.number(),
+  }),
+});
+
+// Asset-specific validators using discriminated union
+const restaurantAssetValidator = v.object({
+  ...baseAssetFields,
+  assetType: v.literal("restaurants"),
+  slug: v.optional(v.string()),
+  description_long: v.optional(v.string()),
+  address: v.optional(addressValidator),
+  phone: v.optional(v.string()),
+  website: v.optional(v.string()),
+  cuisine: v.optional(v.array(v.string())),
+  priceRange: v.optional(v.string()),
+  diningStyle: v.optional(v.string()),
+  hours: v.optional(v.object({
+    Monday: v.array(v.string()),
+    Tuesday: v.array(v.string()),
+    Wednesday: v.array(v.string()),
+    Thursday: v.array(v.string()),
+    Friday: v.array(v.string()),
+    Saturday: v.array(v.string()),
+    Sunday: v.array(v.string()),
+  })),
+  features: v.optional(v.array(v.string())),
+  dressCode: v.optional(v.string()),
+  paymentOptions: v.optional(v.array(v.string())),
+  parkingDetails: v.optional(v.string()),
+  menuImages: v.optional(v.array(v.string())),
+  acceptsReservations: v.optional(v.boolean()),
+  maximumPartySize: v.optional(v.number()),
+  executiveChef: v.optional(v.string()),
+  privatePartyInfo: v.optional(v.string()),
+  // Handle complex rating object that might be returned
+  rating: v.optional(v.union(
+    v.number(),
+    v.object({
+      overall: v.number(),
+      food: v.number(),
+      service: v.number(),
+      ambience: v.number(),
+      value: v.number(),
+      noiseLevel: v.string(),
+      totalReviews: v.number(),
+    })
+  )),
+});
+
+const eventAssetValidator = v.object({
+  ...baseAssetFields,
+  assetType: v.literal("events"),
+  title: v.string(),
+  shortDescription: v.optional(v.string()),
+  description_long: v.optional(v.string()),
+  category: v.optional(v.string()),
+  location: v.optional(v.string()),
+  address: v.optional(v.union(v.string(), addressValidator)),
+  maxParticipants: v.optional(v.number()),
+  hasMultipleTickets: v.optional(v.boolean()),
+  date: v.optional(v.string()),
+  time: v.optional(v.string()),
+  speaker: v.optional(v.string()),
+  speakerBio: v.optional(v.string()),
+  whatsappContact: v.optional(v.string()),
+  includes: v.optional(v.array(v.string())),
+  additionalInfo: v.optional(v.array(v.string())),
+  highlights: v.optional(v.array(v.string())),
+});
+
+const activityAssetValidator = v.object({
+  ...baseAssetFields,
+  assetType: v.literal("activities"),
+  title: v.optional(v.string()),
+  shortDescription: v.optional(v.string()),
+  description_long: v.optional(v.string()),
+  category: v.optional(v.string()),
+  location: v.optional(v.string()),
+  address: v.optional(v.union(v.string(), addressValidator)),
+  duration: v.optional(v.string()),
+  difficulty: v.optional(v.string()),
+  minAge: v.optional(v.number()),
+  maxParticipants: v.optional(v.number()),
+  includes: v.optional(v.array(v.string())),
+  additionalInfo: v.optional(v.array(v.string())),
+  highlights: v.optional(v.array(v.string())),
+  requiresBooking: v.optional(v.boolean()),
+  hasMultipleTickets: v.optional(v.boolean()),
+});
+
+const vehicleAssetValidator = v.object({
+  ...baseAssetFields,
+  assetType: v.literal("vehicles"),
+  ownerId: v.id("users"),
+  make: v.optional(v.string()),
+  model: v.optional(v.string()),
+  brand: v.optional(v.string()),
+  year: v.optional(v.number()),
+  licensePlate: v.optional(v.string()),
+  capacity: v.optional(v.number()),
+  seats: v.optional(v.number()),
+  transmission: v.optional(v.string()),
+  fuelType: v.optional(v.string()),
+  pricePerDay: v.optional(v.number()),
+  status: v.optional(v.string()),
+  color: v.optional(v.string()),
+  category: v.optional(v.string()),
+  features: v.optional(v.array(v.string())),
+  organizationId: v.optional(v.string()),
+  createdAt: v.optional(v.number()),
+  updatedAt: v.optional(v.number()),
+  // Override base field to make partnerId optional since vehicles use ownerId
+  partnerId: v.optional(v.id("users")),
+});
+
+const accommodationAssetValidator = v.object({
+  ...baseAssetFields,
+  assetType: v.literal("accommodations"),
+  slug: v.string(),
+  description_long: v.string(),
+  address: addressValidator,
+  phone: v.string(),
+  website: v.optional(v.string()),
+  type: v.string(),
+  checkInTime: v.string(),
+  checkOutTime: v.string(),
+  pricePerNight: v.number(),
+  currency: v.string(),
+  discountPercentage: v.optional(v.number()),
+  taxes: v.optional(v.number()),
+  cleaningFee: v.optional(v.number()),
+  totalRooms: v.number(),
+  maxGuests: v.number(),
+  bedrooms: v.number(),
+  bathrooms: v.number(),
+  beds: v.object({
+    single: v.number(),
+    double: v.number(),
+    queen: v.number(),
+    king: v.number(),
+  }),
+  area: v.number(),
+  amenities: v.array(v.string()),
+  houseRules: v.array(v.string()),
+  cancellationPolicy: v.string(),
+  petsAllowed: v.boolean(),
+  smokingAllowed: v.boolean(),
+  eventsAllowed: v.boolean(),
+  minimumStay: v.number(),
+});
+
 export const listAllAssets = query({
   args: {
     assetType: v.optional(v.union(
@@ -774,44 +1131,13 @@ export const listAllAssets = query({
     partnerId: v.optional(v.id("users")),
     limit: v.optional(v.number()),
   },
-  returns: v.array(v.object({
-    _id: v.string(),
-    _creationTime: v.number(),
-    name: v.string(), // title para eventos
-    assetType: v.string(),
-    isActive: v.boolean(),
-    partnerId: v.id("users"),
-    partnerName: v.optional(v.string()),
-    partnerEmail: v.optional(v.string()),
-    // Métricas específicas podem variar por tipo
-    bookingsCount: v.optional(v.number()),
-    rating: v.optional(v.number()),
-    price: v.optional(v.number()),
-    // Campos adicionais que podem existir nos assets
-    title: v.optional(v.string()),
-    description: v.optional(v.string()),
-    shortDescription: v.optional(v.string()),
-    category: v.optional(v.string()),
-    location: v.optional(v.string()),
-    address: v.optional(v.string()),
-    imageUrl: v.optional(v.string()),
-    galleryImages: v.optional(v.array(v.string())),
-    includes: v.optional(v.array(v.string())),
-    additionalInfo: v.optional(v.array(v.string())),
-    highlights: v.optional(v.array(v.string())),
-    isFeatured: v.optional(v.boolean()),
-    maxParticipants: v.optional(v.number()),
-    hasMultipleTickets: v.optional(v.boolean()),
-    date: v.optional(v.string()),
-    time: v.optional(v.string()),
-    speaker: v.optional(v.string()),
-    speakerBio: v.optional(v.string()),
-    whatsappContact: v.optional(v.string()),
-    pricePerDay: v.optional(v.number()),
-    pricePerNight: v.optional(v.number()),
-    status: v.optional(v.string()),
-    ownerId: v.optional(v.id("users")),
-  })),
+  returns: v.array(v.union(
+    restaurantAssetValidator,
+    eventAssetValidator,
+    activityAssetValidator,
+    vehicleAssetValidator,
+    accommodationAssetValidator
+  )),
   handler: async (ctx, args) => {
     const currentUserRole = await getCurrentUserRole(ctx);
 
@@ -904,6 +1230,296 @@ export const listAllAssets = query({
 });
 
 /**
+ * Listar apenas restaurantes (para melhor performance e type safety)
+ */
+export const listAllRestaurants = query({
+  args: {
+    isActive: v.optional(v.boolean()),
+    partnerId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(restaurantAssetValidator),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas administradores master podem ver todos os assets");
+    }
+
+    const limit = args.limit || 100;
+    let query = ctx.db.query("restaurants");
+
+    if (args.partnerId) {
+      query = query.withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId!)) as any;
+    }
+
+    if (args.isActive !== undefined) {
+      query = query.filter((q) => q.eq(q.field("isActive"), args.isActive));
+    }
+
+    const restaurants = await query.take(limit);
+
+    const enrichedRestaurants = await Promise.all(
+      restaurants.map(async (restaurant) => {
+        const partner = restaurant.partnerId ? await ctx.db.get(restaurant.partnerId) : null;
+        
+        // Transform complex rating object to match validator
+        let transformedRating: any = restaurant.rating;
+        if (restaurant.rating && typeof restaurant.rating === 'object' && 'totalReviews' in restaurant.rating) {
+          transformedRating = {
+            ...restaurant.rating,
+            totalReviews: Number(restaurant.rating.totalReviews), // Convert bigint to number
+          };
+        }
+
+        return {
+          ...restaurant,
+          _id: restaurant._id.toString(),
+          assetType: "restaurants" as const,
+          partnerName: partner?.name,
+          partnerEmail: partner?.email,
+          bookingsCount: 0, // TODO: Implement booking counting
+          rating: transformedRating,
+          maximumPartySize: restaurant.maximumPartySize ? Number(restaurant.maximumPartySize) : undefined,
+        };
+      })
+    );
+
+    return enrichedRestaurants.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Listar apenas eventos (para melhor performance e type safety)
+ */
+export const listAllEvents = query({
+  args: {
+    isActive: v.optional(v.boolean()),
+    partnerId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(eventAssetValidator),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas administradores master podem ver todos os assets");
+    }
+
+    const limit = args.limit || 100;
+    let query = ctx.db.query("events");
+
+    if (args.partnerId) {
+      query = query.withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId!)) as any;
+    }
+
+    if (args.isActive !== undefined) {
+      query = query.filter((q) => q.eq(q.field("isActive"), args.isActive));
+    }
+
+    const events = await query.take(limit);
+
+    const enrichedEvents = await Promise.all(
+      events.map(async (event) => {
+        const partner = event.partnerId ? await ctx.db.get(event.partnerId) : null;
+        
+        const bookings = await ctx.db
+          .query("eventBookings")
+          .filter((q) => q.eq(q.field("eventId"), event._id))
+          .collect();
+
+        return {
+          ...event,
+          _id: event._id.toString(),
+          name: event.title || "Evento sem título",
+          assetType: "events" as const,
+          partnerName: partner?.name,
+          partnerEmail: partner?.email,
+          bookingsCount: bookings.length,
+          maxParticipants: event.maxParticipants ? Number(event.maxParticipants) : undefined,
+        };
+      })
+    );
+
+    return enrichedEvents.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Listar apenas atividades (para melhor performance e type safety)
+ */
+export const listAllActivities = query({
+  args: {
+    isActive: v.optional(v.boolean()),
+    partnerId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(activityAssetValidator),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas administradores master podem ver todos os assets");
+    }
+
+    const limit = args.limit || 100;
+    let query = ctx.db.query("activities");
+
+    if (args.partnerId) {
+      query = query.withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId!)) as any;
+    }
+
+    if (args.isActive !== undefined) {
+      query = query.filter((q) => q.eq(q.field("isActive"), args.isActive));
+    }
+
+    const activities = await query.take(limit);
+
+    const enrichedActivities = await Promise.all(
+      activities.map(async (activity) => {
+        const partner = activity.partnerId ? await ctx.db.get(activity.partnerId) : null;
+        
+        return {
+          ...activity,
+          _id: activity._id.toString(),
+          name: activity.title || "Atividade sem título",
+          assetType: "activities" as const,
+          partnerName: partner?.name,
+          partnerEmail: partner?.email,
+          bookingsCount: 0, // TODO: Implement booking counting for activities
+          maxParticipants: activity.maxParticipants ? Number(activity.maxParticipants) : undefined,
+        };
+      })
+    );
+
+    return enrichedActivities.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Listar apenas veículos (para melhor performance e type safety)
+ */
+export const listAllVehicles = query({
+  args: {
+    isActive: v.optional(v.boolean()),
+    ownerId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(vehicleAssetValidator),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas administradores master podem ver todos os assets");
+    }
+
+    const limit = args.limit || 100;
+    let query = ctx.db.query("vehicles");
+
+    if (args.ownerId) {
+      query = query.withIndex("by_ownerId", (q) => q.eq("ownerId", args.ownerId!)) as any;
+    }
+
+    if (args.isActive !== undefined) {
+      const status = args.isActive ? "available" : "maintenance";
+      query = query.filter((q) => q.eq(q.field("status"), status));
+    }
+
+    const vehicles = await query.take(limit);
+
+    const enrichedVehicles = await Promise.all(
+      vehicles.map(async (vehicle) => {
+        // Only fetch owner if ownerId exists
+        const owner = vehicle.ownerId ? await ctx.db.get(vehicle.ownerId) : null;
+        
+        return {
+          ...vehicle,
+          _id: vehicle._id.toString(),
+          assetType: "vehicles" as const,
+          partnerId: vehicle.ownerId, // Keep as Id<"users"> type
+          ownerId: vehicle.ownerId!, // Ensure it's not undefined for validator
+          isActive: vehicle.status === "available",
+          partnerName: owner?.name,
+          partnerEmail: owner?.email,
+          bookingsCount: 0, // TODO: Implement booking counting for vehicles
+        };
+      })
+    );
+
+    return enrichedVehicles.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Listar apenas hospedagens (para melhor performance e type safety)
+ */
+export const listAllAccommodations = query({
+  args: {
+    isActive: v.optional(v.boolean()),
+    partnerId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(accommodationAssetValidator),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas administradores master podem ver todos os assets");
+    }
+
+    const limit = args.limit || 100;
+    let query = ctx.db.query("accommodations");
+
+    if (args.partnerId) {
+      query = query.withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId!)) as any;
+    }
+
+    if (args.isActive !== undefined) {
+      query = query.filter((q) => q.eq(q.field("isActive"), args.isActive));
+    }
+
+    const accommodations = await query.take(limit);
+
+    const enrichedAccommodations = await Promise.all(
+      accommodations.map(async (accommodation) => {
+        const partner = accommodation.partnerId ? await ctx.db.get(accommodation.partnerId) : null;
+        
+        // Transform complex rating object to match validator
+        let transformedRating: any = accommodation.rating;
+        if (accommodation.rating && typeof accommodation.rating === 'object' && 'totalReviews' in accommodation.rating) {
+          transformedRating = Number(accommodation.rating.location || 0); // Convert to simple number for validator
+        }
+        
+        return {
+          ...accommodation,
+          _id: accommodation._id.toString(),
+          assetType: "accommodations" as const,
+          partnerName: partner?.name,
+          partnerEmail: partner?.email,
+          bookingsCount: 0, // TODO: Implement booking counting for accommodations
+          rating: transformedRating,
+          minimumStay: accommodation.minimumStay ? Number(accommodation.minimumStay) : 1,
+          // Convert bigint fields to numbers
+          totalRooms: Number(accommodation.totalRooms),
+          maxGuests: Number(accommodation.maxGuests),
+          bedrooms: Number(accommodation.bedrooms),
+          bathrooms: Number(accommodation.bathrooms),
+          area: Number(accommodation.area),
+          beds: {
+            single: Number(accommodation.beds.single),
+            double: Number(accommodation.beds.double),
+            queen: Number(accommodation.beds.queen),
+            king: Number(accommodation.beds.king),
+          },
+        };
+      })
+    );
+
+    return enrichedAccommodations.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
  * Get detailed user information by ID (masters only)
  */
 export const getUserDetailsById = query({
@@ -917,13 +1533,19 @@ export const getUserDetailsById = query({
       clerkId: v.optional(v.string()),
       email: v.optional(v.string()),
       name: v.optional(v.string()),
+      fullName: v.optional(v.string()),
       image: v.optional(v.string()),
       phone: v.optional(v.string()),
+      phoneNumber: v.optional(v.string()),
       role: v.optional(v.string()),
       partnerId: v.optional(v.id("users")),
       organizationId: v.optional(v.id("partnerOrganizations")),
       emailVerificationTime: v.optional(v.number()),
+      phoneVerificationTime: v.optional(v.number()),
       isAnonymous: v.optional(v.boolean()),
+      dateOfBirth: v.optional(v.string()),
+      onboardingCompleted: v.optional(v.boolean()),
+      onboardingCompletedAt: v.optional(v.number()),
       // Dados enriquecidos
       organizations: v.array(v.object({
         _id: v.id("partnerOrganizations"),
@@ -950,16 +1572,57 @@ export const getUserDetailsById = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    // Verificar se o usuário atual é master
+    // Verificar permissões baseadas no role
     const currentUserRole = await getCurrentUserRole(ctx);
-    if (currentUserRole !== "master") {
-      throw new Error("Apenas administradores master podem ver detalhes de usuários");
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
     }
 
     const user = await ctx.db.get(args.userId);
     
     if (!user) {
       return null;
+    }
+
+    // Masters podem ver qualquer usuário
+    if (currentUserRole === "master") {
+      // Continue with existing logic
+    }
+    // Partners podem ver apenas travelers que fizeram reservas confirmadas com seus assets
+    else if (currentUserRole === "partner") {
+      // Partners só podem ver detalhes de travelers
+      if (user.role !== "traveler") {
+        throw new Error("Partners só podem ver detalhes de clientes (travelers)");
+      }
+      
+      // Verificar se o traveler tem reservas confirmadas com assets do partner
+      const hasConfirmedBookings = await verifyTravelerBookingAccess(ctx, currentUserId, user._id);
+      if (!hasConfirmedBookings) {
+        throw new Error("Você só pode ver detalhes de clientes que fizeram reservas confirmadas");
+      }
+    }
+    // Employees podem ver apenas travelers que fizeram reservas com assets do seu partner
+    else if (currentUserRole === "employee") {
+      const currentUser = await ctx.db.get(currentUserId);
+      if (!currentUser?.partnerId) {
+        throw new Error("Employee deve estar associado a um partner");
+      }
+      
+      // Employees só podem ver detalhes de travelers
+      if (user.role !== "traveler") {
+        throw new Error("Employees só podem ver detalhes de clientes (travelers)");
+      }
+      
+      // Verificar se o traveler tem reservas confirmadas com assets do partner do employee
+      const hasConfirmedBookings = await verifyTravelerBookingAccess(ctx, currentUser.partnerId, user._id);
+      if (!hasConfirmedBookings) {
+        throw new Error("Você só pode ver detalhes de clientes que fizeram reservas confirmadas");
+      }
+    }
+    else {
+      throw new Error("Acesso negado - role não autorizado");
     }
 
     // Buscar organizações (se for partner)
@@ -1022,6 +1685,37 @@ export const getUserDetailsById = query({
       employeesCount = employees.filter(emp => emp.role === "employee").length;
     }
 
+    // For partners and employees viewing traveler details, return simplified information
+    if ((currentUserRole === "partner" || currentUserRole === "employee") && user.role === "traveler") {
+      return {
+        _id: user._id,
+        _creationTime: user._creationTime,
+        clerkId: user.clerkId,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        phone: user.phone,
+        role: user.role,
+        partnerId: user.partnerId,
+        organizationId: user.organizationId,
+        emailVerificationTime: user.emailVerificationTime,
+        isAnonymous: user.isAnonymous,
+        organizations: [], // Travelers don't have organizations
+        assets: {
+          restaurants: 0,
+          events: 0,
+          activities: 0,
+          vehicles: 0,
+          accommodations: 0,
+          total: 0,
+        }, // Travelers don't have assets
+        partnerInfo: undefined,
+        employeesCount: undefined,
+        lastActivity: user.emailVerificationTime,
+      };
+    }
+
+    // For masters viewing any user, return full information
     return {
       _id: user._id,
       _creationTime: user._creationTime,
@@ -1062,13 +1756,20 @@ export const listPartnerEmployees = query({
     _creationTime: v.number(),
     clerkId: v.optional(v.string()),
     name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
     email: v.optional(v.string()),
+    image: v.optional(v.string()),
     phone: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
     emailVerificationTime: v.optional(v.number()),
+    phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
+    dateOfBirth: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
     // Employee-specific info
     organizationName: v.optional(v.string()),
     creationRequestStatus: v.optional(v.string()),
@@ -1445,5 +2146,77 @@ export const shouldRedirectToOnboarding = query({
     return user.role === "traveler" && 
            !user.onboardingCompleted && 
            !!user.email;
+  },
+});
+
+/**
+ * Get user by ID (internal query for actions)
+ */
+export const getUserById = internalQuery({
+  args: {
+    userId: v.id("users"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.optional(v.string()),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      role: v.optional(v.string()),
+      partnerId: v.optional(v.id("users")),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      return null;
+    }
+
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      partnerId: user.partnerId,
+    };
+  },
+});
+
+/**
+ * Get employees with failed or temporary clerk IDs (internal query for auto-fix)
+ */
+export const getFailedEmployees = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.optional(v.string()),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      role: v.optional(v.string()),
+      partnerId: v.optional(v.id("users")),
+    })
+  ),
+  handler: async (ctx) => {
+    // Get all employees
+    const allUsers = await ctx.db.query("users").collect();
+    
+    // Filter for employees with failed or temp clerk IDs
+    const failedEmployees = allUsers.filter(user => 
+      user.role === "employee" && 
+      user.clerkId && 
+      (user.clerkId.startsWith("failed_") || user.clerkId.startsWith("temp_"))
+    );
+
+    return failedEmployees.map(user => ({
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      partnerId: user.partnerId,
+    }));
   },
 }); 

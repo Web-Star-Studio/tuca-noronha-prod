@@ -112,13 +112,13 @@ export function RestaurantForm({
       description_long: "",
       address: {
         street: "",
-        city: "",
-        state: "",
+        city: "Fernando de Noronha",
+        state: "Pernambuco",
         zipCode: "",
         neighborhood: "",
         coordinates: {
-          latitude: 0,
-          longitude: 0,
+          latitude: -3.8549,
+          longitude: -32.4238,
         },
       },
       phone: "",
@@ -337,19 +337,21 @@ export function RestaurantForm({
       maximumPartySize: Number(data.maximumPartySize) || 8,
       address: {
         ...data.address,
+        city: "Fernando de Noronha",
+        state: "Pernambuco",
         coordinates: {
-          latitude: Number(data.address.coordinates.latitude) || 0,
-          longitude: Number(data.address.coordinates.longitude) || 0,
+          latitude: -3.8549,
+          longitude: -32.4238,
         },
       },
       rating: {
-        ...data.rating,
-        overall: Number(data.rating.overall) || 0,
-        food: Number(data.rating.food) || 0,
-        service: Number(data.rating.service) || 0,
-        ambience: Number(data.rating.ambience) || 0,
-        value: Number(data.rating.value) || 0,
-        totalReviews: Number(data.rating.totalReviews) || 0,
+        overall: 4.0,
+        food: 4.0,
+        service: 4.0,
+        ambience: 4.0,
+        value: 4.0,
+        noiseLevel: "Moderate",
+        totalReviews: 0,
       },
     };
 
@@ -746,130 +748,7 @@ export function RestaurantForm({
             />
           </div>
 
-          {/* Seção de Classificações */}
-          <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
-            <h3 className="font-medium">Classificações Iniciais</h3>
-            <p className="text-sm text-gray-500">Valores iniciais para novos restaurantes. Poderão ser alterados com base em avaliações reais.</p>
-            
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="rating.overall">Classificação Geral (0-5)</Label>
-                <Input
-                  id="rating.overall"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  {...register("rating.overall", { 
-                    required: "Classificação geral é obrigatória",
-                    min: { value: 0, message: "Mínimo é 0" },
-                    max: { value: 5, message: "Máximo é 5" },
-                  })}
-                  error={errors.rating?.overall?.message}
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="rating.food">Comida (0-5)</Label>
-                <Input
-                  id="rating.food"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  {...register("rating.food", { 
-                    required: "Classificação da comida é obrigatória",
-                    min: { value: 0, message: "Mínimo é 0" },
-                    max: { value: 5, message: "Máximo é 5" },
-                  })}
-                  error={errors.rating?.food?.message}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rating.service">Serviço (0-5)</Label>
-                <Input
-                  id="rating.service"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  {...register("rating.service", { 
-                    required: "Classificação do serviço é obrigatória",
-                    min: { value: 0, message: "Mínimo é 0" },
-                    max: { value: 5, message: "Máximo é 5" },
-                  })}
-                  error={errors.rating?.service?.message}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rating.ambience">Ambiente (0-5)</Label>
-                <Input
-                  id="rating.ambience"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  {...register("rating.ambience", { 
-                    required: "Classificação do ambiente é obrigatória",
-                    min: { value: 0, message: "Mínimo é 0" },
-                    max: { value: 5, message: "Máximo é 5" },
-                  })}
-                  error={errors.rating?.ambience?.message}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rating.value">Custo-Benefício (0-5)</Label>
-                <Input
-                  id="rating.value"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  {...register("rating.value", { 
-                    required: "Classificação do custo-benefício é obrigatória",
-                    min: { value: 0, message: "Mínimo é 0" },
-                    max: { value: 5, message: "Máximo é 5" },
-                  })}
-                  error={errors.rating?.value?.message}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rating.noiseLevel">Nível de Ruído</Label>
-                <Select
-                  defaultValue={preparedRestaurant?.rating?.noiseLevel || "Moderate"}
-                  onValueChange={(value) => setValue("rating.noiseLevel", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o nível de ruído" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Quiet">Silencioso</SelectItem>
-                    <SelectItem value="Moderate">Moderado</SelectItem>
-                    <SelectItem value="Energetic">Enérgico</SelectItem>
-                    <SelectItem value="Very Loud">Muito Alto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="rating.totalReviews">Total de Avaliações</Label>
-              <Input
-                id="rating.totalReviews"
-                type="number"
-                min="0"
-                {...register("rating.totalReviews", { 
-                  required: "Total de avaliações é obrigatório",
-                  min: { value: 0, message: "Mínimo é 0" },
-                })}
-                error={errors.rating?.totalReviews?.message}
-              />
-            </div>
-          </div>
         </TabsContent>
 
         {/* Tab de endereço */}
@@ -898,34 +777,10 @@ export function RestaurantForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address.city">Cidade *</Label>
-              <Input
-                id="address.city"
-                placeholder="Ex: Rio de Janeiro"
-                {...register("address.city", { required: "Cidade é obrigatória" })}
-                error={errors.address?.city?.message}
-              />
-              {errors.address?.city && <p className="text-sm text-red-500">{errors.address?.city.message}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="address.state">Estado *</Label>
-              <Input
-                id="address.state"
-                placeholder="Ex: RJ"
-                {...register("address.state", { required: "Estado é obrigatório" })}
-                error={errors.address?.state?.message}
-              />
-              {errors.address?.state && <p className="text-sm text-red-500">{errors.address?.state.message}</p>}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="address.zipCode">CEP *</Label>
               <Input
                 id="address.zipCode"
-                placeholder="Ex: 20000-000"
+                placeholder="Ex: 53990-000"
                 {...register("address.zipCode", { required: "CEP é obrigatório" })}
                 error={errors.address?.zipCode?.message}
               />
@@ -933,46 +788,30 @@ export function RestaurantForm({
             </div>
           </div>
 
-          <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
-            <h3 className="font-medium">Coordenadas</h3>
-            <p className="text-sm text-gray-500">Coordenadas geográficas para localização precisa no mapa.</p>
-            
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="address.coordinates.latitude">Latitude *</Label>
-                <Input
-                  id="address.coordinates.latitude"
-                  type="number"
-                  step="0.000001"
-                  placeholder="Ex: -22.9028"
-                  {...register("address.coordinates.latitude", { 
-                    required: "Latitude é obrigatória",
-                  })}
-                  error={errors.address?.coordinates?.latitude?.message}
-                />
-                {errors.address?.coordinates?.latitude && (
-                  <p className="text-sm text-red-500">{errors.address?.coordinates?.latitude.message}</p>
-                )}
-              </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="address.city">Cidade</Label>
+              <Input
+                id="address.city"
+                value="Fernando de Noronha"
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+              />
+              <p className="text-sm text-gray-500">Nossa plataforma é exclusiva para Fernando de Noronha</p>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address.coordinates.longitude">Longitude *</Label>
-                <Input
-                  id="address.coordinates.longitude"
-                  type="number"
-                  step="0.000001"
-                  placeholder="Ex: -43.2075"
-                  {...register("address.coordinates.longitude", { 
-                    required: "Longitude é obrigatória",
-                  })}
-                  error={errors.address?.coordinates?.longitude?.message}
-                />
-                {errors.address?.coordinates?.longitude && (
-                  <p className="text-sm text-red-500">{errors.address?.coordinates?.longitude.message}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="address.state">Estado</Label>
+              <Input
+                id="address.state"
+                value="Pernambuco"
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+              />
             </div>
           </div>
+
+
         </TabsContent>
 
         {/* Tab de horários */}
@@ -1040,13 +879,6 @@ export function RestaurantForm({
 
         {/* Tab de mídia */}
           <TabsContent value="media" className="space-y-4">
-          {/* Seletor de mídia para galeria */}
-          <MediaSelector
-            open={galleryPickerOpen}
-            onOpenChange={setGalleryPickerOpen}
-            multiple
-            onSelect={(urls) => setGalleryImages([...galleryImages, ...urls])}
-          />
           <div className="space-y-2">
             <Label>Galeria de Imagens</Label>
             <div className="flex gap-2">
@@ -1147,14 +979,26 @@ export function RestaurantForm({
             onOpenChange={setGalleryPickerOpen}
             multiple
             initialSelected={galleryImages}
-            onSelect={(urls) => setGalleryImages((prev) => [...prev, ...urls])}
+            onSelect={(urls) => {
+              // Remove duplicatas e adiciona apenas URLs novas
+              setGalleryImages(prev => {
+                const newUrls = urls.filter(url => !prev.includes(url));
+                return [...prev, ...newUrls];
+              });
+            }}
           />
           <MediaSelector
             open={menuPickerOpen}
             onOpenChange={setMenuPickerOpen}
             multiple
             initialSelected={menuImages}
-            onSelect={(urls) => setMenuImages((prev) => [...prev, ...urls])}
+            onSelect={(urls) => {
+              // Remove duplicatas e adiciona apenas URLs novas
+              setMenuImages(prev => {
+                const newUrls = urls.filter(url => !prev.includes(url));
+                return [...prev, ...newUrls];
+              });
+            }}
           />
       </Tabs>
 

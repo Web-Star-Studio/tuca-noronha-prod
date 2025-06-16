@@ -22,7 +22,10 @@ import {
   DollarSign,
   BarChart3,
   PieChart,
-  Bell
+  Bell,
+  CheckCircle,
+  Image,
+  AlertCircle
 } from "lucide-react"
 import { useOrganization, useOrganizationAssets } from "@/lib/providers/organization-context"
 import { ChatList } from "@/components/chat/ChatList"
@@ -345,12 +348,16 @@ function EmptyStateCard() {
         <p className="text-gray-600 max-w-md mb-6">
           Aguarde que um partner atribua organizações para você gerenciar.
         </p>
+      ) : user?.role === "master" ? (
+        <p className="text-gray-600 max-w-md mb-6">
+          Use o menu lateral para acessar as funcionalidades de administração do sistema.
+        </p>
       ) : (
         <>
           <p className="text-gray-600 max-w-md mb-6">
             Para começar, crie sua primeira organização e comece a gerenciar seus empreendimentos.
           </p>
-          {user && (user.role === "partner" || user.role === "master") && (
+          {user && user.role === "partner" && (
             <Link href="/admin/dashboard/novo-empreendimento">
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -508,12 +515,7 @@ function PartnerDashboard() {
               Chat
             </Button>
           </Link>
-          <Link href="/admin/dashboard/novo-empreendimento">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Empreendimento
-            </Button>
-          </Link>
+
         </div>
       </div>
 
@@ -633,15 +635,162 @@ function PartnerDashboard() {
               </Button>
             </Link>
             
-            <Link href="/admin/dashboard/configuracoes">
+
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function EmployeeDashboard() {
+  const { activeOrganization, organizations } = useOrganization();
+  
+  // Se não tem organização ativa, mostrar página de seleção
+  if (!activeOrganization) {
+    return <EmptyStateCard />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header - diferente para employee */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">
+            Área de trabalho - {activeOrganization.name}
+          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              Funcionário
+            </Badge>
+            <span className="text-sm text-gray-500">
+              • Acesso limitado às suas organizações atribuídas
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/dashboard/chat">
+            <Button variant="outline" className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Chat
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Employee specific cards - sem estatísticas financeiras */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Suas Organizações</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{organizations?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Organizações atribuídas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Organização Ativa</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-base font-bold truncate">{activeOrganization.name}</div>
+            <p className="text-xs text-muted-foreground capitalize">
+              {activeOrganization.type.replace('_', ' ')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-base font-bold text-green-600">Ativo</div>
+            <p className="text-xs text-muted-foreground">
+              Acesso autorizado
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content - ações limitadas para employee */}
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+        {/* Chat Notifications */}
+        <div>
+          <ChatNotifications 
+            maxItems={5} 
+            showTitle={true}
+            className="h-fit"
+          />
+        </div>
+
+        {/* Quick Actions for Employee - limitado */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Suas Ações</CardTitle>
+            <CardDescription>
+              Ações disponíveis para sua função
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <Link href={`/admin/dashboard/${activeOrganization.type === 'restaurant' ? 'restaurantes' : 
+                          activeOrganization.type === 'event_service' ? 'eventos' :
+                          activeOrganization.type === 'activity_service' ? 'atividades' :
+                          activeOrganization.type === 'rental_service' ? 'veiculos' :
+                          activeOrganization.type === 'accommodation' ? 'hospedagens' : 'assets'}`}>
               <Button variant="outline" className="w-full justify-start">
                 <Building2 className="mr-2 h-4 w-4" />
-                Configurações
+                Visualizar Assets
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/reservas">
+              <Button variant="outline" className="w-full justify-start">
+                <Calendar className="mr-2 h-4 w-4" />
+                Ver Reservas
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/chat">
+              <Button variant="outline" className="w-full justify-start">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Central de Chat
+              </Button>
+            </Link>
+            
+            <Link href="/admin/dashboard/midias">
+              <Button variant="outline" className="w-full justify-start">
+                <Image className="mr-2 h-4 w-4" />
+                Mídias
               </Button>
             </Link>
           </CardContent>
         </Card>
       </div>
+
+      {/* Employee Notice */}
+      <Card className="border-amber-200 bg-amber-50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-amber-800">Acesso de Funcionário</h4>
+              <p className="text-sm text-amber-700 mt-1">
+                Você tem acesso apenas às organizações atribuídas pelo seu parceiro. 
+                Entre em contato com seu supervisor para solicitar acesso a outras áreas.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -663,9 +812,14 @@ export default function DashboardPage() {
     return <MasterDashboard />
   }
 
-  // Partners and employees get organization-specific dashboards
-  if (user.role === "partner" || user.role === "employee") {
+  // Partners get full organizational dashboard
+  if (user.role === "partner") {
     return <PartnerDashboard />
+  }
+
+  // Employees get limited dashboard
+  if (user.role === "employee") {
+    return <EmployeeDashboard />
   }
 
   // Fallback - shouldn't happen

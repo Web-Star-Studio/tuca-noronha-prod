@@ -71,6 +71,22 @@ export const getMediaByCategory = query({
 /**
  * Get media files by user
  */
+export const getByUser = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const media = await ctx.db
+      .query("media")
+      .withIndex("by_uploadedBy", (q) => q.eq("uploadedBy", args.userId))
+      .collect();
+    return media;
+  },
+});
+
+/**
+ * Get public media files
+ */
 export const getPublicMedia = query({
   args: {},
   handler: async (ctx) => {
