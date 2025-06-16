@@ -39,12 +39,21 @@ export const createVehicle = mutation({
     
     const currentTime = Date.now();
     
+    // Determine organizationId: for partners, use their first organization
+    let orgId: string | null = null;
+    if (role === "partner" && currentUserId) {
+      const org = await ctx.db
+        .query("partnerOrganizations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .first();
+      orgId = org?._id ?? null;
+    }
     const vehicleId = await ctx.db.insert("vehicles", {
       ...args,
       createdAt: currentTime,
       updatedAt: currentTime,
       ownerId: currentUserId, // Set owner to current user
-      organizationId: currentUserId, // For now, use userId as orgId
+      organizationId: orgId || undefined, // Convert null to undefined to fix type error
     });
     
     return vehicleId;

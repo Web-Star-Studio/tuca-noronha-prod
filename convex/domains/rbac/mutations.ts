@@ -96,9 +96,11 @@ export const grantAssetPermission = mutationWithRole(["partner", "master"])({
     return await ctx.db.insert("assetPermissions", {
       employeeId: args.employeeId,
       partnerId: currentUserId,
+      grantedBy: currentUserId, // Keep for backwards compatibility
       assetId: args.assetId,
       assetType: args.assetType,
       permissions: args.permissions,
+      grantedAt: Date.now(),
       note: args.note,
     });
   },
@@ -136,6 +138,209 @@ export const revokeAssetPermission = mutationWithRole(["partner", "master"])({
     // Remove a permissão
     await ctx.db.delete(args.permissionId);
     return true;
+  },
+});
+
+/**
+ * Versão simplificada de criação de employee que automaticamente concede
+ * permissões básicas para evitar problemas de acesso ao dashboard
+ */
+export const createEmployeeWithDefaultPermissions = mutationWithRole(["partner", "master"])({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    image: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organização opcional para conceder permissão automaticamente
+  },
+  returns: v.object({
+    employeeId: v.id("users"),
+    permissionGranted: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    if (!currentUserId) throw new Error("Usuário não autenticado");
+
+    // Primeiro, cria ou obtém o employee usando a função existente
+    const employeeId = await ctx.runMutation(api.domains.rbac.mutations.createEmployee, {
+      name: args.name,
+      email: args.email,
+      image: args.image,
+    });
+
+    let permissionGranted = false;
+
+    // Se uma organização foi especificada, concede permissão automaticamente
+    if (args.organizationId) {
+      // Verifica se o usuário atual tem acesso à organização
+      const organization = await ctx.db.get(args.organizationId);
+      if (organization) {
+        // Partners só podem conceder permissões para suas próprias organizações
+        if (currentUserRole === "master" || organization.partnerId.toString() === currentUserId.toString()) {
+          try {
+            await ctx.runMutation(api.domains.rbac.mutations.grantOrganizationPermission, {
+              employeeId,
+              organizationId: args.organizationId,
+              permissions: ["view"],
+              note: "Permissão básica concedida automaticamente durante criação"
+            });
+            permissionGranted = true;
+          } catch (error) {
+            console.error("Erro ao conceder permissão automática:", error);
+          }
+        }
+      }
+    } else {
+      // Se nenhuma organização foi especificada, tenta conceder para a primeira organização do partner
+      if (currentUserRole === "partner") {
+        const partnerOrganizations = await ctx.db
+          .query("partnerOrganizations")
+          .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+          .filter((q) => q.eq(q.field("isActive"), true))
+          .take(1);
+
+        if (partnerOrganizations.length > 0) {
+          try {
+            await ctx.runMutation(api.domains.rbac.mutations.grantOrganizationPermission, {
+              employeeId,
+              organizationId: partnerOrganizations[0]._id,
+              permissions: ["view"],
+              note: "Permissão básica concedida automaticamente para primeira organização do partner"
+            });
+            permissionGranted = true;
+          } catch (error) {
+            console.error("Erro ao conceder permissão automática para primeira organização:", error);
+          }
+        }
+      }
+    }
+
+    return { employeeId, permissionGranted };
+  },
+});
+
+/**
+ * Criação direta de colaborador com senha definida pelo partner
+ * Cria o usuário diretamente no Clerk com senha, sem envio de email
+ */
+export const createEmployeeDirectly = mutationWithRole(["partner", "master"])({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    image: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
+  },
+  returns: v.object({
+    employeeId: v.id("users"),
+    permissionGranted: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    console.log(`=== INÍCIO: createEmployeeDirectly para email=${args.email}, name=${args.name} ===`);
+    
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+    if (!currentUserId) throw new Error("Usuário não autenticado");
+
+    // Validações básicas
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(args.email)) {
+      throw new Error("Email inválido");
+    }
+
+    if (args.password.length < 8) {
+      throw new Error("Senha deve ter pelo menos 8 caracteres");
+    }
+
+    // Verifica se já existe usuário com esse email
+    console.log(`Verificando se já existe usuário com email ${args.email}...`);
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (existingUser) {
+      throw new Error("Já existe um usuário com este email");
+    }
+
+    // Valida organização se fornecida
+    if (args.organizationId) {
+      const organization = await ctx.db.get(args.organizationId);
+      if (!organization || organization.partnerId !== currentUserId) {
+        throw new Error("Organização não encontrada ou não pertence ao partner");
+      }
+    }
+
+    // Cria o usuário diretamente no Convex
+    console.log(`Criando novo colaborador para ${args.email}...`);
+    const newEmployeeId = await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      image: args.image,
+      role: "employee",
+      partnerId: currentUserId,
+      organizationId: args.organizationId,
+      isAnonymous: false,
+      emailVerificationTime: Date.now(), // Consideramos como verificado
+    });
+    console.log(`Novo colaborador criado com ID: ${newEmployeeId}`);
+
+    // Agenda criação no Clerk com senha
+    console.log(`Agendando criação direta no Clerk para ${args.email}...`);
+    await ctx.scheduler.runAfter(0, internal.domains.integrations.clerk.createEmployeeDirectly, {
+      email: args.email,
+      password: args.password,
+      name: args.name,
+      employeeId: newEmployeeId,
+    });
+
+    let permissionGranted = false;
+
+    // Concede permissões automáticas
+    if (args.organizationId) {
+      const organization = await ctx.db.get(args.organizationId);
+      if (organization) {
+        if (currentUserRole === "master" || organization.partnerId.toString() === currentUserId.toString()) {
+          try {
+            await ctx.runMutation(api.domains.rbac.mutations.grantOrganizationPermission, {
+              employeeId: newEmployeeId,
+              organizationId: args.organizationId,
+              permissions: ["view"],
+              note: "Permissão básica concedida automaticamente durante criação direta"
+            });
+            permissionGranted = true;
+          } catch (error) {
+            console.error("Erro ao conceder permissão automática:", error);
+          }
+        }
+      }
+    } else {
+      // Se nenhuma organização foi especificada, tenta conceder para a primeira organização do partner
+      if (currentUserRole === "partner") {
+        const partnerOrganizations = await ctx.db
+          .query("partnerOrganizations")
+          .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+          .filter((q) => q.eq(q.field("isActive"), true))
+          .take(1);
+
+        if (partnerOrganizations.length > 0) {
+          try {
+            await ctx.runMutation(api.domains.rbac.mutations.grantOrganizationPermission, {
+              employeeId: newEmployeeId,
+              organizationId: partnerOrganizations[0]._id,
+              permissions: ["view"],
+              note: "Permissão básica concedida automaticamente para primeira organização do partner"
+            });
+            permissionGranted = true;
+          } catch (error) {
+            console.error("Erro ao conceder permissão automática para primeira organização:", error);
+          }
+        }
+      }
+    }
+
+    console.log(`=== FIM: createEmployeeDirectly para ${args.email} ===`);
+    return { employeeId: newEmployeeId, permissionGranted };
   },
 });
 
@@ -421,7 +626,7 @@ export const createOrganization = mutationWithRole(["partner", "master"])({
     }
 
     // Valida o tipo de organização
-    const validTypes = ["restaurant", "accommodation", "rental_service", "activity_service", "event_service"];
+    const validTypes = ["restaurant", "rental_service", "activity_service", "event_service"];
     if (!validTypes.includes(args.type)) {
       throw new Error("Tipo de organização inválido");
     }
@@ -890,7 +1095,7 @@ export const createOrganizationWithRestaurant = mutationWithRole(["partner", "ma
     }
 
     // Valida o tipo de organização
-    const validTypes = ["restaurant", "accommodation", "rental_service", "activity_service", "event_service"];
+    const validTypes = ["restaurant", "rental_service", "activity_service", "event_service"];
     if (!validTypes.includes(args.organizationType)) {
       throw new Error("Tipo de organização inválido");
     }
@@ -986,4 +1191,136 @@ export const createOrganizationWithRestaurant = mutationWithRole(["partner", "ma
       restaurantId,
     };
   },
-}); 
+});
+
+/**
+ * Migration function to populate partnerId field from grantedBy for existing records
+ * This should be run once after the schema change
+ */
+export const migrateAssetPermissionsPartnerField = mutationWithRole(["master"])({
+  args: {},
+  returns: v.object({
+    updated: v.number(),
+    message: v.string(),
+  }),
+  handler: async (ctx) => {
+    const permissions = await ctx.db.query("assetPermissions").collect();
+    let updated = 0;
+
+    for (const permission of permissions) {
+      // If partnerId doesn't exist but grantedBy does, copy it over
+      if (!(permission as any).partnerId && (permission as any).grantedBy) {
+        await ctx.db.patch(permission._id, {
+          partnerId: (permission as any).grantedBy,
+        });
+        updated++;
+      }
+    }
+
+    return {
+      updated,
+      message: `Migration completed. Updated ${updated} permission records.`,
+    };
+  },
+});
+
+/**
+ * DEVELOPMENT ONLY: Cria organizações de exemplo para testes
+ */
+export const createSampleOrganizations = mutationWithRole(["partner", "master"])({
+  args: {},
+  returns: v.array(v.id("partnerOrganizations")),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const now = Date.now();
+    const organizations: Id<"partnerOrganizations">[] = [];
+
+    // Restaurante do Mar - Organização de Restaurante
+    const restauranteId = await ctx.db.insert("partnerOrganizations", {
+      name: "Restaurante do Mar",
+      description: "Restaurante especializado em frutos do mar com vista para o oceano",
+      type: "restaurant",
+      partnerId: currentUserId,
+      isActive: true,
+      settings: {
+        contactInfo: {
+          email: "contato@restaurantedomar.com",
+          phone: "(85) 3456-7890",
+          website: "www.restaurantedomar.com",
+        }
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    organizations.push(restauranteId);
+
+    // Aventuras Fernando de Noronha - Organização de Atividades
+    const aventurasId = await ctx.db.insert("partnerOrganizations", {
+      name: "Aventuras Fernando de Noronha",
+      description: "Experiências únicas em atividades aquáticas e terrestres",
+      type: "activity_service",
+      partnerId: currentUserId,
+      isActive: true,
+      settings: {
+        contactInfo: {
+          email: "aventuras@fernandodenoronha.com",
+          phone: "(85) 3654-3210",
+          website: "www.aventurasfn.com",
+        }
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    organizations.push(aventurasId);
+
+    // Eventos Noronha - Organização de Eventos
+    const eventosId = await ctx.db.insert("partnerOrganizations", {
+      name: "Eventos Noronha",
+      description: "Organização de eventos especiais na ilha",
+      type: "event_service",
+      partnerId: currentUserId,
+      isActive: true,
+      settings: {
+        contactInfo: {
+          email: "eventos@noronha.com",
+          phone: "(85) 3789-4560",
+          website: "www.eventosnoronha.com",
+        }
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    organizations.push(eventosId);
+
+    // Aluguel de Veículos Ilha - Organização de Veículos
+    const veiculosId = await ctx.db.insert("partnerOrganizations", {
+      name: "Aluguel de Veículos Ilha",
+      description: "Locação de buggies e veículos para explorar a ilha",
+      type: "rental_service",
+      partnerId: currentUserId,
+      isActive: true,
+      settings: {
+        contactInfo: {
+          email: "veiculos@ilha.com",
+          phone: "(85) 3321-6540",
+          website: "www.aluguelilha.com",
+        }
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    organizations.push(veiculosId);
+
+    return organizations;
+  },
+});
+
+
+
+ 

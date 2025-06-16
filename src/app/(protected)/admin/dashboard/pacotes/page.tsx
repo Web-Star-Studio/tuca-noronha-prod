@@ -34,7 +34,7 @@ export default function PackagesPage() {
   
   // Convex hooks
   const packagesQuery = useQuery(api.packages.getPackages, { 
-    filters: user?.role === "partner" ? { partnerId: user.id as Id<"users"> } : {}
+    filters: user?.role === "partner" ? { partnerId: user._id } : {}
   })
   const createPackage = useMutation(api.packages.createPackage)
   const updatePackage = useMutation(api.packages.updatePackage)
@@ -112,7 +112,7 @@ export default function PackagesPage() {
       setIsSubmitting(true)
       await createPackage({
         ...packageData,
-        partnerId: user.id as Id<"users">
+        partnerId: user._id
       })
       toast.success("Pacote criado com sucesso!")
       setDialogOpen(false)

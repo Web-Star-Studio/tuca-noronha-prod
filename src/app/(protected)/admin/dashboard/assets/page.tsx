@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
+import { useOptimizedAssets, useAssetTypeCounts } from "@/hooks/useOptimizedAssets";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,9 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  Shield
+  Shield,
+  Eye,
+  ExternalLink
 } from "lucide-react";
 import {
   Select,
@@ -40,8 +43,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { Id } from "@/../convex/_generated/dataModel";
+import { useRouter } from "next/navigation";
 
 type Asset = {
   _id: string;
@@ -55,6 +66,30 @@ type Asset = {
   bookingsCount?: number;
   rating?: number;
   price?: number;
+  // Campos adicionais que podem existir nos assets
+  title?: string;
+  description?: string;
+  shortDescription?: string;
+  category?: string;
+  location?: string;
+  address?: string;
+  imageUrl?: string;
+  galleryImages?: string[];
+  includes?: string[];
+  additionalInfo?: string[];
+  highlights?: string[];
+  isFeatured?: boolean;
+  maxParticipants?: number;
+  hasMultipleTickets?: boolean;
+  date?: string;
+  time?: string;
+  speaker?: string;
+  speakerBio?: string;
+  whatsappContact?: string;
+  pricePerDay?: number;
+  pricePerNight?: number;
+  status?: string;
+  ownerId?: Id<"users">;
 };
 
 const assetTypeLabels: Record<string, string> = {
@@ -83,17 +118,30 @@ const assetTypeIcons: Record<string, any> = {
 
 export default function AssetsManagementPage() {
   const { user } = useCurrentUser();
+  const router = useRouter();
   const [selectedAssetType, setSelectedAssetType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
 
-  // Queries
-  const allAssets = useQuery(api["domains/users/queries"].listAllAssets, {
-    assetType: selectedAssetType === "all" ? undefined : selectedAssetType as any,
+  // Use optimized asset management hooks
+  const {
+    allAssets,
+    isLoading,
+    hasError,
+    refetch,
+    totalCount,
+    activeCount,
+    inactiveCount,
+  } = useOptimizedAssets({
+    assetType: selectedAssetType as any,
     isActive: selectedStatus === "all" ? undefined : selectedStatus === "active",
     limit: 200,
   });
 
+  // Use optimized asset type counts for system statistics
+  const assetTypeCounts = useAssetTypeCounts();
   const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics);
 
   if (user?.role !== "master") {
@@ -141,21 +189,45 @@ export default function AssetsManagementPage() {
     return <Icon className="h-4 w-4" />;
   };
 
-  const getAssetStats = () => {
-    if (!allAssets) return null;
+  // Optimized asset statistics using memoization
+  const assetStats = useMemo(() => {
+    if (!allAssets || allAssets.length === 0) return null;
 
-    const stats = {
-      total: allAssets.length,
-      active: allAssets.filter(a => a.isActive).length,
-      inactive: allAssets.filter(a => !a.isActive).length,
-      withBookings: allAssets.filter(a => (a.bookingsCount || 0) > 0).length,
-      avgRating: allAssets.reduce((sum, a) => sum + (a.rating || 0), 0) / allAssets.length,
+    const withBookings = allAssets.filter(a => (a.bookingsCount || 0) > 0).length;
+    const avgRating = allAssets.length > 0 
+      ? allAssets.reduce((sum, a) => sum + (a.rating || 0), 0) / allAssets.length
+      : 0;
+
+    return {
+      total: totalCount,
+      active: activeCount,
+      inactive: inactiveCount,
+      withBookings,
+      avgRating,
     };
+  }, [allAssets, totalCount, activeCount, inactiveCount]);
 
-    return stats;
+  // Handler for viewing asset details
+  const handleViewAssetDetails = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setIsAssetDetailsModalOpen(true);
   };
 
-  const assetStats = getAssetStats();
+  // Handler for navigating to asset-specific page
+  const handleNavigateToAsset = (asset: Asset) => {
+    const routes = {
+      restaurants: `/restaurantes/${asset.name.toLowerCase().replace(/\s+/g, '-')}`,
+      events: `/eventos/${asset._id}`,
+      activities: `/atividades/${asset._id}`,
+      vehicles: `/veiculos/${asset._id}`,
+      accommodations: `/hospedagens/${asset.name.toLowerCase().replace(/\s+/g, '-')}`
+    };
+
+    const route = routes[asset.assetType as keyof typeof routes];
+    if (route) {
+      window.open(route, '_blank');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -183,7 +255,7 @@ export default function AssetsManagementPage() {
               <Database className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemStats.assets.total}</div>
+              <div className="text-2xl font-bold">{assetTypeCounts.total}</div>
               <p className="text-xs text-muted-foreground">assets no sistema</p>
             </CardContent>
           </Card>
@@ -194,7 +266,7 @@ export default function AssetsManagementPage() {
               <Store className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{systemStats.assets.restaurants}</div>
+              <div className="text-2xl font-bold text-orange-600">{assetTypeCounts.restaurants}</div>
             </CardContent>
           </Card>
 
@@ -204,7 +276,7 @@ export default function AssetsManagementPage() {
               <Calendar className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{systemStats.assets.events}</div>
+              <div className="text-2xl font-bold text-blue-600">{assetTypeCounts.events}</div>
             </CardContent>
           </Card>
 
@@ -214,7 +286,7 @@ export default function AssetsManagementPage() {
               <Activity className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{systemStats.assets.activities}</div>
+              <div className="text-2xl font-bold text-green-600">{assetTypeCounts.activities}</div>
             </CardContent>
           </Card>
 
@@ -224,7 +296,7 @@ export default function AssetsManagementPage() {
               <Car className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{systemStats.assets.vehicles}</div>
+              <div className="text-2xl font-bold text-purple-600">{assetTypeCounts.vehicles}</div>
             </CardContent>
           </Card>
 
@@ -234,7 +306,7 @@ export default function AssetsManagementPage() {
               <Building2 className="h-4 w-4 text-pink-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-pink-600">{systemStats.assets.accommodations}</div>
+              <div className="text-2xl font-bold text-pink-600">{assetTypeCounts.accommodations}</div>
             </CardContent>
           </Card>
         </div>
@@ -291,7 +363,7 @@ export default function AssetsManagementPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
-                {assetStats.avgRating ? assetStats.avgRating.toFixed(1) : "0.0"}
+                {assetStats.avgRating && typeof assetStats.avgRating === 'number' ? assetStats.avgRating.toFixed(1) : "0.0"}
               </div>
             </CardContent>
           </Card>
@@ -350,13 +422,45 @@ export default function AssetsManagementPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!allAssets && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          {/* Enhanced loading state with query-specific status */}
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-900">Carregando Assets</h3>
+                <p className="text-sm text-gray-500">
+                  {selectedAssetType === "all" 
+                    ? "Buscando todos os tipos de assets..." 
+                    : `Carregando ${assetTypeLabels[selectedAssetType] || selectedAssetType}...`
+                  }
+                </p>
+              </div>
             </div>
           )}
 
-          {allAssets && filteredAssets.length === 0 && (
+          {/* Error state */}
+          {hasError && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-900">Erro ao Carregar Assets</h3>
+                <p className="text-sm text-gray-500">
+                  Ocorreu um erro ao buscar os dados. Tente novamente.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Tentar Novamente
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && !hasError && allAssets && filteredAssets.length === 0 && (
             <div className="text-center py-12">
               <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Nenhum asset encontrado</h3>
@@ -369,7 +473,7 @@ export default function AssetsManagementPage() {
             </div>
           )}
 
-          {filteredAssets.length > 0 && (
+          {!isLoading && !hasError && filteredAssets.length > 0 && (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -434,7 +538,7 @@ export default function AssetsManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {asset.rating ? (
+                        {asset.rating && typeof asset.rating === 'number' ? (
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                             <span className="font-medium">{asset.rating.toFixed(1)}</span>
@@ -467,8 +571,21 @@ export default function AssetsManagementPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewAssetDetails(asset)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
                             Ver Detalhes
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleNavigateToAsset(asset)}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Visitar
                           </Button>
                           {asset.assetType === "events" && asset.bookingsCount && asset.bookingsCount > 0 && (
                             <Button variant="outline" size="sm">
@@ -497,7 +614,7 @@ export default function AssetsManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-2">
-              {allAssets?.filter(a => a.assetType === "restaurants").length || 0}
+              {assetTypeCounts.restaurants}
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Total de restaurantes cadastrados
@@ -517,7 +634,7 @@ export default function AssetsManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-2">
-              {allAssets?.filter(a => a.assetType === "events").length || 0}
+              {assetTypeCounts.events}
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Total de eventos programados
@@ -537,7 +654,7 @@ export default function AssetsManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold mb-2">
-              {allAssets?.filter(a => a.assetType === "activities").length || 0}
+              {assetTypeCounts.activities}
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Total de atividades disponíveis
@@ -548,6 +665,170 @@ export default function AssetsManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Asset Details Modal */}
+      <Dialog open={isAssetDetailsModalOpen} onOpenChange={setIsAssetDetailsModalOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Detalhes do Asset
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas sobre {selectedAsset?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedAsset && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {getAssetIcon(selectedAsset.assetType)}
+                    Informações Básicas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Nome:</span>
+                      <p className="text-sm text-gray-900">{selectedAsset.name}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Tipo:</span>
+                      <Badge className={`${assetTypeColors[selectedAsset.assetType]} ml-2`}>
+                        {assetTypeLabels[selectedAsset.assetType]}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Status:</span>
+                      <Badge variant={selectedAsset.isActive ? "default" : "secondary"} className="ml-2">
+                        {selectedAsset.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">ID:</span>
+                      <p className="text-sm text-gray-900 font-mono">{selectedAsset._id}</p>
+                    </div>
+                  </div>
+
+                  {selectedAsset.description && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Descrição:</span>
+                      <p className="text-sm text-gray-900 mt-1">{selectedAsset.description}</p>
+                    </div>
+                  )}
+
+                  {selectedAsset.location && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Localização:</span>
+                      <p className="text-sm text-gray-900 mt-1 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {selectedAsset.location}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Partner Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Parceiro Responsável
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Nome:</span>
+                      <p className="text-sm text-gray-900">{selectedAsset.partnerName || "Nome não informado"}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Email:</span>
+                      <p className="text-sm text-gray-900">{selectedAsset.partnerEmail || "Email não informado"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Metrics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Métricas de Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-blue-600">{selectedAsset.bookingsCount || 0}</div>
+                      <p className="text-sm text-gray-600">Reservas</p>
+                    </div>
+                                         <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                       <Star className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                       <div className="text-2xl font-bold text-yellow-600">
+                         {selectedAsset.rating && typeof selectedAsset.rating === 'number' ? selectedAsset.rating.toFixed(1) : "N/A"}
+                       </div>
+                       <p className="text-sm text-gray-600">Avaliação</p>
+                     </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-green-600">
+                        {selectedAsset.price ? formatPrice(selectedAsset.price) : "N/A"}
+                      </div>
+                      <p className="text-sm text-gray-600">Preço</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Additional Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações Adicionais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Criado em:</span>
+                      <p>{formatDate(selectedAsset._creationTime)}</p>
+                    </div>
+                    {selectedAsset.maxParticipants && (
+                      <div>
+                        <span className="font-medium text-gray-700">Capacidade máxima:</span>
+                        <p>{selectedAsset.maxParticipants} pessoas</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Action buttons */}
+              <div className="flex justify-between gap-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => handleNavigateToAsset(selectedAsset)}
+                  className="flex-1"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Visitar Página
+                </Button>
+                <Button 
+                  onClick={() => setIsAssetDetailsModalOpen(false)}
+                  className="flex-1"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

@@ -26,7 +26,6 @@ import PreferencesSection from "./PreferencesSection"
 
 // Import our refactored components
 import { useDashboard } from './hooks/useDashboard'
-import { mockRecommendations } from './data/mockData'
 import { getReservationColor, getStatusVariant, getStatusLabel } from './utils/reservations'
 import ReservationsSection from './components/ReservationsSection'
 import PackageRequestsSection from './components/PackageRequestsSection'
@@ -34,6 +33,10 @@ import OverviewSection from './components/OverviewSection'
 import FloatingSupportButton from './components/FloatingSupportButton'
 import RecommendationCard from './components/RecommendationCard'
 import FavoritesSection from '@/components/profile/FavoritesSection'
+import AIRecommendationsSection from '@/components/AIRecommendationsSection'
+import ChatsSection from './components/ChatsSection'
+
+
 
 export default function Dashboard() {
   const { user } = useUser()
@@ -48,8 +51,13 @@ export default function Dashboard() {
     handleCancelReservation,
     reservations,
     stats,
-    isLoading
+    isLoadingReservations,
+    isLoadingNotifications,
+    isLoadingStats
   } = useDashboard()
+
+  // Show loading state while fetching data
+  const isLoading = isLoadingReservations || isLoadingNotifications || isLoadingStats;
 
   const renderPageContent = () => {
     switch (activeSection) {
@@ -76,23 +84,10 @@ export default function Dashboard() {
         )
       case 'pacotes':
         return <PackageRequestsSection />
+      case 'chats':
+        return <ChatsSection />
       case 'recomendacoes':
-        return (
-          <div className="space-y-6">
-            <Card className="bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-purple-700">Recomendações Personalizadas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockRecommendations.map((item) => (
-                    <RecommendationCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
+        return <AIRecommendationsSection />
       case 'favoritos':
         return <FavoritesSection />
       case 'personalizacao':

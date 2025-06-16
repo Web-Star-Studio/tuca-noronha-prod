@@ -38,14 +38,14 @@ import {
 type SystemUser = {
   _id: Id<"users">;
   _creationTime: number;
-  clerkId: string;
+  clerkId?: string;
   name?: string;
   email?: string;
   role?: string;
   createdAt?: number;
   updatedAt?: number;
-  organizationsCount: number;
-  assetsCount: number;
+  organizationsCount?: number;
+  assetsCount?: number;
 };
 
 const roleLabels: Record<string, string> = {
@@ -83,8 +83,8 @@ export default function UsersManagementPage() {
   }
 
   // Verifica se o usuário tem permissão para acessar esta página
-  if (user?.role === "employee") {
-    // Employees não podem acessar o gerenciamento de usuários
+  if (!user || !["partner", "employee", "master"].includes(user.role || "")) {
+    // Apenas partners, employees e masters podem acessar
     router.push("/admin/dashboard");
     return (
       <div className="flex items-center justify-center h-64">
@@ -143,9 +143,102 @@ export default function UsersManagementPage() {
     return (
       user.name?.toLowerCase().includes(searchLower) ||
       user.email?.toLowerCase().includes(searchLower) ||
-      user.clerkId.toLowerCase().includes(searchLower)
+      user.clerkId?.toLowerCase().includes(searchLower)
     );
   }) || [];
+
+  // Filtrar dados baseado no role do usuário atual
+  const getFilteredData = () => {
+    if (!user) return [];
+
+    // Masters veem todos os usuários
+    if (user.role === "master") {
+      return filteredUsers;
+    }
+
+    // Partners veem apenas seus employees e outros partners (sem dados sensíveis de outros partners)
+    if (user.role === "partner") {
+      return filteredUsers.filter(u => 
+        u.role === "employee" || 
+        u.role === "traveler" || 
+        (u.role === "partner" && u._id === user._id) // Só vê a si mesmo entre partners
+      );
+    }
+
+    // Employees veem apenas travelers e outros employees da mesma organização
+    if (user.role === "employee") {
+      return filteredUsers.filter(u => 
+        u.role === "traveler" ||
+        (u.role === "employee" && u._id === user._id) // Só vê a si mesmo entre employees
+      );
+    }
+
+    return [];
+  };
+
+  const visibleUsers = getFilteredData();
+
+  // Adaptar título e descrição baseado no role
+  const getPageTitle = () => {
+    switch (user?.role) {
+      case "master": 
+        return {
+          title: "Gestão de Usuários",
+          description: "Visualizar e gerenciar todos os usuários do sistema"
+        };
+      case "partner":
+        return {
+          title: "Usuários",
+          description: "Visualizar colaboradores e viajantes"
+        };
+      case "employee":
+        return {
+          title: "Usuários",
+          description: "Visualizar viajantes e informações do sistema"
+        };
+      default:
+        return {
+          title: "Usuários",
+          description: "Visualizar usuários do sistema"
+        };
+    }
+  };
+
+  const pageInfo = getPageTitle();
+
+  // Adaptar filtros de role baseado nas permissões do usuário
+  const getAvailableRoleFilters = () => {
+    const baseFilters = [{ value: "all", label: "Todos os Usuários" }];
+    
+    if (user?.role === "master") {
+      return [
+        ...baseFilters,
+        { value: "traveler", label: "Viajantes" },
+        { value: "partner", label: "Parceiros" },
+        { value: "employee", label: "Funcionários" },
+        { value: "master", label: "Masters" },
+      ];
+    }
+    
+    if (user?.role === "partner") {
+      return [
+        ...baseFilters,
+        { value: "traveler", label: "Viajantes" },
+        { value: "employee", label: "Funcionários" },
+      ];
+    }
+    
+    if (user?.role === "employee") {
+      return [
+        ...baseFilters,
+        { value: "traveler", label: "Viajantes" },
+      ];
+    }
+    
+    return baseFilters;
+  };
+
+  const roleFilters = getAvailableRoleFilters();
 
   const getRoleIcon = (role: string) => {
     const Icon = roleIcons[role] || UserCheck;
@@ -161,9 +254,9 @@ export default function UsersManagementPage() {
             <Users className="h-6 w-6 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gestão de Usuários</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{pageInfo.title}</h1>
             <p className="text-sm text-gray-600">
-              Visualizar e gerenciar todos os usuários do sistema
+              {pageInfo.description}
             </p>
           </div>
         </div>
@@ -183,56 +276,81 @@ export default function UsersManagementPage() {
       {/* Estatísticas */}
       {systemStats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {/* Total - sempre mostrar */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {user?.role === "master" ? "Total" : "Usuários Visíveis"}
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemStats.users.total}</div>
-              <p className="text-xs text-muted-foreground">usuários registrados</p>
+              <div className="text-2xl font-bold">{visibleUsers.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {user?.role === "master" ? "usuários registrados" : "usuários visíveis"}
+              </p>
             </CardContent>
           </Card>
 
+          {/* Viajantes - sempre mostrar para todos os roles */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Viajantes</CardTitle>
               <UserCheck className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{systemStats.users.travelers}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {user?.role === "master" 
+                  ? systemStats.users.travelers 
+                  : visibleUsers.filter(u => u.role === "traveler").length
+                }
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Parceiros</CardTitle>
-              <Building2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{systemStats.users.partners}</div>
-            </CardContent>
-          </Card>
+          {/* Parceiros - apenas para masters */}
+          {user?.role === "master" && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Parceiros</CardTitle>
+                <Building2 className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{systemStats.users.partners}</div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Funcionários</CardTitle>
-              <Users className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{systemStats.users.employees}</div>
-            </CardContent>
-          </Card>
+          {/* Funcionários - para masters e partners */}
+          {(user?.role === "master" || user?.role === "partner") && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Funcionários</CardTitle>
+                <Users className="h-4 w-4 text-yellow-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {user?.role === "master" 
+                    ? systemStats.users.employees 
+                    : visibleUsers.filter(u => u.role === "employee").length
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Masters</CardTitle>
-              <Crown className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{systemStats.users.masters}</div>
-            </CardContent>
-          </Card>
+          {/* Masters - apenas para masters */}
+          {user?.role === "master" && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Masters</CardTitle>
+                <Crown className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-600">{systemStats.users.masters}</div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -253,11 +371,11 @@ export default function UsersManagementPage() {
             <SelectValue placeholder="Filtrar por role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os Roles</SelectItem>
-            <SelectItem value="traveler">Viajantes</SelectItem>
-            <SelectItem value="partner">Parceiros</SelectItem>
-            <SelectItem value="employee">Funcionários</SelectItem>
-            <SelectItem value="master">Masters</SelectItem>
+            {roleFilters.map((filter) => (
+              <SelectItem key={filter.value} value={filter.value}>
+                {filter.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -268,9 +386,9 @@ export default function UsersManagementPage() {
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Usuários do Sistema
-            {filteredUsers.length > 0 && (
+            {visibleUsers.length > 0 && (
               <Badge variant="secondary">
-                {filteredUsers.length} {filteredUsers.length === 1 ? "usuário" : "usuários"}
+                {visibleUsers.length} {visibleUsers.length === 1 ? "usuário" : "usuários"}
               </Badge>
             )}
           </CardTitle>
@@ -282,7 +400,7 @@ export default function UsersManagementPage() {
             </div>
           )}
 
-          {systemUsers && filteredUsers.length === 0 && (
+          {systemUsers && visibleUsers.length === 0 && (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Nenhum usuário encontrado</h3>
@@ -295,7 +413,7 @@ export default function UsersManagementPage() {
             </div>
           )}
 
-          {filteredUsers.length > 0 && (
+          {visibleUsers.length > 0 && (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -310,62 +428,67 @@ export default function UsersManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user._id}>
+                  {visibleUsers.map((tableUser) => (
+                    <TableRow key={tableUser._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
-                            {getRoleIcon(user.role || "traveler")}
+                            {getRoleIcon(tableUser.role || "traveler")}
                           </div>
                           <div>
                             <div className="font-medium">
-                              {user.name || "Nome não informado"}
+                              {tableUser.name || "Nome não informado"}
                             </div>
                             <div className="text-sm text-gray-500">
-                              ID: {user.clerkId.slice(0, 8)}...
+                              ID: {tableUser.clerkId?.slice(0, 8) || "N/A"}...
                             </div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${roleColors[user.role || "traveler"]}`}>
-                          {roleLabels[user.role || "traveler"]}
+                        <Badge className={`${roleColors[tableUser.role || "traveler"]}`}>
+                          {roleLabels[tableUser.role || "traveler"]}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-gray-400" />
-                          {user.email || "Email não informado"}
+                          {tableUser.email || "Email não informado"}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-gray-400" />
-                          {user.organizationsCount}
+                          {tableUser.organizationsCount ?? 0}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Store className="h-4 w-4 text-gray-400" />
-                          {user.assetsCount}
+                          {tableUser.assetsCount ?? 0}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          {formatDate(user._creationTime)}
+                          {formatDate(tableUser._creationTime)}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewUserDetails(user._id)}
-                          >
-                            Ver Detalhes
-                          </Button>
-                          {user.role === "partner" && user.assetsCount > 0 && (
+                          {/* Masters podem ver detalhes de qualquer usuário */}
+                          {/* Partners e employees só podem ver detalhes de travelers */}
+                          {(user?.role === "master" || 
+                            ((user?.role === "partner" || user?.role === "employee") && tableUser.role === "traveler")) && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewUserDetails(tableUser._id)}
+                            >
+                              Ver Detalhes
+                            </Button>
+                          )}
+                          {tableUser.role === "partner" && tableUser.assetsCount > 0 && (
                             <Button variant="outline" size="sm">
                               Ver Assets
                             </Button>

@@ -1,10 +1,16 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
-import { getCurrentUserRole, getCurrentUserConvexId } from "../rbac/utils";
+import { getCurrentUserConvexId, getCurrentUserRole } from "../rbac";
 import type { Id } from "../../_generated/dataModel";
 
+// Tipos para os diferentes assets
+type AssetType = {
+  name?: string;
+  title?: string;
+} | null;
+
 /**
- * Cria uma nova sala de chat
+ * Cria uma nova sala de chat ou retorna uma existente
  */
 export const createChatRoom = mutation({
   args: {
@@ -34,7 +40,7 @@ export const createChatRoom = mutation({
     }
 
     // Verificar se já existe uma sala de chat para este contexto
-    const existingRoom = await ctx.db
+    const existingChatRoom = await ctx.db
       .query("chatRooms")
       .withIndex("by_context", (q) => 
         q.eq("contextType", args.contextType).eq("contextId", args.contextId)
@@ -47,9 +53,9 @@ export const createChatRoom = mutation({
       )
       .first();
 
-    if (existingRoom) {
+    if (existingChatRoom) {
       return {
-        _id: existingRoom._id,
+        _id: existingChatRoom._id,
         success: true,
       };
     }
@@ -67,6 +73,63 @@ export const createChatRoom = mutation({
       title: args.title,
       createdAt: now,
       updatedAt: now,
+    });
+
+    // Buscar informações do usuário atual e do partner para as notificações
+    const currentUser = await ctx.db.get(currentUserId);
+    const partner = await ctx.db.get(args.partnerId);
+    
+    // Buscar informações do contexto para enriquecer a notificação
+    let contextData: any = {};
+    if (args.contextType === "asset" && args.assetType) {
+      // Buscar o asset baseado no tipo usando Id conversion
+      let asset: AssetType = null;
+      try {
+        const assetId = args.contextId as Id<any>;
+        switch (args.assetType) {
+          case "restaurants":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "events":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "activities":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "vehicles":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "accommodations":
+            asset = await ctx.db.get(assetId);
+            break;
+        }
+      } catch (error) {
+        console.warn("Failed to fetch asset:", error);
+      }
+      
+      if (asset) {
+        contextData = {
+          assetName: asset.name || asset.title || "Asset desconhecido",
+          assetType: args.assetType,
+        };
+      }
+    }
+
+    // Criar notificação para o partner sobre a nova conversa
+    await ctx.db.insert("notifications", {
+      userId: args.partnerId,
+      type: "chat_room_created",
+      title: "Nova Conversa Iniciada",
+      message: `${currentUser?.name || 'Um usuário'} iniciou uma conversa${contextData.assetName ? ` sobre ${contextData.assetName}` : ''}`,
+      relatedId: chatRoomId.toString(),
+      relatedType: "chat_room",
+      isRead: false,
+      data: {
+        travelerName: currentUser?.name,
+        contextType: args.contextType,
+        ...contextData,
+      },
+      createdAt: now,
     });
 
     // Enviar mensagem de boas-vindas do sistema
@@ -92,6 +155,24 @@ export const createChatRoom = mutation({
         isRead: false,
         createdAt: now + 1, // +1ms para manter ordem
         updatedAt: now + 1,
+      });
+
+      // Criar notificação para o partner sobre a mensagem inicial
+      await ctx.db.insert("notifications", {
+        userId: args.partnerId,
+        type: "chat_message",
+        title: "Nova Mensagem de Chat",
+        message: `${currentUser?.name || 'Usuário'} enviou uma mensagem${contextData.assetName ? ` sobre ${contextData.assetName}` : ''}: "${args.initialMessage.trim().substring(0, 50)}${args.initialMessage.trim().length > 50 ? '...' : ''}"`,
+        relatedId: chatRoomId.toString(),
+        relatedType: "chat_room",
+        isRead: false,
+        data: {
+          senderName: currentUser?.name,
+          messagePreview: args.initialMessage.trim().substring(0, 100),
+          contextType: args.contextType,
+          ...contextData,
+        },
+        createdAt: now + 1,
       });
 
       // Atualizar sala de chat com última mensagem
@@ -149,6 +230,53 @@ export const sendMessage = mutation({
     const now = Date.now();
     const messageType = args.messageType || "text";
 
+    // Buscar informações do remetente e do destinatário
+    const sender = await ctx.db.get(currentUserId);
+    const recipientId = chatRoom.travelerId.toString() === currentUserId.toString() 
+      ? chatRoom.partnerId 
+      : chatRoom.travelerId;
+
+    // Buscar informações do contexto para enriquecer a notificação
+    let contextData: any = {};
+    if (chatRoom.contextType === "asset" && chatRoom.assetType) {
+      // Buscar o asset baseado no tipo usando Id conversion
+      let asset: AssetType = null;
+      try {
+        const assetId = chatRoom.contextId as Id<any>;
+        switch (chatRoom.assetType) {
+          case "restaurants":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "events":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "activities":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "vehicles":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "accommodations":
+            asset = await ctx.db.get(assetId);
+            break;
+        }
+      } catch (error) {
+        console.warn("Failed to fetch asset:", error);
+      }
+      
+      if (asset) {
+        contextData = {
+          assetName: asset.name || asset.title || "Asset desconhecido",
+          assetType: chatRoom.assetType,
+        };
+      }
+    } else if (chatRoom.contextType === "booking") {
+      // Para reservas, podemos buscar informações do booking
+      contextData = {
+        bookingCode: chatRoom.contextId,
+      };
+    }
+
     // Inserir mensagem
     const messageId = await ctx.db.insert("chatMessages", {
       chatRoomId: args.chatRoomId,
@@ -160,6 +288,33 @@ export const sendMessage = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    // Criar notificação para o destinatário (apenas mensagens de texto por enquanto)
+    if (messageType === "text") {
+      const messagePreview = args.content.trim().substring(0, 100);
+      const contextInfo = contextData.assetName 
+        ? ` sobre ${contextData.assetName}`
+        : contextData.bookingCode 
+          ? ` sobre reserva ${contextData.bookingCode}`
+          : '';
+
+      await ctx.db.insert("notifications", {
+        userId: recipientId,
+        type: "chat_message",
+        title: "Nova Mensagem de Chat",
+        message: `${sender?.name || 'Usuário'} enviou uma mensagem${contextInfo}: "${args.content.trim().substring(0, 50)}${args.content.trim().length > 50 ? '...' : ''}"`,
+        relatedId: args.chatRoomId.toString(),
+        relatedType: "chat_room",
+        isRead: false,
+        data: {
+          senderName: sender?.name,
+          messagePreview,
+          contextType: chatRoom.contextType,
+          ...contextData,
+        },
+        createdAt: now,
+      });
+    }
 
     // Atualizar sala de chat com última mensagem
     await ctx.db.patch(args.chatRoomId, {

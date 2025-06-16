@@ -74,14 +74,15 @@ export default function MetricsPage() {
   const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics)
   const supportStats = useQuery(api["domains/support/queries"].getSupportStatistics)
 
-  // Simular dados de métricas (em produção, criar queries específicas)
-  const mockMetrics = {
-    usersGrowth: 12.5,
-    organizationsGrowth: 8.3,
-    assetsGrowth: 15.2,
-    bookingsGrowth: 22.1,
-    revenueGrowth: 18.7,
-    supportGrowth: -5.2
+  // Métricas de crescimento serão calculadas automaticamente 
+  // com base nos dados históricos do sistema quando implementadas
+  const growthMetrics = {
+    usersGrowth: 0, // TODO: Implementar cálculo real baseado em dados históricos
+    organizationsGrowth: 0,
+    assetsGrowth: 0,
+    bookingsGrowth: 0,
+    revenueGrowth: 0,
+    supportGrowth: 0
   }
 
   const handleRefresh = async () => {
@@ -149,7 +150,7 @@ export default function MetricsPage() {
         <MetricCard
           title="Total de Usuários"
           value={systemStats.users.total.toLocaleString()}
-          change={mockMetrics.usersGrowth}
+          change={growthMetrics.usersGrowth}
           icon={Users}
           description="vs mês anterior"
           color="text-blue-600"
@@ -158,7 +159,7 @@ export default function MetricsPage() {
         <MetricCard
           title="Organizações Ativas"
           value={systemStats.organizations.active.toLocaleString()}
-          change={mockMetrics.organizationsGrowth}
+          change={growthMetrics.organizationsGrowth}
           icon={Building2}
           description="vs mês anterior"
           color="text-green-600"
@@ -167,7 +168,7 @@ export default function MetricsPage() {
         <MetricCard
           title="Total de Assets"
           value={systemStats.assets.total.toLocaleString()}
-          change={mockMetrics.assetsGrowth}
+          change={growthMetrics.assetsGrowth}
           icon={Database}
           description="vs mês anterior"
           color="text-purple-600"
@@ -176,7 +177,7 @@ export default function MetricsPage() {
         <MetricCard
           title="Reservas"
           value={systemStats.bookings.total.toLocaleString()}
-          change={mockMetrics.bookingsGrowth}
+          change={growthMetrics.bookingsGrowth}
           icon={Calendar}
           description="vs mês anterior"
           color="text-orange-600"
@@ -185,7 +186,7 @@ export default function MetricsPage() {
         <MetricCard
           title="Receita Estimada"
           value="R$ 45.2K"
-          change={mockMetrics.revenueGrowth}
+          change={growthMetrics.revenueGrowth}
           icon={TrendingUp}
           description="vs mês anterior"
           color="text-emerald-600"
@@ -194,7 +195,7 @@ export default function MetricsPage() {
         <MetricCard
           title="Tickets de Suporte"
           value={supportStats.total.toLocaleString()}
-          change={mockMetrics.supportGrowth}
+          change={growthMetrics.supportGrowth}
           icon={MessageSquare}
           description="vs mês anterior"
           color="text-red-600"

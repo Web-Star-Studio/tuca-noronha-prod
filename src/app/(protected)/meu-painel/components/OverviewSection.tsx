@@ -97,10 +97,13 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
             <Button 
               onClick={() => onSectionChange('personalizacao')} 
               variant="outline" 
-              className="h-auto flex flex-col items-center justify-center py-3 md:py-4 px-2 gap-2 text-center border-cyan-200 bg-cyan-50 hover:bg-cyan-100 hover:text-cyan-800 min-h-[80px] md:min-h-[90px]"
+              className="h-auto flex flex-col items-center justify-center py-3 md:py-4 px-2 gap-2 text-center border-gradient-to-r from-blue-200 to-purple-200 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 min-h-[80px] md:min-h-[90px] relative overflow-hidden"
             >
-              <User className="h-5 w-5 md:h-6 md:w-6 text-cyan-500" />
-              <span className="text-xs md:text-sm font-medium leading-tight">Preferências</span>
+              <div className="absolute top-1 right-1">
+                <Sparkles className="h-3 w-3 text-purple-500 animate-pulse" />
+              </div>
+              <User className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+              <span className="text-xs md:text-sm font-medium leading-tight text-purple-700">Personalização IA</span>
             </Button>
             
             <Button 

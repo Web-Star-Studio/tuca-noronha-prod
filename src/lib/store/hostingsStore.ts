@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { create } from "zustand";
-import { hostings } from "../mocked/hostingsMockedData";
 
 export interface Hosting {
   // Identificação 
@@ -98,6 +97,7 @@ interface HostingsState {
   availableAmenities: string[];
   
   // Ações
+  setHostings: (hostings: Hosting[]) => void;
   setFilteredHostings: (filteredHostings: Hosting[]) => void;
   toggleTypeFilter: (type: string) => void;
   toggleAmenityFilter: (amenity: string) => void;
@@ -108,20 +108,24 @@ interface HostingsState {
 }
 
 export const useHostingsStore = create<HostingsState>((set, get) => ({
-  hostings,
-  filteredHostings: hostings,
+  hostings: [],
+  filteredHostings: [],
   selectedTypes: [],
   selectedAmenities: [],
   priceRange: [0, 3000],
   guestCount: 2,
   
   // Valores disponíveis para filtro extraídos dos dados
-  availableTypes: Array.from(new Set(hostings.map((hosting: Hosting) => hosting.type))),
-  availableAmenities: Array.from(
-    new Set(hostings.flatMap((hosting: Hosting) => hosting.amenities))
-  ),
+  availableTypes: [],
+  availableAmenities: [],
   
   // Métodos
+  setHostings: (hostings) => set({ 
+    hostings,
+    filteredHostings: hostings,
+    availableTypes: Array.from(new Set(hostings.map((hosting: Hosting) => hosting.type))),
+    availableAmenities: Array.from(new Set(hostings.flatMap((hosting: Hosting) => hosting.amenities)))
+  }),
   setFilteredHostings: (filteredHostings) => set({ filteredHostings }),
   
   toggleTypeFilter: (type) => set((state) => {

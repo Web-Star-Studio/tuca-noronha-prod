@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { create } from "zustand";
-import { restaurants } from "../mocked/restaurantsMockedData";
 
 export interface Restaurant {
   // Basic Information
@@ -88,10 +87,14 @@ type RestaurantsStoreState = {
   featuredRestaurants: Restaurant[];
 };
 
-export const useRestaurantsStore = create<RestaurantsStoreState>((set) => ({
-  restaurants: restaurants,
-  filteredRestaurants: restaurants,
-  setRestaurants: (restaurants: Restaurant[]) => set({ restaurants }),
+export const useRestaurantsStore = create<RestaurantsStoreState>((set, get) => ({
+  restaurants: [],
+  filteredRestaurants: [],
+  setRestaurants: (restaurants: Restaurant[]) => set({ 
+    restaurants,
+    filteredRestaurants: restaurants,
+    featuredRestaurants: restaurants.filter(restaurant => restaurant.isFeatured)
+  }),
   setFilteredRestaurants: (filteredRestaurants: Restaurant[]) => set({ filteredRestaurants }),
-  featuredRestaurants: restaurants.filter(restaurant => restaurant.isFeatured),
+  featuredRestaurants: [],
 }));

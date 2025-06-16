@@ -21,8 +21,6 @@ export default function AdminLayout({
   const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    // Debug log para entender o estado atual
-    console.log('Admin Layout State:', { isLoading, isAuthenticated, hasUser: !!user, userRole: user?.role });
     
     // Skip check if still loading - wait for auth to stabilize
     if (isLoading) return;

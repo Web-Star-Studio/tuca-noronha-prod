@@ -26,6 +26,7 @@ import {
   X,
   CheckCircle2,
   Trash2,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -44,12 +45,13 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     limit: 50,
   });
 
+  // Get unread count efficiently
+  const unreadCount = useQuery(api.domains.notifications.queries.getUnreadNotificationCount);
+
   // Mutations
   const markAsRead = useMutation(api.domains.notifications.mutations.markAsRead);
   const markAllAsRead = useMutation(api.domains.notifications.mutations.markAllAsRead);
   const deleteNotification = useMutation(api.domains.notifications.mutations.deleteNotification);
-
-  const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
@@ -62,10 +64,13 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
 
   const handleMarkAllAsRead = async () => {
     try {
-      const user = await fetch('/api/get-user-id').then(res => res.json());
-      if (!user.userId) throw new Error("Usuário não encontrado");
+      // Buscar o userId do usuário logado
+      const userIdResult = await fetch('/api/get-user-id').then(res => res.json());
+      if (!userIdResult?.userId) {
+        throw new Error("Usuário não encontrado");
+      }
       
-      await markAllAsRead({ userId: user.userId });
+      await markAllAsRead({ userId: userIdResult.userId });
       toast.success("Todas as notificações foram marcadas como lidas");
     } catch (error) {
       toast.error("Erro ao marcar todas as notificações como lidas");
@@ -88,7 +93,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
       case "booking_confirmed":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "booking_canceled":
-        return <X className="w-5 h-5 text-red-500" />;
+        return <Calendar className="w-5 h-5 text-red-500" />;
       case "booking_updated":
         return <Calendar className="w-5 h-5 text-blue-500" />;
       case "booking_reminder":
@@ -96,30 +101,40 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
       case "payment_received":
         return <CreditCard className="w-5 h-5 text-green-500" />;
       case "system_update":
-        return <Info className="w-5 h-5 text-blue-500" />;
+        return <Bell className="w-5 h-5 text-blue-500" />;
+      case "chat_message":
+        return <MessageCircle className="w-5 h-5 text-purple-500" />;
+      case "chat_room_created":
+        return <MessageCircle className="w-5 h-5 text-indigo-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
   };
 
   const getNotificationBgColor = (type: string, isRead: boolean) => {
-    if (isRead) return "bg-gray-50";
+    if (isRead) {
+      return "bg-gray-50 hover:bg-gray-100";
+    }
     
     switch (type) {
       case "booking_confirmed":
-        return "bg-green-50 border-l-4 border-green-500";
+        return "bg-green-50 border-l-4 border-green-500 hover:bg-green-100";
       case "booking_canceled":
-        return "bg-red-50 border-l-4 border-red-500";
+        return "bg-red-50 border-l-4 border-red-500 hover:bg-red-100";
       case "booking_updated":
-        return "bg-blue-50 border-l-4 border-blue-500";
+        return "bg-blue-50 border-l-4 border-blue-500 hover:bg-blue-100";
       case "booking_reminder":
-        return "bg-orange-50 border-l-4 border-orange-500";
+        return "bg-orange-50 border-l-4 border-orange-500 hover:bg-orange-100";
       case "payment_received":
-        return "bg-green-50 border-l-4 border-green-500";
+        return "bg-green-50 border-l-4 border-green-500 hover:bg-green-100";
       case "system_update":
-        return "bg-blue-50 border-l-4 border-blue-500";
+        return "bg-blue-50 border-l-4 border-blue-500 hover:bg-blue-100";
+      case "chat_message":
+        return "bg-purple-50 border-l-4 border-purple-500 hover:bg-purple-100";
+      case "chat_room_created":
+        return "bg-indigo-50 border-l-4 border-indigo-500 hover:bg-indigo-100";
       default:
-        return "bg-gray-50 border-l-4 border-gray-500";
+        return "bg-gray-50 border-l-4 border-gray-500 hover:bg-gray-100";
     }
   };
 
@@ -180,14 +195,21 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
           {notifications && notifications.length > 0 ? (
             <div className="space-y-2">
               {notifications.map((notification) => (
-                <button
+                <div
                   key={notification._id}
-                  type="button"
                   className={cn(
                     "p-4 rounded-lg transition-colors cursor-pointer group w-full text-left",
                     getNotificationBgColor(notification.type, notification.isRead)
                   )}
                   onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      !notification.isRead && handleMarkAsRead(notification._id);
+                    }
+                  }}
                   aria-label={`Notificação: ${notification.title}`}
                 >
                   <div className="flex items-start gap-3">
@@ -250,7 +272,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                       </p>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           ) : (

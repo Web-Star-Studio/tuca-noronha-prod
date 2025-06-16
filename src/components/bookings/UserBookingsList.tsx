@@ -29,12 +29,12 @@ function ActivityBookingCard({ booking }: ActivityBookingCardProps) {
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{booking.activityTitle}</CardTitle>
+            <CardTitle className="text-lg">{booking.assetName || booking.activityTitle}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">Código: #{booking.confirmationCode}</p>
             {booking.activityImageUrl && (
               <img 
                 src={booking.activityImageUrl} 
-                alt={booking.activityTitle}
+                alt={booking.assetName || booking.activityTitle}
                 className="w-20 h-20 object-cover rounded-md mt-2"
               />
             )}
@@ -59,11 +59,14 @@ function ActivityBookingCard({ booking }: ActivityBookingCardProps) {
           )}
           <div className="flex items-center">
             <Users className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{booking.participants} participantes</span>
+            <span>{booking.participants || "N/A"} participantes</span>
           </div>
           <div className="font-semibold text-green-600">
             R$ {booking.totalPrice.toFixed(2)}
           </div>
+        </div>
+        <div className="mt-3 text-xs text-gray-500">
+          <span>Cliente: {booking.customerName}</span>
         </div>
         {booking.specialRequests && (
           <div className="mt-4 pt-4 border-t">
@@ -95,12 +98,12 @@ function EventBookingCard({ booking }: EventBookingCardProps) {
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{booking.eventTitle}</CardTitle>
+            <CardTitle className="text-lg">{booking.assetName || booking.eventTitle}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">Código: #{booking.confirmationCode}</p>
             {booking.eventImageUrl && (
               <img 
                 src={booking.eventImageUrl} 
-                alt={booking.eventTitle}
+                alt={booking.assetName || booking.eventTitle}
                 className="w-20 h-20 object-cover rounded-md mt-2"
               />
             )}
@@ -115,24 +118,27 @@ function EventBookingCard({ booking }: EventBookingCardProps) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{booking.eventDate}</span>
+            <span>{booking.date || booking.eventDate}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{booking.eventTime}</span>
+            <span>{booking.time || booking.eventTime}</span>
           </div>
           <div className="flex items-center">
             <Ticket className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{booking.quantity} ingressos</span>
+            <span>{booking.quantity || "N/A"} ingressos</span>
           </div>
           <div className="font-semibold text-green-600">
             R$ {booking.totalPrice.toFixed(2)}
           </div>
         </div>
+        <div className="mt-3 text-xs text-gray-500">
+          <span>Cliente: {booking.customerName || booking.customerEmail}</span>
+        </div>
         <div className="mt-4 pt-4 border-t">
           <div className="flex items-center">
             <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{booking.eventLocation}</span>
+            <span>{booking.eventLocation || "Local não informado"}</span>
           </div>
         </div>
         {booking.specialRequests && (
@@ -165,12 +171,12 @@ function RestaurantReservationCard({ reservation }: RestaurantReservationCardPro
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{reservation.restaurantName}</CardTitle>
+            <CardTitle className="text-lg">{reservation.assetName || reservation.restaurantName}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">Código: #{reservation.confirmationCode}</p>
             {reservation.restaurantImageUrl && (
               <img 
                 src={reservation.restaurantImageUrl} 
-                alt={reservation.restaurantName}
+                alt={reservation.assetName || reservation.restaurantName}
                 className="w-20 h-20 object-cover rounded-md mt-2"
               />
             )}
@@ -193,8 +199,11 @@ function RestaurantReservationCard({ reservation }: RestaurantReservationCardPro
           </div>
           <div className="flex items-center">
             <Users className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{Number(reservation.partySize)} pessoas</span>
+            <span>{Number(reservation.partySize || 0)} pessoas</span>
           </div>
+        </div>
+        <div className="mt-3 text-xs text-gray-500">
+          <span>Cliente: {reservation.customerName || reservation.customerEmail}</span>
         </div>
         <div className="mt-4 pt-4 border-t">
           <div className="flex items-center">
@@ -232,12 +241,12 @@ function VehicleBookingCard({ booking }: VehicleBookingCardProps) {
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{booking.vehicleName}</CardTitle>
-            <p className="text-sm text-gray-600 mt-1">{booking.vehicleBrand} {booking.vehicleModel}</p>
+            <CardTitle className="text-lg">{booking.assetName || booking.vehicleName}</CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Código: #{booking.confirmationCode || booking._id}</p>
             {booking.vehicleImageUrl && (
               <img 
                 src={booking.vehicleImageUrl} 
-                alt={booking.vehicleName}
+                alt={booking.assetName || booking.vehicleName}
                 className="w-20 h-20 object-cover rounded-md mt-2"
               />
             )}
@@ -252,15 +261,18 @@ function VehicleBookingCard({ booking }: VehicleBookingCardProps) {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-            <span>De: {new Date(booking.startDate).toLocaleDateString('pt-BR')}</span>
+            <span>De: {booking.checkIn ? new Date(booking.checkIn).toLocaleDateString('pt-BR') : new Date(booking.startDate).toLocaleDateString('pt-BR')}</span>
           </div>
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-            <span>Até: {new Date(booking.endDate).toLocaleDateString('pt-BR')}</span>
+            <span>Até: {booking.checkOut ? new Date(booking.checkOut).toLocaleDateString('pt-BR') : new Date(booking.endDate).toLocaleDateString('pt-BR')}</span>
           </div>
           <div className="font-semibold text-green-600 col-span-2">
             R$ {booking.totalPrice.toFixed(2)}
           </div>
+        </div>
+        <div className="mt-3 text-xs text-gray-500">
+          <span>Cliente: {booking.customerName || booking.customerEmail}</span>
         </div>
         {(booking.pickupLocation || booking.returnLocation) && (
           <div className="mt-4 pt-4 border-t">
@@ -296,23 +308,29 @@ function VehicleBookingCard({ booking }: VehicleBookingCardProps) {
 }
 
 export default function UserBookingsList() {
-  const activityBookings = useQuery(api.domains.bookings.queries.getUserActivityBookings, {
-    paginationOpts: { numItems: 50, cursor: null },
+  // Using RBAC query that works for all user types (including travelers)
+  const allBookings = useQuery(api.domains.bookings.queries.getBookingsWithRBAC, {
+    paginationOpts: { numItems: 200, cursor: null },
   });
 
-  const eventBookings = useQuery(api.domains.bookings.queries.getUserEventBookings, {
-    paginationOpts: { numItems: 50, cursor: null },
-  });
+  // Separate bookings by type
+  const activityBookings = {
+    page: allBookings?.bookings.filter(b => b.type === "activity") || []
+  };
+  
+  const eventBookings = {
+    page: allBookings?.bookings.filter(b => b.type === "event") || []
+  };
+  
+  const restaurantReservations = {
+    page: allBookings?.bookings.filter(b => b.type === "restaurant") || []
+  };
+  
+  const vehicleBookings = {
+    page: allBookings?.bookings.filter(b => b.type === "vehicle") || []
+  };
 
-  const restaurantReservations = useQuery(api.domains.bookings.queries.getUserRestaurantReservations, {
-    paginationOpts: { numItems: 50, cursor: null },
-  });
-
-  const vehicleBookings = useQuery(api.domains.bookings.queries.getUserVehicleBookings, {
-    paginationOpts: { numItems: 50, cursor: null },
-  });
-
-  if (!activityBookings || !eventBookings || !restaurantReservations || !vehicleBookings) {
+  if (!allBookings) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">

@@ -45,6 +45,7 @@ import {
   Trash2,
   Eye,
   Plus,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -167,6 +168,10 @@ export function NotificationManagement({ className }: NotificationManagementProp
         return <CreditCard className="w-5 h-5 text-green-500" />;
       case "system_update":
         return <Bell className="w-5 h-5 text-blue-500" />;
+      case "chat_message":
+        return <MessageCircle className="w-5 h-5 text-purple-500" />;
+      case "chat_room_created":
+        return <MessageCircle className="w-5 h-5 text-indigo-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -186,6 +191,10 @@ export function NotificationManagement({ className }: NotificationManagementProp
         return "Pagamento Recebido";
       case "system_update":
         return "Atualização do Sistema";
+      case "chat_message":
+        return "Mensagem de Chat";
+      case "chat_room_created":
+        return "Nova Conversa";
       default:
         return "Notificação";
     }
@@ -245,6 +254,8 @@ export function NotificationManagement({ className }: NotificationManagementProp
                     <SelectItem value="system_update">Atualização do Sistema</SelectItem>
                     <SelectItem value="booking_reminder">Lembrete</SelectItem>
                     <SelectItem value="payment_received">Pagamento</SelectItem>
+                    <SelectItem value="chat_message">Mensagem de Chat</SelectItem>
+                    <SelectItem value="chat_room_created">Nova Conversa</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -375,6 +386,8 @@ export function NotificationManagement({ className }: NotificationManagementProp
             <SelectItem value="booking_reminder">Lembrete</SelectItem>
             <SelectItem value="payment_received">Pagamento</SelectItem>
             <SelectItem value="system_update">Sistema</SelectItem>
+            <SelectItem value="chat_message">Mensagem de Chat</SelectItem>
+            <SelectItem value="chat_room_created">Nova Conversa</SelectItem>
           </SelectContent>
         </Select>
         

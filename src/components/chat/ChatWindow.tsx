@@ -24,7 +24,7 @@ import {
   getChatStatusText,
   type ChatMessage 
 } from "@/lib/services/chatService";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 interface ChatWindowProps {
@@ -244,10 +244,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
         </div>
       </div>
 

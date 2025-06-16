@@ -3,9 +3,9 @@ import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/../convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,6 +30,9 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 3));
   const [isLoading, setIsLoading] = useState(false);
 
+  // Get current user
+  const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
+
   // Calculate total days and price
   const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
   const totalPrice = totalDays * pricePerDay;
@@ -48,13 +51,16 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
     setIsLoading(true);
 
     try {
-      // In a real app, you would get the actual user ID from auth context
-      // For now, we'll use a placeholder user ID
-      const mockUserId = "placeholder" as Id<"users">;
+      if (!currentUser) {
+        toast.error("Usuário não autenticado", {
+          description: "Por favor, faça login para realizar uma reserva.",
+        });
+        return;
+      }
       
       await createBooking({
         vehicleId,
-        userId: mockUserId,
+        userId: currentUser._id,
         startDate: startDate.getTime(),
         endDate: endDate.getTime(),
         totalPrice,

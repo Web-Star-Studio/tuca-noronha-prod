@@ -1,21 +1,31 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
-import { mockNotifications } from '../data/mockData';
 import { Notification } from '../types/dashboard';
 
-export const useDashboard = () => {
+export function useDashboard() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
 
-  // Fetch real reservations data from Convex
-  const reservationsData = useQuery(api.domains.bookings.queries.getUserReservations);
+  // Use real reservation data from Convex
+  const reservationsResult = useQuery(api.domains.bookings.queries.getUserReservations, {});
   
-  // Fetch user statistics
-  const userStats = useQuery(api.domains.bookings.queries.getUserStats);
+  // Use real notifications from Convex
+  const notificationsResult = useQuery(api.domains.notifications.queries.getUserNotifications, {
+    limit: 10,
+    includeRead: true,
+  });
+
+  // Get unread notification count
+  const unreadCount = useQuery(api.domains.notifications.queries.getUnreadNotificationCount, {});
+
+  // Get user stats
+  const userStats = useQuery(api.domains.bookings.queries.getUserStats, {});
+
+  // Mutations for notification management
+  const markAsReadMutation = useMutation(api.domains.notifications.mutations.markAsRead);
 
   const handleNewReservation = () => {
     router.push('/');
@@ -30,20 +40,16 @@ export const useDashboard = () => {
     toast.error(`Cancelando reserva ${reservationId}`);
   };
 
-  const markNotificationAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await markAsReadMutation({ notificationId: id as any });
+    } catch (error) {
+      console.error('Erro ao marcar notificação como lida:', error);
+    }
   };
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
-
   // Transform Convex data to match the expected format
-  const transformedReservations = reservationsData?.map(reservation => ({
+  const transformedReservations = reservationsResult?.map(reservation => ({
     id: reservation.id,
     type: reservation.type,
     name: reservation.name,
@@ -59,17 +65,43 @@ export const useDashboard = () => {
   return {
     activeSection,
     setActiveSection,
-    notifications,
-    unreadNotifications,
+    notifications: notificationsResult?.map(notification => ({
+      id: notification._id,
+      title: notification.title,
+      description: notification.message,
+      date: new Date(notification.createdAt),
+      read: notification.isRead,
+      type: notification.type.includes('success') || notification.type.includes('confirmed') ? 'success' as const :
+            notification.type.includes('promotion') || notification.type.includes('offer') ? 'promotion' as const :
+            'info' as const,
+      relatedId: notification.relatedId,
+      relatedType: notification.relatedType,
+      data: notification.data,
+    })) || [],
+    isLoadingNotifications: notificationsResult === undefined,
+    unreadNotificationsCount: unreadCount || 0,
     markNotificationAsRead,
     handleNewReservation,
     handleViewReservationDetails,
     handleCancelReservation,
     reservations: transformedReservations,
-    stats: userStats,
-    isLoading: reservationsData === undefined || userStats === undefined,
+    isLoadingReservations: reservationsResult === undefined,
+    stats: userStats ? {
+      totalReservations: userStats.totalReservations,
+      activeReservations: userStats.activeReservations,
+      totalSpent: userStats.totalSpent,
+      favoriteLocations: userStats.favoriteLocations,
+      completedTrips: userStats.completedTrips,
+    } : {
+      totalReservations: 0,
+      activeReservations: 0,
+      totalSpent: 0,
+      favoriteLocations: [],
+      completedTrips: 0,
+    },
+    isLoadingStats: userStats === undefined,
   };
-};
+}
 
 // Hook para detectar media queries
 export const useMediaQuery = (query: string) => {

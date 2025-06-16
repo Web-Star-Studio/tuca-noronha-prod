@@ -141,7 +141,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
               </h1>
               <div className="flex items-center gap-1 text-yellow-400 mb-4">
                 <Star className="h-5 w-5 fill-yellow-400" />
-                <span className="font-medium">{activity.rating.toFixed(1)}</span>
+                <span className="font-medium">{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
                 <span className="text-white/80 text-sm">(124 avaliações)</span>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
@@ -520,8 +520,8 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     hasMultipleTickets: activity.hasMultipleTickets,
                   }}
                   onBookingSuccess={(booking) => {
-                    // Redirect to confirmation page
-                    window.location.href = `/test-bookings/confirmation?code=${booking.confirmationCode}&type=activity`;
+                    // Redirect to user dashboard reservations page
+                    window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
                   }}
                 />
 
@@ -548,7 +548,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                       </div>
                       <div className="flex items-center gap-2">
                         <Star className="h-4 w-4 text-yellow-500" />
-                        <span>Avaliação: {activity.rating.toFixed(1)}/5</span>
+                        <span>Avaliação: {activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}/5</span>
                       </div>
                     </div>
 

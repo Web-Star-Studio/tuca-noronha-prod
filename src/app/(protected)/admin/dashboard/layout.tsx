@@ -33,9 +33,20 @@ import {
   Globe,
   AlertTriangle,
   Clock,
-  Bookmark
+  HelpCircle,
+  DollarSign,
+  Music,
+  Truck,
+  Badge,
+  ClipboardList,
+  BookOpen,
+  Heart,
+  Zap,
+  UtensilsCrossed,
+  MapPin,
+  UserPlus
 } from "lucide-react"
-import { UserButton } from "@clerk/nextjs"
+import { UserButton, useUser } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
 import {
   Sidebar,
@@ -69,9 +80,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { OrganizationProvider, useOrganization } from "@/lib/providers/organization-context"
+import { AssetProvider } from "@/lib/providers/asset-context"
+import type { Organization } from "@/lib/providers/organization-context"
 import { useMutation } from "convex/react"
 import { api } from "../../../../../convex/_generated/api"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
+import { NotificationCenter } from "@/components/ui/notification-center"
 
 
 interface SidebarLinkProps {
@@ -108,7 +122,25 @@ function OrganizationSwitcher() {
   const { organizations, activeOrganization, setActiveOrganization } = useOrganization()
   const [open, setOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useCurrentUser()
+
+  // Função para trocar organização e redirecionar para o dashboard
+  const handleOrganizationChange = (org: Organization) => {
+    setActiveOrganization(org)
+    setOpen(false)
+    
+    // Se estiver na página de reservas ou em qualquer página específica,
+    // redirecionar para o dashboard principal da nova organização
+    if (pathname.includes('/reservas') || 
+        pathname.includes('/restaurantes') || 
+        pathname.includes('/eventos') || 
+        pathname.includes('/atividades') || 
+        pathname.includes('/vehicles') ||
+        pathname.includes('/hospedagens')) {
+      router.push('/admin/dashboard')
+    }
+  }
 
   if (!activeOrganization) {
     return (
@@ -147,10 +179,7 @@ function OrganizationSwitcher() {
             <DropdownMenuCheckboxItem
               key={org._id}
               checked={org._id === activeOrganization._id}
-              onCheckedChange={() => {
-                setActiveOrganization(org)
-                setOpen(false)
-              }}
+              onCheckedChange={() => handleOrganizationChange(org)}
               className="focus:bg-slate-100 focus:text-slate-900 cursor-pointer"
             >
               <Avatar className="h-5 w-5 mr-2">
@@ -167,8 +196,8 @@ function OrganizationSwitcher() {
           ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-slate-200" />
-        {/* Apenas partners e masters podem criar organizações */}
-        {user && (user.role === "partner" || user.role === "master") && (
+        {/* Apenas partners podem criar organizações - employees e masters NÃO podem */}
+        {user && user.role === "partner" && (
           <DropdownMenuItem 
             className="cursor-pointer text-sm focus:bg-slate-100 focus:text-slate-900"
             onClick={() => {
@@ -185,44 +214,7 @@ function OrganizationSwitcher() {
   )
 }
 
-// Mapear tipos de organização para ícones e links específicos
-const getOrganizationSpecificLinks = (organizationType: string): Array<{
-  href: string
-  icon: LucideIcon
-  label: string
-}> => {
-  const baseLink = "/admin/dashboard"
-  
-  switch (organizationType) {
-    case "restaurant":
-      return [
-        { href: `${baseLink}/restaurantes`, icon: Utensils, label: "Gerenciar Restaurantes" },
-        { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
-      ]
-    case "accommodation":
-      return [
-        { href: `${baseLink}/hospedagens`, icon: Bed, label: "Acomodações" },
-        { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
-      ]
-    case "rental_service":
-      return [
-        { href: `${baseLink}/vehicles`, icon: Car, label: "Frota de Veículos" },
-        { href: `${baseLink}/reservas`, icon: Receipt, label: "Locações" },
-      ]
-    case "activity_service":
-      return [
-        { href: `${baseLink}/atividades`, icon: Activity, label: "Atividades" },
-        { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
-      ]
-    case "event_service":
-      return [
-        { href: `${baseLink}/eventos`, icon: Calendar, label: "Eventos" },
-        { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
-      ]
-    default:
-      return []
-  }
-}
+
 
 // Navegação específica para Master Admin
 function MasterSidebar() {
@@ -249,21 +241,17 @@ function MasterSidebar() {
     { href: "/admin/dashboard/eventos-master", icon: Calendar, label: "Eventos" },
     { href: "/admin/dashboard/atividades-master", icon: Activity, label: "Atividades" },
     { href: "/admin/dashboard/veiculos-master", icon: Car, label: "Veículos" },
-    { href: "/admin/dashboard/hospedagens-master", icon: Bed, label: "Hospedagens" },
   ]
 
   const masterReportLinks = [
     { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },
     { href: "/admin/dashboard/metricas", icon: BarChart3, label: "Métricas do Sistema" },
     { href: "/admin/dashboard/relatorios", icon: TrendingUp, label: "Relatórios" },
-    { href: "/admin/dashboard/favoritos", icon: Bookmark, label: "Favoritos" },
     { href: "/admin/dashboard/solicitacoes-pacotes", icon: Package, label: "Solicitações de Pacotes" },
   ]
 
   const masterConfigLinks = [
-    { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
-    { href: "/admin/dashboard/novo-empreendimento", icon: PlusCircle, label: "Novo Empreendimento" },
   ]
 
   return (
@@ -385,33 +373,104 @@ function AdminSidebar() {
     return pathname.startsWith(path)
   }
 
-  // Links comuns a todas as organizações
-  const baseCommonLinks: Array<{
+  // Links gerais - aparecem para todos
+  const generalLinks: Array<{
     href: string;
     icon: LucideIcon;
     label: string;
-    requiresRole?: string[];
   }> = [
     { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard" },
     { href: "/admin/dashboard/chat", icon: MessageSquare, label: "Chat" },
-    { href: "/admin/dashboard/colaboradores", icon: UserCheck, label: "Colaboradores", requiresRole: ["partner", "master"] },
-    { href: "/admin/dashboard/usuarios", icon: Users, label: "Usuários", requiresRole: ["partner", "master"] },
-    { href: "/admin/dashboard/midias", icon: Image, label: "Mídias" },
-    { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria", requiresRole: ["partner", "master"] },
-    { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações" },
   ]
 
-  // Filtrar links baseado no role do usuário
-  const commonLinks = baseCommonLinks.filter(link => {
-    if (!link.requiresRole) return true;
-    if (!user?.role) return false;
-    return link.requiresRole.includes(user.role);
-  });
+  // Links de negócio - específicos do asset + reservas
+  const getBusinessLinks = (): Array<{
+    href: string;
+    icon: LucideIcon;
+    label: string;
+  }> => {
+    const baseLink = "/admin/dashboard"
+    const baseLinks = [
+      { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" }
+    ]
+    
+    if (!activeOrganization) return baseLinks
 
-  // Links específicos baseados no tipo de organização
-  const specificLinks = activeOrganization 
-    ? getOrganizationSpecificLinks(activeOrganization.type)
-    : []
+    let assetSpecificLinks: Array<{
+      href: string;
+      icon: LucideIcon;
+      label: string;
+    }> = []
+
+    switch (activeOrganization.type) {
+      case "restaurant":
+        assetSpecificLinks = [
+          { href: `${baseLink}/restaurantes`, icon: Utensils, label: "Restaurantes" },
+        ]
+        break
+      case "accommodation":
+        assetSpecificLinks = [
+          { href: `${baseLink}/hospedagens`, icon: Bed, label: "Hospedagens" },
+        ]
+        break
+      case "rental_service":
+        assetSpecificLinks = [
+          { href: `${baseLink}/vehicles`, icon: Car, label: "Frota de Veículos" },
+        ]
+        break
+      case "activity_service":
+        assetSpecificLinks = [
+          { href: `${baseLink}/atividades`, icon: Activity, label: "Atividades" },
+        ]
+        break
+      case "event_service":
+        assetSpecificLinks = [
+          { href: `${baseLink}/eventos`, icon: Calendar, label: "Eventos" },
+        ]
+        break
+      default:
+        assetSpecificLinks = []
+    }
+
+    return [...assetSpecificLinks, ...baseLinks]
+  }
+
+  // Links de gestão - pessoas e administração
+  const getManagementLinks = (): Array<{
+    href: string;
+    icon: LucideIcon;
+    label: string;
+  }> => {
+    const links: Array<{
+      href: string;
+      icon: LucideIcon;
+      label: string;
+    }> = []
+
+    // Colaboradores - apenas para quem pode gerenciar employees (partners e masters)
+    if (user && (user.role === "partner" || user.role === "master")) {
+      links.push({ href: "/admin/dashboard/colaboradores", icon: UserCheck, label: "Colaboradores" })
+    }
+
+    // Usuários - para partners, employees e masters
+    if (user && (user.role === "partner" || user.role === "employee" || user.role === "master")) {
+      links.push({ href: "/admin/dashboard/usuarios", icon: Users, label: "Usuários" })
+    }
+
+    return links
+  }
+
+  // Links de recursos
+  const resourceLinks: Array<{
+    href: string;
+    icon: LucideIcon;
+    label: string;
+  }> = [
+    { href: "/admin/dashboard/midias", icon: Image, label: "Mídias" },
+  ]
+
+  const businessLinks = getBusinessLinks()
+  const managementLinks = getManagementLinks()
 
   return (
     <Sidebar className="bg-white border-r border-slate-200 shadow-sm">
@@ -422,40 +481,91 @@ function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-2">
-        <SidebarMenu className="space-y-1">
-          {/* Links comuns */}
-          {commonLinks.slice(0, 1).map((link) => (
-            <SidebarLink
-              key={link.href}
-              href={link.href}
-              icon={link.icon}
-              label={link.label}
-              isActive={isActive}
-            />
-          ))}
+        {/* Seção Geral */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Geral
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {generalLinks.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  icon={link.icon}
+                  label={link.label}
+                  isActive={isActive}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-          {/* Links específicos do tipo de organização */}
-          {specificLinks.map((link) => (
-            <SidebarLink
-              key={link.href}
-              href={link.href}
-              icon={link.icon}
-              label={link.label}
-              isActive={isActive}
-            />
-          ))}
+        {/* Seção Negócio */}
+        {businessLinks.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Negócio
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {businessLinks.map((link) => (
+                  <SidebarLink
+                    key={link.href}
+                    href={link.href}
+                    icon={link.icon}
+                    label={link.label}
+                    isActive={isActive}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
-          {/* Resto dos links comuns */}
-          {commonLinks.slice(1).map((link) => (
-            <SidebarLink
-              key={link.href}
-              href={link.href}
-              icon={link.icon}
-              label={link.label}
-              isActive={isActive}
-            />
-          ))}
-        </SidebarMenu>
+        {/* Seção Gestão */}
+        {managementLinks.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Gestão
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {managementLinks.map((link) => (
+                  <SidebarLink
+                    key={link.href}
+                    href={link.href}
+                    icon={link.icon}
+                    label={link.label}
+                    isActive={isActive}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Seção Recursos */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Recursos
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {resourceLinks.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  icon={link.icon}
+                  label={link.label}
+                  isActive={isActive}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+
       </SidebarContent>
 
       <SidebarFooter className="border-t border-slate-200 mt-auto py-3 px-3">
@@ -492,10 +602,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               />
             </div>
 
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 relative">
-              <Bell className="h-5 w-5 text-slate-700" />
-              <span className="absolute -top-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">3</span>
-            </Button>
+            <NotificationCenter className="rounded-full hover:bg-slate-100">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 relative">
+                <Bell className="h-5 w-5 text-slate-700" />
+              </Button>
+            </NotificationCenter>
 
             <div className="overflow-hidden rounded-full">
               <UserButton appearance={{
@@ -529,9 +640,11 @@ export default function DashboardLayout({
 }) {
   return (
     <OrganizationProvider>
-      <DashboardContent>
-        {children}
-      </DashboardContent>
+      <AssetProvider>
+        <DashboardContent>
+          {children}
+        </DashboardContent>
+      </AssetProvider>
     </OrganizationProvider>
   )
 }

@@ -1,285 +1,114 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { ChevronLeft, Users, Bath, Home, BedDouble, Check, X } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { AccommodationBookingForm } from "@/components/bookings/AccommodationBookingForm";
-import { useAccommodationBySlug } from "@/lib/services/accommodationService";
-import type { Accommodation } from "@/lib/services/accommodationService";
-
-// Definir o tipo para o objeto de reserva
-type BookingData = {
-  hotelId?: string;
-  hotelName?: string;
-  checkIn: Date;
-  checkOut: Date;
-  roomType: string;
-  guests: number;
-};
+import { Card, CardContent } from "@/components/ui/card";
+import { Home, Calendar, Compass, UtensilsCrossed, ArrowLeft } from "lucide-react";
+import { use } from "react";
 
 export default function HostingDetailPage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [allImages, setAllImages] = useState<string[]>([]);
-
-  // Buscar dados reais do Convex
-  const { accommodation, isLoading } = useAccommodationBySlug(params.slug);
-
-  useEffect(() => {
-    if (accommodation) {
-      // Combinar imagem principal com galeria para exibição
-      const images = [accommodation.mainImage, ...(accommodation.galleryImages || [])];
-      setAllImages(images);
-    }
-  }, [accommodation]);
-
-  // Manipulador de eventos para a submissão de reserva
-  const handleBookingSubmit = (booking: BookingData) => {
-    console.log("Booking submitted:", booking);
-    alert(`Reserva de hospedagem confirmada para ${booking.guests} hóspede(s) de ${format(booking.checkIn, "PPP", { locale: ptBR })} a ${format(booking.checkOut, "PPP", { locale: ptBR })}`);
-  };
-
-  // Manipulador de mudança de imagem acessível
-  const handleImageChange = (index: number) => {
-    setActiveImageIndex(index);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6" />
-          <div className="h-96 bg-gray-200 rounded mb-8" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2">
-              <div className="h-8 bg-gray-200 rounded w-1/2 mb-4" />
-              <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-              <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-8" />
-            </div>
-            <div>
-              <div className="h-64 bg-gray-200 rounded mb-4" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!accommodation) {
-    return (
-      <div className="container mx-auto py-12 px-4 text-center">
-        <h1 className="text-3xl font-bold mb-4">Hospedagem não encontrada</h1>
-        <p className="mb-8">A hospedagem que você está procurando não existe ou foi removida.</p>
-        <Link href="/hospedagens">
-          <Button>
-            Ver todas as hospedagens
-          </Button>
-        </Link>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      {/* Breadcrumb navigation */}
-      <div className="mb-6">
-        <Link
-          href="/hospedagens"
-          className="text-blue-600 hover:text-blue-800 flex items-center"
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Voltar para hospedagens
-        </Link>
-      </div>
-
-      {/* Heading */}
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">
-          {accommodation.name}
-        </h1>
-        <div className="flex flex-wrap items-center gap-2 text-gray-600">
-          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-            {accommodation.type}
-          </span>
-          <span>•</span>
-          <span>{accommodation.address.neighborhood}, {accommodation.address.city}</span>
-          <span>•</span>
-          <div className="flex items-center">
-            <span className="text-yellow-500 mr-1">⭐</span>
-            <span className="font-medium">{accommodation.rating.overall.toFixed(1)}</span>
-            <span className="text-gray-500 ml-1">({accommodation.rating.totalReviews} avaliações)</span>
+    <>
+      {/* Hero Section */}
+      <section className="relative mb-10">
+        <div>
+          <div
+            className="h-[60vh] bg-cover bg-center filter brightness-60"
+            style={{
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+            }}
+          />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="text-center text-white px-4">
+              <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+                Hospedagem Indisponível
+              </h1>
+              <p className="text-xl max-w-2xl mx-auto">
+                O módulo de hospedagens está temporariamente indisponível
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Image Gallery */}
-      <div className="mb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 h-96 relative rounded-xl overflow-hidden">
-            {allImages.length > 0 && (
-              <Image
-                src={allImages[activeImageIndex]}
-                alt={accommodation.name}
-                fill
-                className="object-cover"
-              />
-            )}
-          </div>
-          <div className="hidden lg:grid grid-cols-2 gap-4">
-            {allImages.slice(1, 5).map((image, index) => (
-              <Button
-                key={`image-${index + 1}`}
-                className="h-[11.5rem] relative rounded-xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onClick={() => handleImageChange(index + 1)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handleImageChange(index + 1);
-                  }
-                }}
-                aria-label={`Ver imagem ${index + 2} de ${allImages.length}`}
-              >
-                <Image
-                  src={image}
-                  alt={`${accommodation.name} - imagem ${index + 2}`}
-                  fill
-                  className="object-cover hover:scale-110 transition-transform duration-300"
-                />
-              </Button>
-            ))}
-          </div>
+      {/* Main Content */}
+      <section className="container mx-auto px-4 py-12">
+        {/* Breadcrumb navigation */}
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="text-blue-600 hover:text-blue-800 flex items-center"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Voltar para página inicial
+          </Link>
         </div>
-      </div>
 
-      {/* Main content with sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-12">
-          {/* Host and basic info */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-8 pb-8 border-b">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">
-                {accommodation.type} inteira
+        <div className="max-w-4xl mx-auto text-center">
+          <Card className="p-8 shadow-lg">
+            <CardContent className="space-y-6">
+              <div className="flex justify-center mb-6">
+                <Home className="h-16 w-16 text-blue-600" />
+              </div>
+              
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Hospedagem Temporariamente Indisponível
               </h2>
-              <ul className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
-                <li className="flex items-center">
-                  <Users className="h-4 w-4 mr-2" />
-                  <span>Até {accommodation.maximumGuests} hóspedes</span>
-                </li>
-                <li className="flex items-center">
-                  <Home className="h-4 w-4 mr-2" />
-                  <span>{accommodation.rooms.bedrooms} quartos</span>
-                </li>
-                <li className="flex items-center">
-                  <BedDouble className="h-4 w-4 mr-2" />
-                  <span>{accommodation.rooms.beds || 2} camas</span>
-                </li>
-                <li className="flex items-center">
-                  <Bath className="h-4 w-4 mr-2" />
-                  <span>{accommodation.rooms.bathrooms} banheiros</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <h3 className="text-xl font-bold mb-4">Sobre esta acomodação</h3>
-            <p className="text-gray-700 leading-relaxed">
-              {accommodation.description}
-            </p>
-          </div>
-
-          {/* Amenities */}
-          <div>
-            <h3 className="text-xl font-bold mb-6">O que este local oferece</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {accommodation.amenities.map((amenity, index) => (
-                <div key={index} className="flex items-center">
-                  <Check className="h-5 w-5 text-green-600 mr-3" />
-                  <span className="text-gray-700">{amenity}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Location */}
-          <div>
-            <h3 className="text-xl font-bold mb-4">Onde você vai ficar</h3>
-            <div className="text-gray-700">
-              <p className="mb-2">
-                <strong>{accommodation.address.neighborhood}</strong>, {accommodation.address.city}, {accommodation.address.state}
+              
+              <p className="text-lg text-gray-600 mb-4">
+                A hospedagem <strong>"{params.slug}"</strong> que você está procurando 
+                não pode ser exibida no momento.
               </p>
-              <p className="text-sm text-gray-600">
-                {accommodation.address.street}, {accommodation.address.zipCode}
+              
+              <p className="text-gray-600 mb-8">
+                Estamos trabalhando para melhorar nossa plataforma de hospedagens. 
+                Enquanto isso, confira nossas outras opções de serviços disponíveis.
               </p>
-            </div>
-          </div>
 
-          {/* Contact Information */}
-          {(accommodation.phone || accommodation.website) && (
-            <div>
-              <h3 className="text-xl font-bold mb-4">Informações de contato</h3>
-              <div className="space-y-2">
-                {accommodation.phone && (
-                  <p className="text-gray-700">
-                    <strong>Telefone:</strong> {accommodation.phone}
-                  </p>
-                )}
-                {accommodation.website && (
-                  <p className="text-gray-700">
-                    <strong>Website:</strong>{" "}
-                    <a 
-                      href={accommodation.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {accommodation.website}
-                    </a>
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+              {/* Alternative Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                <Link href="/atividades">
+                  <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200">
+                    <Compass className="h-6 w-6" />
+                    <span className="text-sm font-medium">Atividades</span>
+                  </Button>
+                </Link>
 
-        {/* Sidebar - Booking Form */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6">
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
-              <div className="mb-6">
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-bold">R$ {accommodation.pricing.pricePerNight.toLocaleString()}</span>
-                  <span className="text-gray-600 ml-1">/noite</span>
-                </div>
-                {accommodation.pricing.taxes && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    + R$ {accommodation.pricing.taxes} de taxas
-                  </p>
-                )}
-                {accommodation.pricing.cleaningFee && (
-                  <p className="text-sm text-gray-600">
-                    + R$ {accommodation.pricing.cleaningFee} taxa de limpeza
-                  </p>
-                )}
+                <Link href="/eventos">
+                  <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200">
+                    <Calendar className="h-6 w-6" />
+                    <span className="text-sm font-medium">Eventos</span>
+                  </Button>
+                </Link>
+
+                <Link href="/restaurantes">
+                  <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200">
+                    <UtensilsCrossed className="h-6 w-6" />
+                    <span className="text-sm font-medium">Restaurantes</span>
+                  </Button>
+                </Link>
+
+                <Link href="/">
+                  <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200">
+                    <Home className="h-6 w-6" />
+                    <span className="text-sm font-medium">Página Inicial</span>
+                  </Button>
+                </Link>
               </div>
 
-              <AccommodationBookingForm
-                accommodationId={accommodation._id || ''}
-                accommodationName={accommodation.name}
-                pricePerNight={accommodation.pricing.pricePerNight}
-                maxGuests={accommodation.maximumGuests}
-                onSubmit={handleBookingSubmit}
-              />
-            </div>
-          </div>
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Em breve:</strong> Voltaremos com uma experiência ainda melhor 
+                  para encontrar e reservar as melhores hospedagens em Fernando de Noronha.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }

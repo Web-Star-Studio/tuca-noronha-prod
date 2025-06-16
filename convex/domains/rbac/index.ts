@@ -34,6 +34,7 @@ export const actionWithRole = actionRole;
 export { 
   listAllAssetPermissions,
   listEmployeeAssets,
+  listEmployeePermissions,
   listPartnerOrganizations,
   listUserOrganizations,
   getOrganization,
@@ -41,7 +42,8 @@ export {
   listPartnerAssets,
   listAllOrganizationPermissions,
   listEmployeeOrganizations,
-  getEmployeeOrganizationPermission
+  getEmployeeOrganizationPermission,
+  getCurrentUser
 } from "./queries";
 
 // Export test functions
@@ -55,6 +57,8 @@ export {
   grantAssetPermission,
   revokeAssetPermission,
   createEmployee,
+  createEmployeeDirectly,
+  createEmployeeWithDefaultPermissions,
   createInvite,
   removeEmployee,
   updateEmployee,
@@ -63,5 +67,6 @@ export {
   updateOrganization,
   grantOrganizationPermission,
   revokeOrganizationPermission,
-  updateOrganizationPermission
+  updateOrganizationPermission,
+  createSampleOrganizations
 } from "./mutations"; 

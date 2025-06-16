@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   BarChart3,
   ListOrderedIcon,
-  Settings,
   ClipboardList
 } from "lucide-react"
 import { TeamSwitcher } from "./TeamSwitcher"
@@ -53,11 +52,7 @@ const data = {
       url: "/admin/dashboard/restaurantes",
       icon: Utensils,
     },
-    {
-      title: "Hospedagens",
-      url: "/admin/dashboard/hospedagens",
-      icon: Building,
-    },
+
     {
       title: "Eventos",
       url: "/admin/dashboard/eventos",
@@ -99,11 +94,6 @@ const data = {
       url: "/admin/dashboard/logs",
       icon: ListOrderedIcon,
       badge: "10",
-    },
-    {
-      title: "Configurações",
-      url: "/admin/dashboard/configuracoes",
-      icon: Settings,
     },
   ],
 }

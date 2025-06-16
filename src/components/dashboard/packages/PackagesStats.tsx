@@ -20,7 +20,7 @@ export function PackagesStats() {
   const { user } = useCurrentUser()
   
   const packagesQuery = useQuery(api.packages.getPackages, { 
-    filters: user?.role === "partner" ? { partnerId: user.id as Id<"users"> } : {}
+    filters: user?.role === "partner" ? { partnerId: user._id } : {}
   })
 
   const packages = packagesQuery?.packages || []

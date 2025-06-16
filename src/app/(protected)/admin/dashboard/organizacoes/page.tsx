@@ -52,7 +52,7 @@ import Link from "next/link"
 
 const organizationTypeLabels = {
   "restaurant": "Restaurante",
-  "accommodation": "Hospedagem", 
+  // "accommodation": "Hospedagem", // Temporariamente desabilitado
   "rental_service": "Aluguel de Veículos",
   "activity_service": "Atividades",
   "event_service": "Eventos"
@@ -60,7 +60,7 @@ const organizationTypeLabels = {
 
 const organizationTypeColors = {
   "restaurant": "bg-orange-100 text-orange-800",
-  "accommodation": "bg-blue-100 text-blue-800",
+  // "accommodation": "bg-blue-100 text-blue-800", // Temporariamente desabilitado
   "rental_service": "bg-purple-100 text-purple-800",
   "activity_service": "bg-green-100 text-green-800",
   "event_service": "bg-pink-100 text-pink-800"
@@ -134,12 +134,7 @@ export default function OrganizationsManagementPage() {
             </p>
           </div>
         </div>
-        <Link href="/admin/dashboard/novo-empreendimento">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Organização
-          </Button>
-        </Link>
+        {/* Master admins não precisam criar organizações através desta interface */}
       </div>
 
       {/* Estatísticas Globais */}
@@ -220,7 +215,6 @@ export default function OrganizationsManagementPage() {
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="restaurant">Restaurantes</SelectItem>
-                <SelectItem value="accommodation">Hospedagens</SelectItem>
                 <SelectItem value="rental_service">Aluguel de Veículos</SelectItem>
                 <SelectItem value="activity_service">Atividades</SelectItem>
                 <SelectItem value="event_service">Eventos</SelectItem>

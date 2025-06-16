@@ -459,4 +459,225 @@ export const getFullMenu = queryWithRole(["partner", "master", "employee"])({
 
     return categoriesWithItems.sort((a, b) => a.order - b.order);
   },
+});
+
+/**
+ * Get restaurant reservations with table information
+ */
+export const getRestaurantReservationsWithTables = query({
+  args: {
+    restaurantId: v.id("restaurants"),
+    date: v.optional(v.string()), // Filter by specific date
+    status: v.optional(v.string()), // Filter by status
+  },
+  returns: v.array(v.object({
+    _id: v.id("restaurantReservations"),
+    _creationTime: v.number(),
+    restaurantId: v.id("restaurants"),
+    userId: v.id("users"),
+    date: v.string(),
+    time: v.string(),
+    partySize: v.number(),
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    status: v.string(),
+    confirmationCode: v.string(),
+    specialRequests: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
+    tableId: v.optional(v.id("restaurantTables")),
+    table: v.optional(v.object({
+      _id: v.id("restaurantTables"),
+      name: v.string(),
+      capacity: v.number(),
+      location: v.string(),
+      type: v.string(),
+      isVip: v.boolean(),
+      hasView: v.boolean(),
+    })),
+  })),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    const canAccess = user.role === "master" || 
+      (user.role === "partner" && restaurant.partnerId.toString() === user._id.toString());
+
+    if (!canAccess) {
+      throw new Error("Sem permissão para visualizar reservas deste restaurante");
+    }
+
+    // Buscar reservas
+    let reservationsQuery = ctx.db
+      .query("restaurantReservations")
+      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId));
+
+    if (args.date) {
+      reservationsQuery = reservationsQuery.filter((q) => q.eq(q.field("date"), args.date));
+    }
+
+    if (args.status) {
+      reservationsQuery = reservationsQuery.filter((q) => q.eq(q.field("status"), args.status));
+    }
+
+    const reservations = await reservationsQuery.collect();
+
+    // Buscar informações das mesas para cada reserva
+    const reservationsWithTables = await Promise.all(
+      reservations.map(async (reservation) => {
+        let table: {
+          _id: Id<"restaurantTables">;
+          name: string;
+          capacity: number;
+          location: string;
+          type: string;
+          isVip: boolean;
+          hasView: boolean;
+        } | undefined = undefined;
+        
+        if (reservation.tableId) {
+          const tableData = await ctx.db.get(reservation.tableId);
+          if (tableData) {
+            table = {
+              _id: tableData._id,
+              name: tableData.name,
+              capacity: Number(tableData.capacity),
+              location: tableData.location,
+              type: tableData.type,
+              isVip: tableData.isVip,
+              hasView: tableData.hasView,
+            };
+          }
+        }
+
+        return {
+          ...reservation,
+          table,
+        };
+      })
+    );
+
+    return reservationsWithTables;
+  },
+});
+
+/**
+ * Get available tables for a specific date and time
+ */
+export const getAvailableTablesForReservation = query({
+  args: {
+    restaurantId: v.id("restaurants"),
+    date: v.string(),
+    time: v.string(),
+    partySize: v.number(),
+    excludeReservationId: v.optional(v.id("restaurantReservations")), // Para não considerar a própria reserva quando editando
+  },
+  returns: v.array(v.object({
+    _id: v.id("restaurantTables"),
+    name: v.string(),
+    capacity: v.number(),
+    location: v.string(),
+    type: v.string(),
+    isVip: v.boolean(),
+    hasView: v.boolean(),
+    notes: v.optional(v.string()),
+  })),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Verificar se tem acesso ao restaurante
+    const restaurant = await ctx.db.get(args.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    // Verificar permissões
+    const canAccess = user.role === "master" || 
+      (user.role === "partner" && restaurant.partnerId.toString() === user._id.toString());
+
+    if (!canAccess) {
+      throw new Error("Sem permissão para visualizar mesas deste restaurante");
+    }
+
+    // Buscar todas as mesas ativas do restaurante
+    const allTables = await ctx.db
+      .query("restaurantTables")
+      .withIndex("by_restaurant_active", (q) => 
+        q.eq("restaurantId", args.restaurantId).eq("isActive", true)
+      )
+      .collect();
+
+    // Filtrar mesas que atendem ao tamanho da festa
+    const suitableTables = allTables.filter(table => Number(table.capacity) >= args.partySize);
+
+    // Buscar reservas conflitantes
+    const conflictingReservations = await ctx.db
+      .query("restaurantReservations")
+      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("date"), args.date),
+          q.eq(q.field("time"), args.time),
+          q.or(
+            q.eq(q.field("status"), "confirmed"),
+            q.eq(q.field("status"), "pending")
+          ),
+          args.excludeReservationId ? q.neq(q.field("_id"), args.excludeReservationId) : true
+        )
+      )
+      .collect();
+
+    // Obter IDs das mesas ocupadas
+    const occupiedTableIds = new Set(
+      conflictingReservations
+        .filter(r => r.tableId)
+        .map(r => r.tableId!.toString())
+    );
+
+    // Filtrar mesas disponíveis
+    const availableTables = suitableTables
+      .filter(table => !occupiedTableIds.has(table._id.toString()))
+      .map(table => ({
+        _id: table._id,
+        name: table.name,
+        capacity: Number(table.capacity),
+        location: table.location,
+        type: table.type,
+        isVip: table.isVip,
+        hasView: table.hasView,
+        notes: table.notes,
+      }));
+
+    return availableTables;
+  },
 }); 

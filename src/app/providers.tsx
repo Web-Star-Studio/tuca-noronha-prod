@@ -7,6 +7,7 @@ import { ConvexReactClient } from "convex/react";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
+import { OnboardingRedirect } from "@/components/onboarding/OnboardingRedirect";
 
 // Initialize the Convex client
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL ?? "");
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <AuthProvider>
           <QueryProvider>
-            {children}
+            <OnboardingRedirect>
+              {children}
+            </OnboardingRedirect>
             <Toaster richColors />
           </QueryProvider>
         </AuthProvider>

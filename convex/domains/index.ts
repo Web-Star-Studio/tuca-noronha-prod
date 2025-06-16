@@ -28,4 +28,7 @@ export * as rbac from "./rbac";
 export * as packages from "./packages";
 
 // Export chat domain for real-time messaging
-export * as chat from "./chat"; 
+export * as chat from "./chat";
+
+// Export recommendations domain for cache and AI recommendations
+export * as recommendations from "./recommendations"; 

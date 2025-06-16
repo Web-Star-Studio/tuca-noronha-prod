@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { paginationOptsValidator } from "convex/server";
+import { Id } from "../../_generated/dataModel";
 
 /**
  * Get user's activity bookings
@@ -689,6 +690,8 @@ export const getActivityBookings = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
+    activityId: v.optional(v.id("activities")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -734,12 +737,80 @@ export const getActivityBookings = query({
 
     // For partners, only show bookings for their activities
     if (user.role === "partner") {
-      // Get partner's activities
-      const partnerActivities = await ctx.db
-        .query("activities")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      // If specific activity is requested, check ownership first
+      if (args.activityId) {
+        const activity = await ctx.db.get(args.activityId);
+        if (!activity || activity.partnerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas desta atividade");
+        }
 
+        let activityQuery = ctx.db
+          .query("activityBookings")
+          .withIndex("by_activity", (q) => q.eq("activityId", args.activityId!));
+
+        if (args.status && typeof args.status === "string") {
+          activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await activityQuery.collect();
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              activityTitle: activity.title,
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
+      // Get partner's activities, filtered by organization if specified
+      let partnerActivities;
+      
+      if (args.organizationId) {
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "activities")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra atividades que pertencem à organização
+        const allPartnerActivities = await ctx.db
+          .query("activities")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        partnerActivities = allPartnerActivities.filter(activity => 
+          assetIds.includes(activity._id)
+        );
+        
+        // Se não encontrar atividades na organização, mas a organização existe,
+        // mostra todas as atividades do partner (fallback)
+        if (partnerActivities.length === 0) {
+          const organization = await ctx.db.get(args.organizationId);
+          if (organization && organization.partnerId.toString() === user._id.toString()) {
+            partnerActivities = await ctx.db
+              .query("activities")
+              .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+              .collect();
+          }
+        }
+      } else {
+        // Sem filtro de organização, busca todas as atividades do partner
+        partnerActivities = await ctx.db
+          .query("activities")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      }
       const activityIds = partnerActivities.map(a => a._id);
 
       let filteredBookings: any[] = [];
@@ -776,33 +847,87 @@ export const getActivityBookings = query({
       };
     }
 
-    // Admin and master see all bookings
-    let query = ctx.db.query("activityBookings").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("activityBookings")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const activity = await ctx.db.get(booking.activityId);
+    // Admin and master see all bookings, filtered by organization if specified
+    if (args.organizationId) {
+      // Busca assets da organização específica
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "activities")
+        )
+        .collect();
+      
+      const assetIds = organizationAssets.map(asset => asset.assetId);
+      
+      if (assetIds.length === 0) {
         return {
-          ...booking,
-          activityTitle: activity?.title || "Atividade não encontrada",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+      
+      let filteredBookings: any[] = [];
+      for (const activityId of assetIds) {
+        let activityQuery = ctx.db
+          .query("activityBookings")
+          .withIndex("by_activity", (q) => q.eq("activityId", activityId as any));
 
-    return {
-      page: bookingsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await activityQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+      
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+
+      const bookingsWithDetails = await Promise.all(
+        filteredBookings.map(async (booking) => {
+          const activity = await ctx.db.get(booking.activityId) as any;
+          return {
+            ...booking,
+            activityTitle: activity?.title || "Atividade não encontrada",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: true,
+        continueCursor: "",
+      };
+    } else {
+      // Sem filtro de organização, busca todas as reservas
+      let query = ctx.db.query("activityBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("activityBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const activity = await ctx.db.get(booking.activityId) as any;
+          return {
+            ...booking,
+            activityTitle: activity?.title || "Atividade não encontrada",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -813,6 +938,8 @@ export const getEventBookings = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
+    eventId: v.optional(v.id("events")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -856,12 +983,80 @@ export const getEventBookings = query({
 
     // For partners, only show bookings for their events
     if (user.role === "partner") {
-      // Get partner's events
-      const partnerEvents = await ctx.db
-        .query("events")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      // If specific event is requested, check ownership first
+      if (args.eventId) {
+        const event = await ctx.db.get(args.eventId);
+        if (!event || event.partnerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas deste evento");
+        }
 
+        let eventQuery = ctx.db
+          .query("eventBookings")
+          .withIndex("by_event", (q) => q.eq("eventId", args.eventId!));
+
+        if (args.status && typeof args.status === "string") {
+          eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await eventQuery.collect();
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              eventTitle: event.title,
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
+      // Get partner's events, filtered by organization if specified
+      let partnerEvents;
+      
+      if (args.organizationId) {
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "events")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra eventos que pertencem à organização
+        const allPartnerEvents = await ctx.db
+          .query("events")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        partnerEvents = allPartnerEvents.filter(event => 
+          assetIds.includes(event._id)
+        );
+        
+        // Se não encontrar eventos na organização, mas a organização existe,
+        // mostra todos os eventos do partner (fallback)
+        if (partnerEvents.length === 0) {
+          const organization = await ctx.db.get(args.organizationId);
+          if (organization && organization.partnerId.toString() === user._id.toString()) {
+            partnerEvents = await ctx.db
+              .query("events")
+              .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+              .collect();
+          }
+        }
+      } else {
+        // Sem filtro de organização, busca todos os eventos do partner
+        partnerEvents = await ctx.db
+          .query("events")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      }
       const eventIds = partnerEvents.map(e => e._id);
 
       let filteredBookings: any[] = [];
@@ -898,33 +1093,87 @@ export const getEventBookings = query({
       };
     }
 
-    // Admin and master see all bookings
-    let query = ctx.db.query("eventBookings").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("eventBookings")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const event = await ctx.db.get(booking.eventId);
+    // Admin and master see all bookings, filtered by organization if specified
+    if (args.organizationId) {
+      // Busca assets da organização específica
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "events")
+        )
+        .collect();
+      
+      const assetIds = organizationAssets.map(asset => asset.assetId);
+      
+      if (assetIds.length === 0) {
         return {
-          ...booking,
-          eventTitle: event?.title || "Evento não encontrado",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+      
+      let filteredBookings: any[] = [];
+      for (const eventId of assetIds) {
+        let eventQuery = ctx.db
+          .query("eventBookings")
+          .withIndex("by_event", (q) => q.eq("eventId", eventId as any));
 
-    return {
-      page: bookingsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await eventQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+      
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+
+      const bookingsWithDetails = await Promise.all(
+        filteredBookings.map(async (booking) => {
+          const event = await ctx.db.get(booking.eventId) as any;
+          return {
+            ...booking,
+            eventTitle: event?.title || "Evento não encontrado",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: true,
+        continueCursor: "",
+      };
+    } else {
+      // Sem filtro de organização, busca todas as reservas
+      let query = ctx.db.query("eventBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("eventBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const event = await ctx.db.get(booking.eventId);
+          return {
+            ...booking,
+            eventTitle: event?.title || "Evento não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -935,6 +1184,8 @@ export const getRestaurantReservations = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
+    restaurantId: v.optional(v.id("restaurants")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -953,6 +1204,7 @@ export const getRestaurantReservations = query({
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      tableId: v.optional(v.id("restaurantTables")),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -974,13 +1226,78 @@ export const getRestaurantReservations = query({
 
     // For partners, only show reservations for their restaurants
     if (user.role === "partner") {
+      // If specific restaurant is requested, check ownership first
+      if (args.restaurantId) {
+        const restaurant = await ctx.db.get(args.restaurantId);
+        if (!restaurant || restaurant.partnerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas deste restaurante");
+        }
+
+        let restaurantQuery = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId!));
+
+        if (args.status && typeof args.status === "string") {
+          restaurantQuery = restaurantQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const reservations = await restaurantQuery.collect();
+        const reservationsWithDetails = await Promise.all(
+          reservations.map(async (reservation) => {
+            return {
+              ...reservation,
+              restaurantName: restaurant.name,
+            };
+          })
+        );
+
+        return {
+          page: reservationsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
       // Get partner's restaurants
-      const partnerRestaurants = await ctx.db
-        .query("restaurants")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      let partnerRestaurants;
+      
+      if (args.organizationId) {
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "restaurants")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra restaurantes que pertencem à organização
+        const allPartnerRestaurants = await ctx.db
+          .query("restaurants")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        partnerRestaurants = allPartnerRestaurants.filter(restaurant => 
+          assetIds.includes(restaurant._id)
+        );
+      } else {
+        // Get all partner restaurants if no organizationId is provided
+        partnerRestaurants = await ctx.db
+          .query("restaurants")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      }
 
       const restaurantIds = partnerRestaurants.map(r => r._id);
+
+      if (restaurantIds.length === 0) {
+        return {
+          page: [],
+          isDone: true,
+          continueCursor: "",
+        };
+      }
 
       let filteredReservations: any[] = [];
       for (const restaurantId of restaurantIds) {
@@ -1017,32 +1334,99 @@ export const getRestaurantReservations = query({
     }
 
     // Admin and master see all reservations
-    let query = ctx.db.query("restaurantReservations").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("restaurantReservations")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const reservationsWithDetails = await Promise.all(
-      result.page.map(async (reservation) => {
-        const restaurant = await ctx.db.get(reservation.restaurantId);
+    let restaurantIds: any[] = [];
+    
+    // If organizationId is provided, filter by organization
+    if (args.organizationId) {
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "restaurants")
+        )
+        .collect();
+        
+      restaurantIds = organizationAssets.map(asset => asset.assetId);
+      
+      if (restaurantIds.length === 0) {
         return {
-          ...reservation,
-          restaurantName: restaurant?.name || "Restaurante não encontrado",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+    }
+    
+    let query;
+    
+    if (args.organizationId && restaurantIds.length > 0) {
+      // If filtering by organization, we need to query each restaurant separately
+      let filteredReservations: any[] = [];
+      
+      for (const restaurantId of restaurantIds) {
+        let restaurantQuery = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_restaurant", (q) => q.eq("restaurantId", restaurantId));
 
-    return {
-      page: reservationsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          restaurantQuery = restaurantQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const reservations = await restaurantQuery.collect();
+        filteredReservations.push(...reservations);
+      }
+      
+      // Sort by creation time
+      filteredReservations.sort((a, b) => b._creationTime - a._creationTime);
+      
+      // Apply pagination manually
+      const startIndex = 0;
+      const endIndex = Math.min(startIndex + args.paginationOpts.numItems, filteredReservations.length);
+      const paginatedReservations = filteredReservations.slice(startIndex, endIndex);
+      
+      const reservationsWithDetails = await Promise.all(
+        paginatedReservations.map(async (reservation) => {
+          const restaurant = await ctx.db.get(reservation.restaurantId) as any;
+          return {
+            ...reservation,
+            restaurantName: restaurant?.name || "Restaurante não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: reservationsWithDetails,
+        isDone: endIndex >= filteredReservations.length,
+        continueCursor: endIndex >= filteredReservations.length ? "" : endIndex.toString(),
+      };
+    } else {
+      // Use standard query if not filtering by organization
+      query = ctx.db.query("restaurantReservations").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const reservationsWithDetails = await Promise.all(
+        result.page.map(async (reservation) => {
+          const restaurant = await ctx.db.get(reservation.restaurantId) as any;
+          return {
+            ...reservation,
+            restaurantName: restaurant?.name || "Restaurante não encontrado",
+          };
+        })
+      );
+
+      return {
+        page: reservationsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -1053,6 +1437,8 @@ export const getVehicleBookings = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     status: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
+    vehicleId: v.optional(v.id("vehicles")),
   },
   returns: v.object({
     page: v.array(v.object({
@@ -1097,14 +1483,80 @@ export const getVehicleBookings = query({
 
     // For partners, only show bookings for their vehicles
     if (user.role === "partner") {
-      // Get partner's vehicles - use filter until index is available
-      const partnerVehicles = await ctx.db
-        .query("vehicles")
-        .order("desc")
-        .filter((q) => q.eq(q.field("ownerId"), user._id))
-        .collect();
+      // If specific vehicle is requested, check ownership first
+      if (args.vehicleId) {
+        const vehicle = await ctx.db.get(args.vehicleId);
+        if (!vehicle || !vehicle.ownerId || vehicle.ownerId.toString() !== user._id.toString()) {
+          throw new Error("Você não tem permissão para ver as reservas deste veículo");
+        }
+
+        let vehicleQuery = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", args.vehicleId!));
+
+        if (args.status && typeof args.status === "string") {
+          vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await vehicleQuery.collect();
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              vehicleName: vehicle.name,
+              vehicleBrand: vehicle.brand,
+              vehicleModel: vehicle.model,
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
+      // Get partner's vehicles
+      let partnerVehicles;
+      
+      if (args.organizationId) {
+        // Busca assets da organização específica
+        const organizationAssets = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_organization_type", (q) => 
+            q.eq("organizationId", args.organizationId!).eq("assetType", "vehicles")
+          )
+          .collect();
+        
+        const assetIds = organizationAssets.map(asset => asset.assetId);
+        
+        // Filtra veículos que pertencem à organização
+        const allPartnerVehicles = await ctx.db
+          .query("vehicles")
+          .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+          .collect();
+        
+        partnerVehicles = allPartnerVehicles.filter(vehicle => 
+          assetIds.includes(vehicle._id)
+        );
+      } else {
+        // Get all partner vehicles if no organizationId is provided
+        partnerVehicles = await ctx.db
+          .query("vehicles")
+          .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+          .collect();
+      }
 
       const vehicleIds = partnerVehicles.map(v => v._id);
+      
+      if (vehicleIds.length === 0) {
+        return {
+          page: [],
+          isDone: true,
+          continueCursor: "",
+        };
+      }
 
       let filteredBookings: any[] = [];
       for (const vehicleId of vehicleIds) {
@@ -1143,34 +1595,103 @@ export const getVehicleBookings = query({
     }
 
     // Admin and master see all bookings
-    let query = ctx.db.query("vehicleBookings").order("desc");
-
-    if (args.status && typeof args.status === "string") {
-      query = ctx.db
-        .query("vehicleBookings")
-        .withIndex("by_status", (q) => q.eq("status", args.status as string))
-        .order("desc");
-    }
-
-    const result = await query.paginate(args.paginationOpts);
-
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const vehicle = await ctx.db.get(booking.vehicleId);
+    let vehicleIds: any[] = [];
+    
+    // If organizationId is provided, filter by organization
+    if (args.organizationId) {
+      const organizationAssets = await ctx.db
+        .query("partnerAssets")
+        .withIndex("by_organization_type", (q) => 
+          q.eq("organizationId", args.organizationId!).eq("assetType", "vehicles")
+        )
+        .collect();
+        
+      vehicleIds = organizationAssets.map(asset => asset.assetId);
+      
+      if (vehicleIds.length === 0) {
         return {
-          ...booking,
-          vehicleName: vehicle?.name || "Veículo não encontrado",
-          vehicleBrand: vehicle?.brand || "",
-          vehicleModel: vehicle?.model || "",
+          page: [],
+          isDone: true,
+          continueCursor: "",
         };
-      })
-    );
+      }
+    }
+    
+    let query;
+    
+    if (args.organizationId && vehicleIds.length > 0) {
+      // If filtering by organization, we need to query each vehicle separately
+      let filteredBookings: any[] = [];
+      
+      for (const vehicleId of vehicleIds) {
+        let vehicleQuery = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicleId));
 
-    return {
-      page: bookingsWithDetails,
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
-    };
+        if (args.status && typeof args.status === "string") {
+          vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await vehicleQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+      
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+      
+      // Apply pagination manually
+      const startIndex = 0;
+      const endIndex = Math.min(startIndex + args.paginationOpts.numItems, filteredBookings.length);
+      const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+      
+      const bookingsWithDetails = await Promise.all(
+        paginatedBookings.map(async (booking) => {
+          const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          return {
+            ...booking,
+            vehicleName: vehicle?.name || "Veículo não encontrado",
+            vehicleBrand: vehicle?.brand || "",
+            vehicleModel: vehicle?.model || "",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: endIndex >= filteredBookings.length,
+        continueCursor: endIndex >= filteredBookings.length ? "" : endIndex.toString(),
+      };
+    } else {
+      // Use standard query if not filtering by organization
+      query = ctx.db.query("vehicleBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          return {
+            ...booking,
+            vehicleName: vehicle?.name || "Veículo não encontrado",
+            vehicleBrand: vehicle?.brand || "",
+            vehicleModel: vehicle?.model || "",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
   },
 });
 
@@ -1271,6 +1792,7 @@ export const getRestaurantReservationById = query({
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      tableId: v.optional(v.id("restaurantTables")),
     }),
     v.null()
   ),
@@ -1316,24 +1838,45 @@ export const getVehicleBookingById = query({
 });
 
 /**
- * Get all user reservations in a unified format for dashboard
+ * Get bookings with RBAC filtering
+ * - Traveler: Only their own bookings
+ * - Partner: Only bookings for their own assets
+ * - Employee: Only bookings for assets they're assigned to
+ * - Master: All bookings
  */
-export const getUserReservations = query({
-  args: {},
-  returns: v.array(v.object({
-    id: v.string(),
-    type: v.string(),
-    name: v.string(),
-    date: v.optional(v.number()),
-    checkIn: v.optional(v.number()),
-    checkOut: v.optional(v.number()),
-    guests: v.number(),
-    status: v.string(),
-    location: v.string(),
-    imageUrl: v.string(),
-    confirmationCode: v.string(),
-    createdAt: v.number(),
-  })),
+export const getBookingsWithRBAC = query({
+  args: { 
+    paginationOpts: paginationOptsValidator,
+    status: v.optional(v.string()),
+    bookingType: v.optional(v.union(
+      v.literal("activity"), 
+      v.literal("event"), 
+      v.literal("restaurant"), 
+      v.literal("vehicle")
+    )),
+  },
+  returns: v.object({
+    bookings: v.array(v.object({
+      _id: v.string(),
+      _creationTime: v.number(),
+      type: v.string(),
+      assetId: v.string(),
+      assetName: v.string(),
+      customerName: v.string(),
+      customerEmail: v.string(),
+      totalPrice: v.number(),
+      status: v.string(),
+      confirmationCode: v.string(),
+      date: v.optional(v.string()),
+      time: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      canManage: v.boolean(), // Whether current user can manage this booking
+    })),
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+    totalCount: v.number(),
+  }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -1349,6 +1892,457 @@ export const getUserReservations = query({
       throw new Error("Usuário não encontrado");
     }
 
+    const allBookings: any[] = [];
+    let totalCount = 0;
+
+    // Helper function to check if user can manage a booking based on asset ownership
+    const canUserManageAsset = async (assetId: string, assetType: string): Promise<boolean> => {
+      if (user.role === "master") return true;
+      
+      let asset;
+      switch (assetType) {
+        case "activity":
+          asset = await ctx.db.get(assetId as any);
+          return user.role === "partner" && asset?.partnerId === user._id;
+        case "event":
+          asset = await ctx.db.get(assetId as any);
+          return user.role === "partner" && asset?.partnerId === user._id;
+        case "restaurant":
+          asset = await ctx.db.get(assetId as any);
+          return user.role === "partner" && asset?.partnerId === user._id;
+        case "vehicle":
+          asset = await ctx.db.get(assetId as any);
+          return user.role === "partner" && asset?.ownerId === user._id;
+        default:
+          return false;
+      }
+    };
+
+    // Fetch activity bookings based on role
+    if (!args.bookingType || args.bookingType === "activity") {
+      // Apply role-based filtering
+      if (user.role === "traveler") {
+        const activityBookings = await ctx.db
+          .query("activityBookings")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+        
+        for (const booking of activityBookings) {
+          const activity = await ctx.db.get(booking.activityId);
+          if (activity) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "activity",
+              assetId: booking.activityId,
+              assetName: activity.title,
+              customerName: booking.customerInfo.name,
+              customerEmail: booking.customerInfo.email,
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking.confirmationCode,
+              date: booking.date,
+              time: booking.time,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: false,
+            });
+          }
+        }
+      } else if (user.role === "partner") {
+        // Get activities owned by partner
+        const ownedActivities = await ctx.db
+          .query("activities")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        for (const activity of ownedActivities) {
+          const bookings = await ctx.db
+            .query("activityBookings")
+            .withIndex("by_activity", (q) => q.eq("activityId", activity._id))
+            .collect();
+          
+          for (const booking of bookings) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "activity",
+              assetId: booking.activityId,
+              assetName: activity.title,
+              customerName: booking.customerInfo.name,
+              customerEmail: booking.customerInfo.email,
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking.confirmationCode,
+              date: booking.date,
+              time: booking.time,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: true,
+            });
+          }
+        }
+      } else if (user.role === "master") {
+        const masterBookings = await ctx.db.query("activityBookings").collect();
+        for (const booking of masterBookings) {
+          const activity = await ctx.db.get(booking.activityId);
+          if (activity) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "activity",
+              assetId: booking.activityId,
+              assetName: activity.title,
+              customerName: booking.customerInfo.name,
+              customerEmail: booking.customerInfo.email,
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking.confirmationCode,
+              date: booking.date,
+              time: booking.time,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: true,
+            });
+          }
+        }
+      }
+    }
+
+    // Fetch event bookings based on role
+    if (!args.bookingType || args.bookingType === "event") {
+      // Apply role-based filtering
+      if (user.role === "traveler") {
+        const eventBookings = await ctx.db
+          .query("eventBookings")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+        
+        for (const booking of eventBookings) {
+          const event = await ctx.db.get(booking.eventId);
+          if (event) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "event",
+              assetId: booking.eventId,
+              assetName: event.title,
+              customerName: booking.customerInfo.name,
+              customerEmail: booking.customerInfo.email,
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking.confirmationCode,
+              date: event.date,
+              time: event.time,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: false,
+            });
+          }
+        }
+      } else if (user.role === "partner") {
+        // Get events owned by partner
+        const ownedEvents = await ctx.db
+          .query("events")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        for (const event of ownedEvents) {
+          const bookings = await ctx.db
+            .query("eventBookings")
+            .withIndex("by_event", (q) => q.eq("eventId", event._id))
+            .collect();
+          
+          for (const booking of bookings) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "event",
+              assetId: booking.eventId,
+              assetName: event.title,
+              customerName: booking.customerInfo.name,
+              customerEmail: booking.customerInfo.email,
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking.confirmationCode,
+              date: event.date,
+              time: event.time,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: true,
+            });
+          }
+        }
+      } else if (user.role === "master") {
+        const masterBookings = await ctx.db.query("eventBookings").collect();
+        for (const booking of masterBookings) {
+          const event = await ctx.db.get(booking.eventId);
+          if (event) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "event",
+              assetId: booking.eventId,
+              assetName: event.title,
+              customerName: booking.customerInfo.name,
+              customerEmail: booking.customerInfo.email,
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking.confirmationCode,
+              date: event.date,
+              time: event.time,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: true,
+            });
+          }
+        }
+      }
+    }
+
+    // Fetch restaurant reservations based on role
+    if (!args.bookingType || args.bookingType === "restaurant") {
+      // Apply role-based filtering
+      if (user.role === "traveler") {
+        const restaurantReservations = await ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+        
+        for (const reservation of restaurantReservations) {
+          const restaurant = await ctx.db.get(reservation.restaurantId);
+          if (restaurant) {
+            allBookings.push({
+              _id: reservation._id,
+              _creationTime: reservation._creationTime,
+              type: "restaurant",
+              assetId: reservation.restaurantId,
+              assetName: restaurant.name,
+              customerName: reservation.name,
+              customerEmail: reservation.email,
+              totalPrice: 0, // Restaurant reservations don't have totalPrice
+              status: reservation.status,
+              confirmationCode: reservation.confirmationCode,
+              date: reservation.date,
+              time: reservation.time,
+              createdAt: reservation._creationTime,
+              updatedAt: reservation._creationTime,
+              canManage: false,
+            });
+          }
+        }
+      } else if (user.role === "partner") {
+        // Get restaurants owned by partner
+        const ownedRestaurants = await ctx.db
+          .query("restaurants")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+        
+        for (const restaurant of ownedRestaurants) {
+          const reservations = await ctx.db
+            .query("restaurantReservations")
+            .withIndex("by_restaurant", (q) => q.eq("restaurantId", restaurant._id))
+            .collect();
+          
+          for (const reservation of reservations) {
+            allBookings.push({
+              _id: reservation._id,
+              _creationTime: reservation._creationTime,
+              type: "restaurant",
+              assetId: reservation.restaurantId,
+              assetName: restaurant.name,
+              customerName: reservation.name,
+              customerEmail: reservation.email,
+              totalPrice: 0, // Restaurant reservations don't have totalPrice
+              status: reservation.status,
+              confirmationCode: reservation.confirmationCode,
+              date: reservation.date,
+              time: reservation.time,
+              createdAt: reservation._creationTime,
+              updatedAt: reservation._creationTime,
+              canManage: true,
+            });
+          }
+        }
+      } else if (user.role === "master") {
+        const masterReservations = await ctx.db.query("restaurantReservations").collect();
+        for (const reservation of masterReservations) {
+          const restaurant = await ctx.db.get(reservation.restaurantId);
+          if (restaurant) {
+            allBookings.push({
+              _id: reservation._id,
+              _creationTime: reservation._creationTime,
+              type: "restaurant",
+              assetId: reservation.restaurantId,
+              assetName: restaurant.name,
+              customerName: reservation.name,
+              customerEmail: reservation.email,
+              totalPrice: 0, // Restaurant reservations don't have totalPrice
+              status: reservation.status,
+              confirmationCode: reservation.confirmationCode,
+              date: reservation.date,
+              time: reservation.time,
+              createdAt: reservation._creationTime,
+              updatedAt: reservation._creationTime,
+              canManage: true,
+            });
+          }
+        }
+      }
+    }
+
+    // Fetch vehicle bookings based on role
+    if (!args.bookingType || args.bookingType === "vehicle") {
+      // Apply role-based filtering
+      if (user.role === "traveler") {
+        const vehicleBookings = await ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_userId", (q) => q.eq("userId", user._id))
+          .collect();
+        
+        for (const booking of vehicleBookings) {
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          if (vehicle) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "vehicle",
+              assetId: booking.vehicleId,
+              assetName: vehicle.name,
+              customerName: "Cliente", // Vehicle bookings may not have customer info
+              customerEmail: "cliente@email.com", // Placeholder
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking._id.toString(), // Use booking ID as confirmation
+              date: new Date(booking.startDate).toISOString().split('T')[0],
+              time: undefined,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: false,
+            });
+          }
+        }
+      } else if (user.role === "partner") {
+        // Get vehicles owned by partner
+        const ownedVehicles = await ctx.db
+          .query("vehicles")
+          .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+          .collect();
+        
+        for (const vehicle of ownedVehicles) {
+          const bookings = await ctx.db
+            .query("vehicleBookings")
+            .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicle._id))
+            .collect();
+          
+          for (const booking of bookings) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "vehicle",
+              assetId: booking.vehicleId,
+              assetName: vehicle.name,
+              customerName: "Cliente", // Vehicle bookings may not have customer info
+              customerEmail: "cliente@email.com", // Placeholder
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking._id.toString(), // Use booking ID as confirmation
+              date: new Date(booking.startDate).toISOString().split('T')[0],
+              time: undefined,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: true,
+            });
+          }
+        }
+      } else if (user.role === "master") {
+        const masterBookings = await ctx.db.query("vehicleBookings").collect();
+        for (const booking of masterBookings) {
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          if (vehicle) {
+            allBookings.push({
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              type: "vehicle",
+              assetId: booking.vehicleId,
+              assetName: vehicle.name,
+              customerName: "Cliente", // Vehicle bookings may not have customer info
+              customerEmail: "cliente@email.com", // Placeholder
+              totalPrice: booking.totalPrice,
+              status: booking.status,
+              confirmationCode: booking._id.toString(), // Use booking ID as confirmation
+              date: new Date(booking.startDate).toISOString().split('T')[0],
+              time: undefined,
+              createdAt: booking.createdAt,
+              updatedAt: booking.updatedAt,
+              canManage: true,
+            });
+          }
+        }
+      }
+    }
+
+    // Apply status filter if provided
+    const filteredBookings = args.status 
+      ? allBookings.filter(booking => booking.status === args.status)
+      : allBookings;
+
+    // Sort by creation time (newest first)
+    filteredBookings.sort((a, b) => b.createdAt - a.createdAt);
+    
+    totalCount = filteredBookings.length;
+
+    // Apply pagination
+    const startIndex = args.paginationOpts.cursor ? 
+      parseInt(args.paginationOpts.cursor) : 0;
+    const endIndex = startIndex + args.paginationOpts.numItems;
+    
+    const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+    const isDone = endIndex >= filteredBookings.length;
+    const continueCursor = isDone ? "" : endIndex.toString();
+
+    return {
+      bookings: paginatedBookings,
+      isDone,
+      continueCursor,
+      totalCount,
+    };
+  },
+});
+
+/**
+ * Get user's own reservations (for traveler dashboard)
+ */
+export const getUserReservations = query({
+  args: {},
+  returns: v.array(v.object({
+    id: v.string(),
+    type: v.string(),
+    name: v.string(),
+    date: v.optional(v.string()),
+    checkIn: v.optional(v.string()),
+    checkOut: v.optional(v.string()),
+    guests: v.optional(v.number()),
+    status: v.string(),
+    location: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    confirmationCode: v.optional(v.string()),
+  })),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      return [];
+    }
+
     const reservations: any[] = [];
 
     // Get activity bookings
@@ -1361,16 +2355,15 @@ export const getUserReservations = query({
       const activity = await ctx.db.get(booking.activityId);
       if (activity) {
         reservations.push({
-          id: booking._id.toString(),
-          type: 'activity',
+          id: booking._id,
+          type: "activity",
           name: activity.title,
-          date: new Date(booking.date).getTime(),
+          date: booking.date,
           guests: booking.participants,
           status: booking.status,
-          location: 'Fernando de Noronha', // Default location
-          imageUrl: activity.imageUrl || '/images/activity-default.jpg',
+          location: "Fernando de Noronha",
+          imageUrl: activity.imageUrl,
           confirmationCode: booking.confirmationCode,
-          createdAt: booking.createdAt,
         });
       }
     }
@@ -1385,16 +2378,15 @@ export const getUserReservations = query({
       const event = await ctx.db.get(booking.eventId);
       if (event) {
         reservations.push({
-          id: booking._id.toString(),
-          type: 'event',
+          id: booking._id,
+          type: "event",
           name: event.title,
-          date: new Date(event.date).getTime(),
+          date: event.date,
           guests: booking.quantity,
           status: booking.status,
           location: event.location,
-          imageUrl: event.imageUrl || '/images/event-default.jpg',
+          imageUrl: event.imageUrl,
           confirmationCode: booking.confirmationCode,
-          createdAt: booking.createdAt,
         });
       }
     }
@@ -1408,18 +2400,16 @@ export const getUserReservations = query({
     for (const reservation of restaurantReservations) {
       const restaurant = await ctx.db.get(reservation.restaurantId);
       if (restaurant) {
-        const reservationDateTime = new Date(`${reservation.date}T${reservation.time}`);
         reservations.push({
-          id: reservation._id.toString(),
-          type: 'restaurant',
+          id: reservation._id,
+          type: "restaurant",
           name: restaurant.name,
-          date: reservationDateTime.getTime(),
+          date: reservation.date,
           guests: reservation.partySize,
           status: reservation.status,
-          location: `${restaurant.address.neighborhood}, ${restaurant.address.city} - ${restaurant.address.state}`,
-          imageUrl: restaurant.mainImage || '/images/restaurant-default.jpg',
+          location: restaurant.address?.city || "Fernando de Noronha",
+          imageUrl: restaurant.mainImage,
           confirmationCode: reservation.confirmationCode,
-          createdAt: reservation._creationTime,
         });
       }
     }
@@ -1434,50 +2424,21 @@ export const getUserReservations = query({
       const vehicle = await ctx.db.get(booking.vehicleId);
       if (vehicle) {
         reservations.push({
-          id: booking._id.toString(),
-          type: 'vehicle',
+          id: booking._id,
+          type: "vehicle",
           name: `${vehicle.brand} ${vehicle.model}`,
-          checkIn: booking.startDate,
-          checkOut: booking.endDate,
-          guests: 1, // Vehicle bookings don't have guests, but we need a value
+          checkIn: new Date(booking.startDate).toISOString(),
+          checkOut: new Date(booking.endDate).toISOString(),
           status: booking.status,
-          location: booking.pickupLocation || 'Fernando de Noronha',
-          imageUrl: vehicle.imageUrl || '/images/vehicle-default.jpg',
-          confirmationCode: booking._id.toString(), // Vehicle bookings might not have confirmation codes
-          createdAt: booking.createdAt,
+          location: "Fernando de Noronha",
+          imageUrl: vehicle.imageUrl,
+          confirmationCode: booking._id, // Use booking ID as fallback for vehicles
         });
       }
     }
 
-    // Get accommodation bookings
-    const accommodationBookings = await ctx.db
-      .query("accommodationBookings")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    for (const booking of accommodationBookings) {
-      const accommodation = await ctx.db.get(booking.accommodationId);
-      if (accommodation) {
-        reservations.push({
-          id: booking._id.toString(),
-          type: 'accommodation',
-          name: accommodation.name,
-          checkIn: new Date(booking.checkInDate).getTime(),
-          checkOut: new Date(booking.checkOutDate).getTime(),
-          guests: booking.guests,
-          status: booking.status,
-          location: `${accommodation.address.neighborhood}, ${accommodation.address.city} - ${accommodation.address.state}`,
-          imageUrl: accommodation.mainImage || '/images/accommodation-default.jpg',
-          confirmationCode: booking.confirmationCode,
-          createdAt: booking.createdAt,
-        });
-      }
-    }
-
-    // Sort by creation date (most recent first)
-    reservations.sort((a, b) => b.createdAt - a.createdAt);
-
-    return reservations;
+    // Sort by creation time (newest first)
+    return reservations.sort((a, b) => new Date(b.date || b.checkIn || 0).getTime() - new Date(a.date || a.checkIn || 0).getTime());
   },
 });
 
@@ -1496,6 +2457,107 @@ export const getUserStats = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
+      return {
+        totalReservations: 0,
+        activeReservations: 0,
+        totalSpent: 0,
+        favoriteLocations: [],
+        completedTrips: 0,
+      };
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      return {
+        totalReservations: 0,
+        activeReservations: 0,
+        totalSpent: 0,
+        favoriteLocations: [],
+        completedTrips: 0,
+      };
+    }
+
+    // Count all reservations for the user
+    const [activityBookings, eventBookings, restaurantReservations, vehicleBookings] = await Promise.all([
+      ctx.db.query("activityBookings").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
+      ctx.db.query("eventBookings").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
+      ctx.db.query("restaurantReservations").withIndex("by_user", (q) => q.eq("userId", user._id)).collect(),
+      ctx.db.query("vehicleBookings").withIndex("by_userId", (q) => q.eq("userId", user._id)).collect(),
+    ]);
+
+    const totalReservations = activityBookings.length + eventBookings.length + restaurantReservations.length + vehicleBookings.length;
+    
+    const activeReservations = [
+      ...activityBookings.filter(b => b.status === "confirmed" || b.status === "pending"),
+      ...eventBookings.filter(b => b.status === "confirmed" || b.status === "pending"),
+      ...restaurantReservations.filter(b => b.status === "confirmed" || b.status === "pending"),
+      ...vehicleBookings.filter(b => b.status === "confirmed" || b.status === "pending"),
+    ].length;
+
+    const totalSpent = [
+      ...activityBookings.filter(b => b.status === "confirmed"),
+      ...eventBookings.filter(b => b.status === "confirmed"),
+    ].reduce((sum, booking) => sum + booking.totalPrice, 0);
+
+    const completedTrips = [
+      ...activityBookings.filter(b => b.status === "completed"),
+      ...eventBookings.filter(b => b.status === "completed"),
+      ...restaurantReservations.filter(b => b.status === "completed"),
+      ...vehicleBookings.filter(b => b.status === "completed"),
+    ].length;
+
+    return {
+      totalReservations,
+      activeReservations,
+      totalSpent,
+      favoriteLocations: ["Fernando de Noronha", "Vila dos Remédios"],
+      completedTrips,
+    };
+  },
+});
+
+/**
+ * Get reservation details with partner information (for contact feature)
+ */
+export const getReservationWithPartnerDetails = query({
+  args: {
+    reservationId: v.string(),
+    reservationType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("accommodation")
+    ),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.string(),
+      _creationTime: v.number(),
+      type: v.string(),
+      assetId: v.string(),
+      assetName: v.string(),
+      userId: v.id("users"),
+      status: v.string(),
+      confirmationCode: v.string(),
+      // Partner information
+      partnerId: v.id("users"),
+      partnerName: v.optional(v.string()),
+      partnerEmail: v.optional(v.string()),
+      // Asset information for context
+      assetType: v.string(),
+      // Customer info (for verification)
+      customerName: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Usuário não autenticado");
     }
 
@@ -1508,70 +2570,98 @@ export const getUserStats = query({
       throw new Error("Usuário não encontrado");
     }
 
-    // Get all user reservations
-    const activityBookings = await ctx.db
-      .query("activityBookings")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+    let reservation: any = null;
+    let asset: any = null;
+    let partner: any = null;
 
-    const eventBookings = await ctx.db
-      .query("eventBookings")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+    // Get reservation based on type
+    switch (args.reservationType) {
+      case "activity":
+        reservation = await ctx.db.get(args.reservationId as Id<"activityBookings">);
+        if (reservation) {
+          asset = await ctx.db.get(reservation.activityId);
+          if (asset) {
+            partner = await ctx.db.get(asset.partnerId);
+          }
+        }
+        break;
 
-    const restaurantReservations = await ctx.db
-      .query("restaurantReservations")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      case "event":
+        reservation = await ctx.db.get(args.reservationId as Id<"eventBookings">);
+        if (reservation) {
+          asset = await ctx.db.get(reservation.eventId);
+          if (asset) {
+            partner = await ctx.db.get(asset.partnerId);
+          }
+        }
+        break;
 
-    const vehicleBookings = await ctx.db
-      .query("vehicleBookings")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .collect();
+      case "restaurant":
+        reservation = await ctx.db.get(args.reservationId as Id<"restaurantReservations">);
+        if (reservation) {
+          asset = await ctx.db.get(reservation.restaurantId);
+          if (asset) {
+            partner = await ctx.db.get(asset.partnerId);
+          }
+        }
+        break;
 
-    const accommodationBookings = await ctx.db
-      .query("accommodationBookings")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      case "vehicle":
+        reservation = await ctx.db.get(args.reservationId as Id<"vehicleBookings">);
+        if (reservation) {
+          asset = await ctx.db.get(reservation.vehicleId);
+          if (asset) {
+            partner = await ctx.db.get(asset.ownerId);
+          }
+        }
+        break;
 
-    // Calculate statistics
-    const totalReservations = activityBookings.length + eventBookings.length + 
-                             restaurantReservations.length + vehicleBookings.length + 
-                             accommodationBookings.length;
+      case "accommodation":
+        reservation = await ctx.db.get(args.reservationId as Id<"accommodationBookings">);
+        if (reservation) {
+          asset = await ctx.db.get(reservation.accommodationId);
+          if (asset) {
+            partner = await ctx.db.get(asset.partnerId);
+          }
+        }
+        break;
 
-    const activeReservations = [
-      ...activityBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
-      ...eventBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
-      ...restaurantReservations.filter(r => r.status === 'confirmed' || r.status === 'pending'),
-      ...vehicleBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
-      ...accommodationBookings.filter(b => b.status === 'confirmed' || b.status === 'pending'),
-    ].length;
+      default:
+        return null;
+    }
 
-    const completedTrips = [
-      ...activityBookings.filter(b => b.status === 'completed'),
-      ...eventBookings.filter(b => b.status === 'completed'),
-      ...restaurantReservations.filter(r => r.status === 'completed'),
-      ...vehicleBookings.filter(b => b.status === 'completed'),
-      ...accommodationBookings.filter(b => b.status === 'completed'),
-    ].length;
+    if (!reservation || !asset || !partner) {
+      return null;
+    }
 
-    // Calculate total spent
-    const totalSpent = [
-      ...activityBookings.map(b => b.totalPrice),
-      ...eventBookings.map(b => b.totalPrice),
-      ...vehicleBookings.map(b => b.totalPrice),
-      ...accommodationBookings.map(b => b.totalPrice),
-    ].reduce((sum, price) => sum + price, 0);
+    // Verify that the current user owns this reservation
+    if (reservation.userId !== user._id) {
+      throw new Error("Você não tem permissão para ver esta reserva");
+    }
 
-    // Get favorite locations from completed trips
-    const favoriteLocations = ["Fernando de Noronha", "Praia do Sancho", "Baía do Sueste"];
+    // Get asset name based on type
+    const assetName = asset.name || asset.title || `${asset.brand} ${asset.model}` || "Asset";
+    
+    // Get customer name based on reservation type
+    const customerName = reservation.customerInfo?.name || reservation.name || "Cliente";
 
     return {
-      totalReservations,
-      activeReservations,
-      totalSpent,
-      favoriteLocations,
-      completedTrips,
+      _id: reservation._id,
+      _creationTime: reservation._creationTime,
+      type: args.reservationType,
+      assetId: asset._id,
+      assetName,
+      userId: reservation.userId,
+      status: reservation.status,
+      confirmationCode: reservation.confirmationCode,
+      partnerId: partner._id,
+      partnerName: partner.name,
+      partnerEmail: partner.email,
+      assetType: args.reservationType === "vehicle" ? "vehicles" : 
+                 args.reservationType === "accommodation" ? "accommodations" :
+                 `${args.reservationType}s`,
+      customerName,
     };
   },
 });
+

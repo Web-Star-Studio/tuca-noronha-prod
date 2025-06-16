@@ -262,7 +262,7 @@ export const setRole = mutationWithRole(["master"])({
 /**
  * Update user profile information
  */
-export const updateUserProfile = mutation({
+export const updateUserProfileData = mutation({
   args: {
     userId: v.id("users"),
     name: v.optional(v.string()),
@@ -342,61 +342,110 @@ export const getUserByClerkId = mutation({
 });
 
 /**
- * Create an employee and their Clerk account
+ * Create employee for partner (Partner only)
+ * Creates user directly in Clerk and stores in Convex database
  */
 export const createEmployee = mutation({
   args: {
-    name: v.string(),
     email: v.string(),
     password: v.string(),
-    organizationId: v.id("partnerOrganizations"),
+    name: v.string(),
+    phone: v.optional(v.string()),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   },
+  returns: v.object({
+    employeeId: v.id("users"),
+    clerkId: v.string(),
+  }),
   handler: async (ctx, args) => {
-    // Verify the current user has permission to create employees
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
+    const currentUserRole = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    // Only partners can create employees
+    if (currentUserRole !== "partner") {
+      throw new Error("Apenas partners podem criar colaboradores");
     }
 
-    const currentUser = await ctx.db
-      .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-      .first();
+    if (!currentUserId) {
+      throw new Error("ID do usuário atual não encontrado");
+    }
 
-    if (!currentUser || (currentUser.role !== "partner" && currentUser.role !== "master")) {
-      throw new Error("Unauthorized: Only partners and masters can create employees");
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(args.email)) {
+      throw new Error("Email inválido");
+    }
+
+    // Validate password strength (minimum requirements)
+    if (args.password.length < 8) {
+      throw new Error("Senha deve ter pelo menos 8 caracteres");
     }
 
     // Check if user with this email already exists
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
+      .filter((q) => q.eq(q.field("email"), args.email))
       .first();
 
     if (existingUser) {
-      throw new Error("A user with this email already exists");
+      throw new Error("Já existe um usuário com este email");
     }
 
-    // First, create the user in Convex database
-    const userId = await ctx.db.insert("users", {
-      email: args.email,
-      name: args.name,
-      role: "employee",
-      organizationId: args.organizationId,
-      partnerId: currentUser._id, // Link employee to the current partner
-      isAnonymous: false,
-      emailVerificationTime: Date.now(),
-    });
+    // Validate organization belongs to partner if provided
+    if (args.organizationId) {
+      const organization = await ctx.db.get(args.organizationId);
+      if (!organization || organization.partnerId !== currentUserId) {
+        throw new Error("Organização não encontrada ou não pertence ao partner");
+      }
+    }
 
-    // Schedule the action to create the user in Clerk
-    await ctx.scheduler.runAfter(0, internal.domains.users.actions.createClerkUser, {
-      userId,
-      name: args.name,
-      email: args.email,
-      password: args.password,
-    });
+    try {
+      // Create employee record in Convex first with temporary Clerk ID
+      const tempClerkId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const employeeId = await ctx.db.insert("users", {
+        clerkId: tempClerkId, // Will be updated by the action
+        email: args.email,
+        name: args.name,
+        phone: args.phone,
+        role: "employee",
+        partnerId: currentUserId,
+        organizationId: args.organizationId,
+        isAnonymous: false,
+        emailVerificationTime: Date.now(),
+      });
 
-    return userId;
+      // Store employee creation request for immediate processing
+      const requestId = await ctx.db.insert("employeeCreationRequests", {
+        employeeId,
+        partnerId: currentUserId,
+        email: args.email,
+        password: args.password,
+        name: args.name,
+        phone: args.phone,
+        organizationId: args.organizationId,
+        status: "pending",
+        createdAt: Date.now(),
+      });
+
+      // Process the employee creation immediately
+      await ctx.scheduler.runAfter(0, internal.domains.users.actions.createEmployeeInClerk, {
+        email: args.email,
+        password: args.password,
+        name: args.name,
+        employeeId: employeeId,
+      });
+
+      // Also schedule the cleanup of the request
+      await ctx.scheduler.runAfter(5000, internal.domains.users.actions.processEmployeeCreationRequests);
+
+      return {
+        employeeId,
+        clerkId: tempClerkId, // Will be updated once Clerk responds
+      };
+    } catch (error) {
+      throw new Error(`Erro ao criar colaborador: ${error}`);
+    }
   },
 });
 
@@ -524,5 +573,300 @@ export const createPartner = mutationWithRole(["master"])({
     });
 
     return userId;
+  },
+});
+
+/**
+ * Update employee creation request status (Internal)
+ */
+export const updateEmployeeCreationRequest = internalMutation({
+  args: {
+    requestId: v.id("employeeCreationRequests"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    clerkId: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    processedAt: v.optional(v.number()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const updateData: any = {
+      status: args.status,
+    };
+
+    if (args.clerkId) {
+      updateData.clerkId = args.clerkId;
+    }
+
+    if (args.errorMessage) {
+      updateData.errorMessage = args.errorMessage;
+    }
+
+    if (args.processedAt) {
+      updateData.processedAt = args.processedAt;
+    }
+
+    await ctx.db.patch(args.requestId, updateData);
+    return null;
+  },
+});
+
+/**
+ * Update employee Clerk ID (Internal)
+ */
+export const updateEmployeeClerkId = internalMutation({
+  args: {
+    employeeId: v.id("users"),
+    clerkId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.employeeId, {
+      clerkId: args.clerkId,
+      emailVerificationTime: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
+ * Update user clerk ID (internal helper for fixing failed user sync)
+ */
+export const updateUserClerkId = internalMutation({
+  args: {
+    userId: v.id("users"),
+    clerkId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      clerkId: args.clerkId,
+      emailVerificationTime: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
+ * Mark employee creation as failed (Internal)
+ */
+export const markEmployeeCreationFailed = internalMutation({
+  args: {
+    employeeId: v.id("users"),
+    error: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Mark the employee user as failed/inactive
+    await ctx.db.patch(args.employeeId, {
+      clerkId: `failed_${Date.now()}`, // Mark as failed
+      emailVerificationTime: undefined, // Remove verification time
+    });
+
+    // Find and update the creation request
+    const request = await ctx.db
+      .query("employeeCreationRequests")
+      .withIndex("by_employee", (q) => q.eq("employeeId", args.employeeId))
+      .first();
+
+    if (request) {
+      await ctx.db.patch(request._id, {
+        status: "failed",
+        errorMessage: args.error,
+        processedAt: Date.now(),
+      });
+    }
+
+    return null;
+  },
+});
+
+
+
+/**
+ * Completar o onboarding do usuário traveler
+ */
+export const completeOnboarding = mutation({
+  args: {
+    fullName: v.string(),
+    dateOfBirth: v.string(),
+    phoneNumber: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+    userId: v.optional(v.id("users")),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Buscar o usuário atual
+    const user = await ctx.db.get(currentUserId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Verificar se o usuário é do tipo traveler
+    if (user.role !== "traveler") {
+      throw new Error("Onboarding disponível apenas para travelers");
+    }
+
+    // Verificar se o onboarding já foi completado
+    if (user.onboardingCompleted) {
+      return {
+        success: false,
+        message: "Onboarding já foi completado anteriormente",
+        userId: currentUserId,
+      };
+    }
+
+    // Validar data de nascimento (formato YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(args.dateOfBirth)) {
+      throw new Error("Data de nascimento deve estar no formato YYYY-MM-DD");
+    }
+
+    // Validar se a data não é futura
+    const birthDate = new Date(args.dateOfBirth);
+    const today = new Date();
+    if (birthDate > today) {
+      throw new Error("Data de nascimento não pode ser no futuro");
+    }
+
+    // Validar idade mínima (13 anos)
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age < 13) {
+      throw new Error("Usuário deve ter pelo menos 13 anos");
+    }
+
+    // Validar telefone (formato básico)
+    const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
+    if (!phoneRegex.test(args.phoneNumber)) {
+      throw new Error("Telefone deve estar no formato (XX) XXXXX-XXXX");
+    }
+
+    // Atualizar o usuário com os dados do onboarding
+    await ctx.db.patch(currentUserId, {
+      fullName: args.fullName.trim(),
+      dateOfBirth: args.dateOfBirth,
+      phoneNumber: args.phoneNumber,
+      onboardingCompleted: true,
+      onboardingCompletedAt: Date.now(),
+    });
+
+    return {
+      success: true,
+      message: "Onboarding completado com sucesso!",
+      userId: currentUserId,
+    };
+  },
+});
+
+/**
+ * Verificar status do onboarding do usuário
+ */
+export const getOnboardingStatus = mutation({
+  args: {},
+  returns: v.object({
+    isCompleted: v.boolean(),
+    needsOnboarding: v.boolean(),
+    userRole: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    if (!currentUserId) {
+      return {
+        isCompleted: false,
+        needsOnboarding: false,
+        userRole: undefined,
+      };
+    }
+
+    const user = await ctx.db.get(currentUserId);
+    if (!user) {
+      return {
+        isCompleted: false,
+        needsOnboarding: false,
+        userRole: undefined,
+      };
+    }
+
+    // Apenas travelers precisam de onboarding
+    const needsOnboarding = user.role === "traveler" && !user.onboardingCompleted;
+
+    return {
+      isCompleted: user.onboardingCompleted || false,
+      needsOnboarding,
+      userRole: user.role,
+    };
+  },
+});
+
+/**
+ * Atualizar dados do perfil do usuário (após onboarding)
+ */
+export const updateUserProfile = mutation({
+  args: {
+    fullName: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db.get(currentUserId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Verificar se o onboarding foi completado
+    if (!user.onboardingCompleted && user.role === "traveler") {
+      throw new Error("Complete o onboarding antes de atualizar o perfil");
+    }
+
+    const updates: any = {};
+
+    if (args.fullName) {
+      updates.fullName = args.fullName.trim();
+    }
+
+    if (args.phoneNumber) {
+      // Validar telefone
+      const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
+      if (!phoneRegex.test(args.phoneNumber)) {
+        throw new Error("Telefone deve estar no formato (XX) XXXXX-XXXX");
+      }
+      updates.phoneNumber = args.phoneNumber;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return {
+        success: false,
+        message: "Nenhum campo para atualizar",
+      };
+    }
+
+    await ctx.db.patch(currentUserId, updates);
+
+    return {
+      success: true,
+      message: "Perfil atualizado com sucesso!",
+    };
   },
 }); 

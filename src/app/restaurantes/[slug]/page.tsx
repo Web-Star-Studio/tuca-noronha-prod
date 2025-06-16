@@ -21,7 +21,7 @@ import { type Restaurant } from "@/lib/store/restaurantsStore";
 import { useRestaurantBySlug } from "@/lib/services/restaurantService";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "@/../convex/_generated/dataModel";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";

@@ -4,6 +4,8 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   trailingSlash: true,
+  // Timeout de geração de páginas estáticas (em segundos)
+  staticPageGenerationTimeout: 1000,
   images: {
     remotePatterns: [
       {
@@ -34,7 +36,17 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "images.sympla.com.br"
+      },
+      {
+        protocol: "https",
+        hostname: "gregarious-civet-174.convex.cloud",
+        pathname: "/api/storage/**"
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co"
       }
+
     ]
   }
 };

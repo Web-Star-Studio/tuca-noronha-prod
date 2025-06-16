@@ -12,7 +12,8 @@ import {
   Settings, 
   HelpCircle,
   ChevronDown,
-  Grid3X3
+  Grid3X3,
+  MessageCircle
 } from "lucide-react";
 
 interface ProfileHeroNavigationProps {
@@ -31,6 +32,7 @@ const ProfileHeroNavigation: React.FC<ProfileHeroNavigationProps> = ({
   const navigationItems = [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard, shortLabel: 'Início' },
     { id: 'reservas', label: 'Reservas', icon: Calendar, shortLabel: 'Reservas' },
+    { id: 'chats', label: 'Conversas', icon: MessageCircle, shortLabel: 'Chats' },
     { id: 'pacotes', label: 'Pacotes', icon: Package, shortLabel: 'Pacotes' },
     { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles, shortLabel: 'Dicas' },
     { id: 'favoritos', label: 'Favoritos', icon: Heart, shortLabel: 'Favoritos' },

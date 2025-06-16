@@ -114,8 +114,8 @@ export const listVehicles = query({
     }
     // Admin/master sees all vehicles (no filtering)
     
-    // Apply organization filter
-    if (organizationId) {
+    // Apply organization filter for non-partner roles
+    if (organizationId && role !== "partner") {
       vehicles = vehicles.filter(vehicle => vehicle.organizationId === organizationId);
     }
     

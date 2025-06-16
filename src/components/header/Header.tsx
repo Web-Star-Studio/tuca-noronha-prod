@@ -11,10 +11,10 @@ export default function Header() {
     const [isTransparent, setIsTransparent] = useState(true)
     const pathname = usePathname()
     
-    // Verifica se estamos em uma página de detalhe de hospedagem
-    const isDetailPage = /^\/hospedagens\/[^/]+$/.test(pathname)
+    // Verifica se estamos em uma página de detalhe 
+    const isDetailPage = false // removido check de hospedagens
     const isProfilePage = /^\/meu-painel/.test(pathname) // Incluindo subpáginas do meu-painel
-    const isReservationPage = /^\/reservas\/[^/]+$/.test(pathname)
+    const isReservationPage = /^\/reservas/.test(pathname) // Qualquer página dentro de /reservas
 
     useEffect(() => {
       const handleScroll = () => {

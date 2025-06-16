@@ -576,9 +576,9 @@ export const getPackageRequestStats = query({
     total: v.number(),
     pending: v.number(),
     inReview: v.number(),
-    approved: v.number(),
-    rejected: v.number(),
-    completed: v.number(),
+    proposalSent: v.number(),
+    confirmed: v.number(),
+    cancelled: v.number(),
   }),
   handler: async (ctx) => {
     const requests = await ctx.db.query("packageRequests").collect();
@@ -587,9 +587,9 @@ export const getPackageRequestStats = query({
       total: requests.length,
       pending: requests.filter(r => r.status === "pending").length,
       inReview: requests.filter(r => r.status === "in_review").length,
-      approved: requests.filter(r => r.status === "approved").length,
-      rejected: requests.filter(r => r.status === "rejected").length,
-      completed: requests.filter(r => r.status === "completed").length,
+      proposalSent: requests.filter(r => r.status === "proposal_sent").length,
+      confirmed: requests.filter(r => r.status === "confirmed").length,
+      cancelled: requests.filter(r => r.status === "cancelled").length,
     };
     
     return stats;
@@ -698,5 +698,29 @@ export const getRecentPackageRequests = query({
       .query("packageRequests")
       .order("desc")
       .take(10);
+  },
+});
+
+/**
+ * Get package requests for current authenticated user
+ */
+export const getMyPackageRequests = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userEmail = identity.email;
+    if (!userEmail) {
+      throw new Error("User email not found");
+    }
+
+    const requests = await ctx.db.query("packageRequests").collect();
+    return requests
+      .filter(request => request.customerInfo.email === userEmail)
+      .sort((a, b) => b._creationTime - a._creationTime); // Most recent first
   },
 }); 

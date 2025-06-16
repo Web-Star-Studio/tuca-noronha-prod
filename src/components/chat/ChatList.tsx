@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { MessageCircle, Search, Filter, MoreVertical, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatWindow } from "./ChatWindow";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
   useChatRooms,
   useUpdateChatRoomStatus,
@@ -25,7 +26,7 @@ import {
   getChatStatusText,
   type ChatRoom,
 } from "@/lib/services/chatService";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 interface ChatListProps {
@@ -264,6 +265,9 @@ export const ChatList: React.FC<ChatListProps> = ({ className = "" }) => {
       {/* Janela de chat */}
       <Dialog open={showChatWindow} onOpenChange={setShowChatWindow}>
         <DialogContent className="max-w-2xl max-h-[80vh] p-0">
+          <VisuallyHidden>
+            <DialogTitle>Conversa com Cliente</DialogTitle>
+          </VisuallyHidden>
           {selectedChatRoomId && (
             <ChatWindow
               chatRoomId={selectedChatRoomId}

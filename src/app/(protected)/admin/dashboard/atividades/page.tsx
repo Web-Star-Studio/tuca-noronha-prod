@@ -17,6 +17,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { MediaSelector } from "@/components/dashboard/media";
 
 function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleActive }: { 
   activity: Activity; 
@@ -137,7 +138,7 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center">
                   <span className="text-yellow-500 mr-1">★</span>
-                  <span>{activity.rating.toFixed(1)}</span>
+                  <span>{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -179,6 +180,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
 }) {
   const categories = activitiesStore(state => state.categories);
   const { user, isAuthenticated } = useCurrentUser();
+  const [mainMediaPickerOpen, setMainMediaPickerOpen] = useState(false);
+  const [galleryMediaPickerOpen, setGalleryMediaPickerOpen] = useState(false);
   
   const [activeTab, setActiveTab] = useState("basic");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -505,29 +508,72 @@ function ActivityForm({ activity, onSave, onCancel }: {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="imageUrl" className="text-sm font-medium">URL da Imagem Principal</Label>
-              <Input 
-                id="imageUrl" 
-                name="imageUrl" 
-                value={formData.imageUrl} 
-                onChange={handleInputChange} 
-                className="mt-1.5 bg-white shadow-sm"
-                placeholder="https://..."
-                required 
-              />
-            </div>
-            
-            {formData.imageUrl && formData.imageUrl.trim() !== '' && (
-              <div className="mt-4 relative h-40 rounded-md overflow-hidden">
-                <Image 
-                  src={formData.imageUrl}
-                  alt="Preview"
-                  fill
-                  className="object-cover"
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl" className="text-sm font-medium">Imagem Principal</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="imageUrl"
+                  name="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={handleInputChange}
+                  className="mt-1.5 bg-white shadow-sm flex-1"
+                  placeholder="https://..."
+                  required
                 />
+                <Button type="button" onClick={() => setMainMediaPickerOpen(true)}>
+                  Selecionar da Biblioteca
+                </Button>
               </div>
-            )}
+              {formData.imageUrl && formData.imageUrl.trim() !== '' && (
+                <div className="mt-4 relative h-40 rounded-md overflow-hidden">
+                  <Image
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <MediaSelector
+            open={mainMediaPickerOpen}
+            onOpenChange={setMainMediaPickerOpen}
+            initialSelected={formData.imageUrl ? [formData.imageUrl] : []}
+            onSelect={([url]) => setFormData({ ...formData, imageUrl: url })}
+          />
+          <div className="mt-6">
+            <Label className="text-sm font-medium">Galeria de Imagens</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {formData.galleryImages.map((url, idx) => (
+                <div key={idx} className="relative w-24 h-24 rounded overflow-hidden">
+                  <Image src={url} alt="" fill className="object-cover"/>
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    onClick={() => {
+                      const newGallery = [...formData.galleryImages];
+                      newGallery.splice(idx, 1);
+                      setFormData({ ...formData, galleryImages: newGallery });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600"/>
+                  </button>
+                </div>
+              ))}
+              <Button type="button" onClick={() => setGalleryMediaPickerOpen(true)}>
+                Adicionar Imagem
+              </Button>
+            </div>
+          <MediaSelector
+            open={galleryMediaPickerOpen}
+            onOpenChange={setGalleryMediaPickerOpen}
+            multiple
+            initialSelected={formData.galleryImages}
+            onSelect={(urls) =>
+              setFormData({ ...formData, galleryImages: [...formData.galleryImages, ...urls] })
+            }
+          />
           </div>
         </TabsContent>
 
@@ -886,13 +932,13 @@ export default function ActivitiesPage() {
     
     try {
       // Use the clerk ID for user identification
-      const clerkId = user.id;
+      const clerkId = user._id;
       
       // Save the creator information
       await createActivity(newActivity);
       
       // Log the creation for audit purposes
-      console.log(`Activity created by user ${user.id} at ${new Date().toISOString()}`);
+      console.log(`Activity created by user ${user._id} at ${new Date().toISOString()}`);
       toast.success("Atividade criada com sucesso");
       setAddDialogOpen(false);
     } catch (error) {
@@ -1084,11 +1130,12 @@ export default function ActivitiesPage() {
               </DialogTitle>
               <DialogDescription>
                 Esta ação não pode ser desfeita. Tem certeza que deseja excluir esta atividade?
-                <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200 text-red-700 text-sm">
-                  Ao excluir esta atividade, todos os dados associados também serão removidos.
-                </div>
               </DialogDescription>
             </DialogHeader>
+            
+            <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200 text-red-700 text-sm">
+              Ao excluir esta atividade, todos os dados associados também serão removidos.
+            </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setConfirmDeleteId(null)} className="border-slate-200 hover:bg-slate-100 transition-colors">Cancelar</Button>
               <Button variant="destructive" onClick={() => handleDeleteActivity(confirmDeleteId)} className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 border-none">

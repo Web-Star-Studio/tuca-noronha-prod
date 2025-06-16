@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2, X, Ticket, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { MediaSelector } from "@/components/dashboard/media";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
@@ -105,6 +106,8 @@ export function EventForm({
 
   // Form tabs
   const [activeTab, setActiveTab] = useState("basic");
+  const [mainMediaPickerOpen, setMainMediaPickerOpen] = useState(false);
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -467,6 +470,20 @@ export function EventForm({
             </div>
           </div>
         </TabsContent>
+        {/* MediaSelector modals */}
+        <MediaSelector
+          open={mainMediaPickerOpen}
+          onOpenChange={setMainMediaPickerOpen}
+          initialSelected={formData.imageUrl ? [formData.imageUrl] : []}
+          onSelect={([url]) => setFormData({ ...formData, imageUrl: url })}
+        />
+        <MediaSelector
+          open={galleryPickerOpen}
+          onOpenChange={setGalleryPickerOpen}
+          multiple
+          initialSelected={formData.galleryImages}
+          onSelect={(urls) => setFormData({ ...formData, galleryImages: [...formData.galleryImages, ...urls] })}
+        />
 
         {/* Details Tab */}
         <TabsContent value="details" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
@@ -583,23 +600,23 @@ export function EventForm({
 
         {/* Media Tab */}
         <TabsContent value="media" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="imageUrl" className="text-sm font-medium">URL da Imagem Principal</Label>
-              <Input 
-                id="imageUrl" 
-                name="imageUrl" 
-                value={formData.imageUrl} 
-                onChange={handleInputChange} 
-                className="mt-1.5 bg-white shadow-sm"
-                placeholder="https://..."
-                required 
+          {/* Imagem Principal */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Imagem Principal</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={formData.imageUrl}
+                readOnly
+                placeholder="Nenhuma imagem selecionada"
+                className="flex-1 bg-white shadow-sm"
               />
+              <Button type="button" onClick={() => setMainMediaPickerOpen(true)}>
+                Selecionar da Biblioteca
+              </Button>
             </div>
-            
-            {formData.imageUrl && formData.imageUrl.trim() !== '' && (
+            {formData.imageUrl && (
               <div className="mt-4 relative h-40 rounded-md overflow-hidden">
-                <Image 
+                <Image
                   src={formData.imageUrl}
                   alt="Preview"
                   fill
@@ -608,49 +625,31 @@ export function EventForm({
               </div>
             )}
           </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Galeria de Imagens</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-0 bg-white/80"
-                onClick={() => handleAddArrayItem("galleryImages")}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Adicionar Imagem
-              </Button>
-            </div>
-            
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
-              {formData.galleryImages.map((image, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={image}
-                    onChange={(e) => handleArrayItemChange(index, e.target.value, "galleryImages")}
-                    placeholder="URL da imagem"
-                    className="bg-white shadow-sm"
-                  />
-                  <Button
+          {/* Galeria de Imagens */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Galeria de Imagens</Label>
+            <div className="flex flex-wrap gap-2">
+              {formData.galleryImages.map((url, idx) => (
+                <div key={idx} className="relative w-24 h-24 rounded overflow-hidden">
+                  <Image src={url} alt="" fill className="object-cover" />
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveArrayItem(index, "galleryImages")}
-                    className="shrink-0"
+                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    onClick={() => {
+                      const newGallery = [...formData.galleryImages];
+                      newGallery.splice(idx, 1);
+                      setFormData({ ...formData, galleryImages: newGallery });
+                    }}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </button>
                 </div>
               ))}
-              
-              {formData.galleryImages.length === 0 && (
-                <div className="py-8 text-center text-muted-foreground border border-dashed rounded-md">
-                  Adicione imagens para a galeria
-                </div>
-              )}
+              <Button type="button" onClick={() => setGalleryPickerOpen(true)}>
+                Adicionar Imagens
+              </Button>
             </div>
-          </div>
+          </div>  
         </TabsContent>
         
         {/* Tickets Tab */}

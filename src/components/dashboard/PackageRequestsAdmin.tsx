@@ -37,7 +37,7 @@ import {
   type PackageRequestSummary,
   type PackageRequest
 } from "../../../convex/domains/packages/types";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/../convex/_generated/dataModel";
 
 export default function PackageRequestsAdmin() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -82,10 +82,9 @@ export default function PackageRequestsAdmin() {
 
     try {
       await updateRequestStatus({
-        requestId: selectedRequest,
+        id: selectedRequest,
         status: updateForm.status as any,
-        adminNotes: updateForm.adminNotes || undefined,
-        proposalDetails: updateForm.proposalDetails || undefined,
+        note: updateForm.adminNotes || undefined,
       });
       setIsUpdateDialogOpen(false);
       setUpdateForm({ status: "", adminNotes: "", proposalDetails: "" });
