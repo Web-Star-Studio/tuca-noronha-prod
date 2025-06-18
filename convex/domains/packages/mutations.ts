@@ -590,11 +590,17 @@ const customerInfoValidator = v.object({
   occupation: v.optional(v.string()),
 });
 
-// Trip details validator
+// Trip details validator - updated to support flexible dates
 const tripDetailsValidator = v.object({
   destination: v.string(),
-  startDate: v.string(),
-  endDate: v.string(),
+  originCity: v.optional(v.string()), // Where the traveler is departing from
+  // For specific dates
+  startDate: v.optional(v.string()),
+  endDate: v.optional(v.string()),
+  // For flexible dates
+  startMonth: v.optional(v.string()),
+  endMonth: v.optional(v.string()),
+  flexibleDates: v.optional(v.boolean()),
   duration: v.number(),
   groupSize: v.number(),
   companions: v.string(),
@@ -646,17 +652,33 @@ export const createPackageRequest = mutation({
       throw new Error("Invalid email format");
     }
 
-    // Validate dates
-    const startDate = new Date(args.tripDetails.startDate);
-    const endDate = new Date(args.tripDetails.endDate);
-    const today = new Date();
-    
-    if (startDate < today) {
-      throw new Error("Start date cannot be in the past");
-    }
-    
-    if (endDate <= startDate) {
-      throw new Error("End date must be after start date");
+    // Validate dates (only for specific dates, not flexible dates)
+    if (!args.tripDetails.flexibleDates) {
+      if (!args.tripDetails.startDate || !args.tripDetails.endDate) {
+        throw new Error("Start date and end date are required when not using flexible dates");
+      }
+      
+      const startDate = new Date(args.tripDetails.startDate);
+      const endDate = new Date(args.tripDetails.endDate);
+      const today = new Date();
+      
+      if (startDate < today) {
+        throw new Error("Start date cannot be in the past");
+      }
+      
+      if (endDate <= startDate) {
+        throw new Error("End date must be after start date");
+      }
+    } else {
+      // For flexible dates, validate that months are provided
+      if (!args.tripDetails.startMonth || !args.tripDetails.endMonth) {
+        throw new Error("Start month and end month are required when using flexible dates");
+      }
+      
+      // Validate that end month is not before start month
+      if (args.tripDetails.endMonth < args.tripDetails.startMonth) {
+        throw new Error("End month cannot be before start month");
+      }
     }
 
     // Validate budget is positive number

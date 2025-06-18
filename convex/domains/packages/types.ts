@@ -243,11 +243,19 @@ export interface PackageRequestCustomerInfo {
 
 export interface PackageRequestTripDetails {
   destination: string;
-  startDate: string;
-  endDate: string;
-  duration: string;
-  budget: string;
-  groupSize: string;
+  originCity?: string;
+  // For specific dates
+  startDate?: string;
+  endDate?: string;
+  // For flexible dates
+  startMonth?: string;
+  endMonth?: string;
+  flexibleDates?: boolean;
+  duration: number;
+  budget: number;
+  groupSize: number;
+  companions: string;
+  budgetFlexibility: string;
 }
 
 export interface PackageRequestPreferences {
@@ -408,8 +416,14 @@ export interface PackageRequestFormData {
   };
   tripDetails: {
     destination: string;
-    startDate: string;
-    endDate: string;
+    originCity?: string;
+    // For specific dates
+    startDate?: string;
+    endDate?: string;
+    // For flexible dates
+    startMonth?: string;
+    endMonth?: string;
+    flexibleDates?: boolean;
     duration: number;
     groupSize: number;
     companions: string;

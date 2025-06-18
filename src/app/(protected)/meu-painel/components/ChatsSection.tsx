@@ -73,7 +73,7 @@ const ChatsSection: React.FC = () => {
   const renderChatItem = (chat: any) => (
     <Card
       key={chat._id}
-      className="cursor-pointer hover:shadow-md transition-shadow border border-gray-200"
+      className="cursor-pointer hover:shadow-md transition-shadow duration-200 border border-gray-200"
       onClick={() => handleChatSelect(chat._id)}
     >
       <CardContent className="p-4">
@@ -93,7 +93,7 @@ const ChatsSection: React.FC = () => {
                 <span className="text-sm">
                   {getAssetTypeIcon(chat.assetType)}
                 </span>
-                <h3 className="font-semibold text-sm truncate">
+                <h3 className="font-semibold text-sm truncate text-gray-900">
                   {chat.otherParticipant.name || "Usuário"}
                 </h3>
                 {chat.unreadCount > 0 && (
@@ -136,206 +136,216 @@ const ChatsSection: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="flex items-center justify-between"
-      >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Minhas Conversas</h2>
-          <p className="text-gray-600 mt-1">Converse com parceiros, fornecedores e nossa equipe de suporte</p>
+          <h2 className="text-2xl font-semibold text-gray-900">Minhas Conversas</h2>
+          <p className="text-gray-600 text-sm mt-1">Converse com parceiros, fornecedores e nossa equipe de suporte</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0 w-full sm:w-auto">
+          <Plus className="w-4 h-4 mr-2" />
           Novo Chat
         </Button>
-      </motion.div>
+      </div>
 
-      {/* Stats Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
-      >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversas Ativas</CardTitle>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeChats?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">conversas em andamento</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Conversas</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{allChats?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">todas as conversas</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Não Lidas</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {allChats?.reduce((total, chat) => total + chat.unreadCount, 0) || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">mensagens não lidas</p>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="flex flex-col sm:flex-row gap-4"
-      >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Pesquisar conversas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Top Row - Stats & Search */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Stats Overview */}
+        <div className="lg:col-span-2">
+          <Card className="bg-white shadow-sm border border-gray-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Resumo das Conversas</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="w-10 h-10 mx-auto mb-3 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{activeChats?.length || 0}</div>
+                  <div className="text-sm text-gray-500">Ativas</div>
+                </div>
+                
+                <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="w-10 h-10 mx-auto mb-3 bg-gray-100 rounded-xl flex items-center justify-center">
+                    <Users className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{allChats?.length || 0}</div>
+                  <div className="text-sm text-gray-500">Total</div>
+                </div>
+                
+                <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="w-10 h-10 mx-auto mb-3 bg-red-100 rounded-xl flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {allChats?.reduce((total, chat) => total + chat.unreadCount, 0) || 0}
+                  </div>
+                  <div className="text-sm text-gray-500">Não Lidas</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Filter className="w-4 h-4" />
-          Filtros
-        </Button>
-      </motion.div>
 
-      {/* Chat Tabs and List */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>Suas Conversas</CardTitle>
-            <CardDescription>
-              Gerencie suas conversas com parceiros e nossa equipe
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="all" className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  Todas
-                  {allChats && allChats.length > 0 && (
-                    <Badge variant="secondary">{allChats.length}</Badge>
+        {/* Search Card */}
+        <div className="lg:col-span-1">
+          <Card className="bg-white shadow-sm border border-gray-200 h-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Buscar Conversas</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Pesquisar por nome ou assunto..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-gray-200"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Chat List - Main Content */}
+        <div className="lg:col-span-2">
+          <Card className="bg-white shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">Suas Conversas</CardTitle>
+              <CardDescription className="text-gray-600">
+                Gerencie suas conversas com parceiros e nossa equipe
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+                  <TabsTrigger value="all" className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Todas
+                    {allChats && allChats.length > 0 && (
+                      <Badge variant="secondary" className="bg-gray-200 text-gray-700">{allChats.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="active" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Ativas
+                    {activeChats && activeChats.length > 0 && (
+                      <Badge variant="secondary" className="bg-gray-200 text-gray-700">{activeChats.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all" className="mt-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                    </div>
+                  ) : currentChatList && currentChatList.length > 0 ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {currentChatList.map(renderChatItem)}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <MessageCircle className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma conversa encontrada</h3>
+                      <p className="text-gray-500 mb-4">
+                        {searchTerm 
+                          ? "Tente ajustar sua pesquisa ou limpar os filtros"
+                          : "Suas conversas aparecerão aqui quando você começar a conversar com parceiros ou nossa equipe"
+                        }
+                      </p>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Iniciar Conversa com Suporte
+                      </Button>
+                    </div>
                   )}
-                </TabsTrigger>
-                <TabsTrigger value="active" className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Ativas
-                  {activeChats && activeChats.length > 0 && (
-                    <Badge variant="secondary">{activeChats.length}</Badge>
+                </TabsContent>
+
+                <TabsContent value="active" className="mt-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                    </div>
+                  ) : currentChatList && currentChatList.length > 0 ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {currentChatList.map(renderChatItem)}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma conversa ativa</h3>
+                      <p className="text-gray-500 mb-4">
+                        Suas conversas ativas aparecerão aqui
+                      </p>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Iniciar Conversa com Suporte
+                      </Button>
+                    </div>
                   )}
-                </TabsTrigger>
-              </TabsList>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
 
-              <TabsContent value="all" className="mt-6">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-                  </div>
-                ) : currentChatList && currentChatList.length > 0 ? (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {currentChatList.map(renderChatItem)}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma conversa encontrada</h3>
-                    <p className="text-gray-500 mb-4">
-                      {searchTerm 
-                        ? "Tente ajustar sua pesquisa ou limpar os filtros"
-                        : "Suas conversas aparecerão aqui quando você começar a conversar com parceiros ou nossa equipe"
-                      }
-                    </p>
-                    <Button className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4" />
-                      Iniciar Conversa com Suporte
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
+        {/* Sidebar - Help Section */}
+        <div className="lg:col-span-1">
+          <Card className="bg-white shadow-sm border border-gray-200 sticky top-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <MessageCircle className="w-5 h-5 text-blue-600" />
+                Precisa de Ajuda?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                Nossa equipe de suporte está sempre disponível para ajudá-lo com suas dúvidas sobre reservas, 
+                pagamentos, atividades e qualquer outra questão relacionada à sua viagem.
+              </p>
+              
+              <div className="space-y-3">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat com Suporte
+                </Button>
+                <Button variant="outline" className="w-full border-gray-200 text-gray-700 hover:bg-gray-50">
+                  Ver FAQ
+                </Button>
+              </div>
 
-              <TabsContent value="active" className="mt-6 bg-white">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-                  </div>
-                ) : currentChatList && currentChatList.length > 0 ? (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {currentChatList.map(renderChatItem)}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma conversa ativa</h3>
-                    <p className="text-gray-500 mb-4">
-                      Suas conversas ativas aparecerão aqui
-                    </p>
-                    <Button className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4" />
-                      Iniciar Conversa com Suporte
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Help Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900">
-              <MessageCircle className="w-5 h-5 text-blue-600" />
-              Precisa de Ajuda?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-blue-700 mb-4">
-              Nossa equipe de suporte está sempre disponível para ajudá-lo com suas dúvidas sobre reservas, 
-              pagamentos, atividades e qualquer outra questão relacionada à sua viagem.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-                <MessageCircle className="w-4 h-4" />
-                Iniciar Chat com Suporte
-              </Button>
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                Ver Perguntas Frequentes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+              {/* Quick Actions */}
+              <div className="pt-4 border-t border-gray-100">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Ações Rápidas</h4>
+                <div className="space-y-2">
+                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                    💬 Conversar sobre reserva
+                  </button>
+                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                    💳 Questões de pagamento
+                  </button>
+                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                    📍 Dúvidas sobre destino
+                  </button>
+                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                    🎯 Sugestões de atividades
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Chat Window Dialog */}
       <Dialog open={!!selectedChatId} onOpenChange={(open) => !open && handleCloseChatWindow()}>

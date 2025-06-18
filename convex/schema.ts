@@ -931,8 +931,14 @@ export default defineSchema({
     // Trip Details
     tripDetails: v.object({
       destination: v.string(),
-      startDate: v.string(),
-      endDate: v.string(),
+      originCity: v.optional(v.string()), // Where the traveler is departing from
+      // For specific dates
+      startDate: v.optional(v.string()),
+      endDate: v.optional(v.string()),
+      // For flexible dates
+      startMonth: v.optional(v.string()),
+      endMonth: v.optional(v.string()),
+      flexibleDates: v.optional(v.boolean()),
       duration: v.number(), // in days
       groupSize: v.number(),
       companions: v.string(), // family, friends, couple, solo, business

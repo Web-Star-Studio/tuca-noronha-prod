@@ -597,8 +597,40 @@ function RequestDetailsContent({ request }: { request: any }) {
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "Data não definida";
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? "Data inválida" : date.toLocaleDateString('pt-BR');
+  };
+
+  // Helper function to format trip dates (handles both specific and flexible dates)
+  const formatTripDates = (tripDetails: any) => {
+    if (tripDetails.flexibleDates) {
+      // For flexible dates, show months
+      const startMonth = tripDetails.startMonth;
+      const endMonth = tripDetails.endMonth;
+      
+      if (startMonth && endMonth) {
+        const formatMonth = (monthStr: string) => {
+          const [year, month] = monthStr.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1);
+          return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        };
+        
+        if (startMonth === endMonth) {
+          return `${formatMonth(startMonth)} (datas flexíveis)`;
+        } else {
+          return `${formatMonth(startMonth)} - ${formatMonth(endMonth)} (datas flexíveis)`;
+        }
+      }
+      return "Datas flexíveis";
+    } else {
+      // For specific dates
+      if (tripDetails.startDate && tripDetails.endDate) {
+        return `${formatDate(tripDetails.startDate)} - ${formatDate(tripDetails.endDate)}`;
+      }
+      return "Datas a definir";
+    }
   };
 
   return (
@@ -652,11 +684,8 @@ function RequestDetailsContent({ request }: { request: any }) {
             <div>
               <strong>Duração:</strong> {request.tripDetails.duration} dias
             </div>
-            <div>
-              <strong>Data de Início:</strong> {formatDate(request.tripDetails.startDate)}
-            </div>
-            <div>
-              <strong>Data de Fim:</strong> {formatDate(request.tripDetails.endDate)}
+            <div className="md:col-span-2">
+              <strong>Datas da Viagem:</strong> {formatTripDates(request.tripDetails)}
             </div>
             <div>
               <strong>Tamanho do Grupo:</strong> {request.tripDetails.groupSize} pessoas
