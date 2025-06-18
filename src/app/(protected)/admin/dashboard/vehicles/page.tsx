@@ -278,9 +278,12 @@ export default function VehiclesPage() {
 
       {/* Dialog para adicionar/editar veículo */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl bg-white">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
           <DialogHeader>
-            <DialogTitle>{editMode ? "Editar Veículo" : "Adicionar Novo Veículo"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <CarFront className="h-5 w-5" />
+              {editMode ? "Editar Veículo" : "Adicionar Novo Veículo"}
+            </DialogTitle>
           </DialogHeader>
           
           <VehicleForm 
@@ -293,12 +296,21 @@ export default function VehiclesPage() {
 
       {/* Dialog de confirmação para remover veículo */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white max-w-md">
           <DialogHeader>
-            <DialogTitle>Remover Veículo</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Remover Veículo
+            </DialogTitle>
           </DialogHeader>
-          <p>Tem certeza que deseja remover este veículo? Esta ação não pode ser desfeita.</p>
-          <DialogFooter>
+          
+          <div className="py-4">
+            <p className="text-gray-600 leading-relaxed">
+              Tem certeza que deseja remover este veículo? Esta ação não pode ser desfeita e todas as informações relacionadas serão perdidas.
+            </p>
+          </div>
+          
+          <DialogFooter className="gap-3">
             <Button
               variant="outline"
               onClick={() => setConfirmDialogOpen(false)}
@@ -310,6 +322,7 @@ export default function VehiclesPage() {
               variant="destructive"
               onClick={handleDeleteVehicle}
               disabled={isLoading}
+              className="min-w-[100px]"
             >
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Remover

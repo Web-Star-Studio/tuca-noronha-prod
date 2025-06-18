@@ -39,6 +39,12 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
         gradient: "from-indigo-500 to-indigo-600",
         image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
       },
+      notificacoes: {
+        title: "Notificações",
+        subtitle: "Acompanhe todas as suas notificações e atualizações importantes",
+        gradient: "from-purple-500 to-purple-600",
+        image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+      },
       chats: {
         title: "Conversas",
         subtitle: "Acompanhe todas as suas conversas e mensagens",

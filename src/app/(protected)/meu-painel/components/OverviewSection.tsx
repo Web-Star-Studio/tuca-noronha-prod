@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/card";
 import { OverviewSectionProps } from '../types/dashboard';
 import { getReservationIconType, getReservationColor, getStatusVariant, getStatusLabel } from '../utils/reservations';
-import NotificationItem from './NotificationItem';
 import StatsOverviewCard from './StatsOverviewCard';
+import NotificationsSection from './NotificationsSection';
 
 const ReservationIcon = ({ type }: { type: string }) => {
   const IconComponent = getReservationIconType(type);
@@ -52,7 +52,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
         {/* Latest Reservations */}
-        <Card className="bg-white shadow-sm border border-gray-200">
+        <Card className="bg-white shadow-sm border border-gray-200/50">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="text-lg font-semibold text-gray-900">
               Próximas Reservas {reservations.length > 0 && (
@@ -72,9 +72,9 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
             {reservations.length > 0 ? (
               <div className="space-y-3">
                 {reservations.slice(0, 4).map((reservation) => (
-                  <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors duration-200">
+                  <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50/70 rounded-xl border border-gray-200/50 hover:bg-gray-100/70 transition-colors duration-200">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getReservationColor(reservation.type)} flex-shrink-0`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${getReservationColor(reservation.type)} flex-shrink-0 shadow-sm`}>
                         <ReservationIcon type={reservation.type} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -89,7 +89,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
                   <CalendarDays className="h-6 w-6 text-gray-400" />
                 </div>
@@ -107,47 +107,8 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
           </CardContent>
         </Card>
         
-        {/* Notifications */}
-        <Card className="bg-white shadow-sm border border-gray-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg font-semibold text-gray-900">Notificações</CardTitle>
-              {notifications.filter(n => !n.read).length > 0 && (
-                <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-1">
-                  {notifications.filter(n => !n.read).length}
-                </Badge>
-              )}
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              onClick={() => {}}
-            >
-              Ver Todas
-            </Button>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {notifications.length > 0 ? (
-              <div className="space-y-3">
-                {notifications.slice(0, 4).map((notification) => (
-                  <NotificationItem 
-                    key={notification.id} 
-                    notification={notification}
-                    onClick={() => onMarkAsRead(notification.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                  <Bell className="h-6 w-6 text-gray-400" />
-                </div>
-                <p className="text-gray-500 text-sm">Nenhuma notificação</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Notifications - Using new NotificationsSection component */}
+        <NotificationsSection compact maxItems={4} />
       </motion.div>
     </div>
   );

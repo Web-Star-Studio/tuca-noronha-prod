@@ -8,7 +8,8 @@ import {
   Calendar, 
   Package, 
   Sparkles, 
-  MessageCircle
+  MessageCircle,
+  Bell
 } from "lucide-react";
 
 interface ProfileHeroNavigationProps {
@@ -23,6 +24,7 @@ const ProfileHeroNavigation: React.FC<ProfileHeroNavigationProps> = ({
   const navigationItems = [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'reservas', label: 'Reservas', icon: Calendar },
+    { id: 'notificacoes', label: 'Notificações', icon: Bell },
     { id: 'chats', label: 'Conversas', icon: MessageCircle },
     { id: 'pacotes', label: 'Solicitações', icon: Package },
     { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles },

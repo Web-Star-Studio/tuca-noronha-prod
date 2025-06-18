@@ -13,10 +13,12 @@ import {
   MediaEditDialog
 } from "@/components/dashboard/media"
 import { Button } from "@/components/ui/button"
-import { Plus, Loader2 } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Loader2, Image, Filter, Search } from "lucide-react"
 import type { Id } from "@/../convex/_generated/dataModel"
 import { AnimatePresence, motion } from "framer-motion"
-import { buttonStyles, cardStyles, transitionEffects, typography } from "@/lib/ui-config"
+import { ui } from "@/lib/ui-config"
 import { cn } from "@/lib/utils"
 
 export default function MediaPage() {
@@ -104,49 +106,130 @@ export default function MediaPage() {
   }
 
   return (
-    <div className={cn("container py-6 space-y-6", cardStyles.content.spacious)}>
-      <motion.div 
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div>
-          <h1 className={cn("text-3xl font-bold tracking-tight", typography.title.cool)}>
-            Biblioteca de Mídia
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie as imagens utilizadas no sistema
-          </p>
+    <motion.div 
+      className="space-y-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+            <Image className="h-6 w-6 text-purple-600" />
+          </div>
+          <div>
+            <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
+              Biblioteca de Mídia
+            </h1>
+            <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
+              Gerencie imagens, arquivos e recursos visuais do sistema
+            </p>
+          </div>
         </div>
-        
-        <Button 
-          onClick={() => setUploadDialogOpen(true)}
-          className={buttonStyles.variant.gradient}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Adicionar Mídia
-        </Button>
-      </motion.div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold text-foreground">{media?.length || 0}</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Image className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Filtradas</p>
+                <p className="text-2xl font-bold text-purple-600">{filteredMedia.length}</p>
+              </div>
+              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                <Search className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Públicas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {media?.filter(m => m.isPublic).length || 0}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <Filter className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Categorias</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {new Set(media?.filter(m => m.category).map(m => m.category)).size || 0}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                <Filter className="h-5 w-5 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actions Bar */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="font-semibold text-foreground">Filtros e Pesquisa</h3>
+              <p className="text-sm text-muted-foreground">
+                Use os filtros abaixo para encontrar arquivos específicos
+              </p>
+            </div>
+            <Button 
+              onClick={() => setUploadDialogOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar Mídia
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <MediaFilter
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          category={selectedCategory}
-          setCategory={setSelectedCategory}
-          filterIsPublic={filterIsPublic}
-          setFilterIsPublic={setFilterIsPublic}
-          fileTypes={selectedFileTypes}
-          setFileTypes={setSelectedFileTypes}
-          className={cn(cardStyles.base, "p-4")}
-        />
-      </motion.div>
+      {/* Filters */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <MediaFilter
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            category={selectedCategory}
+            setCategory={setSelectedCategory}
+            filterIsPublic={filterIsPublic}
+            setFilterIsPublic={setFilterIsPublic}
+            fileTypes={selectedFileTypes}
+            setFileTypes={setSelectedFileTypes}
+          />
+        </CardContent>
+      </Card>
       
+      {/* Media Grid */}
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div
@@ -155,14 +238,13 @@ export default function MediaPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className={cn("flex justify-center items-center py-12", transitionEffects.appear.fadeIn)}
+            className="flex justify-center items-center py-12"
           >
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
           </motion.div>
         ) : (
           <motion.div
             key="content"
-            className={transitionEffects.appear.fadeInUp}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -180,9 +262,12 @@ export default function MediaPage() {
       
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-white">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className={typography.title.gradient}>Adicionar nova mídia</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-blue-600" />
+              Adicionar nova mídia
+            </DialogTitle>
           </DialogHeader>
           <MediaUploader onSuccess={handleUploadSuccess} />
         </DialogContent>
@@ -198,6 +283,6 @@ export default function MediaPage() {
           setEditDialogOpen(false)
         }}
       />
-    </div>
+    </motion.div>
   )
 }

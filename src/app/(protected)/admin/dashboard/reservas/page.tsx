@@ -21,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -29,30 +28,82 @@ import {
   Calendar,
   Users,
   Search,
-  Filter,
   CheckCircle,
   AlertCircle,
   XCircle,
   Clock,
   Car,
-  Utensils,
-  Ticket,
   TrendingUp,
   Check,
   X,
-  MessageCircle,
   Building2,
   Store,
   Activity,
   Mail,
   Phone,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { ui } from "@/lib/ui-config";
 import { useAsset } from "@/lib/providers/asset-context";
 import { AssetSelector } from "@/components/dashboard/AssetSelector";
+import { motion } from "framer-motion";
+
+// Helper function to safely format dates
+const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string => {
+  if (!dateValue) {
+    return "Data não informada";
+  }
+
+  try {
+    let date: Date;
+    
+    if (typeof dateValue === 'string') {
+      // Try parsing ISO string first
+      if (dateValue.includes('T') || dateValue.includes('-')) {
+        date = parseISO(dateValue);
+      } else {
+        date = new Date(dateValue);
+      }
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else if (typeof dateValue === 'number') {
+      date = new Date(dateValue);
+    } else {
+      return "Data inválida";
+    }
+
+    if (!isValid(date)) {
+      return "Data inválida";
+    }
+
+    return format(date, formatString, { locale: ptBR });
+  } catch (error) {
+    console.error("Error formatting date:", error, "Date value:", dateValue);
+    return "Data inválida";
+  }
+};
+
+// Helper function for date ranges
+const formatDateRange = (startDate: any, endDate: any): string => {
+  const start = formatDateSafely(startDate);
+  const end = formatDateSafely(endDate);
+  
+  if (start === "Data inválida" && end === "Data inválida") {
+    return "Período não informado";
+  }
+  
+  if (start === "Data inválida") {
+    return `Até ${end}`;
+  }
+  
+  if (end === "Data inválida") {
+    return `A partir de ${start}`;
+  }
+  
+  return `${start} - ${end}`;
+};
 
 export default function AdminBookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,7 +127,6 @@ export default function AdminBookingsPage() {
   const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
 
   // Fetch bookings based on selected asset type
-  // Now we pass organizationId instead of specific asset IDs since selectedAsset is an organization
   const activityBookings = useQuery(
     selectedAsset?.assetType === "activities" 
       ? api.domains.bookings.queries.getActivityBookings
@@ -259,10 +309,10 @@ export default function AdminBookingsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { variant: "secondary" as const, label: "Pendente", icon: AlertCircle },
-      confirmed: { variant: "default" as const, label: "Confirmado", icon: CheckCircle },
-      canceled: { variant: "destructive" as const, label: "Cancelado", icon: XCircle },
-      completed: { variant: "outline" as const, label: "Concluído", icon: CheckCircle },
+      pending: { variant: "secondary" as const, label: "Pendente", icon: AlertCircle, color: "text-orange-600" },
+      confirmed: { variant: "default" as const, label: "Confirmado", icon: CheckCircle, color: "text-green-600" },
+      canceled: { variant: "destructive" as const, label: "Cancelado", icon: XCircle, color: "text-red-600" },
+      completed: { variant: "outline" as const, label: "Concluído", icon: CheckCircle, color: "text-blue-600" },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -274,56 +324,6 @@ export default function AdminBookingsPage() {
         {config.label}
       </Badge>
     );
-  };
-
-  // Action buttons for each booking
-  const renderActionButtons = (booking: any) => {
-    if (booking.status === "pending") {
-      return (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => {
-              setSelectedBooking(booking);
-              setShowConfirmDialog(true);
-            }}
-            className={ui.buttons.confirm.className}
-          >
-            <Check className="w-4 h-4 mr-1" />
-            Confirmar
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => {
-              setSelectedBooking(booking);
-              setShowCancelDialog(true);
-            }}
-          >
-            <X className="w-4 h-4 mr-1" />
-            Cancelar
-          </Button>
-        </div>
-      );
-    }
-    
-    if (booking.status === "confirmed") {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            setSelectedBooking(booking);
-            setShowCancelDialog(true);
-          }}
-        >
-          <X className="w-4 h-4 mr-1" />
-          Cancelar
-        </Button>
-      );
-    }
-    
-    return null;
   };
 
   const getAssetIcon = (assetType: string) => {
@@ -339,151 +339,189 @@ export default function AdminBookingsPage() {
     return <Icon className="h-4 w-4" />;
   };
 
+  // Helper function to format booking date display
+  const formatBookingDate = (booking: any, assetType: string) => {
+    if (assetType === "restaurants") {
+      return `${booking.date || "Data não informada"} às ${booking.time || "Horário não informado"}`;
+    }
+    
+    if (assetType === "vehicles") {
+      return formatDateRange(booking.startDate, booking.endDate);
+    }
+    
+    // For activities and events
+    return formatDateSafely(booking.startDate || booking.date);
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-            Gerenciamento de Reservas
-          </h1>
+    <motion.div 
+      className="space-y-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header - Design Minimalista */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+            <Calendar className="h-6 w-6 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
+              Gerenciamento de Reservas
+            </h1>
+            <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
+              {selectedAsset 
+                ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
+                : "Selecione um asset para visualizar suas reservas"
+              }
+            </p>
+          </div>
           {selectedAsset && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl border border-blue-200">
               {getAssetIcon(selectedAsset.assetType)}
               <span className="text-sm font-medium text-blue-700">{selectedAsset.name}</span>
             </div>
           )}
         </div>
-        <p className={ui.colors.text.secondary}>
-          {selectedAsset 
-            ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
-            : "Selecione um asset para visualizar suas reservas"
-          }
-        </p>
       </div>
 
       {/* Asset Selector */}
-      <AssetSelector compact={true} showDetails={false} />
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <AssetSelector compact={true} showDetails={false} />
+        </CardContent>
+      </Card>
 
       {/* Show content only if asset is selected */}
       {selectedAsset ? (
         <>
           {/* Stats Cards */}
           <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-4">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Total de Reservas</p>
-                    <p className={`text-2xl font-bold ${ui.colors.text.primary}`}>
-                      {stats.total}
-                    </p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Total de Reservas</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.total}</p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                     {getAssetIcon(selectedAsset.assetType)}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-4">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Pendentes</p>
-                    <p className={`text-2xl font-bold ${ui.colors.warning}`}>
-                      {stats.pending}
-                    </p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                    <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
                   </div>
-                  <Clock className={`h-8 w-8 ${ui.colors.warning}`} />
+                  <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-orange-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-4">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Confirmadas</p>
-                    <p className={`text-2xl font-bold ${ui.colors.success}`}>
-                      {stats.confirmed}
-                    </p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Confirmadas</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
                   </div>
-                  <CheckCircle className={`h-8 w-8 ${ui.colors.success}`} />
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-4">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-sm font-medium ${ui.colors.text.secondary}`}>Receita Total</p>
-                    <p className={`text-2xl font-bold ${ui.colors.success}`}>
-                      R$ {stats.revenue.toFixed(2)}
-                    </p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Receita Total</p>
+                    <p className="text-2xl font-bold text-green-600">R$ {stats.revenue.toFixed(2)}</p>
                   </div>
-                  <TrendingUp className={`h-8 w-8 ${ui.colors.success}`} />
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Search and Filters */}
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${ui.colors.text.muted} w-4 h-4`} />
-              <Input
-                placeholder="Buscar por nome do cliente, email, código..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="confirmed">Confirmado</SelectItem>
-                <SelectItem value="canceled">Cancelado</SelectItem>
-                <SelectItem value="completed">Concluído</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Buscar por nome do cliente, email, código..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 border-0 bg-muted/30"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px] border-0 bg-muted/30">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="confirmed">Confirmado</SelectItem>
+                    <SelectItem value="canceled">Cancelado</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Bookings List */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {getAssetIcon(selectedAsset.assetType)}
-                  Reservas - {selectedAsset.name}
-                  {filteredBookings.length > 0 && (
-                    <Badge variant="secondary">
-                      {filteredBookings.length} {filteredBookings.length === 1 ? "reserva" : "reservas"}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {filteredBookings.length === 0 ? (
-                  <div className={`text-center py-8 ${ui.colors.text.muted}`}>
-                    {searchTerm 
-                      ? `Nenhuma reserva encontrada para "${searchTerm}"`
-                      : "Nenhuma reserva encontrada para este asset"
-                    }
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3">
+                {getAssetIcon(selectedAsset.assetType)}
+                Reservas - {selectedAsset.name}
+                {filteredBookings.length > 0 && (
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                    {filteredBookings.length} {filteredBookings.length === 1 ? "reserva" : "reservas"}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {filteredBookings.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    {getAssetIcon(selectedAsset.assetType)}
                   </div>
-                ) : (
-                  filteredBookings.map((booking: any) => (
-                    <Card key={booking._id} className="border border-gray-200">
-                      <CardContent className="p-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {searchTerm ? "Nenhuma reserva encontrada" : "Nenhuma reserva ainda"}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm 
+                      ? `Não encontramos reservas para "${searchTerm}"`
+                      : "As reservas aparecerão aqui quando forem feitas"
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredBookings.map((booking: any) => (
+                    <Card key={booking._id} className="border border-border/50 hover:shadow-md transition-all duration-300">
+                      <CardContent className="p-5">
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold">
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold text-foreground">
                                 {selectedAsset.assetType === "restaurants" 
                                   ? `Mesa para ${booking.partySize || booking.participants} pessoas`
                                   : booking.activityTitle || booking.eventTitle || booking.vehicleName || "Reserva"
@@ -491,168 +529,182 @@ export default function AdminBookingsPage() {
                               </h3>
                               {getStatusBadge(booking.status)}
                             </div>
-                            <div className={`space-y-1 text-sm ${ui.colors.text.secondary}`}>
-                              <div className="flex items-center gap-2">
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
                                 <Calendar className="w-4 h-4" />
-                                {selectedAsset.assetType === "restaurants" 
-                                  ? `${booking.date} às ${booking.time}`
-                                  : selectedAsset.assetType === "vehicles"
-                                  ? `${format(new Date(booking.startDate), "PPP", { locale: ptBR })} - ${format(new Date(booking.endDate), "PPP", { locale: ptBR })}`
-                                  : booking.date
-                                }
+                                {formatBookingDate(booking, selectedAsset.assetType)}
                               </div>
-                              {(booking.participants || booking.partySize) && (
-                                <div className="flex items-center gap-2">
-                                  <Users className="w-4 h-4" />
-                                  {booking.participants || booking.partySize} {selectedAsset.assetType === "restaurants" ? "pessoas" : "participantes"}
+                              
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Users className="w-4 h-4" />
+                                {booking.customerInfo?.name || booking.name || "Cliente"}
+                              </div>
+                              
+                              {booking.customerInfo?.email && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Mail className="w-4 h-4" />
+                                  {booking.customerInfo.email}
                                 </div>
                               )}
+                              
                               {booking.totalPrice && (
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <span className="text-lg font-semibold text-green-600">
                                     R$ {booking.totalPrice.toFixed(2)}
                                   </span>
                                 </div>
                               )}
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-mono">
-                                  #{booking.confirmationCode}
-                                </span>
-                              </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="mb-3">
-                              <p className="font-medium">{booking.customerInfo?.name || booking.name}</p>
-                              <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo?.email || booking.email}</p>
-                              <p className={`text-sm ${ui.colors.text.secondary}`}>{booking.customerInfo?.phone || booking.phone}</p>
-                            </div>
-                            {renderActionButtons(booking)}
+
+                          <div className="flex items-center gap-2 ml-4">
+                            {booking.status === "pending" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setShowConfirmDialog(true);
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 text-white gap-1"
+                                >
+                                  <Check className="w-4 h-4" />
+                                  Confirmar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setShowCancelDialog(true);
+                                  }}
+                                  className="text-red-600 border-red-200 hover:bg-red-50 gap-1"
+                                >
+                                  <X className="w-4 h-4" />
+                                  Cancelar
+                                </Button>
+                              </>
+                            )}
+                            
+                            {booking.status === "confirmed" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setShowCancelDialog(true);
+                                }}
+                                className="text-red-600 border-red-200 hover:bg-red-50 gap-1"
+                              >
+                                <X className="w-4 h-4" />
+                                Cancelar
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        {booking.specialRequests && (
-                          <div className="mt-3 pt-3 border-t">
-                            <p className="text-sm font-medium">Solicitações especiais:</p>
-                            <p className="text-sm text-gray-600">{booking.specialRequests}</p>
-                          </div>
-                        )}
-                        {booking.partnerNotes && (
-                          <div className="mt-3 pt-3 border-t">
-                            <p className="text-sm font-medium">Observações do parceiro:</p>
-                            <p className="text-sm text-gray-600">{booking.partnerNotes}</p>
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       ) : (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Selecione um Asset</h3>
-            <p className="text-gray-600">
+        <Card className="border-0 shadow-sm">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-3">
+              Selecione um Asset
+            </h3>
+            <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
               Escolha um asset acima para visualizar e gerenciar suas reservas.
             </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Confirmation Dialog */}
+      {/* Confirm Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="bg-white">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmar Reserva</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="h-5 w-5" />
+              Confirmar Reserva
+            </DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja confirmar esta reserva? O cliente receberá uma notificação da confirmação.
+              Confirme esta reserva e envie uma notificação ao cliente.
             </DialogDescription>
           </DialogHeader>
-          {selectedBooking && (
-            <div className={`space-y-3 p-4 ${ui.colors.background.muted} rounded-lg`}>
-              <div>
-                <Label className="text-sm font-medium">Detalhes da Reserva</Label>
-                <p className="text-sm">Cliente: {selectedBooking.customerInfo?.name || selectedBooking.name}</p>
-                <p className="text-sm">Código: #{selectedBooking.confirmationCode}</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="partner-notes">Observações do Parceiro (opcional)</Label>
-                <Textarea
-                  id="partner-notes"
-                  placeholder="Adicione observações ou instruções especiais para o cliente..."
-                  value={partnerNotes}
-                  onChange={(e) => setPartnerNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="notes">Observações (opcional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Adicione observações sobre a confirmação..."
+                value={partnerNotes}
+                onChange={(e) => setPartnerNotes(e.target.value)}
+                className="mt-1"
+              />
             </div>
-          )}
+          </div>
+          
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowConfirmDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
               Cancelar
             </Button>
-            <Button
-              onClick={() => selectedBooking && handleConfirmBooking(selectedBooking)}
-              className={ui.buttons.confirm.className}
-            >
-              <Check className="w-4 h-4 mr-2" />
+            <Button onClick={() => handleConfirmBooking(selectedBooking)} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="w-4 h-4 mr-1" />
               Confirmar Reserva
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Cancellation Dialog */}
+      {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Cancelar Reserva</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="h-5 w-5" />
+              Cancelar Reserva
+            </DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja cancelar esta reserva? Esta ação não pode ser desfeita.
+              Esta ação não pode ser desfeita. O cliente será notificado sobre o cancelamento.
             </DialogDescription>
           </DialogHeader>
-          {selectedBooking && (
-            <div className={`space-y-3 p-4 ${ui.colors.background.muted} rounded-lg`}>
-              <div>
-                <Label className="text-sm font-medium">Detalhes da Reserva</Label>
-                <p className="text-sm">Cliente: {selectedBooking.customerInfo?.name || selectedBooking.name}</p>
-                <p className="text-sm">Código: #{selectedBooking.confirmationCode}</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cancel-reason">Motivo do Cancelamento</Label>
-                <Textarea
-                  id="cancel-reason"
-                  placeholder="Explique o motivo do cancelamento..."
-                  value={partnerNotes}
-                  onChange={(e) => setPartnerNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reason">Motivo do cancelamento</Label>
+              <Textarea
+                id="reason"
+                placeholder="Explique o motivo do cancelamento..."
+                value={partnerNotes}
+                onChange={(e) => setPartnerNotes(e.target.value)}
+                className="mt-1"
+              />
             </div>
-          )}
+          </div>
+          
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowCancelDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
               Voltar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => selectedBooking && handleCancelBooking(selectedBooking)}
+            <Button 
+              variant="destructive" 
+              onClick={() => handleCancelBooking(selectedBooking)}
             >
-              <X className="w-4 h-4 mr-2" />
+              <XCircle className="w-4 h-4 mr-1" />
               Cancelar Reserva
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }

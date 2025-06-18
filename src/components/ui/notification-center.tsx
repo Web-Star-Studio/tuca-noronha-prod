@@ -21,12 +21,11 @@ import {
   CheckCircle,
   Calendar,
   CreditCard,
-  AlertTriangle,
-  Info,
-  X,
   CheckCircle2,
   Trash2,
   MessageCircle,
+  X,
+  Dot,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -89,53 +88,44 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
   };
 
   const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "booking_confirmed":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "booking_canceled":
-        return <Calendar className="w-5 h-5 text-red-500" />;
-      case "booking_updated":
-        return <Calendar className="w-5 h-5 text-blue-500" />;
-      case "booking_reminder":
-        return <BellRing className="w-5 h-5 text-orange-500" />;
-      case "payment_received":
-        return <CreditCard className="w-5 h-5 text-green-500" />;
-      case "system_update":
-        return <Bell className="w-5 h-5 text-blue-500" />;
-      case "chat_message":
-        return <MessageCircle className="w-5 h-5 text-purple-500" />;
-      case "chat_room_created":
-        return <MessageCircle className="w-5 h-5 text-indigo-500" />;
-      default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
-    }
+    const iconMap = {
+      booking_confirmed: { icon: CheckCircle, color: "text-emerald-500" },
+      booking_canceled: { icon: Calendar, color: "text-red-500" },
+      booking_updated: { icon: Calendar, color: "text-blue-500" },
+      booking_reminder: { icon: BellRing, color: "text-orange-500" },
+      payment_received: { icon: CreditCard, color: "text-emerald-500" },
+      system_update: { icon: Bell, color: "text-blue-500" },
+      chat_message: { icon: MessageCircle, color: "text-purple-500" },
+      chat_room_created: { icon: MessageCircle, color: "text-indigo-500" },
+    };
+
+    const { icon: IconComponent, color } = iconMap[type] || { icon: Bell, color: "text-gray-500" };
+    return <IconComponent className={`w-5 h-5 ${color}`} />;
   };
 
-  const getNotificationBgColor = (type: string, isRead: boolean) => {
+  const getNotificationVariant = (type: string, isRead: boolean) => {
     if (isRead) {
-      return "bg-gray-50 hover:bg-gray-100";
+      return {
+        container: "bg-gray-50/80 hover:bg-gray-100/80 border-transparent",
+        indicator: null
+      };
     }
     
-    switch (type) {
-      case "booking_confirmed":
-        return "bg-green-50 border-l-4 border-green-500 hover:bg-green-100";
-      case "booking_canceled":
-        return "bg-red-50 border-l-4 border-red-500 hover:bg-red-100";
-      case "booking_updated":
-        return "bg-blue-50 border-l-4 border-blue-500 hover:bg-blue-100";
-      case "booking_reminder":
-        return "bg-orange-50 border-l-4 border-orange-500 hover:bg-orange-100";
-      case "payment_received":
-        return "bg-green-50 border-l-4 border-green-500 hover:bg-green-100";
-      case "system_update":
-        return "bg-blue-50 border-l-4 border-blue-500 hover:bg-blue-100";
-      case "chat_message":
-        return "bg-purple-50 border-l-4 border-purple-500 hover:bg-purple-100";
-      case "chat_room_created":
-        return "bg-indigo-50 border-l-4 border-indigo-500 hover:bg-indigo-100";
-      default:
-        return "bg-gray-50 border-l-4 border-gray-500 hover:bg-gray-100";
-    }
+    const variants = {
+      booking_confirmed: "border-l-emerald-400 bg-emerald-50/50 hover:bg-emerald-50",
+      booking_canceled: "border-l-red-400 bg-red-50/50 hover:bg-red-50",
+      booking_updated: "border-l-blue-400 bg-blue-50/50 hover:bg-blue-50",
+      booking_reminder: "border-l-orange-400 bg-orange-50/50 hover:bg-orange-50",
+      payment_received: "border-l-emerald-400 bg-emerald-50/50 hover:bg-emerald-50",
+      system_update: "border-l-blue-400 bg-blue-50/50 hover:bg-blue-50",
+      chat_message: "border-l-purple-400 bg-purple-50/50 hover:bg-purple-50",
+      chat_room_created: "border-l-indigo-400 bg-indigo-50/50 hover:bg-indigo-50",
+    };
+
+    return {
+      container: variants[type] || "border-l-gray-400 bg-gray-50/50 hover:bg-gray-50",
+      indicator: <Dot className="w-4 h-4 text-blue-500 fill-blue-500" />
+    };
   };
 
   return (
@@ -149,42 +139,43 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-              >
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </Badge>
+              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-xs font-medium text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </div>
             )}
           </Button>
         )}
       </SheetTrigger>
       
-      <SheetContent className="w-[400px] sm:w-[540px] bg-white shadow-2xl z-[80]">
-        <SheetHeader>
+      <SheetContent className="w-[400px] sm:w-[540px] bg-white shadow-xl border-l">
+        <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notificações
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-gray-600" />
+              <SheetTitle className="text-xl font-semibold text-gray-900">
+                Notificações
+              </SheetTitle>
               {unreadCount > 0 && (
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary" className="text-xs font-medium">
                   {unreadCount} novas
                 </Badge>
               )}
-            </SheetTitle>
+            </div>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-2 text-sm"
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Marcar todas como lidas
               </Button>
             )}
           </div>
-          <SheetDescription>
+          <SheetDescription className="text-gray-500">
             Suas notificações e atualizações mais recentes
           </SheetDescription>
         </SheetHeader>
@@ -194,94 +185,106 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
         <ScrollArea className="h-[calc(100vh-140px)]">
           {notifications && notifications.length > 0 ? (
             <div className="space-y-2">
-              {notifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  className={cn(
-                    "p-4 rounded-lg transition-colors cursor-pointer group w-full text-left",
-                    getNotificationBgColor(notification.type, notification.isRead)
-                  )}
-                  onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      !notification.isRead && handleMarkAsRead(notification._id);
-                    }
-                  }}
-                  aria-label={`Notificação: ${notification.title}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <h4 className={cn(
-                          "font-medium text-sm",
-                          !notification.isRead && "text-gray-900",
-                          notification.isRead && "text-gray-600"
-                        )}>
-                          {notification.title}
-                        </h4>
-                        <div className="flex items-center gap-1 ml-2">
-                          {!notification.isRead && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteNotification(notification._id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-500" />
-                          </Button>
+              {notifications.map((notification) => {
+                const variant = getNotificationVariant(notification.type, notification.isRead);
+                
+                return (
+                  <div
+                    key={notification._id}
+                    className={cn(
+                      "relative p-4 rounded-xl border-l-2 transition-all duration-200 cursor-pointer group",
+                      variant.container
+                    )}
+                    onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !notification.isRead && handleMarkAsRead(notification._id);
+                      }
+                    }}
+                    aria-label={`Notificação: ${notification.title}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-9 h-9 rounded-lg bg-white/80 flex items-center justify-center border border-gray-200/50">
+                          {getNotificationIcon(notification.type)}
                         </div>
                       </div>
                       
-                      <p className={cn(
-                        "text-sm mt-1",
-                        !notification.isRead && "text-gray-700",
-                        notification.isRead && "text-gray-500"
-                      )}>
-                        {notification.message}
-                      </p>
-                      
-                      {notification.data && (
-                        <div className="mt-2 text-xs text-gray-500 space-y-1">
-                          {notification.data.confirmationCode && (
-                            <p className="font-mono">
-                              Código: {notification.data.confirmationCode}
-                            </p>
-                          )}
-                          {notification.data.assetName && (
-                            <p>Local: {notification.data.assetName}</p>
-                          )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className={cn(
+                            "font-medium text-sm leading-tight",
+                            !notification.isRead ? "text-gray-900" : "text-gray-600"
+                          )}>
+                            {notification.title}
+                          </h4>
+                          <div className="flex items-center gap-2 ml-3">
+                            {variant.indicator}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteNotification(notification._id);
+                              }}
+                            >
+                              <X className="h-3 w-3 text-gray-400 hover:text-red-500" />
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                      
-                      <p className="text-xs text-gray-400 mt-2">
-                        {format(new Date(notification.createdAt), "dd 'de' MMMM 'às' HH:mm", {
-                          locale: ptBR,
-                        })}
-                      </p>
+                        
+                        <p className={cn(
+                          "text-sm leading-relaxed mb-3",
+                          !notification.isRead ? "text-gray-700" : "text-gray-500"
+                        )}>
+                          {notification.message}
+                        </p>
+                        
+                        {notification.data && (
+                          <div className="mb-3 p-2 bg-white/60 rounded-lg border border-gray-200/50">
+                            <div className="space-y-1 text-xs">
+                              {notification.data.confirmationCode && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500">Código:</span>
+                                  <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">
+                                    {notification.data.confirmationCode}
+                                  </code>
+                                </div>
+                              )}
+                              {notification.data.assetName && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500">Local:</span>
+                                  <span className="text-gray-700">{notification.data.assetName}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <time className="text-xs text-gray-400" dateTime={notification.createdAt}>
+                          {format(new Date(notification.createdAt), "dd 'de' MMMM 'às' HH:mm", {
+                            locale: ptBR,
+                          })}
+                        </time>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Bell className="h-12 w-12 text-gray-300 mb-4" />
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <Bell className="h-8 w-8 text-gray-400" />
+              </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Nenhuma notificação
               </h3>
-              <p className="text-gray-500 max-w-sm">
+              <p className="text-gray-500 max-w-sm leading-relaxed">
                 Você receberá notificações sobre suas reservas e atualizações importantes aqui.
               </p>
             </div>

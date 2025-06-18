@@ -133,12 +133,12 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
           
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category || "none"} onValueChange={(value) => setCategory(value === "none" ? "" : value)}>
               <SelectTrigger className={formStyles.select.trigger}>
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent className={formStyles.select.content}>
-                <SelectItem value="">Nenhuma</SelectItem>
+                <SelectItem value="none">Nenhuma</SelectItem>
                 {MEDIA_CATEGORIES.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.label}

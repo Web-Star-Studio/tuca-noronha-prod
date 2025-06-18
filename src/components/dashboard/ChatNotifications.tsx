@@ -23,7 +23,8 @@ import {
   Clock,
   User,
   ExternalLink,
-  Trash2,
+  X,
+  Dot,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,22 +38,24 @@ interface ChatNotificationsProps {
   className?: string;
   maxItems?: number;
   showTitle?: boolean;
+  showWrapper?: boolean;
 }
 
 export function ChatNotifications({ 
   className, 
   maxItems = 10, 
-  showTitle = true 
+  showTitle = true,
+  showWrapper = true
 }: ChatNotificationsProps) {
-  const [selectedChatRoomId, setSelectedChatRoomId] = useState<Id<"chatRooms"> | null>(null);
-  const [showChatDialog, setShowChatDialog] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<Id<"chatRooms"> | null>(null);
 
-  // Buscar notificações de chat para o usuário atual
+  // Get chat-related notifications
   const notifications = useQuery(api.domains.notifications.queries.getUserNotifications, {
     limit: maxItems,
+    type: "chat"
   });
 
-  // Filtrar apenas notificações de chat
+  // Filter chat notifications
   const chatNotifications = notifications?.filter(n => 
     n.type === "chat_message" || n.type === "chat_room_created"
   ) || [];
@@ -80,210 +83,230 @@ export function ChatNotifications({
     }
   };
 
-  const handleOpenChat = (chatRoomId: string) => {
-    try {
-      setSelectedChatRoomId(chatRoomId as Id<"chatRooms">);
-      setShowChatDialog(true);
-    } catch (error) {
-      toast.error("Erro ao abrir conversa");
-      console.error(error);
-    }
+  const handleOpenChat = (chatId: Id<"chatRooms">) => {
+    setSelectedChatId(chatId);
   };
 
   const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "chat_message":
-        return <MessageCircle className="w-4 h-4 text-purple-500" />;
-      case "chat_room_created":
-        return <MessageCircle className="w-4 h-4 text-indigo-500" />;
-      default:
-        return <BellRing className="w-4 h-4 text-gray-500" />;
-    }
+    const iconMap = {
+      chat_message: { icon: MessageCircle, color: "text-purple-500", bg: "bg-purple-50" },
+      chat_room_created: { icon: MessageCircle, color: "text-indigo-500", bg: "bg-indigo-50" },
+    };
+    
+    const { icon: IconComponent, color, bg } = iconMap[type] || { 
+      icon: MessageCircle, 
+      color: "text-gray-500", 
+      bg: "bg-gray-50" 
+    };
+    
+    return (
+      <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center border border-white/80 shadow-sm`}>
+        <IconComponent className={`w-5 h-5 ${color}`} />
+      </div>
+    );
   };
 
   const getNotificationTypeLabel = (type: string) => {
-    switch (type) {
-      case "chat_message":
-        return "Mensagem";
-      case "chat_room_created":
-        return "Nova Conversa";
-      default:
-        return "Chat";
-    }
+    const labels = {
+      chat_message: "Nova Mensagem",
+      chat_room_created: "Nova Conversa",
+    };
+    return labels[type] || "Chat";
   };
 
-  const unreadCount = chatNotifications.filter(n => !n.isRead).length;
+  const getNotificationStyle = (type: string, isRead: boolean) => {
+    if (isRead) {
+      return "bg-gray-50/70 hover:bg-gray-100/70 border-gray-200/50";
+    }
+    
+    const typeStyles = {
+      chat_message: "bg-purple-50/50 hover:bg-purple-50 border-l-purple-400",
+      chat_room_created: "bg-indigo-50/50 hover:bg-indigo-50 border-l-indigo-400",
+    };
 
-  return (
+    return typeStyles[type] || "bg-gray-50/50 hover:bg-gray-50 border-l-gray-400";
+  };
+
+  const NotificationsContent = () => (
     <>
-      <Card className={cn("bg-white shadow-sm", className)}>
-        {showTitle && (
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-purple-600" />
-                <span>Notificações de Chat</span>
-                {unreadCount > 0 && (
-                  <Badge variant="destructive" className="text-xs">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </div>
-            </CardTitle>
-            <CardDescription>
-              Mensagens e conversas recentes
-            </CardDescription>
-          </CardHeader>
-        )}
-        
-        <CardContent className={showTitle ? "pt-0" : ""}>
-          {chatNotifications.length > 0 ? (
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
-                {chatNotifications.map((notification) => (
-                  <div
-                    key={notification._id}
-                    className={cn(
-                      "p-3 rounded-lg border transition-colors group",
-                      !notification.isRead 
-                        ? "bg-purple-50 border-purple-200 hover:bg-purple-100" 
-                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-1">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs"
-                            >
-                              {getNotificationTypeLabel(notification.type)}
-                            </Badge>
-                            {!notification.isRead && (
-                              <Badge variant="default" className="text-xs">
-                                Nova
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {notification.relatedId && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => handleOpenChat(notification.relatedId!)}
-                                title="Abrir conversa"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                              </Button>
-                            )}
-                            {!notification.isRead && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => handleMarkAsRead(notification._id)}
-                                title="Marcar como lida"
-                              >
-                                <CheckCircle2 className="w-3 h-3" />
-                              </Button>
-                            )}
+      {showTitle && showWrapper && (
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-purple-500" />
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Notificações de Chat
+              </CardTitle>
+              {chatNotifications.filter(n => !n.isRead).length > 0 && (
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {chatNotifications.filter(n => !n.isRead).length} novas
+                </Badge>
+              )}
+            </div>
+          </div>
+          <CardDescription className="text-gray-500">
+            Mensagens e atualizações de conversas
+          </CardDescription>
+        </CardHeader>
+      )}
+      
+      <div className={showWrapper ? (showTitle ? "pt-0" : "") : "p-4"}>
+        {chatNotifications.length > 0 ? (
+          <ScrollArea className={showWrapper ? "h-[400px]" : "h-[300px]"}>
+            <div className="space-y-2">
+              {chatNotifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={cn(
+                    "relative p-3 rounded-xl border border-l-2 transition-all duration-200 group",
+                    getNotificationStyle(notification.type, notification.isRead)
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs font-medium border-gray-300"
+                          >
+                            {getNotificationTypeLabel(notification.type)}
+                          </Badge>
+                          {!notification.isRead && (
+                            <Dot className="w-4 h-4 text-purple-500 fill-purple-500" />
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {notification.relatedId && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteNotification(notification._id)}
-                              title="Remover notificação"
+                              className="h-6 w-6 p-0 rounded-full hover:bg-white/80"
+                              onClick={() => handleOpenChat(notification.relatedId!)}
+                              title="Abrir conversa"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <ExternalLink className="w-3 h-3 text-gray-600" />
                             </Button>
-                          </div>
+                          )}
+                          {!notification.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 rounded-full hover:bg-white/80"
+                              onClick={() => handleMarkAsRead(notification._id)}
+                              title="Marcar como lida"
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 rounded-full hover:bg-white/80 text-red-500 hover:text-red-700"
+                            onClick={() => handleDeleteNotification(notification._id)}
+                            title="Remover notificação"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
                         </div>
+                      </div>
+                      
+                      <h4 className={cn(
+                        "font-medium text-sm mb-2 leading-tight",
+                        !notification.isRead ? "text-gray-900" : "text-gray-600"
+                      )}>
+                        {notification.title}
+                      </h4>
+                      
+                      <p className={cn(
+                        "text-sm leading-relaxed mb-3",
+                        !notification.isRead ? "text-gray-700" : "text-gray-500"
+                      )}>
+                        {notification.message}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <time className="text-xs text-gray-400" dateTime={notification.createdAt}>
+                          {format(new Date(notification.createdAt), "dd/MM 'às' HH:mm", {
+                            locale: ptBR,
+                          })}
+                        </time>
                         
-                        <h4 className={cn(
-                          "font-medium text-sm mb-1",
-                          !notification.isRead && "text-gray-900",
-                          notification.isRead && "text-gray-600"
-                        )}>
-                          {notification.title}
-                        </h4>
-                        
-                        <p className={cn(
-                          "text-sm mb-2 line-clamp-2",
-                          !notification.isRead && "text-gray-700",
-                          notification.isRead && "text-gray-500"
-                        )}>
-                          {notification.message}
-                        </p>
-                        
-                        {notification.data && (
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                            {notification.data.senderName && (
-                              <div className="flex items-center gap-1">
-                                <User className="w-3 h-3" />
-                                <span>{notification.data.senderName}</span>
-                              </div>
-                            )}
-                            {notification.data.assetName && (
-                              <div className="flex items-center gap-1">
-                                <span>📍 {notification.data.assetName}</span>
-                              </div>
-                            )}
-                            {notification.data.bookingCode && (
-                              <div className="flex items-center gap-1">
-                                <span>🎫 {notification.data.bookingCode}</span>
-                              </div>
-                            )}
-                          </div>
+                        {!notification.isRead && (
+                          <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                            Nova
+                          </span>
                         )}
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-xs text-gray-400">
-                            <Clock className="w-3 h-3" />
-                            <span>
-                              {format(new Date(notification.createdAt), "dd/MM HH:mm", {
-                                locale: ptBR,
-                              })}
-                            </span>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="text-center py-8">
-              <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhuma notificação de chat
-              </h3>
-              <p className="text-gray-500">
-                Você será notificado quando receber mensagens
-              </p>
+                </div>
+              ))}
             </div>
-          )}
+          </ScrollArea>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+              <MessageCircle className="h-6 w-6 text-purple-500" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhuma notificação de chat
+            </h3>
+            <p className="text-gray-500 max-w-sm leading-relaxed">
+              Você receberá notificações quando receber mensagens ou quando novas conversas forem criadas.
+            </p>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  if (!showWrapper) {
+    return (
+      <div className={cn("bg-white rounded-lg", className)}>
+        <NotificationsContent />
+        
+        {/* Chat Dialog */}
+        <Dialog open={!!selectedChatId} onOpenChange={() => setSelectedChatId(null)}>
+          <DialogContent className="max-w-4xl h-[80vh] p-0">
+            <VisuallyHidden>
+              <DialogTitle>Chat</DialogTitle>
+            </VisuallyHidden>
+            {selectedChatId && (
+              <ChatWindow 
+                chatId={selectedChatId}
+                onClose={() => setSelectedChatId(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Card className={cn("bg-white shadow-sm border-gray-200/50", className)}>
+        <CardContent className={showTitle ? "" : "p-0"}>
+          <NotificationsContent />
         </CardContent>
       </Card>
 
-      {/* Dialog de Chat */}
-      <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] p-0">
+      {/* Chat Dialog */}
+      <Dialog open={!!selectedChatId} onOpenChange={() => setSelectedChatId(null)}>
+        <DialogContent className="max-w-4xl h-[80vh] p-0">
           <VisuallyHidden>
-            <DialogTitle>Conversa com Cliente</DialogTitle>
+            <DialogTitle>Chat</DialogTitle>
           </VisuallyHidden>
-          {selectedChatRoomId && (
-            <ChatWindow
-              chatRoomId={selectedChatRoomId}
-              onClose={() => setShowChatDialog(false)}
-              className="h-[600px]"
+          {selectedChatId && (
+            <ChatWindow 
+              chatId={selectedChatId}
+              onClose={() => setSelectedChatId(null)}
             />
           )}
         </DialogContent>

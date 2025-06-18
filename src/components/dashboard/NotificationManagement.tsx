@@ -74,8 +74,10 @@ export function NotificationManagement({ className }: NotificationManagementProp
     includeRead: true,
   });
 
-  // Get all users for sending notifications
-  const users = useQuery(api.domains.users.queries.getAllUsers);
+  // Get users for sending notifications - partners only see users who made confirmed bookings with their assets
+  const users = useQuery(api.domains.users.queries.listAllUsers, {
+    limit: 1000
+  });
 
   // Mutations
   const createNotification = useMutation(api.domains.notifications.mutations.createNotification);

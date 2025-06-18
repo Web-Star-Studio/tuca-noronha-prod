@@ -35,6 +35,7 @@ import FloatingSupportButton from './components/FloatingSupportButton'
 import RecommendationCard from './components/RecommendationCard'
 import AIRecommendationsSection from '@/components/AIRecommendationsSection'
 import ChatsSection from './components/ChatsSection'
+import NotificationsSection from './components/NotificationsSection'
 
 export default function Dashboard() {
   const { user } = useUser()
@@ -93,6 +94,8 @@ export default function Dashboard() {
         return <PackageRequestsSection />
       case 'chats':
         return <ChatsSection />
+      case 'notificacoes':
+        return <NotificationsSection />
       case 'recomendacoes':
         return <AIRecommendationsSection />
       default:
@@ -102,6 +105,7 @@ export default function Dashboard() {
             notifications={notifications}
             onMarkAsRead={markNotificationAsRead}
             onSectionChange={setActiveSection}
+            stats={stats}
           />
         )
     }

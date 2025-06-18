@@ -8,7 +8,8 @@ import {
   Calendar, 
   Package, 
   Sparkles, 
-  MessageCircle
+  MessageCircle,
+  Bell
 } from "lucide-react";
 
 interface MobileBottomNavigationProps {
@@ -23,9 +24,9 @@ const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   const navigationItems = [
     { id: 'overview', label: 'Início', icon: LayoutDashboard },
     { id: 'reservas', label: 'Reservas', icon: Calendar },
+    { id: 'notificacoes', label: 'Avisos', icon: Bell },
     { id: 'chats', label: 'Chats', icon: MessageCircle },
     { id: 'pacotes', label: 'Solicitações', icon: Package },
-    { id: 'recomendacoes', label: 'Dicas', icon: Sparkles },
   ];
 
   return (
