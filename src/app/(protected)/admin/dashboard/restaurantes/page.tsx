@@ -8,7 +8,9 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Trash2, Store, Plus, Search, Filter } from "lucide-react"
 import { 
   RestaurantsHeader, 
   RestaurantsFilter, 
@@ -16,7 +18,10 @@ import {
   RestaurantsPagination, 
   RestaurantForm
 } from "@/components/dashboard/restaurants"
-import { AnimatePresence, motion } from "framer-motion"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ui } from "@/lib/ui-config"
+import { motion } from "framer-motion"
+import { DashboardPageHeader } from "../components"
 
 export default function RestaurantsPage() {
   const { restaurants, isLoading } = useRestaurantsWithCreators()
@@ -37,7 +42,6 @@ export default function RestaurantsPage() {
   const [filter, setFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [showMobileFilter, setShowMobileFilter] = useState(false)
   const itemsPerPage = 6
   
   // Filter restaurants based on filter and search query
@@ -80,10 +84,20 @@ export default function RestaurantsPage() {
     return sortedRestaurants.slice(startIndex, startIndex + itemsPerPage)
   }, [sortedRestaurants, currentPage])
   
+  // Calculate stats
+  const stats = useMemo(() => {
+    if (!restaurants) return { total: 0, active: 0, featured: 0, inactive: 0 };
+    return {
+      total: restaurants.length,
+      active: restaurants.filter(r => r.isActive).length,
+      featured: restaurants.filter(r => r.isFeatured).length,
+      inactive: restaurants.filter(r => !r.isActive).length,
+    };
+  }, [restaurants]);
+  
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    // Scroll to top on page change
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
   
@@ -96,7 +110,6 @@ export default function RestaurantsPage() {
     
     try {
       setIsSubmitting(true)
-      // Cast the string ID to the Convex Id<"users"> type
       const userId = user._id 
       await createRestaurant(restaurantData, userId)
       toast.success("Restaurante criado com sucesso!")
@@ -179,58 +192,185 @@ export default function RestaurantsPage() {
   
   return (
     <motion.div 
-      className="relative space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      className="space-y-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
     >
-      {/* Background elements */}
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50 pointer-events-none -z-10" />
-      <div className="fixed top-1/4 right-1/3 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000 pointer-events-none -z-10" />
-      <div className="fixed bottom-1/4 left-1/3 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000 pointer-events-none -z-10" />
+      {/* Header - Design Minimalista */}
+      <DashboardPageHeader
+        title="Restaurantes"
+        description="Gerencie todos os restaurantes da plataforma"
+        icon={Store}
+        iconBgClassName="bg-orange-50"
+        iconColorClassName="text-orange-600"
+      >
+        <Button
+          onClick={openCreateDialog}
+          className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Adicionar Restaurante
+        </Button>
+      </DashboardPageHeader>
 
-      {/* Page content */}
-      <RestaurantsHeader openCreateDialog={openCreateDialog} />
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Store className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Filters and actions */}
-      <div className="bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-gray-100 shadow-sm">
-        <RestaurantsFilter 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filter={filter}
-          setFilter={setFilter}
-          showMobileFilter={showMobileFilter}
-          setShowMobileFilter={setShowMobileFilter}
-        />
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Ativos</p>
+                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+              </div>
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-green-600 rounded-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Destacados</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.featured}</p>
+              </div>
+              <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-yellow-600 rounded-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Inativos</p>
+                <p className="text-2xl font-bold text-gray-600">{stats.inactive}</p>
+              </div>
+              <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div className="w-3 h-3 bg-gray-600 rounded-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Restaurants grid */}
-      <div className="min-h-[300px]">
-        <AnimatePresence mode="wait">
-          <RestaurantsGrid
-            restaurants={paginatedRestaurants}
-            isLoading={isLoading}
-            searchQuery={searchQuery}
-            onEdit={openEditDialog}
-            onDelete={(id) => setConfirmDeleteId(id)}
-            onToggleFeatured={handleToggleFeatured}
-            onToggleActive={handleToggleActive}
-          />
-        </AnimatePresence>
-      </div>
-      
-      {/* Pagination */}
-      <RestaurantsPagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        handlePageChange={handlePageChange} 
-      />
+      {/* Filters and Search */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Buscar restaurantes por nome, cidade, culinária..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 border-0 bg-muted/30"
+              />
+            </div>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="px-4 py-2 border-0 bg-muted/30 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+              <option value="featured">Destacados</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Restaurants Grid */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3">
+            <Store className="h-5 w-5 text-orange-600" />
+            Lista de Restaurantes
+            {filteredRestaurants.length > 0 && (
+              <Badge variant="secondary" className="bg-orange-50 text-orange-700">
+                {filteredRestaurants.length} {filteredRestaurants.length === 1 ? "restaurante" : "restaurantes"}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
+            </div>
+          ) : filteredRestaurants.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Store className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">
+                {searchQuery ? "Nenhum restaurante encontrado" : "Nenhum restaurante ainda"}
+              </h3>
+              <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed mb-8">
+                {searchQuery 
+                  ? `Não encontramos restaurantes para "${searchQuery}"`
+                  : "Comece adicionando restaurantes para gerenciar a gastronomia da plataforma."
+                }
+              </p>
+              {!searchQuery && (
+                <Button onClick={openCreateDialog} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Adicionar Primeiro Restaurante
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Restaurants grid */}
+              <RestaurantsGrid
+                restaurants={paginatedRestaurants}
+                isLoading={isLoading}
+                searchQuery={searchQuery}
+                onEdit={openEditDialog}
+                onDelete={(id) => setConfirmDeleteId(id)}
+                onToggleFeatured={handleToggleFeatured}
+                onToggleActive={handleToggleActive}
+              />
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <RestaurantsPagination 
+                  currentPage={currentPage} 
+                  totalPages={totalPages} 
+                  handlePageChange={handlePageChange} 
+                />
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Create/Edit Restaurant Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[900px] bg-white/95 backdrop-blur-md border-none shadow-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent font-bold">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Store className="h-5 w-5 text-orange-600" />
               {selectedRestaurant ? "Editar Restaurante" : "Adicionar Novo Restaurante"}
             </DialogTitle>
             <DialogDescription>
@@ -251,9 +391,9 @@ export default function RestaurantsPage() {
       {/* Confirm Delete Dialog */}
       {confirmDeleteId && (
         <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
-          <DialogContent className="bg-white/95 backdrop-blur-md border-none shadow-xl max-w-md">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+              <DialogTitle className="text-xl font-semibold text-red-600 flex items-center gap-2">
                 <Trash2 className="h-5 w-5" /> Confirmar Exclusão
               </DialogTitle>
               <DialogDescription>
@@ -261,19 +401,26 @@ export default function RestaurantsPage() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200 text-red-700 text-sm">
-              Ao excluir este restaurante, todos os dados associados também serão removidos.
+            <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
+              <p className="text-sm text-red-700">
+                Ao excluir este restaurante, todos os dados associados também serão removidos.
+              </p>
             </div>
+            
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setConfirmDeleteId(null)} className="border-slate-200 hover:bg-slate-100 transition-colors">
+              <Button 
+                variant="outline" 
+                onClick={() => setConfirmDeleteId(null)}
+              >
                 Cancelar
               </Button>
               <Button 
                 variant="destructive" 
-                onClick={() => handleDeleteRestaurant(confirmDeleteId)} 
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 border-none"
+                onClick={() => handleDeleteRestaurant(confirmDeleteId)}
+                className="gap-2"
               >
-                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                <Trash2 className="h-4 w-4" />
+                Excluir
               </Button>
             </DialogFooter>
           </DialogContent>

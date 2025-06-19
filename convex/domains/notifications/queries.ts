@@ -10,6 +10,7 @@ export const getUserNotifications = query({
   args: {
     limit: v.optional(v.number()),
     includeRead: v.optional(v.boolean()),
+    type: v.optional(v.string()),
     paginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.array(v.object({
@@ -49,6 +50,11 @@ export const getUserNotifications = query({
     // Apply read status filter if specified
     if (args.includeRead === false) {
       query = query.filter((q) => q.eq(q.field("isRead"), false));
+    }
+
+    // Apply type filter if specified
+    if (args.type) {
+      query = query.filter((q) => q.eq(q.field("type"), args.type));
     }
 
     // Apply pagination if provided

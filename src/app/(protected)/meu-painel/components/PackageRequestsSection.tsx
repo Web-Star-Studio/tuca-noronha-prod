@@ -154,6 +154,42 @@ const PackageRequestsSection: React.FC = () => {
     }
   };
 
+  // Helper function to format trip dates (handles both specific and flexible dates)
+  const formatTripDates = (tripDetails: any) => {
+    if (tripDetails.flexibleDates) {
+      // For flexible dates, show months
+      const startMonth = tripDetails.startMonth;
+      const endMonth = tripDetails.endMonth;
+      
+      if (startMonth && endMonth) {
+        const formatMonth = (monthStr: string) => {
+          const [year, month] = monthStr.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1);
+          return format(date, "MMMM 'de' yyyy", { locale: ptBR });
+        };
+        
+        if (startMonth === endMonth) {
+          return `${formatMonth(startMonth)} (datas flexíveis)`;
+        } else {
+          return `${formatMonth(startMonth)} - ${formatMonth(endMonth)} (datas flexíveis)`;
+        }
+      }
+      return "Datas flexíveis";
+    } else {
+      // For specific dates
+      if (tripDetails.startDate && tripDetails.endDate) {
+        const startDate = new Date(tripDetails.startDate);
+        const endDate = new Date(tripDetails.endDate);
+        
+        // Check if dates are valid
+        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+          return `${format(startDate, "dd/MM/yyyy", { locale: ptBR })} - ${format(endDate, "dd/MM/yyyy", { locale: ptBR })}`;
+        }
+      }
+      return "Datas a definir";
+    }
+  };
+
   if (myPackageRequests === undefined && myPackageRequestsByMatch === undefined) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -171,265 +207,297 @@ const PackageRequestsSection: React.FC = () => {
     );
   }
 
-  const renderPackageRequestCard = (request: any) => (
-    <Card key={request._id} className="hover:shadow-md transition-shadow">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">Solicitação {request.requestNumber}</CardTitle>
-          <Badge className={getStatusColor(request.status)}>
-            {getStatusLabel(request.status)}
-          </Badge>
-        </div>
-        <p className="text-sm text-gray-500">
-          Criado em {format(new Date(request._creationTime), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Trip Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-500" />
-              <span>{request.tripDetails.destination}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <span>
-                {format(new Date(request.tripDetails.startDate), "dd/MM/yyyy", { locale: ptBR })} - {" "}
-                {format(new Date(request.tripDetails.endDate), "dd/MM/yyyy", { locale: ptBR })}
-              </span>
-            </div>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span>{request.tripDetails.groupSize} pessoas</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-gray-500" />
-              <span>R$ {request.tripDetails.budget.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Admin Notes */}
-        {request.adminNotes && (
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <h5 className="font-medium text-blue-900 mb-1">Nota da Administração</h5>
-            <p className="text-sm text-blue-800">{request.adminNotes}</p>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => openChatModal(request._id, request.requestNumber)}
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Chat com a Equipe
-          </Button>
-          {request.status === "proposal_sent" && (
-            <Button size="sm">
-              <Eye className="w-4 h-4 mr-2" />
-              Ver Proposta
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Minhas Solicitações de Pacotes</h2>
-          <Button asChild>
-            <Link href="/pacotes">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Solicitação
-            </Link>
-          </Button>
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Solicitações de Pacotes</h2>
+          <p className="text-gray-600">
+            Acompanhe suas solicitações de pacotes personalizados
+          </p>
         </div>
-        <p className="text-gray-600">
-          Aqui você pode acompanhar todas as suas solicitações de pacotes personalizados enviadas para nossa equipe.
-        </p>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Link href="/pacotes">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Solicitação
+          </Link>
+        </Button>
       </div>
 
-      {/* Search Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            Buscar Solicitação Específica
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <Input
-              placeholder="Digite o número de acompanhamento (ex: PKG-1234567890-ABC)"
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && searchPackageRequest()}
-            />
-            <Button onClick={searchPackageRequest} disabled={isSearching}>
-              {isSearching ? "Buscando..." : "Buscar"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Side - Search and Stats */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Search Card */}
+          <Card className="bg-white shadow-sm border border-gray-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Search className="w-5 h-5" />
+                Buscar Solicitação
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              <div className="space-y-3">
+                <Input
+                  placeholder="Número de acompanhamento..."
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchPackageRequest()}
+                  className="border-gray-200"
+                />
+                <Button 
+                  onClick={searchPackageRequest} 
+                  disabled={isSearching}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {isSearching ? "Buscando..." : "Buscar"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Search Results */}
-      {searchResults && (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Solicitação {searchResults.requestNumber}</CardTitle>
-              <Badge className={getStatusColor(searchResults.status)}>
-                {getStatusLabel(searchResults.status)}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Trip Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Detalhes da Viagem</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span>{searchResults.tripDetails.destination}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                    <span>
-                      {format(new Date(searchResults.tripDetails.startDate), "dd/MM/yyyy", { locale: ptBR })} - {" "}
-                      {format(new Date(searchResults.tripDetails.endDate), "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <span>{searchResults.tripDetails.groupSize} pessoas</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-gray-500" />
-                    <span>R$ {searchResults.tripDetails.budget.toLocaleString()}</span>
-                  </div>
+          {/* Quick Stats */}
+          <Card className="bg-white shadow-sm border border-gray-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Resumo</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Total</span>
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                    {finalPackageRequests?.length || 0}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Pendentes</span>
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-600">
+                    {finalPackageRequests?.filter(r => r.status === 'pending').length || 0}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Em Análise</span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-600">
+                    {finalPackageRequests?.filter(r => r.status === 'in_review').length || 0}
+                  </Badge>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Histórico de Status</h4>
-                <div className="space-y-3">
-                  {searchResults.statusHistory?.map((history: any, index: number) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        history.status === searchResults.status ? 'bg-blue-600' : 'bg-gray-300'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {getStatusLabel(history.status)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {format(new Date(history.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {history.description}
-                        </p>
+        {/* Right Side - Main Content */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Search Results */}
+          {searchResults && (
+            <Card className="bg-white shadow-sm border border-gray-200">
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Solicitação {searchResults.requestNumber}
+                  </CardTitle>
+                  <Badge className={getStatusColor(searchResults.status)}>
+                    {getStatusLabel(searchResults.status)}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-6">
+                {/* Trip Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Detalhes da Viagem</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{searchResults.tripDetails.destination}</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {formatTripDates(searchResults.tripDetails)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <Users className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{searchResults.tripDetails.groupSize} pessoas</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <DollarSign className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">R$ {searchResults.tripDetails.budget.toLocaleString()}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+                  </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => openChatModal(searchResults._id, searchResults.requestNumber)}
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Chat com a Equipe
-              </Button>
-              {searchResults.status === "proposal_sent" && (
-                <Button size="sm">
-                  <Eye className="w-4 h-4 mr-2" />
-                  Ver Proposta
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* My Package Requests */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Minhas Solicitações</h3>
-        
-        {finalPackageRequests && finalPackageRequests.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-                              <Badge variant="secondary" className="text-sm">
-                  {finalPackageRequests.length} solicitação{finalPackageRequests.length !== 1 ? 'ões' : ''} encontrada{finalPackageRequests.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-              {finalPackageRequests.map((request) => renderPackageRequestCard(request))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Email mismatch warning */}
-            {allPackageRequests && allPackageRequests.length > 0 && (
-              <Card className="border-orange-200 bg-orange-50">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <MessageCircle className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-orange-900 mb-1">
-                        Solicitações feitas com outro email?
-                      </p>
-                      <p className="text-sm text-orange-700 mb-3">
-                        Encontramos {allPackageRequests.length} solicitação{allPackageRequests.length !== 1 ? 'ões' : ''} no sistema, 
-                        mas elas podem ter sido feitas com um email diferente do atual ({user?.emailAddresses?.[0]?.emailAddress}).
-                      </p>
-                      <p className="text-xs text-orange-600">
-                        Se você fez solicitações com outro email, entre em contato conosco para vinculá-las à sua conta.
-                      </p>
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Histórico</h4>
+                    <div className="space-y-3">
+                      {searchResults.statusHistory?.map((history: any, index: number) => (
+                        <div key={index} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            history.status === searchResults.status ? 'bg-blue-600' : 'bg-gray-300'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                              {getStatusLabel(history.status)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {format(new Date(history.timestamp), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
 
-            <Card className="border-dashed border-2 border-gray-300">
-              <CardContent className="text-center py-12">
-                <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-900 mb-2">
-                  Você ainda não fez nenhuma solicitação
-                </h3>
-                <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                  Crie sua primeira solicitação de pacote personalizado e nossa equipe entrará em contato com uma proposta única para você!
-                </p>
-                <div className="space-y-3">
-                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
-                    <Link href="/pacotes">
-                      <Plus className="h-5 w-5 mr-2" />
-                      Fazer primeira solicitação
-                    </Link>
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => openChatModal(searchResults._id, searchResults.requestNumber)}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Chat
                   </Button>
-                  <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded">
-                    💡 <strong>Dica:</strong> Após enviar a solicitação, ela aparecerá aqui para acompanhamento do status
-                  </p>
+                  {searchResults.status === "proposal_sent" && (
+                    <Button size="sm">
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver Proposta
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* My Package Requests */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Minhas Solicitações</h3>
+            
+            {finalPackageRequests && finalPackageRequests.length > 0 ? (
+              <div className="space-y-4">
+                {finalPackageRequests.map((request) => (
+                  <Card key={request._id} className="bg-white shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-4">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg font-semibold text-gray-900">
+                          Solicitação {request.requestNumber}
+                        </CardTitle>
+                        <Badge className={getStatusColor(request.status)}>
+                          {getStatusLabel(request.status)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Criado em {format(new Date(request._creationTime), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="pt-0 space-y-4">
+                      {/* Trip Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">{request.tripDetails.destination}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              {formatTripDates(request.tripDetails)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">{request.tripDetails.groupSize} pessoas</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">R$ {request.tripDetails.budget.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Admin Notes */}
+                      {request.adminNotes && (
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <h5 className="font-medium text-blue-900 mb-1">Nota da Administração</h5>
+                          <p className="text-sm text-blue-800">{request.adminNotes}</p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex gap-3 pt-4 border-t border-gray-200">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openChatModal(request._id, request.requestNumber)}
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Chat
+                        </Button>
+                        {request.status === "proposal_sent" && (
+                          <Button size="sm">
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Proposta
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Email mismatch warning */}
+                {allPackageRequests && allPackageRequests.length > 0 && (
+                  <Card className="border-orange-200 bg-orange-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <MessageCircle className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-orange-900 mb-1">
+                            Solicitações feitas com outro email?
+                          </p>
+                          <p className="text-sm text-orange-700 mb-3">
+                            Encontramos {allPackageRequests.length} solicitação{allPackageRequests.length !== 1 ? 'ões' : ''} no sistema, 
+                            mas elas podem ter sido feitas com um email diferente.
+                          </p>
+                          <p className="text-xs text-orange-600">
+                            Entre em contato conosco para vinculá-las à sua conta.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card className="border-dashed border-2 border-gray-300">
+                  <CardContent className="text-center py-12">
+                    <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-xl font-medium text-gray-900 mb-2">
+                      Nenhuma solicitação encontrada
+                    </h3>
+                    <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                      Crie sua primeira solicitação de pacote personalizado
+                    </p>
+                    <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+                      <Link href="/pacotes">
+                        <Plus className="h-5 w-5 mr-2" />
+                        Fazer Solicitação
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Chat Modal */}

@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { clerkClient } from "@clerk/clerk-sdk-node";
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 /**
  * Internal action to create a user in Clerk

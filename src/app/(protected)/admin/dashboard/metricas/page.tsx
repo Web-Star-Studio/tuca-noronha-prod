@@ -29,6 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
+import { DashboardPageHeader } from "../components"
 
 type MetricCardProps = {
   title: string
@@ -66,7 +69,9 @@ function MetricCard({ title, value, change, icon: Icon, description, color }: Me
   )
 }
 
-export default function MetricsPage() {
+type TimeRange = "7d" | "30d" | "90d" | "1y";
+
+export default function MetricasPage() {
   const [timeRange, setTimeRange] = useState("30d")
   const [refreshing, setRefreshing] = useState(false)
 
@@ -105,18 +110,13 @@ export default function MetricsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-            <BarChart3 className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Métricas do Sistema</h1>
-            <p className="text-sm text-gray-600">
-              Acompanhe o desempenho e crescimento da plataforma
-            </p>
-          </div>
-        </div>
+      <DashboardPageHeader
+        title="Métricas do Sistema"
+        description="Acompanhe o desempenho e crescimento da plataforma"
+        icon={BarChart3}
+        iconBgClassName="bg-purple-100"
+        iconColorClassName="text-purple-600"
+      >
         <div className="flex gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-32">
@@ -143,7 +143,7 @@ export default function MetricsPage() {
             Exportar
           </Button>
         </div>
-      </div>
+      </DashboardPageHeader>
 
       {/* Métricas Principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

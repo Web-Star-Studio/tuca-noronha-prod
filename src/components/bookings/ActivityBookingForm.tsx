@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, Users, Clock, Ticket, MessageCircle } from "l
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -66,6 +67,9 @@ export function ActivityBookingForm({
   });
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
+  
+  // Get WhatsApp link generator
+  const { generateWhatsAppLink } = useWhatsAppLink();
 
   // Available times (customize based on activity)
   const availableTimes = [
@@ -323,7 +327,7 @@ export function ActivityBookingForm({
               className="w-full flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50"
               onClick={() => {
                 const message = `Olá! Gostaria de tirar dúvidas sobre a atividade "${activity.title}". Vocês podem me ajudar?`;
-                const whatsappUrl = `https://wa.me/5581999999999?text=${encodeURIComponent(message)}`;
+                const whatsappUrl = generateWhatsAppLink(message);
                 window.open(whatsappUrl, '_blank');
               }}
             >

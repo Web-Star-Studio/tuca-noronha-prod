@@ -46,6 +46,7 @@ import {
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { DashboardPageHeader } from "../components";
 
 type ActivityData = {
   _id: Id<"activities">;
@@ -164,19 +165,13 @@ export default function ActivitiesMasterPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
-            <Activity className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gestão de Atividades</h1>
-            <p className="text-sm text-gray-600">
-              Visão completa de todas as atividades da plataforma
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Gestão de Atividades"
+        description="Visão completa de todas as atividades da plataforma"
+        icon={Activity}
+        iconBgClassName="bg-purple-100"
+        iconColorClassName="text-purple-600"
+      />
 
       {/* Estatísticas */}
       {stats && (

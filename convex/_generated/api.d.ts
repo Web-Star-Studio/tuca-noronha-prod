@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as admin_functions from "../admin_functions.js";
 import type * as auth from "../auth.js";
 import type * as clerk from "../clerk.js";
 import type * as crons from "../crons.js";
@@ -38,6 +39,14 @@ import type * as domains_bookings_utils from "../domains/bookings/utils.js";
 import type * as domains_chat_index from "../domains/chat/index.js";
 import type * as domains_chat_mutations from "../domains/chat/mutations.js";
 import type * as domains_chat_queries from "../domains/chat/queries.js";
+import type * as domains_email_actions from "../domains/email/actions.js";
+import type * as domains_email_config from "../domains/email/config.js";
+import type * as domains_email_index from "../domains/email/index.js";
+import type * as domains_email_mutations from "../domains/email/mutations.js";
+import type * as domains_email_queries from "../domains/email/queries.js";
+import type * as domains_email_service from "../domains/email/service.js";
+import type * as domains_email_templates from "../domains/email/templates.js";
+import type * as domains_email_types from "../domains/email/types.js";
 import type * as domains_events_actions from "../domains/events/actions.js";
 import type * as domains_events_index from "../domains/events/index.js";
 import type * as domains_events_mutations from "../domains/events/mutations.js";
@@ -83,6 +92,10 @@ import type * as domains_restaurants_types from "../domains/restaurants/types.js
 import type * as domains_restaurants_utils from "../domains/restaurants/utils.js";
 import type * as domains_support_mutations from "../domains/support/mutations.js";
 import type * as domains_support_queries from "../domains/support/queries.js";
+import type * as domains_systemSettings_index from "../domains/systemSettings/index.js";
+import type * as domains_systemSettings_mutations from "../domains/systemSettings/mutations.js";
+import type * as domains_systemSettings_queries from "../domains/systemSettings/queries.js";
+import type * as domains_systemSettings_types from "../domains/systemSettings/types.js";
 import type * as domains_users_actions from "../domains/users/actions.js";
 import type * as domains_users_helpers from "../domains/users/helpers.js";
 import type * as domains_users_index from "../domains/users/index.js";
@@ -117,6 +130,7 @@ import type * as wishlist from "../wishlist.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  admin_functions: typeof admin_functions;
   auth: typeof auth;
   clerk: typeof clerk;
   crons: typeof crons;
@@ -142,6 +156,14 @@ declare const fullApi: ApiFromModules<{
   "domains/chat/index": typeof domains_chat_index;
   "domains/chat/mutations": typeof domains_chat_mutations;
   "domains/chat/queries": typeof domains_chat_queries;
+  "domains/email/actions": typeof domains_email_actions;
+  "domains/email/config": typeof domains_email_config;
+  "domains/email/index": typeof domains_email_index;
+  "domains/email/mutations": typeof domains_email_mutations;
+  "domains/email/queries": typeof domains_email_queries;
+  "domains/email/service": typeof domains_email_service;
+  "domains/email/templates": typeof domains_email_templates;
+  "domains/email/types": typeof domains_email_types;
   "domains/events/actions": typeof domains_events_actions;
   "domains/events/index": typeof domains_events_index;
   "domains/events/mutations": typeof domains_events_mutations;
@@ -187,6 +209,10 @@ declare const fullApi: ApiFromModules<{
   "domains/restaurants/utils": typeof domains_restaurants_utils;
   "domains/support/mutations": typeof domains_support_mutations;
   "domains/support/queries": typeof domains_support_queries;
+  "domains/systemSettings/index": typeof domains_systemSettings_index;
+  "domains/systemSettings/mutations": typeof domains_systemSettings_mutations;
+  "domains/systemSettings/queries": typeof domains_systemSettings_queries;
+  "domains/systemSettings/types": typeof domains_systemSettings_types;
   "domains/users/actions": typeof domains_users_actions;
   "domains/users/helpers": typeof domains_users_helpers;
   "domains/users/index": typeof domains_users_index;

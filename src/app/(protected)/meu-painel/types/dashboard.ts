@@ -49,6 +49,13 @@ export interface OverviewSectionProps {
   notifications: Notification[];
   onMarkAsRead: (id: string) => void;
   onSectionChange: (section: string) => void;
+  stats?: {
+    totalReservations: number;
+    activeReservations: number;
+    totalSpent: number;
+    favoriteLocations: string[];
+    completedTrips: number;
+  };
 }
 
 export interface StatCardProps {

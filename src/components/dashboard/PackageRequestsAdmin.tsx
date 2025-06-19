@@ -71,8 +71,42 @@ export default function PackageRequestsAdmin() {
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "Data não definida";
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? "Data inválida" : date.toLocaleDateString('pt-BR');
+  };
+
+  // Helper function to format trip dates (handles both specific and flexible dates)
+  const formatTripDates = (tripDetails: any) => {
+    if (tripDetails.flexibleDates) {
+      // For flexible dates, show months
+      const startMonth = tripDetails.startMonth;
+      const endMonth = tripDetails.endMonth;
+      
+      if (startMonth && endMonth) {
+        const formatMonth = (monthStr: string) => {
+          const [year, month] = monthStr.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1);
+          return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+        };
+        
+        if (startMonth === endMonth) {
+          return `${formatMonth(startMonth)} (flexível)`;
+        } else {
+          return `${formatMonth(startMonth)} - ${formatMonth(endMonth)} (flexível)`;
+        }
+      }
+      return "Datas flexíveis";
+    } else {
+      // For specific dates
+      if (tripDetails.startDate && tripDetails.endDate) {
+        return `${formatDate(tripDetails.startDate)} - ${formatDate(tripDetails.endDate)}`;
+      } else if (tripDetails.startDate) {
+        return formatDate(tripDetails.startDate);
+      }
+      return "Datas a definir";
+    }
   };
 
   const handleUpdateRequest = async () => {
@@ -240,7 +274,7 @@ export default function PackageRequestsAdmin() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          <span>{formatDate(request.tripDetails.startDate)}</span>
+                          <span>{formatTripDates(request.tripDetails)}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-4 w-4" />

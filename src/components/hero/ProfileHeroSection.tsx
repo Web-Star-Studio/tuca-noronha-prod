@@ -39,6 +39,18 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
         gradient: "from-indigo-500 to-indigo-600",
         image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
       },
+      notificacoes: {
+        title: "Notificações",
+        subtitle: "Acompanhe todas as suas notificações e atualizações importantes",
+        gradient: "from-purple-500 to-purple-600",
+        image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+      },
+      chats: {
+        title: "Conversas",
+        subtitle: "Acompanhe todas as suas conversas e mensagens",
+        gradient: "from-green-500 to-green-600",
+        image: "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+      },
       pacotes: {
         title: "Minhas Solicitações",
         subtitle: "Acompanhe o status das suas solicitações de pacotes personalizados", 
@@ -50,18 +62,6 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
         subtitle: "Descobra opções perfeitas para você",
         gradient: "from-purple-500 to-purple-600",
         image: "https://images.unsplash.com/photo-1614722860207-909e0e8dfd99?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3"
-      },
-      favoritos: {
-        title: "Meus Favoritos",
-        subtitle: "Seus destinos e experiências favoritas",
-        gradient: "from-pink-500 to-pink-600", 
-        image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-      },
-      ajuda: {
-        title: "Ajuda e Suporte", 
-        subtitle: "Encontre respostas e suporte quando precisar",
-        gradient: "from-emerald-500 to-emerald-600",
-        image: "https://images.unsplash.com/photo-1642846741306-1d9c79725bf8?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3"
       }
     };
     

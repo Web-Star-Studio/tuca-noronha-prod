@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
+import { DashboardPageHeader } from "../components"
 
 const eventTypeColors = {
   "music": "bg-purple-100 text-purple-800",
@@ -183,19 +184,11 @@ export default function EventosMasterPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-            <Calendar className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Gestão de Eventos</h1>
-            <p className="text-sm text-gray-600">
-              Visualizar e gerenciar todos os eventos do sistema
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Gestão de Eventos"
+        description="Visualizar e gerenciar todos os eventos do sistema"
+        icon={Calendar}
+      />
 
       {/* Estatísticas dos Eventos */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

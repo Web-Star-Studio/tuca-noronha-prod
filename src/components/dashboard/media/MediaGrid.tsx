@@ -7,7 +7,7 @@ import type { Id } from "@/../convex/_generated/dataModel"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Pencil, Trash2, Eye, Copy, AlertCircle } from "lucide-react"
+import { Pencil, Trash2, Eye, Copy, AlertCircle, Image as ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { MediaDetailsDialog } from "@/components/dashboard/media/MediaDetailsDialog"
 import { AnimatePresence, motion } from "framer-motion"
@@ -100,32 +100,19 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
 
   if (media.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="text-muted-foreground mb-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mx-auto"
-            aria-hidden="true"
-          >
-            <path d="M21 11v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8" />
-            <path d="m12 12 4-4" />
-            <path d="M17 3v4" />
-            <path d="M21 7h-4" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-medium">Nenhuma mídia encontrada</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Faça upload de imagens para começar a criar sua biblioteca de mídia.
-        </p>
-      </div>
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-16 text-center">
+          <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <ImageIcon className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground mb-3">
+            Nenhuma mídia encontrada
+          </h3>
+          <p className="text-muted-foreground">
+            Faça upload de imagens para começar a criar sua biblioteca de mídia
+          </p>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -161,33 +148,33 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
                       onClick={() => showDetails(item)}
                       size="icon"
                       variant="secondary"
-                      className={buttonStyles.size["icon-sm"]}
+                      className="h-8 w-8 bg-white/20 hover:bg-white/30 border-0 backdrop-blur-sm"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 text-white" />
                     </Button>
                     <Button
                       onClick={() => handleCopyUrl(item.url)}
                       size="icon"
                       variant="secondary"
-                      className={buttonStyles.size["icon-sm"]}
+                      className="h-8 w-8 bg-white/20 hover:bg-white/30 border-0 backdrop-blur-sm"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 text-white" />
                     </Button>
                     <Button
                       onClick={() => onEdit(item)}
                       size="icon"
                       variant="secondary"
-                      className={buttonStyles.size["icon-sm"]}
+                      className="h-8 w-8 bg-white/20 hover:bg-white/30 border-0 backdrop-blur-sm"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-4 w-4 text-white" />
                     </Button>
                     <Button
                       onClick={() => confirmDelete(item)}
                       size="icon"
-                      variant="destructive"
-                      className={buttonStyles.size["icon-sm"]}
+                      variant="secondary"
+                      className="h-8 w-8 bg-red-500/80 hover:bg-red-600/90 border-0 backdrop-blur-sm"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-white" />
                     </Button>
                   </div>
                 </div>
@@ -248,7 +235,7 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
       
       {/* Dialog de confirmação de exclusão */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-white">
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
@@ -278,7 +265,9 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{mediaToDelete.fileName}</p>
+                <p className="font-medium text-sm truncate" title={mediaToDelete.fileName}>
+                  {mediaToDelete.fileName}
+                </p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(mediaToDelete.fileSize)}</p>
               </div>
             </div>

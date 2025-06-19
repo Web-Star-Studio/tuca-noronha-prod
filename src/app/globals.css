@@ -72,6 +72,15 @@
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
   }
   
+  /* Safe area utilities for iOS devices */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  }
+  
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
   /* Mobile-specific improvements */
   @media (max-width: 768px) {
     /* Ensure mobile sidebars have proper stacking */

@@ -30,6 +30,7 @@ import { toast } from "sonner"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { RestaurantForm } from "@/components/dashboard/restaurants"
 import type { Restaurant } from "@/lib/services/restaurantService"
+import { DashboardPageHeader } from "../components"
 
 const organizationTypes = [
   {
@@ -195,7 +196,7 @@ export default function NovoEmpreendimentoPage() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => {
               if (step === 2) {
                 setStep(1)
@@ -203,12 +204,10 @@ export default function NovoEmpreendimentoPage() {
                 router.back()
               }
             }}
-            className="gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
-            {step === 2 ? "Voltar" : "Voltar"}
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold">
               {step === 1 ? "Criar Novo Empreendimento" : "Configurar Restaurante"}
             </h1>
@@ -402,6 +401,13 @@ export default function NovoEmpreendimentoPage() {
                 onSubmit={handleRestaurantSubmit}
                 onCancel={() => setStep(1)}
                 loading={isLoading}
+                isEmbedded={true}
+                initialData={{
+                  name: formData.name,
+                  phone: formData.phone,
+                  website: formData.website,
+                  description: formData.description,
+                }}
               />
             </CardContent>
           </Card>

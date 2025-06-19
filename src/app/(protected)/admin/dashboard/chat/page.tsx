@@ -4,15 +4,18 @@ import { useState } from "react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { ChatNotifications } from "@/components/dashboard/ChatNotifications";
 import { ChatList } from "@/components/chat/ChatList";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Bell, Users, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageCircle, Bell, Users, TrendingUp, Search } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
+import { ui } from "@/lib/ui-config";
+import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { DashboardPageHeader } from "../components";
 
 export default function ChatPage() {
   const { user } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Buscar estatísticas de chat
   const chatRooms = useQuery(api.domains.chat.queries.listChatRooms, {});
@@ -44,149 +47,167 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
-          <MessageCircle className="h-6 w-6 text-purple-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Central de Chat</h1>
-          <p className="text-sm text-gray-600">
-            Gerencie suas conversas e notificações de chat
-          </p>
-        </div>
-      </div>
+    <motion.div 
+      className="space-y-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header - Design Minimalista */}
+      <DashboardPageHeader
+        title="Central de Chat"
+        description="Gerencie suas conversas e notificações de chat"
+        icon={MessageCircle}
+        iconBgClassName="bg-purple-50"
+        iconColorClassName="text-purple-600"
+      />
 
-      {/* Statistics */}
+      {/* Statistics Cards - Layout Clean */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
                   Total de Conversas
                 </p>
-                <p className="text-2xl font-bold">{stats.totalChats}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.totalChats}</p>
               </div>
-              <MessageCircle className="h-8 w-8 text-purple-600" />
+              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                <MessageCircle className="h-5 w-5 text-purple-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
                   Conversas Ativas
                 </p>
                 <p className="text-2xl font-bold text-green-600">
                   {stats.activeChats}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-green-600" />
+              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <Users className="h-5 w-5 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Notificações Não Lidas
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Não Lidas
                 </p>
                 <p className="text-2xl font-bold text-orange-600">
                   {stats.unreadNotifications}
                 </p>
               </div>
-              <Bell className="h-8 w-8 text-orange-600" />
+              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                <Bell className="h-5 w-5 text-orange-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
                   Conversas Hoje
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
                   {stats.todayChats}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-blue-600" />
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="conversations">Conversas</TabsTrigger>
-          <TabsTrigger value="notifications">Notificações</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <ChatNotifications 
-              maxItems={5} 
-              showTitle={true}
-              className="h-fit"
-            />
+      {/* Main Content - Simplified Layout */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Conversas - Principal */}
+        <div className="lg:col-span-2">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Suas Conversas</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Gerencie todas as suas conversas de chat
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
             
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  Conversas Recentes
-                </CardTitle>
-                <CardDescription>
-                  Suas conversas mais recentes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChatList />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+            <CardContent className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar conversas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-muted/30 border-0 focus:bg-white transition-colors"
+                />
+              </div>
 
-        <TabsContent value="conversations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Todas as Conversas</CardTitle>
-              <CardDescription>
-                Gerencie todas as suas conversas de chat
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChatList />
+              {/* Chat List */}
+              <div className="bg-muted/20 rounded-lg p-1">
+                <ChatList 
+                  showWrapper={false}
+                  searchTerm={searchTerm}
+                />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notificações de Chat</CardTitle>
-              <CardDescription>
-                Todas as suas notificações relacionadas ao chat
-              </CardDescription>
+        {/* Notificações - Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                  <Bell className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Notificações</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Mensagens e atualizações recentes
+                  </p>
+                </div>
+              </div>
             </CardHeader>
+            
             <CardContent>
-              <ChatNotifications 
-                maxItems={20} 
-                showTitle={false}
-              />
+              <div className="bg-muted/20 rounded-lg p-1">
+                <ChatNotifications 
+                  maxItems={10} 
+                  showTitle={false}
+                  showWrapper={false}
+                />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+      </div>
+    </motion.div>
   );
 } 

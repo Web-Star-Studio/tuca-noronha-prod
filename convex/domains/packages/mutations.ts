@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, internalMutation } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import type { PackageCreateInput, PackageUpdateInput } from "./types";
 
@@ -590,11 +591,17 @@ const customerInfoValidator = v.object({
   occupation: v.optional(v.string()),
 });
 
-// Trip details validator
+// Trip details validator - updated to support flexible dates
 const tripDetailsValidator = v.object({
   destination: v.string(),
-  startDate: v.string(),
-  endDate: v.string(),
+  originCity: v.optional(v.string()), // Where the traveler is departing from
+  // For specific dates
+  startDate: v.optional(v.string()),
+  endDate: v.optional(v.string()),
+  // For flexible dates
+  startMonth: v.optional(v.string()),
+  endMonth: v.optional(v.string()),
+  flexibleDates: v.optional(v.boolean()),
   duration: v.number(),
   groupSize: v.number(),
   companions: v.string(),
@@ -646,17 +653,33 @@ export const createPackageRequest = mutation({
       throw new Error("Invalid email format");
     }
 
-    // Validate dates
-    const startDate = new Date(args.tripDetails.startDate);
-    const endDate = new Date(args.tripDetails.endDate);
-    const today = new Date();
-    
-    if (startDate < today) {
-      throw new Error("Start date cannot be in the past");
-    }
-    
-    if (endDate <= startDate) {
-      throw new Error("End date must be after start date");
+    // Validate dates (only for specific dates, not flexible dates)
+    if (!args.tripDetails.flexibleDates) {
+      if (!args.tripDetails.startDate || !args.tripDetails.endDate) {
+        throw new Error("Start date and end date are required when not using flexible dates");
+      }
+      
+      const startDate = new Date(args.tripDetails.startDate);
+      const endDate = new Date(args.tripDetails.endDate);
+      const today = new Date();
+      
+      if (startDate < today) {
+        throw new Error("Start date cannot be in the past");
+      }
+      
+      if (endDate <= startDate) {
+        throw new Error("End date must be after start date");
+      }
+    } else {
+      // For flexible dates, validate that months are provided
+      if (!args.tripDetails.startMonth || !args.tripDetails.endMonth) {
+        throw new Error("Start month and end month are required when using flexible dates");
+      }
+      
+      // Validate that end month is not before start month
+      if (args.tripDetails.endMonth < args.tripDetails.startMonth) {
+        throw new Error("End month cannot be before start month");
+      }
     }
 
     // Validate budget is positive number
@@ -682,6 +705,39 @@ export const createPackageRequest = mutation({
       adminNotes: "",
       createdAt: Date.now(),
       updatedAt: Date.now(),
+    });
+
+    // Send confirmation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageRequestReceivedEmail, {
+      customerEmail: args.customerInfo.email,
+      customerName: args.customerInfo.name,
+      requestNumber,
+      duration: args.tripDetails.duration,
+      guests: args.tripDetails.groupSize,
+      budget: args.tripDetails.budget,
+      destination: args.tripDetails.destination,
+      requestDetails: {
+        tripDetails: args.tripDetails,
+        preferences: args.preferences,
+        specialRequirements: args.specialRequirements,
+      },
+    });
+
+    // Notify master about new package request
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.notifyMasterNewPackageRequest, {
+      customerName: args.customerInfo.name,
+      customerEmail: args.customerInfo.email,
+      requestNumber,
+      duration: args.tripDetails.duration,
+      guests: args.tripDetails.groupSize,
+      budget: args.tripDetails.budget,
+      destination: args.tripDetails.destination,
+      requestDetails: {
+        customerInfo: args.customerInfo,
+        tripDetails: args.tripDetails,
+        preferences: args.preferences,
+        specialRequirements: args.specialRequirements,
+      },
     });
 
     return {

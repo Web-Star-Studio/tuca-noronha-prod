@@ -19,6 +19,7 @@ import {
 import { formatDate, cn, formatCurrency } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
 import { EventBookingForm } from "@/components/bookings";
+import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -30,16 +31,13 @@ interface EventDetailsProps {
   event: Event;
 }
 
-// Helper function to generate WhatsApp link
-const generateWhatsAppLink = (phoneNumber: string, eventTitle: string) => {
-  const message = encodeURIComponent(`Olá! Gostaria de reservar para o evento "${eventTitle}".`);
-  return `https://wa.me/${phoneNumber}?text=${message}`;
-};
-
 export default function EventDetails({ event }: EventDetailsProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  
+  // Get WhatsApp link generator
+  const { generateWhatsAppLink } = useWhatsAppLink();
   
   // Format date for display
   const eventDate = new Date(event.date);
@@ -417,17 +415,17 @@ export default function EventDetails({ event }: EventDetailsProps) {
                     </div>
                     
                     {/* WhatsApp Contact for events without Sympla */}
-                    {event.whatsappContact && !event.symplaUrl && (
+                    {!event.symplaUrl && (
                       <div className="p-4 bg-green-50/80 rounded-lg mt-4">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-green-800 font-medium">Contato Direto</h3>
+                          <h3 className="text-green-800 font-medium">Contato para Dúvidas</h3>
                           <div className="text-xs text-gray-500">via WhatsApp</div>
                         </div>
                         <p className="text-sm text-green-700 mb-3">
-                          Dúvidas? Entre em contato diretamente.
+                          Dúvidas sobre o evento? Entre em contato conosco.
                         </p>
                         <a
-                          href={generateWhatsAppLink(event.whatsappContact, event.title)}
+                          href={generateWhatsAppLink(`Olá! Gostaria de tirar dúvidas sobre o evento "${event.title}". Vocês podem me ajudar?`)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"

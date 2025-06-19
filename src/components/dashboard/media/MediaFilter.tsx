@@ -97,37 +97,35 @@ export function MediaFilter({
   ].reduce((a, b) => a + b, 0)
   
   return (
-    <div className={cn("flex flex-col md:flex-row gap-3 md:items-center", className, transitionEffects.appear.fadeIn)}>
-      {/* Search Input */}
-      <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Buscar por nome, descrição ou tags..."
-          className={cn("pl-9", formStyles.input.base)}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-1 top-1 h-8 w-8"
-            onClick={() => setSearchQuery("")}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Limpar busca</span>
-          </Button>
-        )}
-      </div>
-      
-      {/* Desktop Filters */}
-      <div className="hidden md:flex gap-3">
+    <div className={cn("space-y-4", className)}>
+      {/* Primary Filters Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="search"
+            placeholder="Buscar por nome, descrição..."
+            className="pl-10 border-0 bg-muted/30"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1 h-8 w-8"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className={cn("w-[180px]", formStyles.select.trigger)}>
+          <SelectTrigger className="border-0 bg-muted/30">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
-          <SelectContent className={formStyles.select.content}>
+          <SelectContent>
             {MEDIA_CATEGORIES.map((category) => (
               <SelectItem key={category.value} value={category.value}>
                 {category.label}
@@ -144,48 +142,31 @@ export function MediaFilter({
             else setFilterIsPublic(false)
           }}
         >
-          <SelectTrigger className={cn("w-[140px]", formStyles.select.trigger)}>
+          <SelectTrigger className="border-0 bg-muted/30">
             <SelectValue placeholder="Visibilidade" />
           </SelectTrigger>
-          <SelectContent className={formStyles.select.content}>
+          <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="public">Público</SelectItem>
             <SelectItem value="private">Privado</SelectItem>
           </SelectContent>
         </Select>
         
-        {activeFilterCount > 0 && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={resetFilters}
-            className={buttonStyles.variant.outline}
-          >
-            Limpar filtros
-            <Badge variant="secondary" className={cn("ml-2", badgeStyles.variant.secondary)}>
-              {activeFilterCount}
-            </Badge>
-          </Button>
-        )}
-      </div>
-      
-      {/* Mobile Filter Button */}
-      <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetTrigger asChild>
-          <Button 
-            variant="outline" 
-            className={cn("md:hidden", buttonStyles.variant.soft)}
-            onClick={() => setMobileFilterOpen(true)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtrar
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className={cn("ml-2", badgeStyles.variant.secondary)}>
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-        </SheetTrigger>
+        <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+          <SheetTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="border-0 bg-muted/30 hover:bg-muted/50 justify-start"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Tipos de Arquivo
+              {fileTypes.length > 0 && (
+                <Badge variant="secondary" className="ml-auto px-2 py-1 text-xs bg-blue-100 text-blue-700">
+                  {fileTypes.length}
+                </Badge>
+              )}
+            </Button>
+          </SheetTrigger>
         <SheetContent className={cardStyles.base}>
           <SheetHeader>
             <SheetTitle>Filtros</SheetTitle>
@@ -269,6 +250,63 @@ export function MediaFilter({
           </div>
         </SheetContent>
       </Sheet>
+      </div>
+
+      {/* Active Filters */}
+      {activeFilterCount > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+          
+          {searchQuery && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              Busca: {searchQuery}
+              <X 
+                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                onClick={() => setSearchQuery("")}
+              />
+            </Badge>
+          )}
+          
+          {category !== "all" && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              {MEDIA_CATEGORIES.find(c => c.value === category)?.label}
+              <X 
+                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                onClick={() => setCategory("all")}
+              />
+            </Badge>
+          )}
+          
+          {filterIsPublic !== null && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              {filterIsPublic ? "Público" : "Privado"}
+              <X 
+                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                onClick={() => setFilterIsPublic(null)}
+              />
+            </Badge>
+          )}
+          
+          {fileTypes.map(type => (
+            <Badge key={type} variant="outline" className="flex items-center gap-1">
+              {MEDIA_TYPES.find(t => t.value === type)?.label}
+              <X 
+                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                onClick={() => handleFileTypeToggle(type)}
+              />
+            </Badge>
+          ))}
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={resetFilters}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Limpar todos
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

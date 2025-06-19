@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardPageHeader } from "../components"
 
 const logTypeColors = {
   "create": "bg-green-100 text-green-800",
@@ -128,18 +129,11 @@ export default function LogsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-            <FileText className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Logs de Auditoria</h1>
-            <p className="text-sm text-gray-600">
-              Monitore todas as atividades e eventos do sistema
-            </p>
-          </div>
-        </div>
+      <DashboardPageHeader
+        title="Logs de Auditoria"
+        description="Monitore todas as atividades e eventos do sistema"
+        icon={FileText}
+      >
         <div className="flex gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-32">
@@ -166,7 +160,7 @@ export default function LogsPage() {
             Exportar
           </Button>
         </div>
-      </div>
+      </DashboardPageHeader>
 
       {/* Estatísticas dos Logs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -158,7 +158,7 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 overflow-hidden">
       {/* File Drop Area */}
       <div 
         className={cn(
@@ -187,10 +187,10 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
               alt="Preview" 
               className="h-48 max-w-full mx-auto object-contain rounded-md" 
             />
-            <div className="flex justify-center mt-2">
-              <div className="flex items-center text-sm text-green-600">
-                <Check className="w-4 h-4 mr-1" />
-                <span className="font-medium">
+            <div className="flex items-center justify-center gap-2 mt-2 px-2">
+              <div className="flex items-center text-sm text-green-600 min-w-0 flex-1 justify-center">
+                <Check className="w-4 h-4 mr-1 flex-shrink-0" />
+                <span className="font-medium truncate" title={selectedFile?.name}>
                   {selectedFile?.name} ({selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) : 0}MB)
                 </span>
               </div>
@@ -198,7 +198,7 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className={cn("ml-2", buttonStyles.size["icon-sm"])}
+                className={cn("flex-shrink-0", buttonStyles.size["icon-sm"])}
                 onClick={(e) => {
                   e.stopPropagation()
                   clearSelectedFile()

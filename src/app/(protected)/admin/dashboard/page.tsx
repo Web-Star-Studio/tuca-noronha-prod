@@ -1,6 +1,5 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
@@ -9,7 +8,6 @@ import {
   Calendar, 
   Store, 
   TrendingUp, 
-  ArrowUpRight,
   Building2,
   Car,
   Plus,
@@ -21,8 +19,6 @@ import {
   Star,
   DollarSign,
   BarChart3,
-  PieChart,
-  Bell,
   CheckCircle,
   Image,
   AlertCircle
@@ -34,6 +30,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { ChatNotifications } from "@/components/dashboard/ChatNotifications"
+import { StatsCard, DashboardSection, ActionCard, DashboardPageHeader } from "./components"
 
 // Master Dashboard Component for system-wide view
 function MasterDashboard() {
@@ -51,27 +48,55 @@ function MasterDashboard() {
     );
   }
 
+  const systemActions = [
+    {
+      title: "Gestão de Usuários",
+      description: "Gerenciar partners, employees e travellers",
+      icon: Users,
+      actions: [
+        { label: "Ver Todos", href: "/admin/dashboard/usuarios", variant: "default" as const },
+        { label: "Partners", href: "/admin/dashboard/usuarios?role=partner", variant: "outline" as const }
+      ]
+    },
+    {
+      title: "Todos os Assets",
+      description: "Visualizar e gerenciar todos os assets do sistema",
+      icon: Database,
+      actions: [
+        { label: "Ver Todos", href: "/admin/dashboard/assets", variant: "default" as const },
+        { label: "Inativos", href: "/admin/dashboard/assets?active=false", variant: "outline" as const }
+      ]
+    },
+    {
+      title: "Suporte",
+      description: "Gerenciar mensagens de suporte dos usuários",
+      icon: MessageSquare,
+      actions: [
+        { 
+          label: "Gerenciar", 
+          href: "/admin/dashboard/suporte", 
+          variant: "default" as const,
+          badge: supportStats.urgent
+        }
+      ]
+    }
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header do Master Admin */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
-            <Shield className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Painel Master Admin</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">Master</Badge>
-              <span className="text-sm text-gray-600">Administração do Sistema</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
+      <DashboardPageHeader
+        title="Painel Master Admin"
+        description="Visão geral e administração completa do sistema"
+        icon={Shield}
+        iconBgClassName="bg-purple-100"
+        iconColorClassName="text-purple-600"
+      >
+        <div className="flex gap-3">
           <Link href="/admin/dashboard/suporte">
             <Button variant="outline" className="gap-2">
               <MessageSquare className="h-4 w-4" />
-              Mensagens de Suporte
+              Suporte
               {supportStats.open > 0 && (
                 <Badge variant="destructive" className="ml-1">
                   {supportStats.open}
@@ -82,197 +107,108 @@ function MasterDashboard() {
           <Link href="/admin/dashboard/usuarios">
             <Button className="gap-2">
               <Users className="h-4 w-4" />
-              Gerenciar Usuários
+              Usuários
             </Button>
           </Link>
         </div>
-      </div>
+      </DashboardPageHeader>
 
-      {/* Cards de Estatísticas Gerais */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.users.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {systemStats.users.partners} partners, {systemStats.users.employees} employees
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Assets</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.assets.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {systemStats.assets.active} ativos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Organizações</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.organizations.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {systemStats.organizations.active} ativas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reservas</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.bookings.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {systemStats.bookings.pending} pendentes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Suporte</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{supportStats.total}</div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {supportStats.urgent > 0 && (
-                <div className="flex items-center gap-1 text-red-600">
-                  <AlertTriangle className="h-3 w-3" />
-                  {supportStats.urgent} urgentes
-                </div>
-              )}
-              {supportStats.urgent === 0 && `${supportStats.open} abertas`}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Estatísticas Gerais */}
+      <DashboardSection 
+        title="Estatísticas do Sistema" 
+        description="Visão geral dos recursos do sistema"
+        variant="elevated"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatsCard
+            title="Total de Usuários"
+            value={systemStats.users.total}
+            subtitle={`${systemStats.users.partners} partners, ${systemStats.users.employees} employees`}
+            icon={Users}
+            variant="info"
+          />
+          <StatsCard
+            title="Total de Assets"
+            value={systemStats.assets.total}
+            subtitle={`${systemStats.assets.active} ativos`}
+            icon={Database}
+            variant="default"
+          />
+          <StatsCard
+            title="Organizações"
+            value={systemStats.organizations.total}
+            subtitle={`${systemStats.organizations.active} ativas`}
+            icon={Building2}
+            variant="success"
+          />
+          <StatsCard
+            title="Reservas"
+            value={systemStats.bookings.total}
+            subtitle={`${systemStats.bookings.pending} pendentes`}
+            icon={Calendar}
+            variant="info"
+          />
+          <StatsCard
+            title="Suporte"
+            value={supportStats.total}
+            subtitle={supportStats.urgent > 0 ? `${supportStats.urgent} urgentes` : `${supportStats.open} abertas`}
+            icon={MessageSquare}
+            variant={supportStats.urgent > 0 ? "danger" : "default"}
+          />
+        </div>
+      </DashboardSection>
 
       {/* Breakdown de Assets */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Restaurantes</CardTitle>
-            <Store className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.assets.restaurants}</div>
-          </CardContent>
-        </Card>
+      <DashboardSection 
+        title="Assets por Categoria" 
+        description="Distribuição dos recursos cadastrados"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatsCard
+            title="Restaurantes"
+            value={systemStats.assets.restaurants}
+            icon={Store}
+            variant="default"
+          />
+          <StatsCard
+            title="Eventos"
+            value={systemStats.assets.events}
+            icon={Calendar}
+            variant="default"
+          />
+          <StatsCard
+            title="Atividades"
+            value={systemStats.assets.activities}
+            icon={Activity}
+            variant="default"
+          />
+          <StatsCard
+            title="Veículos"
+            value={systemStats.assets.vehicles}
+            icon={Car}
+            variant="default"
+          />
+          <StatsCard
+            title="Hospedagens"
+            value={systemStats.assets.accommodations}
+            icon={Building2}
+            variant="default"
+          />
+        </div>
+      </DashboardSection>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Eventos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.assets.events}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atividades</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.assets.activities}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Veículos</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.assets.vehicles}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hospedagens</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats.assets.accommodations}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions for Master */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Gestão de Usuários</CardTitle>
-            <CardDescription>
-              Gerenciar partners, employees e travellers
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Link href="/admin/dashboard/usuarios" className="flex-1">
-              <Button className="w-full">Ver Todos</Button>
-            </Link>
-            <Link href="/admin/dashboard/usuarios?role=partner">
-              <Button variant="outline">Partners</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Todos os Assets</CardTitle>
-            <CardDescription>
-              Visualizar e gerenciar todos os assets do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Link href="/admin/dashboard/assets" className="flex-1">
-              <Button className="w-full">Ver Todos</Button>
-            </Link>
-            <Link href="/admin/dashboard/assets?active=false">
-              <Button variant="outline">Inativos</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Suporte</CardTitle>
-            <CardDescription>
-              Gerenciar mensagens de suporte dos usuários
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Link href="/admin/dashboard/suporte" className="flex-1">
-              <Button className="w-full gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Gerenciar
-              </Button>
-            </Link>
-            {supportStats.urgent > 0 && (
-              <Badge variant="destructive">
-                {supportStats.urgent} urgentes
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Ações Rápidas */}
+      <DashboardSection 
+        title="Ações Rápidas" 
+        description="Acesso direto às principais funcionalidades"
+        variant="elevated"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {systemActions.map((action, index) => (
+            <ActionCard key={index} {...action} />
+          ))}
+        </div>
+      </DashboardSection>
     </div>
   )
 }
@@ -287,17 +223,6 @@ const getOrganizationTypeInfo = (type: string) => {
         mainMetric: "Reservas",
         assets: "Mesas e Cardápio"
       }
-    // Temporariamente desabilitado - accommodation
-    /*
-    case "accommodation":
-      return {
-        label: "Hospedagem",
-        icon: Building2,
-        description: "Pousada/Hotel",
-        mainMetric: "Ocupação",
-        assets: "Quartos e Suítes"
-      }
-    */
     case "rental_service":
       return {
         label: "Aluguel de Veículos",
@@ -338,23 +263,23 @@ function EmptyStateCard() {
   
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
-      <div className="rounded-full bg-blue-50 p-6 mb-4">
-        <Building2 className="h-12 w-12 text-blue-600" />
+      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6">
+        <Building2 className="h-8 w-8 text-blue-600" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+      <h3 className="text-2xl font-semibold text-gray-900 mb-3">
         Bem-vindo ao Dashboard
       </h3>
       {user?.role === "employee" ? (
-        <p className="text-gray-600 max-w-md mb-6">
+        <p className="text-gray-600 max-w-md mb-8 leading-relaxed">
           Aguarde que um partner atribua organizações para você gerenciar.
         </p>
       ) : user?.role === "master" ? (
-        <p className="text-gray-600 max-w-md mb-6">
+        <p className="text-gray-600 max-w-md mb-8 leading-relaxed">
           Use o menu lateral para acessar as funcionalidades de administração do sistema.
         </p>
       ) : (
         <>
-          <p className="text-gray-600 max-w-md mb-6">
+          <p className="text-gray-600 max-w-md mb-8 leading-relaxed">
             Para começar, crie sua primeira organização e comece a gerenciar seus empreendimentos.
           </p>
           {user && user.role === "partner" && (
@@ -382,31 +307,22 @@ function OrganizationDashboard() {
   const orgInfo = getOrganizationTypeInfo(activeOrganization.type)
   const Icon = orgInfo.icon
 
-  // Agrupa assets por tipo
-  const assetsByType = assets.reduce((acc, asset) => {
-    if (!acc[asset.assetType]) {
-      acc[asset.assetType] = []
-    }
-    acc[asset.assetType].push(asset)
-    return acc
-  }, {} as Record<string, any[]>)
-
   const totalAssets = assets.length
   const activeAssets = assets.filter(asset => asset.isActive).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header da Organização */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-            <Icon className="h-6 w-6 text-blue-600" />
+          <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
+            <Icon className="h-7 w-7 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{activeOrganization.name}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary">{orgInfo.label}</Badge>
-              <span className="text-sm text-gray-600">{orgInfo.description}</span>
+            <h1 className="text-3xl font-bold text-gray-900">{activeOrganization.name}</h1>
+            <div className="flex items-center gap-3 mt-1">
+              <Badge variant="secondary" className="border-blue-200">{orgInfo.label}</Badge>
+              <span className="text-gray-600">{orgInfo.description}</span>
             </div>
           </div>
         </div>
@@ -416,228 +332,197 @@ function OrganizationDashboard() {
         </Button>
       </div>
 
-      {/* Cards de Métricas */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de {orgInfo.assets}</CardTitle>
-            <Icon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalAssets}</div>
-            <p className="text-xs text-muted-foreground">
-              {activeAssets} ativos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{orgInfo.mainMetric} do Mês</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+0%</span> vs mês anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Colaboradores</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              Employees ativos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita</CardTitle>
-            <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 0</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+0%</span> vs mês anterior
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Métricas da Organização */}
+      <DashboardSection 
+        title="Métricas da Organização" 
+        description="Desempenho e estatísticas do seu negócio"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title={`Total de ${orgInfo.assets}`}
+            value={totalAssets}
+            subtitle={`${activeAssets} ativos`}
+            icon={Icon}
+            variant="info"
+          />
+          <StatsCard
+            title={`${orgInfo.mainMetric} do Mês`}
+            value={0}
+            subtitle="vs mês anterior"
+            icon={TrendingUp}
+            trend={{ value: "0%", isPositive: true }}
+            variant="success"
+          />
+          <StatsCard
+            title="Colaboradores"
+            value={0}
+            subtitle="Employees ativos"
+            icon={Users}
+            variant="default"
+          />
+          <StatsCard
+            title="Receita"
+            value="R$ 0"
+            subtitle="vs mês anterior"
+            icon={DollarSign}
+            trend={{ value: "0%", isPositive: true }}
+            variant="success"
+          />
+        </div>
+      </DashboardSection>
 
       {/* Chat List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Conversas Recentes</CardTitle>
-          <CardDescription>
-            Mensagens de clientes interessados em seus serviços
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChatList />
-        </CardContent>
-      </Card>
+      <DashboardSection 
+        title="Conversas Recentes" 
+        description="Mensagens de clientes interessados em seus serviços"
+        variant="elevated"
+      >
+        <ChatList />
+      </DashboardSection>
     </div>
   )
 }
 
 function PartnerDashboard() {
   const { activeOrganization, organizations } = useOrganization();
-  
-  // Buscar estatísticas gerais do partner
   const partnerStats = useQuery(api.domains.rbac.queries.getPartnerStats);
   
-  // Se não tem organização ativa, mostrar página de seleção
   if (!activeOrganization) {
     return <EmptyStateCard />;
   }
 
+  const quickActions = [
+    {
+      title: "Gerenciar Assets",
+      description: "Configurar e atualizar seus recursos",
+      icon: Building2,
+      actions: [
+        {
+          label: "Ver Assets",
+          href: `/admin/dashboard/${
+            activeOrganization.type === 'restaurant' ? 'restaurantes' : 
+            activeOrganization.type === 'event_service' ? 'eventos' :
+            activeOrganization.type === 'activity_service' ? 'atividades' :
+            activeOrganization.type === 'rental_service' ? 'veiculos' :
+            activeOrganization.type === 'accommodation' ? 'hospedagens' : 'assets'
+          }`,
+          variant: "default" as const
+        }
+      ]
+    },
+    {
+      title: "Reservas",
+      description: "Acompanhar e gerenciar reservas",
+      icon: Calendar,
+      actions: [
+        { label: "Ver Reservas", href: "/admin/dashboard/reservas", variant: "default" as const }
+      ]
+    },
+    {
+      title: "Equipe",
+      description: "Gerenciar colaboradores e usuários",
+      icon: Users,
+      actions: [
+        { label: "Colaboradores", href: "/admin/dashboard/colaboradores", variant: "outline" as const },
+        { label: "Relatórios", href: "/admin/dashboard/metricas", variant: "outline" as const }
+      ]
+    },
+    {
+      title: "Chat",
+      description: "Central de atendimento ao cliente",
+      icon: MessageCircle,
+      actions: [
+        { label: "Abrir Chat", href: "/admin/dashboard/chat", variant: "default" as const }
+      ]
+    }
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mt-1">
             Bem-vindo ao painel de controle - {activeOrganization.name}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Link href="/admin/dashboard/chat">
             <Button variant="outline" className="gap-2">
               <MessageCircle className="h-4 w-4" />
               Chat
             </Button>
           </Link>
-
         </div>
       </div>
 
       {/* Statistics Cards */}
       {partnerStats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Assets</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{partnerStats.totalAssets}</div>
-              <p className="text-xs text-muted-foreground">
-                +{partnerStats.recentAssets} este mês
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reservas do Mês</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{partnerStats.monthlyBookings}</div>
-              <p className="text-xs text-muted-foreground">
-                +{partnerStats.bookingGrowth}% vs mês anterior
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R$ {partnerStats.monthlyRevenue?.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                +{partnerStats.revenueGrowth}% vs mês anterior
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avaliação Média</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{partnerStats.averageRating}</div>
-              <p className="text-xs text-muted-foreground">
-                De {partnerStats.totalReviews} avaliações
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <DashboardSection 
+          title="Estatísticas" 
+          description="Desempenho do seu negócio"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatsCard
+              title="Total de Assets"
+              value={partnerStats.totalAssets}
+              subtitle={`+${partnerStats.recentAssets} este mês`}
+              icon={Building2}
+              variant="info"
+            />
+            <StatsCard
+              title="Reservas do Mês"
+              value={partnerStats.monthlyBookings}
+              icon={Calendar}
+              trend={{ value: `${partnerStats.bookingGrowth}%`, isPositive: partnerStats.bookingGrowth > 0 }}
+              variant="success"
+            />
+            <StatsCard
+              title="Receita Mensal"
+              value={`R$ ${partnerStats.monthlyRevenue?.toLocaleString()}`}
+              icon={DollarSign}
+              trend={{ value: `${partnerStats.revenueGrowth}%`, isPositive: partnerStats.revenueGrowth > 0 }}
+              variant="success"
+            />
+            <StatsCard
+              title="Avaliação Média"
+              value={partnerStats.averageRating}
+              subtitle={`De ${partnerStats.totalReviews} avaliações`}
+              icon={Star}
+              variant="warning"
+            />
+          </div>
+        </DashboardSection>
       )}
 
       {/* Main Content */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Chat Notifications */}
         <div className="lg:col-span-1">
-          <ChatNotifications 
-            maxItems={5} 
-            showTitle={true}
-            className="h-fit"
-          />
+          <DashboardSection title="Notificações" variant="elevated">
+            <ChatNotifications 
+              maxItems={5} 
+              showTitle={false}
+              className="h-fit"
+            />
+          </DashboardSection>
         </div>
 
         {/* Quick Actions */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Ações Rápidas</CardTitle>
-            <CardDescription>
-              Acesso rápido às principais funcionalidades
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <Link href={`/admin/dashboard/${activeOrganization.type === 'restaurant' ? 'restaurantes' : 
-                          activeOrganization.type === 'event_service' ? 'eventos' :
-                          activeOrganization.type === 'activity_service' ? 'atividades' :
-                          activeOrganization.type === 'rental_service' ? 'veiculos' :
-                          activeOrganization.type === 'accommodation' ? 'hospedagens' : 'assets'}`}>
-              <Button variant="outline" className="w-full justify-start">
-                <Building2 className="mr-2 h-4 w-4" />
-                Gerenciar Assets
-              </Button>
-            </Link>
-            
-            <Link href="/admin/dashboard/reservas">
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                Ver Reservas
-              </Button>
-            </Link>
-            
-            <Link href="/admin/dashboard/colaboradores">
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="mr-2 h-4 w-4" />
-                Colaboradores
-              </Button>
-            </Link>
-            
-            <Link href="/admin/dashboard/metricas">
-              <Button variant="outline" className="w-full justify-start">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Relatórios
-              </Button>
-            </Link>
-
-            <Link href="/admin/dashboard/chat">
-              <Button variant="outline" className="w-full justify-start">
-                <MessageCircle className="mr-2 h-4 w-4" />
-                Central de Chat
-              </Button>
-            </Link>
-            
-
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+          <DashboardSection 
+            title="Ações Rápidas" 
+            description="Acesso rápido às principais funcionalidades"
+            variant="elevated"
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              {quickActions.map((action, index) => (
+                <ActionCard key={index} {...action} />
+              ))}
+            </div>
+          </DashboardSection>
+        </div>
       </div>
     </div>
   );
@@ -646,30 +531,74 @@ function PartnerDashboard() {
 function EmployeeDashboard() {
   const { activeOrganization, organizations } = useOrganization();
   
-  // Se não tem organização ativa, mostrar página de seleção
   if (!activeOrganization) {
     return <EmptyStateCard />;
   }
 
+  const employeeActions = [
+    {
+      title: "Visualizar Assets",
+      description: "Consultar recursos da organização",
+      icon: Building2,
+      actions: [
+        {
+          label: "Ver Assets",
+          href: `/admin/dashboard/${
+            activeOrganization.type === 'restaurant' ? 'restaurantes' : 
+            activeOrganization.type === 'event_service' ? 'eventos' :
+            activeOrganization.type === 'activity_service' ? 'atividades' :
+            activeOrganization.type === 'rental_service' ? 'veiculos' :
+            activeOrganization.type === 'accommodation' ? 'hospedagens' : 'assets'
+          }`,
+          variant: "outline" as const
+        }
+      ]
+    },
+    {
+      title: "Ver Reservas",
+      description: "Acompanhar reservas da organização",
+      icon: Calendar,
+      actions: [
+        { label: "Ver Reservas", href: "/admin/dashboard/reservas", variant: "outline" as const }
+      ]
+    },
+    {
+      title: "Central de Chat",
+      description: "Atendimento ao cliente",
+      icon: MessageCircle,
+      actions: [
+        { label: "Abrir Chat", href: "/admin/dashboard/chat", variant: "outline" as const }
+      ]
+    },
+    {
+      title: "Mídias",
+      description: "Visualizar mídias da organização",
+      icon: Image,
+      actions: [
+        { label: "Ver Mídias", href: "/admin/dashboard/midias", variant: "outline" as const }
+      ]
+    }
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header - diferente para employee */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mt-1">
             Área de trabalho - {activeOrganization.name}
           </p>
-          <div className="mt-1 flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
+          <div className="mt-2 flex items-center gap-3">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
               Funcionário
             </Badge>
             <span className="text-sm text-gray-500">
-              • Acesso limitado às suas organizações atribuídas
+              Acesso limitado às suas organizações atribuídas
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Link href="/admin/dashboard/chat">
             <Button variant="outline" className="gap-2">
               <MessageCircle className="h-4 w-4" />
@@ -679,118 +608,74 @@ function EmployeeDashboard() {
         </div>
       </div>
 
-      {/* Employee specific cards - sem estatísticas financeiras */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Suas Organizações</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{organizations?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Organizações atribuídas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Organização Ativa</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-bold truncate">{activeOrganization.name}</div>
-            <p className="text-xs text-muted-foreground capitalize">
-              {activeOrganization.type.replace('_', ' ')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-bold text-green-600">Ativo</div>
-            <p className="text-xs text-muted-foreground">
-              Acesso autorizado
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content - ações limitadas para employee */}
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-        {/* Chat Notifications */}
-        <div>
-          <ChatNotifications 
-            maxItems={5} 
-            showTitle={true}
-            className="h-fit"
+      {/* Employee specific cards */}
+      <DashboardSection 
+        title="Informações da Conta" 
+        description="Status e organizações atribuídas"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatsCard
+            title="Suas Organizações"
+            value={organizations?.length || 0}
+            subtitle="Organizações atribuídas"
+            icon={Building2}
+            variant="info"
+          />
+          <StatsCard
+            title="Organização Ativa"
+            value={activeOrganization.name}
+            subtitle={activeOrganization.type.replace('_', ' ')}
+            icon={Users}
+            variant="default"
+          />
+          <StatsCard
+            title="Status"
+            value="Ativo"
+            subtitle="Acesso autorizado"
+            icon={CheckCircle}
+            variant="success"
           />
         </div>
+      </DashboardSection>
 
-        {/* Quick Actions for Employee - limitado */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Suas Ações</CardTitle>
-            <CardDescription>
-              Ações disponíveis para sua função
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            <Link href={`/admin/dashboard/${activeOrganization.type === 'restaurant' ? 'restaurantes' : 
-                          activeOrganization.type === 'event_service' ? 'eventos' :
-                          activeOrganization.type === 'activity_service' ? 'atividades' :
-                          activeOrganization.type === 'rental_service' ? 'veiculos' :
-                          activeOrganization.type === 'accommodation' ? 'hospedagens' : 'assets'}`}>
-              <Button variant="outline" className="w-full justify-start">
-                <Building2 className="mr-2 h-4 w-4" />
-                Visualizar Assets
-              </Button>
-            </Link>
-            
-            <Link href="/admin/dashboard/reservas">
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                Ver Reservas
-              </Button>
-            </Link>
-            
-            <Link href="/admin/dashboard/chat">
-              <Button variant="outline" className="w-full justify-start">
-                <MessageCircle className="mr-2 h-4 w-4" />
-                Central de Chat
-              </Button>
-            </Link>
-            
-            <Link href="/admin/dashboard/midias">
-              <Button variant="outline" className="w-full justify-start">
-                <Image className="mr-2 h-4 w-4" />
-                Mídias
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Chat Notifications */}
+        <DashboardSection title="Notificações" variant="elevated">
+          <ChatNotifications 
+            maxItems={5} 
+            showTitle={false}
+            className="h-fit"
+          />
+        </DashboardSection>
+
+        {/* Employee Actions */}
+        <DashboardSection 
+          title="Suas Ações" 
+          description="Ações disponíveis para sua função"
+          variant="elevated"
+        >
+          <div className="grid gap-4">
+            {employeeActions.map((action, index) => (
+              <ActionCard key={index} {...action} />
+            ))}
+          </div>
+        </DashboardSection>
       </div>
 
       {/* Employee Notice */}
-      <Card className="border-amber-200 bg-amber-50">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-amber-800">Acesso de Funcionário</h4>
-              <p className="text-sm text-amber-700 mt-1">
-                Você tem acesso apenas às organizações atribuídas pelo seu parceiro. 
-                Entre em contato com seu supervisor para solicitar acesso a outras áreas.
-              </p>
-            </div>
+      <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium text-amber-800 mb-1">Acesso de Funcionário</h4>
+            <p className="text-sm text-amber-700 leading-relaxed">
+              Você tem acesso apenas às organizações atribuídas pelo seu parceiro. 
+              Entre em contato com seu supervisor para solicitar acesso a outras áreas.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

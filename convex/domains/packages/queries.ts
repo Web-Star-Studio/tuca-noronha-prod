@@ -813,8 +813,14 @@ export const getMyPackageRequests = query({
     }),
     tripDetails: v.object({
       destination: v.string(),
-      startDate: v.string(),
-      endDate: v.string(),
+      originCity: v.optional(v.string()),
+      // For specific dates
+      startDate: v.optional(v.string()),
+      endDate: v.optional(v.string()),
+      // For flexible dates
+      startMonth: v.optional(v.string()),
+      endMonth: v.optional(v.string()),
+      flexibleDates: v.optional(v.boolean()),
       duration: v.number(),
       groupSize: v.number(),
       companions: v.string(),
