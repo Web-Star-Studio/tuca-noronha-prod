@@ -1,7 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { Instagram, Facebook, Twitter, Mail, Phone, ArrowRight } from "lucide-react";
+import { useSystemSettings } from "@/lib/hooks/useSystemSettings";
 
 const Footer = () => {
+  const { 
+    companyName, 
+    supportEmail, 
+    supportPhone, 
+    footerText,
+    whatsappNumber 
+  } = useSystemSettings();
   return (
     <footer className="bg-tuca-sand text-foreground py-20">
       <div className="container mx-auto px-6 md:px-12">
@@ -51,14 +61,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/passeios" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
-                  Passeios
-                </Link>
-              </li>
-
-              <li>
-                <Link href="/loja" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
-                  Loja
+                <Link href="/atividades" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
+                  Atividades
                 </Link>
               </li>
             </ul>
@@ -117,14 +121,14 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-start">
                 <Mail size={18} className="mr-3 mt-1 text-muted-foreground" />
-                <a href="mailto:karol@tucanoronha.com.br" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
-                  karol@tucanoronha.com.br
+                <a href={`mailto:${supportEmail}`} className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
+                  {supportEmail}
                 </a>
               </div>
               <div className="flex items-start">
                 <Phone size={18} className="mr-3 mt-1 text-muted-foreground" />
-                <a href="https://wa.me/5511968008888" className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
-                  +55 11 96800-8888
+                <a href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}`} className="text-muted-foreground hover:text-tuca-ocean-blue transition-colors">
+                  {supportPhone}
                 </a>
               </div>
             </div>
@@ -132,7 +136,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-16 pt-8 border-t border-gray-200 text-center text-muted-foreground text-sm">
-          <p>&copy; {new Date().getFullYear()} Tuca Noronha. Todos os direitos reservados.</p>
+          <p>{footerText}</p>
         </div>
       </div>
     </footer>

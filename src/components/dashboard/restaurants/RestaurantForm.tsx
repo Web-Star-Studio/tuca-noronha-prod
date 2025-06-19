@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Store } from "lucide-react";
 import Image from "next/image";
 
 export type WeekDay = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
@@ -25,6 +25,15 @@ interface RestaurantFormProps {
   onSubmit: (data: Restaurant) => void;
   onCancel: () => void;
   loading: boolean;
+  // Dados iniciais vindos do formulário de empreendimento
+  initialData?: {
+    name?: string;
+    phone?: string;
+    website?: string;
+    description?: string;
+  };
+  // Modo de criação dentro do fluxo de empreendimento
+  isEmbedded?: boolean;
 }
 
 export function RestaurantForm({
@@ -32,6 +41,8 @@ export function RestaurantForm({
   onSubmit,
   onCancel,
   loading,
+  initialData,
+  isEmbedded = false,
 }: RestaurantFormProps) {
   const isEditing = !!restaurant;
   const [mainMediaPickerOpen, setMainMediaPickerOpen] = useState(false);
@@ -74,7 +85,7 @@ export function RestaurantForm({
   const [paymentOptions, setPaymentOptions] = useState<string[]>(preparedRestaurant?.paymentOptions || []);
   const [galleryImages, setGalleryImages] = useState<string[]>(preparedRestaurant?.galleryImages || []);
   const [menuImages, setMenuImages] = useState<string[]>(preparedRestaurant?.menuImages || []);
-  const [currentTab, setCurrentTab] = useState("basic");
+  const [currentTab, setCurrentTab] = useState(isEmbedded ? "basic" : "basic");
   
   // Estados para inputs temporários
   const [tempCuisine, setTempCuisine] = useState("");
@@ -97,6 +108,21 @@ export function RestaurantForm({
 
   const [hours, setHours] = useState(preparedRestaurant?.hours || defaultHours);
   
+  // Função para gerar slug automaticamente
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[àáâãäå]/g, "a")
+      .replace(/[èéêë]/g, "e")
+      .replace(/[ìíîï]/g, "i")
+      .replace(/[òóôõö]/g, "o")
+      .replace(/[ùúûü]/g, "u")
+      .replace(/[ç]/g, "c")
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  };
+  
   // Form setup
   const {
     register,
@@ -106,10 +132,10 @@ export function RestaurantForm({
     watch,
   } = useForm<Restaurant>({
     defaultValues: preparedRestaurant || {
-      name: "",
-      slug: "",
-      description: "",
-      description_long: "",
+      name: initialData?.name || "",
+      slug: initialData?.name ? generateSlug(initialData.name) : "",
+      description: initialData?.description || "",
+      description_long: initialData?.description || "",
       address: {
         street: "",
         city: "Fernando de Noronha",
@@ -121,8 +147,8 @@ export function RestaurantForm({
           longitude: -32.4238,
         },
       },
-      phone: "",
-      website: "",
+      phone: initialData?.phone || "",
+      website: initialData?.website || "",
       cuisine: [],
       priceRange: "$$",
       diningStyle: "Casual",
@@ -284,21 +310,6 @@ export function RestaurantForm({
     setValue("hours", newHours);
   };
 
-  // Função para gerar slug automaticamente
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[àáâãäå]/g, "a")
-      .replace(/[èéêë]/g, "e")
-      .replace(/[ìíîï]/g, "i")
-      .replace(/[òóôõö]/g, "o")
-      .replace(/[ùúûü]/g, "u")
-      .replace(/[ç]/g, "c")
-      .replace(/[^a-z0-9]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-  };
-
   // Watch para nome do restaurante para gerar slug automaticamente
   const watchName = watch("name");
 
@@ -326,6 +337,12 @@ export function RestaurantForm({
     // Garantir que todas as listas estão incluídas
     const completeData = {
       ...data,
+      // Aplicar dados iniciais se estiver no modo embedded e os campos não foram preenchidos
+      name: data.name || initialData?.name || "",
+      phone: data.phone || initialData?.phone || "",
+      website: data.website || initialData?.website || "",
+      description: data.description || initialData?.description || "",
+      description_long: data.description_long || initialData?.description || "",
       cuisine: cuisineTypes,
       features: features,
       tags: tags,
@@ -363,38 +380,98 @@ export function RestaurantForm({
     <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
         <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-4">
-          <TabsTrigger value="basic">Básico</TabsTrigger>
+          <TabsTrigger value="basic">{isEmbedded ? "Config. Base" : "Básico"}</TabsTrigger>
           <TabsTrigger value="details">Detalhes</TabsTrigger>
           <TabsTrigger value="address">Endereço</TabsTrigger>
           <TabsTrigger value="hours">Horários</TabsTrigger>
           <TabsTrigger value="media">Mídia</TabsTrigger>
         </TabsList>
 
-        {/* Tab de informações básicas */}
-        <TabsContent value="basic" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Restaurante *</Label>
-              <Input
-                id="name"
-                placeholder="Ex: Cantinho Gourmet"
-                {...register("name", { required: "Nome é obrigatório" })}
-                error={errors.name?.message}
-              />
-              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug (URL) *</Label>
-              <Input
-                id="slug"
-                placeholder="Ex: cantinho-gourmet"
-                {...register("slug", { required: "Slug é obrigatório" })}
-                error={errors.slug?.message}
-              />
-              {errors.slug && <p className="text-sm text-red-500">{errors.slug.message}</p>}
+        {/* Mensagem informativa quando estiver no modo embedded */}
+        {isEmbedded && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Store className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-blue-900 mb-1">Configuração do Restaurante</h3>
+                <p className="text-sm text-blue-700 leading-relaxed">
+                  Configure agora os detalhes específicos do seu restaurante. As informações básicas 
+                  (nome, telefone, website) já foram preenchidas na etapa anterior.
+                </p>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Tab de informações básicas */}
+        <TabsContent value="basic" className="space-y-4">
+          {/* Mostrar campos de nome apenas quando não estiver no modo embedded ou quando estiver editando */}
+          {(!isEmbedded || isEditing) && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome do Restaurante *</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Cantinho Gourmet"
+                  {...register("name", { required: "Nome é obrigatório" })}
+                  error={errors.name?.message}
+                />
+                {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug (URL) *</Label>
+                <Input
+                  id="slug"
+                  placeholder="Ex: cantinho-gourmet"
+                  {...register("slug", { required: "Slug é obrigatório" })}
+                  error={errors.slug?.message}
+                />
+                {errors.slug && <p className="text-sm text-red-500">{errors.slug.message}</p>}
+              </div>
+            </div>
+          )}
+
+          {/* Preview dos dados herdados quando estiver no modo embedded */}
+          {isEmbedded && !isEditing && (initialData?.name || initialData?.phone || initialData?.website) && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Store className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-blue-900 mb-2">Dados do Empreendimento</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      {initialData?.name && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Nome:</span>
+                          <span className="ml-2 text-blue-800">{initialData.name}</span>
+                        </div>
+                      )}
+                      {initialData?.phone && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Telefone:</span>
+                          <span className="ml-2 text-blue-800">{initialData.phone}</span>
+                        </div>
+                      )}
+                      {initialData?.website && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Website:</span>
+                          <span className="ml-2 text-blue-800">{initialData.website}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                      ℹ️ Estes dados foram preenchidos na etapa anterior e serão aplicados automaticamente
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Seletor de mídia para imagem principal */}
           <MediaSelector
@@ -403,29 +480,34 @@ export function RestaurantForm({
             initialSelected={watch("mainImage") ? [watch("mainImage")] : []}
             onSelect={([url]) => setValue("mainImage", url)}
           />
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição Curta *</Label>
-            <Textarea
-              id="description"
-              placeholder="Breve descrição do restaurante"
-              {...register("description", { required: "Descrição é obrigatória" })}
-              error={errors.description?.message}
-              rows={2}
-            />
-            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
-          </div>
+          {/* Mostrar campos de descrição apenas quando não estiver no modo embedded ou quando estiver editando */}
+          {(!isEmbedded || isEditing) && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição Curta *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Breve descrição do restaurante"
+                  {...register("description", { required: "Descrição é obrigatória" })}
+                  error={errors.description?.message}
+                  rows={2}
+                />
+                {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description_long">Descrição Completa *</Label>
-            <Textarea
-              id="description_long"
-              placeholder="Descrição detalhada do restaurante"
-              {...register("description_long", { required: "Descrição completa é obrigatória" })}
-              error={errors.description_long?.message}
-              rows={4}
-            />
-            {errors.description_long && <p className="text-sm text-red-500">{errors.description_long.message}</p>}
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="description_long">Descrição Completa *</Label>
+                <Textarea
+                  id="description_long"
+                  placeholder="Descrição detalhada do restaurante"
+                  {...register("description_long", { required: "Descrição completa é obrigatória" })}
+                  error={errors.description_long?.message}
+                  rows={4}
+                />
+                {errors.description_long && <p className="text-sm text-red-500">{errors.description_long.message}</p>}
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -501,29 +583,32 @@ export function RestaurantForm({
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone *</Label>
-                <Input
-                  id="phone"
-                  placeholder="Ex: +55 21 99999-9999"
-                  {...register("phone", { required: "Telefone é obrigatório" })}
-                  error={errors.phone?.message}
-                />
-                {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
-              </div>
+          {/* Mostrar campos de contato apenas quando não estiver no modo embedded ou quando estiver editando */}
+          {(!isEmbedded || isEditing) && (
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone *</Label>
+                  <Input
+                    id="phone"
+                    placeholder="Ex: +55 21 99999-9999"
+                    {...register("phone", { required: "Telefone é obrigatório" })}
+                    error={errors.phone?.message}
+                  />
+                  {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  placeholder="Ex: https://www.restaurante.com"
-                  {...register("website")}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    placeholder="Ex: https://www.restaurante.com"
+                    {...register("website")}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           <div className="space-y-2">
             <Label className="text-sm font-medium">Imagem Principal *</Label>

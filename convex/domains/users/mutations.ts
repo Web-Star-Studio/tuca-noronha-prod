@@ -436,8 +436,8 @@ export const createEmployee = mutation({
         employeeId: employeeId,
       });
 
-      // Also schedule the cleanup of the request
-      await ctx.scheduler.runAfter(5000, internal.domains.users.actions.processEmployeeCreationRequests);
+      // Also schedule the cleanup of the request (commented out to fix API reference)
+      // await ctx.scheduler.runAfter(5000, internal.domains.users.actions.processEmployeeCreationRequests);
 
       return {
         employeeId,
@@ -446,6 +446,95 @@ export const createEmployee = mutation({
     } catch (error) {
       throw new Error(`Erro ao criar colaborador: ${error}`);
     }
+  },
+});
+
+/**
+ * Update user role (Masters and authorized users only)
+ */
+export const updateUserRole = mutation({
+  args: {
+    userId: v.id("users"),
+    role: v.union(
+      v.literal("traveler"),
+      v.literal("partner"),
+      v.literal("employee"),
+      v.literal("master")
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    // Only masters can change user roles
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas masters podem alterar papéis de usuários");
+    }
+
+    if (!currentUserId) {
+      throw new Error("ID do usuário atual não encontrado");
+    }
+
+    // Get the user to be updated
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Prevent masters from removing their own master role
+    if (user._id === currentUserId && user.role === "master" && args.role !== "master") {
+      throw new Error("Você não pode remover seu próprio papel de master");
+    }
+
+    // Update the user's role
+    await ctx.db.patch(args.userId, {
+      role: args.role,
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Toggle user active status (Masters only)
+ */
+export const toggleUserActive = mutation({
+  args: {
+    userId: v.id("users"),
+    isActive: v.boolean(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const currentUserRole = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+
+    // Only masters can activate/deactivate users
+    if (currentUserRole !== "master") {
+      throw new Error("Apenas masters podem ativar/desativar usuários");
+    }
+
+    if (!currentUserId) {
+      throw new Error("ID do usuário atual não encontrado");
+    }
+
+    // Get the user to be updated
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Prevent masters from deactivating themselves
+    if (user._id === currentUserId && !args.isActive) {
+      throw new Error("Você não pode desativar sua própria conta");
+    }
+
+    // Update the user's active status
+    await ctx.db.patch(args.userId, {
+      isActive: args.isActive,
+    });
+
+    return null;
   },
 });
 

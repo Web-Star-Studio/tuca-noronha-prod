@@ -402,6 +402,13 @@ export default function NovoEmpreendimentoPage() {
                 onSubmit={handleRestaurantSubmit}
                 onCancel={() => setStep(1)}
                 loading={isLoading}
+                isEmbedded={true}
+                initialData={{
+                  name: formData.name,
+                  phone: formData.phone,
+                  website: formData.website,
+                  description: formData.description,
+                }}
               />
             </CardContent>
           </Card>

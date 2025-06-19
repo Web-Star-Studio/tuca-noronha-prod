@@ -26,6 +26,9 @@ export function useDashboard() {
 
   // Mutations for notification management
   const markAsReadMutation = useMutation(api.domains.notifications.mutations.markAsRead);
+  
+  // Mutation for booking cancellation
+  const cancelBookingMutation = useMutation(api.domains.bookings.mutations.cancelBooking);
 
   const handleNewReservation = () => {
     router.push('/');
@@ -36,8 +39,38 @@ export function useDashboard() {
     router.push(`/reservas/${reservationId}`);
   };
 
-  const handleCancelReservation = (reservationId: string) => {
-    toast.error(`Cancelando reserva ${reservationId}`);
+  const handleCancelReservation = async (reservationId: string) => {
+    try {
+      // Find the reservation to get its type
+      const reservation = transformedReservations.find(r => r.id === reservationId);
+      
+      if (!reservation) {
+        toast.error("Reserva não encontrada");
+        return;
+      }
+
+      // Show confirmation dialog
+      const confirmed = window.confirm(
+        `Tem certeza que deseja cancelar a reserva "${reservation.name}"?\n\nEsta ação não pode ser desfeita.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Call the generic cancellation function
+      await cancelBookingMutation({
+        reservationId,
+        reservationType: reservation.type as any,
+        reason: "Cancelado pelo cliente",
+      });
+
+      toast.success("Reserva cancelada com sucesso!");
+      
+    } catch (error) {
+      console.error('Erro ao cancelar reserva:', error);
+      toast.error(`Erro ao cancelar reserva: ${error}`);
+    }
   };
 
   const markNotificationAsRead = async (id: string) => {

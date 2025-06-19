@@ -60,6 +60,7 @@ export default defineSchema({
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
+    isActive: v.optional(v.boolean()),                  // Status ativo/inativo do usuário
     
     // Campos de onboarding para travelers
     fullName: v.optional(v.string()),
@@ -1298,4 +1299,73 @@ export default defineSchema({
 
   // Cache de Recomendações
   cachedRecommendations: cachedRecommendationsTable,
+
+  // Configurações Globais do Sistema
+  systemSettings: defineTable({
+    key: v.string(),                            // Chave única da configuração
+    value: v.any(),                             // Valor da configuração (pode ser string, number, object, etc.)
+    type: v.union(
+      v.literal("string"),
+      v.literal("number"),
+      v.literal("boolean"),
+      v.literal("object"),
+      v.literal("array")
+    ),                                          // Tipo do valor para validação
+    category: v.union(
+      v.literal("communication"),               // Configurações de comunicação
+      v.literal("business"),                    // Configurações de negócio
+      v.literal("system"),                      // Configurações do sistema
+      v.literal("ui"),                         // Configurações de interface
+      v.literal("integration"),                // Configurações de integrações
+      v.literal("security")                    // Configurações de segurança
+    ),
+    description: v.string(),                    // Descrição da configuração
+    isPublic: v.boolean(),                      // Se pode ser acessada por não-admins
+    lastModifiedBy: v.id("users"),              // Último usuário que modificou
+    lastModifiedAt: v.number(),                 // Timestamp da última modificação
+    createdAt: v.number(),                      // Timestamp de criação
+  })
+    .index("by_key", ["key"])
+    .index("by_category", ["category"])
+    .index("by_public", ["isPublic"])
+    .index("by_category_public", ["category", "isPublic"]),
+
+  // Sistema de Logs de Email
+  emailLogs: defineTable({
+    type: v.union(
+      v.literal("booking_confirmation"),
+      v.literal("booking_cancelled"),
+      v.literal("booking_reminder"),
+      v.literal("package_request_received"),
+      v.literal("package_request_status_update"),
+      v.literal("partner_new_booking"),
+      v.literal("welcome_new_user"),
+      v.literal("new_partner_registration"),
+      v.literal("employee_invitation"),
+      v.literal("support_message"),
+      v.literal("payment_confirmation"),
+      v.literal("payment_failed"),
+      v.literal("review_request")
+    ),
+    to: v.string(),                             // Email do destinatário
+    subject: v.string(),                        // Assunto do email
+    status: v.union(
+      v.literal("sent"),
+      v.literal("failed"),
+      v.literal("pending")
+    ),
+    error: v.optional(v.string()),              // Mensagem de erro (se falhou)
+    sentAt: v.optional(v.number()),             // Timestamp de quando foi enviado
+    readAt: v.optional(v.number()),             // Timestamp de quando foi lido (se aplicável)
+    retryAt: v.optional(v.number()),            // Timestamp de tentativa de reenvio
+    createdAt: v.number(),                      // Timestamp de criação
+    updatedAt: v.optional(v.number()),          // Timestamp de última atualização
+  })
+    .index("by_type", ["type"])
+    .index("by_status", ["status"])
+    .index("by_recipient", ["to"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_sent_at", ["sentAt"])
+    .index("by_type_status", ["type", "status"])
+    .index("by_recipient_type", ["to", "type"]),
 });

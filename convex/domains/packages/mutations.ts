@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, internalMutation } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import type { PackageCreateInput, PackageUpdateInput } from "./types";
 
@@ -704,6 +705,39 @@ export const createPackageRequest = mutation({
       adminNotes: "",
       createdAt: Date.now(),
       updatedAt: Date.now(),
+    });
+
+    // Send confirmation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageRequestReceivedEmail, {
+      customerEmail: args.customerInfo.email,
+      customerName: args.customerInfo.name,
+      requestNumber,
+      duration: args.tripDetails.duration,
+      guests: args.tripDetails.groupSize,
+      budget: args.tripDetails.budget,
+      destination: args.tripDetails.destination,
+      requestDetails: {
+        tripDetails: args.tripDetails,
+        preferences: args.preferences,
+        specialRequirements: args.specialRequirements,
+      },
+    });
+
+    // Notify master about new package request
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.notifyMasterNewPackageRequest, {
+      customerName: args.customerInfo.name,
+      customerEmail: args.customerInfo.email,
+      requestNumber,
+      duration: args.tripDetails.duration,
+      guests: args.tripDetails.groupSize,
+      budget: args.tripDetails.budget,
+      destination: args.tripDetails.destination,
+      requestDetails: {
+        customerInfo: args.customerInfo,
+        tripDetails: args.tripDetails,
+        preferences: args.preferences,
+        specialRequirements: args.specialRequirements,
+      },
     });
 
     return {

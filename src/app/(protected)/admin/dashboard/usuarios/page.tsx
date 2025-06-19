@@ -73,9 +73,9 @@ export default function UsersPage() {
     limit: 1000
   });
   
-  // Mutations
-  const updateUserRole = useMutation(api.domains.users.mutations.updateUserRole);
-  const toggleUserActive = useMutation(api.domains.users.mutations.toggleUserActive);
+  // Mutations - usando as funções do admin_functions.ts
+  const updateUserRole = useMutation(api.admin_functions.updateUserRole);
+  const toggleUserActive = useMutation(api.admin_functions.toggleUserActive);
 
   // Filter users
   const filteredUsers = useMemo(() => {
@@ -93,7 +93,7 @@ export default function UsersPage() {
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         return (
-          user.name?.toLowerCase().includes(searchLower) ||
+          (user.fullName || user.name)?.toLowerCase().includes(searchLower) ||
           user.email?.toLowerCase().includes(searchLower) ||
           user.clerkId?.toLowerCase().includes(searchLower)
         );
@@ -341,16 +341,16 @@ export default function UsersPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.image} alt={user.name || "Usuário"} />
+                            <AvatarImage src={user.image} alt={(user.fullName || user.name) || "Usuário"} />
                             <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
-                              {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                              {(user.fullName || user.name)?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="font-semibold text-foreground">
-                                {user.name || "Nome não informado"}
+                                {user.fullName || user.name || "Nome não informado"}
                               </h3>
                               <Badge variant="outline" className={`${roleConfig.bg} ${roleConfig.color} border-current/20`}>
                                 <IconComponent className="w-3 h-3 mr-1" />
@@ -374,10 +374,10 @@ export default function UsersPage() {
                                   {user.email}
                                 </div>
                               )}
-                              {user.phone && (
+                              {(user.phoneNumber || user.phone) && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-4 w-4" />
-                                  {user.phone}
+                                  {user.phoneNumber || user.phone}
                                 </div>
                               )}
                               <div className="flex items-center gap-2">
@@ -436,15 +436,15 @@ export default function UsersPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedUser.image} alt={selectedUser.name} />
+                  <AvatarImage src={selectedUser.image} alt={selectedUser.fullName || selectedUser.name} />
                   <AvatarFallback className="bg-blue-100 text-blue-600">
-                    {selectedUser.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
+                    {(selectedUser.fullName || selectedUser.name)?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 Detalhes do Usuário
               </DialogTitle>
               <DialogDescription>
-                Informações completas sobre {selectedUser.name || "este usuário"}
+                Informações completas sobre {selectedUser.fullName || selectedUser.name || "este usuário"}
               </DialogDescription>
             </DialogHeader>
             
@@ -453,7 +453,7 @@ export default function UsersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Nome</label>
-                  <p className="text-foreground">{selectedUser.name || "Não informado"}</p>
+                  <p className="text-foreground">{selectedUser.fullName || selectedUser.name || "Não informado"}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Email</label>
@@ -461,7 +461,7 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Telefone</label>
-                  <p className="text-foreground">{selectedUser.phone || "Não informado"}</p>
+                  <p className="text-foreground">{selectedUser.phoneNumber || selectedUser.phone || "Não informado"}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Papel</label>

@@ -526,10 +526,22 @@ export const getPartnerBookings = query({
     vehicles: v.array(v.object({
       _id: v.id("vehicleBookings"),
       vehicleName: v.string(),
+      vehicleBrand: v.string(),
+      vehicleModel: v.string(),
       startDate: v.number(),
       endDate: v.number(),
       totalPrice: v.number(),
       status: v.string(),
+      pickupLocation: v.optional(v.string()),
+      returnLocation: v.optional(v.string()),
+      notes: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      customerInfo: v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+      }),
+      userId: v.id("users"),
     })),
   }),
   handler: async (ctx, args) => {
@@ -543,8 +555,8 @@ export const getPartnerBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || user.role !== "partner") {
-      throw new Error("Acesso negado - apenas partners");
+    if (!user || (user.role !== "partner" && user.role !== "employee" && user.role !== "master")) {
+      throw new Error("Acesso negado - apenas partners, employees e masters");
     }
 
     const result = {
@@ -580,10 +592,18 @@ export const getPartnerBookings = query({
       vehicles: [] as Array<{
         _id: any;
         vehicleName: string;
+        vehicleBrand: string;
+        vehicleModel: string;
         startDate: number;
         endDate: number;
         totalPrice: number;
         status: string;
+        pickupLocation?: string;
+        returnLocation?: string;
+        notes?: string;
+        partnerNotes?: string;
+        customerInfo: any;
+        userId: any;
       }>,
     };
 
@@ -681,10 +701,36 @@ export const getPartnerBookings = query({
 
     // Get partner's vehicles reservations
     if (!args.assetType || args.assetType === "vehicles") {
-      const vehicles = await ctx.db
-        .query("vehicles")
-        .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
-        .collect();
+      let vehicles;
+      
+      if (user.role === "master") {
+        // Masters see ALL vehicles in the system
+        vehicles = await ctx.db.query("vehicles").collect();
+      } else if (user.role === "partner") {
+        // Partners see only their own vehicles
+        vehicles = await ctx.db
+          .query("vehicles")
+          .withIndex("by_ownerId", (q) => q.eq("ownerId", user._id))
+          .collect();
+      } else if (user.role === "employee") {
+        // Employees see vehicles they have permission to manage
+        const permissions = await ctx.db
+          .query("assetPermissions")
+          .withIndex("by_employee_asset_type", (q) => q.eq("employeeId", user._id).eq("assetType", "vehicles"))
+          .collect();
+        
+        const vehicleIds = permissions.map(p => p.assetId);
+        vehicles = [];
+        
+        for (const vehicleId of vehicleIds) {
+          const vehicle = await ctx.db.get(vehicleId as any);
+          if (vehicle) {
+            vehicles.push(vehicle);
+          }
+        }
+      } else {
+        vehicles = [];
+      }
 
       for (const vehicle of vehicles) {
         let query = ctx.db
@@ -697,14 +743,31 @@ export const getPartnerBookings = query({
 
         const bookings = await query.collect();
         
-        result.vehicles.push(...bookings.map(booking => ({
-          _id: booking._id,
-          vehicleName: vehicle.name,
-          startDate: booking.startDate,
-          endDate: booking.endDate,
-          totalPrice: booking.totalPrice,
-          status: booking.status,
-        })));
+        for (const booking of bookings) {
+          // Get user information for customerInfo
+          const user = await ctx.db.get(booking.userId);
+          
+          result.vehicles.push({
+            _id: booking._id,
+            vehicleName: vehicle.name,
+            vehicleBrand: vehicle.brand,
+            vehicleModel: vehicle.model,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            totalPrice: booking.totalPrice,
+            status: booking.status,
+            pickupLocation: booking.pickupLocation,
+            returnLocation: booking.returnLocation,
+            notes: booking.notes,
+            partnerNotes: booking.partnerNotes,
+            customerInfo: {
+              name: user?.name || "Nome não disponível",
+              email: user?.email || "Email não disponível",
+              phone: user?.phone || "Telefone não disponível",
+            },
+            userId: booking.userId,
+          });
+        }
       }
     }
 
@@ -760,8 +823,8 @@ export const getActivityBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
-      throw new Error("Acesso negado - apenas admins, masters e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
+      throw new Error("Acesso negado - apenas admins, masters, partners e employees");
     }
 
     // For partners, only show bookings for their activities
@@ -1006,8 +1069,8 @@ export const getEventBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
-      throw new Error("Acesso negado - apenas admins, masters e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
+      throw new Error("Acesso negado - apenas admins, masters, partners e employees");
     }
 
     // For partners, only show bookings for their events
@@ -1249,8 +1312,8 @@ export const getRestaurantReservations = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
-      throw new Error("Acesso negado - apenas admins, masters e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
+      throw new Error("Acesso negado - apenas admins, masters, partners e employees");
     }
 
     // For partners, only show reservations for their restaurants
@@ -1506,8 +1569,8 @@ export const getVehicleBookings = query({
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master")) {
-      throw new Error("Acesso negado - apenas admins, masters e partners");
+    if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
+      throw new Error("Acesso negado - apenas admins, masters, partners e employees");
     }
 
     // For partners, only show bookings for their vehicles
@@ -1592,6 +1655,65 @@ export const getVehicleBookings = query({
         let vehicleQuery = ctx.db
           .query("vehicleBookings")
           .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicleId));
+
+        if (args.status && typeof args.status === "string") {
+          vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await vehicleQuery.collect();
+        filteredBookings.push(...bookings);
+      }
+
+      // Sort by creation time
+      filteredBookings.sort((a, b) => b._creationTime - a._creationTime);
+
+      const bookingsWithDetails = await Promise.all(
+        filteredBookings.map(async (booking) => {
+          const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          return {
+            ...booking,
+            vehicleName: vehicle?.name || "Veículo não encontrado",
+            vehicleBrand: vehicle?.brand || "",
+            vehicleModel: vehicle?.model || "",
+          };
+        })
+      );
+
+      return {
+        page: bookingsWithDetails,
+        isDone: true,
+        continueCursor: "",
+      };
+    }
+
+    // For employees, show bookings for vehicles they have permission to access
+    if (user.role === "employee") {
+      // Check employee permissions directly via database query
+      const assetPermissions = await ctx.db
+        .query("assetPermissions")
+        .withIndex("by_employee_asset_type", (q) => 
+          q.eq("employeeId", user._id).eq("assetType", "vehicles")
+        )
+        .collect();
+      
+      // Get IDs of vehicles the employee has permission to access
+      const accessibleVehicleIds = assetPermissions
+        .filter(p => p.permissions.includes("view") || p.permissions.includes("manage"))
+        .map(p => p.assetId);
+      
+      if (accessibleVehicleIds.length === 0) {
+        return {
+          page: [],
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+
+      let filteredBookings: any[] = [];
+      for (const vehicleId of accessibleVehicleIds) {
+        let vehicleQuery = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", vehicleId as any));
 
         if (args.status && typeof args.status === "string") {
           vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));

@@ -63,13 +63,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
 
   const handleMarkAllAsRead = async () => {
     try {
-      // Buscar o userId do usuário logado
-      const userIdResult = await fetch('/api/get-user-id').then(res => res.json());
-      if (!userIdResult?.userId) {
-        throw new Error("Usuário não encontrado");
-      }
-      
-      await markAllAsRead({ userId: userIdResult.userId });
+      await markAllAsRead({});
       toast.success("Todas as notificações foram marcadas como lidas");
     } catch (error) {
       toast.error("Erro ao marcar todas as notificações como lidas");

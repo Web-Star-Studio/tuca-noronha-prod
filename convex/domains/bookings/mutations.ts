@@ -123,6 +123,46 @@ export const createActivityBooking = mutation({
     // Record successful booking attempt for rate limiting
     await recordRateLimitAttempt(ctx, user._id, "CREATE_BOOKING");
 
+    // Send email confirmation to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+      customerEmail: args.customerInfo.email,
+      customerName: args.customerInfo.name,
+      assetName: activity.title,
+      bookingType: "activity",
+      confirmationCode,
+      bookingDate: args.date,
+      totalPrice: finalPrice,
+      bookingDetails: {
+        activityId: activity._id,
+        participants: args.participants,
+        date: args.date,
+        specialRequests: args.specialRequests,
+      },
+    });
+
+    // Send notification to partner about new booking
+    const partner = await ctx.db.get(activity.partnerId);
+    if (partner && partner.email) {
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+        partnerEmail: partner.email,
+        partnerName: partner.name || "Parceiro",
+        customerName: args.customerInfo.name,
+        customerEmail: args.customerInfo.email,
+        customerPhone: args.customerInfo.phone,
+        assetName: activity.title,
+        bookingType: "activity",
+        confirmationCode,
+        bookingDate: args.date,
+        totalPrice: finalPrice,
+        bookingDetails: {
+          activityId: activity._id,
+          participants: args.participants,
+          date: args.date,
+          specialRequests: args.specialRequests,
+        },
+      });
+    }
+
     return {
       bookingId,
       confirmationCode,
@@ -204,6 +244,48 @@ export const createEventBooking = mutation({
       updatedAt: Date.now(),
     });
 
+    // Send email confirmation to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+      customerEmail: args.customerInfo.email,
+      customerName: args.customerInfo.name,
+      assetName: event.title,
+      bookingType: "event",
+      confirmationCode,
+      bookingDate: `${event.date} às ${event.time}`,
+      totalPrice: finalPrice,
+      bookingDetails: {
+        eventId: event._id,
+        quantity: args.quantity,
+        ticketId: args.ticketId,
+        location: event.location,
+        specialRequests: args.specialRequests,
+      },
+    });
+
+    // Send notification to partner about new booking
+    const partner = await ctx.db.get(event.partnerId);
+    if (partner && partner.email) {
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+        partnerEmail: partner.email,
+        partnerName: partner.name || "Parceiro",
+        customerName: args.customerInfo.name,
+        customerEmail: args.customerInfo.email,
+        customerPhone: args.customerInfo.phone,
+        assetName: event.title,
+        bookingType: "event",
+        confirmationCode,
+        bookingDate: `${event.date} às ${event.time}`,
+        totalPrice: finalPrice,
+        bookingDetails: {
+          eventId: event._id,
+          quantity: args.quantity,
+          ticketId: args.ticketId,
+          location: event.location,
+          specialRequests: args.specialRequests,
+        },
+      });
+    }
+
     return {
       bookingId,
       confirmationCode,
@@ -279,6 +361,46 @@ export const createRestaurantReservation = mutation({
       status: BOOKING_STATUS.PENDING,
       confirmationCode,
     });
+
+    // Send email confirmation to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+      customerEmail: args.customerInfo.email,
+      customerName: args.customerInfo.name,
+      assetName: restaurant.name,
+      bookingType: "restaurant",
+      confirmationCode,
+      bookingDate: `${args.date} às ${args.time}`,
+      bookingDetails: {
+        restaurantId: restaurant._id,
+        partySize: args.partySize,
+        date: args.date,
+        time: args.time,
+        specialRequests: args.specialRequests,
+      },
+    });
+
+    // Send notification to partner about new booking
+    const partner = await ctx.db.get(restaurant.partnerId);
+    if (partner && partner.email) {
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+        partnerEmail: partner.email,
+        partnerName: partner.name || "Parceiro",
+        customerName: args.customerInfo.name,
+        customerEmail: args.customerInfo.email,
+        customerPhone: args.customerInfo.phone,
+        assetName: restaurant.name,
+        bookingType: "restaurant",
+        confirmationCode,
+        bookingDate: `${args.date} às ${args.time}`,
+        bookingDetails: {
+          restaurantId: restaurant._id,
+          partySize: args.partySize,
+          date: args.date,
+          time: args.time,
+          specialRequests: args.specialRequests,
+        },
+      });
+    }
 
     return {
       reservationId,
@@ -442,6 +564,16 @@ export const cancelActivityBooking = mutation({
       reason: args.reason,
     });
 
+    // Send cancellation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingCancelledEmail, {
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      assetName: activity.title,
+      bookingType: "activity",
+      confirmationCode: booking.confirmationCode,
+      reason: args.reason,
+    });
+
     return null;
   },
 });
@@ -484,6 +616,16 @@ export const cancelEventBooking = mutation({
       confirmationCode: booking.confirmationCode,
       customerEmail: booking.customerInfo.email,
       customerName: booking.customerInfo.name,
+      reason: args.reason,
+    });
+
+    // Send cancellation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingCancelledEmail, {
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      assetName: event.title,
+      bookingType: "event",
+      confirmationCode: booking.confirmationCode,
       reason: args.reason,
     });
 
@@ -890,9 +1032,48 @@ async function hasEmployeePermission(
   assetId: Id<"activities"> | Id<"events"> | Id<"restaurants"> | Id<"vehicles">, 
   permission: string
 ): Promise<boolean> {
-  // For now, return false since we don't have the proper asset permissions table
-  // This should be implemented when the asset permissions schema is defined
-  return false;
+  // Check if the user is an employee
+  const employee = await ctx.db.get(userId);
+  if (!employee || employee.role !== "employee") {
+    return false;
+  }
+  
+  // Determine asset type based on the asset ID structure
+  let assetType: string;
+  const assetIdStr = assetId.toString();
+  if (assetIdStr.includes("activities")) {
+    assetType = "activities";
+  } else if (assetIdStr.includes("events")) {
+    assetType = "events";
+  } else if (assetIdStr.includes("restaurants")) {
+    assetType = "restaurants";
+  } else if (assetIdStr.includes("vehicles")) {
+    assetType = "vehicles";
+  } else {
+    return false;
+  }
+  
+  // Check if employee has explicit permission for this asset
+  const assetPermissions = await ctx.db
+    .query("assetPermissions")
+    .withIndex("by_employee_asset_type", (q) => 
+      q.eq("employeeId", userId).eq("assetType", assetType)
+    )
+    .filter((q) => q.eq(q.field("assetId"), assetIdStr))
+    .collect();
+  
+  // If no permissions found, employee doesn't have access
+  if (assetPermissions.length === 0) {
+    return false;
+  }
+  
+  // If no specific permission required, having any permission is enough
+  if (!permission) {
+    return true;
+  }
+  
+  // Check if employee has the specific permission
+  return assetPermissions.some(p => p.permissions.includes(permission));
 }
 
 /**
@@ -1134,5 +1315,385 @@ export const seedTestReservations = mutation({
         reservationsCreated,
       };
     }
+  },
+});
+
+/**
+ * Generic booking cancellation function for travelers
+ * Determines the type of booking and calls the appropriate specific cancel function
+ */
+export const cancelBooking = mutation({
+  args: {
+    reservationId: v.string(),
+    reservationType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("accommodation")
+    ),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Check if user is a traveler (only travelers can cancel their own bookings through this function)
+    if (user.role !== "traveler") {
+      throw new Error("Apenas viajantes podem cancelar suas próprias reservas através desta função");
+    }
+
+    try {
+      // Call the appropriate specific cancel function based on reservation type
+      switch (args.reservationType) {
+        case "activity":
+          await ctx.runMutation(internal.domains.bookings.mutations.cancelActivityBookingInternal, {
+            bookingId: args.reservationId as Id<"activityBookings">,
+            userId: user._id,
+            reason: args.reason,
+          });
+          break;
+
+        case "event":
+          await ctx.runMutation(internal.domains.bookings.mutations.cancelEventBookingInternal, {
+            bookingId: args.reservationId as Id<"eventBookings">,
+            userId: user._id,
+            reason: args.reason,
+          });
+          break;
+
+        case "restaurant":
+          await ctx.runMutation(internal.domains.bookings.mutations.cancelRestaurantReservationInternal, {
+            reservationId: args.reservationId as Id<"restaurantReservations">,
+            userId: user._id,
+            reason: args.reason,
+          });
+          break;
+
+        case "vehicle":
+          await ctx.runMutation(internal.domains.bookings.mutations.cancelVehicleBookingInternal, {
+            bookingId: args.reservationId as Id<"vehicleBookings">,
+            userId: user._id,
+            reason: args.reason,
+          });
+          break;
+
+        case "accommodation":
+          await ctx.runMutation(internal.domains.bookings.mutations.cancelAccommodationBookingInternal, {
+            bookingId: args.reservationId as Id<"accommodationBookings">,
+            userId: user._id,
+            reason: args.reason,
+          });
+          break;
+
+        default:
+          throw new Error("Tipo de reserva não reconhecido");
+      }
+    } catch (error) {
+      throw new Error(`Erro ao cancelar reserva: ${error}`);
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Internal function to cancel activity booking with user permission validation
+ */
+export const cancelActivityBookingInternal = mutation({
+  args: {
+    bookingId: v.id("activityBookings"),
+    userId: v.id("users"),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Verify that the user owns this booking
+    if (booking.userId !== args.userId) {
+      throw new Error("Você não tem permissão para cancelar esta reserva");
+    }
+
+    if (booking.status === BOOKING_STATUS.CANCELED) {
+      throw new Error("Reserva já foi cancelada");
+    }
+
+    const activity = await ctx.db.get(booking.activityId);
+    if (!activity) {
+      throw new Error("Atividade não encontrada");
+    }
+
+    await ctx.db.patch(args.bookingId, {
+      status: BOOKING_STATUS.CANCELED,
+      updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingCancellationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "activity",
+      assetName: activity.title,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      reason: args.reason,
+    });
+
+    // Send cancellation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingCancelledEmail, {
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      assetName: activity.title,
+      bookingType: "activity",
+      confirmationCode: booking.confirmationCode,
+      reason: args.reason,
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Internal function to cancel event booking with user permission validation
+ */
+export const cancelEventBookingInternal = mutation({
+  args: {
+    bookingId: v.id("eventBookings"),
+    userId: v.id("users"),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Verify that the user owns this booking
+    if (booking.userId !== args.userId) {
+      throw new Error("Você não tem permissão para cancelar esta reserva");
+    }
+
+    if (booking.status === BOOKING_STATUS.CANCELED) {
+      throw new Error("Reserva já foi cancelada");
+    }
+
+    const event = await ctx.db.get(booking.eventId);
+    if (!event) {
+      throw new Error("Evento não encontrado");
+    }
+
+    await ctx.db.patch(args.bookingId, {
+      status: BOOKING_STATUS.CANCELED,
+      updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingCancellationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "event",
+      assetName: event.title,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      reason: args.reason,
+    });
+
+    // Send cancellation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingCancelledEmail, {
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      assetName: event.title,
+      bookingType: "event",
+      confirmationCode: booking.confirmationCode,
+      reason: args.reason,
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Internal function to cancel restaurant reservation with user permission validation
+ */
+export const cancelRestaurantReservationInternal = mutation({
+  args: {
+    reservationId: v.id("restaurantReservations"),
+    userId: v.id("users"),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.reservationId);
+    if (!reservation) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Verify that the user owns this reservation
+    if (reservation.userId !== args.userId) {
+      throw new Error("Você não tem permissão para cancelar esta reserva");
+    }
+
+    if (reservation.status === BOOKING_STATUS.CANCELED) {
+      throw new Error("Reserva já foi cancelada");
+    }
+
+    const restaurant = await ctx.db.get(reservation.restaurantId);
+    if (!restaurant) {
+      throw new Error("Restaurante não encontrado");
+    }
+
+    await ctx.db.patch(args.reservationId, {
+      status: BOOKING_STATUS.CANCELED,
+    });
+
+    // Schedule cancellation notification
+    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+      userId: reservation.userId,
+      type: "booking_canceled",
+      title: "Reserva de Restaurante Cancelada ❌",
+      message: `Sua reserva no "${restaurant.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      relatedId: reservation._id,
+      relatedType: "restaurant_booking",
+      data: {
+        confirmationCode: reservation.confirmationCode,
+        bookingType: "restaurant",
+        assetName: restaurant.name,
+      },
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Internal function to cancel vehicle booking with user permission validation
+ */
+export const cancelVehicleBookingInternal = mutation({
+  args: {
+    bookingId: v.id("vehicleBookings"),
+    userId: v.id("users"),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Verify that the user owns this booking
+    if (booking.userId !== args.userId) {
+      throw new Error("Você não tem permissão para cancelar esta reserva");
+    }
+
+    if (booking.status === BOOKING_STATUS.CANCELED) {
+      throw new Error("Reserva já foi cancelada");
+    }
+
+    const vehicle = await ctx.db.get(booking.vehicleId);
+    if (!vehicle) {
+      throw new Error("Veículo não encontrado");
+    }
+
+    await ctx.db.patch(args.bookingId, {
+      status: BOOKING_STATUS.CANCELED,
+      updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+      userId: booking.userId,
+      type: "booking_canceled",
+      title: "Reserva de Veículo Cancelada ❌",
+      message: `Sua reserva para "${vehicle.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      relatedId: booking._id,
+      relatedType: "vehicle_booking",
+      data: {
+        bookingType: "vehicle",
+        assetName: vehicle.name,
+      },
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Internal function to cancel accommodation booking with user permission validation
+ */
+export const cancelAccommodationBookingInternal = mutation({
+  args: {
+    bookingId: v.id("accommodationBookings"),
+    userId: v.id("users"),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Verify that the user owns this booking
+    if (booking.userId !== args.userId) {
+      throw new Error("Você não tem permissão para cancelar esta reserva");
+    }
+
+    if (booking.status === BOOKING_STATUS.CANCELED) {
+      throw new Error("Reserva já foi cancelada");
+    }
+
+    const accommodation = await ctx.db.get(booking.accommodationId);
+    if (!accommodation) {
+      throw new Error("Hospedagem não encontrada");
+    }
+
+    await ctx.db.patch(args.bookingId, {
+      status: BOOKING_STATUS.CANCELED,
+      updatedAt: Date.now(),
+    });
+
+    // Schedule cancellation notification
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingCancellationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "accommodation",
+      assetName: accommodation.name,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      reason: args.reason,
+    });
+
+    // Send cancellation email to customer
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingCancelledEmail, {
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      assetName: accommodation.name,
+      bookingType: "accommodation",
+      confirmationCode: booking.confirmationCode,
+      reason: args.reason,
+    });
+
+    return null;
   },
 });

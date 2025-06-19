@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Domain exports
  * This file provides access to all domain-specific functionality
@@ -31,4 +33,10 @@ export * as packages from "./packages";
 export * as chat from "./chat";
 
 // Export recommendations domain for cache and AI recommendations
-export * as recommendations from "./recommendations"; 
+export * as recommendations from "./recommendations";
+
+// Export email domain for automated email notifications
+export * as email from "./email";
+
+// Export system settings domain for global configuration management
+export * as systemSettings from "./systemSettings"; 

@@ -188,8 +188,11 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                           size="sm" 
                           onClick={() => onCancelReservation(reservation.id)} 
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={reservation.status === 'canceled' || reservation.status === 'completed'}
                         >
-                          Cancelar
+                          {reservation.status === 'canceled' ? 'Cancelada' : 
+                           reservation.status === 'completed' ? 'Finalizada' : 
+                           'Cancelar'}
                         </Button>
                       </div>
                     </CardFooter>

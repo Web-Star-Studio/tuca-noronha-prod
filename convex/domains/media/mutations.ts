@@ -11,6 +11,24 @@ import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from 
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    // Verificar se o usuário está autenticado
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const role = await getCurrentUserRole(ctx);
+    
+    // Permitir upload para partners, employees e masters
+    if (role !== "partner" && role !== "employee" && role !== "master") {
+      throw new Error("Apenas partners, employees e masters podem fazer upload de mídias");
+    }
+
     const uploadUrl = await ctx.storage.generateUploadUrl();
     return uploadUrl;
   },
@@ -29,11 +47,32 @@ export const createMedia = mutation({
     category: v.optional(v.string()),
     height: v.optional(v.int64()),
     width: v.optional(v.int64()),
-    uploadedBy: v.id("users"),
+    uploadedBy: v.optional(v.id("users")),
     isPublic: v.boolean(),
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
+    // Verificar se o usuário está autenticado
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const role = await getCurrentUserRole(ctx);
+    
+    // Permitir criação de mídia para partners, employees e masters
+    if (role !== "partner" && role !== "employee" && role !== "master") {
+      throw new Error("Apenas partners, employees e masters podem criar mídias");
+    }
+
+    // Garantir que o uploadedBy seja sempre o usuário atual (segurança)
+    const uploadedBy = currentUserId;
+
     // Gerar URL para a mídia
     const url = await ctx.storage.getUrl(args.storageId);
     if (!url) {
@@ -42,7 +81,17 @@ export const createMedia = mutation({
 
     // Criar o registro da mídia
     const mediaId = await ctx.db.insert("media", {
-      ...args,
+      storageId: args.storageId,
+      fileName: args.fileName,
+      fileType: args.fileType,
+      fileSize: args.fileSize,
+      description: args.description,
+      category: args.category,
+      height: args.height,
+      width: args.width,
+      uploadedBy,
+      isPublic: args.isPublic,
+      tags: args.tags,
       url,
     });
 
@@ -58,10 +107,48 @@ export const deleteMedia = mutation({
     id: v.id("media"),
   },
   handler: async (ctx, args) => {
+    // Verificar se o usuário está autenticado
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const role = await getCurrentUserRole(ctx);
+
     // Verificar se a mídia existe
     const media = await ctx.db.get(args.id);
     if (!media) {
       throw new Error("Mídia não encontrada");
+    }
+
+    // Verificar permissões
+    let canDelete = false;
+
+    if (role === "master") {
+      canDelete = true;
+    } else if (role === "partner") {
+      // Partner pode deletar suas próprias mídias
+      canDelete = media.uploadedBy === currentUserId;
+    } else if (role === "employee") {
+      // Employee pode deletar suas próprias mídias
+      if (media.uploadedBy === currentUserId) {
+        canDelete = true;
+      } else {
+        // Employee também pode deletar mídias do partner que o cadastrou
+        const employee = await ctx.db.get(currentUserId);
+        if (employee?.partnerId && media.uploadedBy === employee.partnerId) {
+          canDelete = true;
+        }
+      }
+    }
+
+    if (!canDelete) {
+      throw new Error("Não autorizado a deletar esta mídia");
     }
 
     // Excluir o arquivo do storage
@@ -92,10 +179,48 @@ export const updateMedia = mutation({
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
 
+    // Verificar se o usuário está autenticado
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const role = await getCurrentUserRole(ctx);
+
     // Verificar se a mídia existe
     const existingMedia = await ctx.db.get(id);
     if (!existingMedia) {
       throw new Error("Mídia não encontrada");
+    }
+
+    // Verificar permissões
+    let canUpdate = false;
+
+    if (role === "master") {
+      canUpdate = true;
+    } else if (role === "partner") {
+      // Partner pode atualizar suas próprias mídias
+      canUpdate = existingMedia.uploadedBy === currentUserId;
+    } else if (role === "employee") {
+      // Employee pode atualizar suas próprias mídias
+      if (existingMedia.uploadedBy === currentUserId) {
+        canUpdate = true;
+      } else {
+        // Employee também pode atualizar mídias do partner que o cadastrou
+        const employee = await ctx.db.get(currentUserId);
+        if (employee?.partnerId && existingMedia.uploadedBy === employee.partnerId) {
+          canUpdate = true;
+        }
+      }
+    }
+
+    if (!canUpdate) {
+      throw new Error("Não autorizado a atualizar esta mídia");
     }
 
     // Atualizar o registro
@@ -140,9 +265,47 @@ export const refreshMediaUrl = mutation({
     id: v.id("media"),
   },
   handler: async (ctx, args) => {
+    // Verificar se o usuário está autenticado
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    if (!currentUserId) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const role = await getCurrentUserRole(ctx);
+
     const media = await ctx.db.get(args.id);
     if (!media) {
       throw new Error("Mídia não encontrada");
+    }
+
+    // Verificar permissões
+    let canRefresh = false;
+
+    if (role === "master") {
+      canRefresh = true;
+    } else if (role === "partner") {
+      // Partner pode atualizar suas próprias mídias
+      canRefresh = media.uploadedBy === currentUserId;
+    } else if (role === "employee") {
+      // Employee pode atualizar suas próprias mídias
+      if (media.uploadedBy === currentUserId) {
+        canRefresh = true;
+      } else {
+        // Employee também pode atualizar mídias do partner que o cadastrou
+        const employee = await ctx.db.get(currentUserId);
+        if (employee?.partnerId && media.uploadedBy === employee.partnerId) {
+          canRefresh = true;
+        }
+      }
+    }
+
+    if (!canRefresh) {
+      throw new Error("Não autorizado a atualizar esta mídia");
     }
 
     const url = await ctx.storage.getUrl(media.storageId);

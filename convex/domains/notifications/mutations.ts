@@ -4,7 +4,6 @@ import { getCurrentUserOrThrow } from "../users/helpers";
 import {
   createNotificationValidator,
   markAsReadValidator,
-  markAllAsReadValidator,
   deleteNotificationValidator,
 } from "./types";
 
@@ -112,15 +111,10 @@ export const markAsRead = mutation({
  * Mark all notifications as read for the current user
  */
 export const markAllAsRead = mutation({
-  args: markAllAsReadValidator,
+  args: {},
   returns: v.number(),
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
-    
-    // Verify user can only mark their own notifications
-    if (args.userId !== user._id) {
-      throw new Error("Você só pode marcar suas próprias notificações como lidas");
-    }
     
     // Get all unread notifications for the user
     const unreadNotifications = await ctx.db

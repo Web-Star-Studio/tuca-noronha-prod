@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin, Utensils, 
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -66,6 +67,9 @@ export function RestaurantReservationForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
+  
+  // Get WhatsApp link generator
+  const { generateWhatsAppLink } = useWhatsAppLink();
 
   // Get available times based on restaurant hours and selected date
   const getAvailableTimes = () => {
@@ -347,7 +351,7 @@ export function RestaurantReservationForm({
               className="w-full flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50"
               onClick={() => {
                 const message = `Olá! Gostaria de tirar dúvidas sobre reservas no restaurante "${restaurant.name}". Vocês podem me ajudar?`;
-                const whatsappUrl = `https://wa.me/5581999999999?text=${encodeURIComponent(message)}`;
+                const whatsappUrl = generateWhatsAppLink(message);
                 window.open(whatsappUrl, '_blank');
               }}
             >

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useQuery, useMutation } from "convex/react"
+import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../../../../../convex/_generated/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -34,13 +34,17 @@ import {
   Edit3,
   Eye,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  RefreshCw,
+  Download
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
 import { ui } from "@/lib/ui-config"
 import { motion } from "framer-motion"
+import { EventForm } from "@/components/dashboard/events/EventForm"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 
 export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -48,16 +52,26 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showSyncModal, setShowSyncModal] = useState(false)
+  const [symplaToken, setSymplaToken] = useState("")
+  const [syncLoading, setSyncLoading] = useState(false)
+
+  // Get current user
+  const currentUser = useCurrentUser()
 
   // Fetch events
-  const events = useQuery(api.domains.events.queries.listEvents, {
-    limit: 100,
-  })
+  const events = useQuery(api.domains.events.queries.getEventsForAdmin, {})
 
   // Mutations
-  const deleteEvent = useMutation(api.domains.events.mutations.deleteEvent)
+  const deleteEvent = useMutation(api.domains.events.mutations.remove)
   const toggleEventFeatured = useMutation(api.domains.events.mutations.toggleFeatured)
   const toggleEventActive = useMutation(api.domains.events.mutations.toggleActive)
+  const createEvent = useMutation(api.domains.events.mutations.create)
+  const updateEvent = useMutation(api.domains.events.mutations.update)
+  
+  // Actions
+  const syncFromSympla = useAction(api.domains.events.actions.syncFromSympla)
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -68,8 +82,8 @@ export default function EventsPage() {
       if (statusFilter === "active" && !event.isActive) return false
       if (statusFilter === "inactive" && event.isActive) return false
       if (statusFilter === "featured" && !event.isFeatured) return false
-      if (statusFilter === "upcoming" && new Date(event.startDate) < new Date()) return false
-      if (statusFilter === "past" && new Date(event.endDate) > new Date()) return false
+      if (statusFilter === "upcoming" && new Date(event.date) < new Date()) return false
+      if (statusFilter === "past" && new Date(event.date) > new Date()) return false
       
       // Filter by search term
       if (searchTerm) {
@@ -95,14 +109,14 @@ export default function EventsPage() {
       total: events.length,
       active: events.filter(e => e.isActive).length,
       featured: events.filter(e => e.isFeatured).length,
-      upcoming: events.filter(e => new Date(e.startDate) > now).length,
-      past: events.filter(e => new Date(e.endDate) < now).length,
+      upcoming: events.filter(e => new Date(e.date) > now).length,
+      past: events.filter(e => new Date(e.date) < now).length,
     }
   }, [events])
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      await deleteEvent({ eventId })
+      await deleteEvent({ id: eventId })
       toast.success("Evento excluído com sucesso!")
       setConfirmDeleteId(null)
     } catch (error) {
@@ -111,9 +125,88 @@ export default function EventsPage() {
     }
   }
 
+  const handleCreateEvent = async (eventData: any) => {
+    if (!currentUser.user?._id) {
+      toast.error("Usuário não encontrado")
+      return
+    }
+
+    try {
+      const formattedData = {
+        title: eventData.title,
+        description: eventData.description,
+        shortDescription: eventData.shortDescription,
+        date: eventData.date,
+        time: eventData.time,
+        location: eventData.location,
+        address: eventData.address,
+        price: eventData.price,
+        category: eventData.category,
+        maxParticipants: eventData.maxParticipants,
+        imageUrl: eventData.imageUrl,
+        galleryImages: eventData.galleryImages || [],
+        highlights: eventData.highlights || [],
+        includes: eventData.includes || [],
+        additionalInfo: eventData.additionalInfo || [],
+        speaker: eventData.speaker || "",
+        speakerBio: eventData.speakerBio || "",
+        isFeatured: eventData.isFeatured,
+        isActive: eventData.isActive,
+        hasMultipleTickets: eventData.hasMultipleTickets || false,
+        partnerId: currentUser.user._id,
+        symplaUrl: eventData.symplaUrl || "",
+        whatsappContact: eventData.whatsappContact || "",
+      }
+
+      if (selectedEvent?._id) {
+        // Update existing event
+        await updateEvent({ id: selectedEvent._id, ...formattedData })
+        toast.success("Evento atualizado com sucesso!")
+      } else {
+        // Create new event
+        await createEvent(formattedData)
+        toast.success("Evento criado com sucesso!")
+      }
+      
+      setShowCreateModal(false)
+      setSelectedEvent(null)
+    } catch (error) {
+      toast.error(selectedEvent?._id ? "Erro ao atualizar evento" : "Erro ao criar evento")
+      console.error(error)
+    }
+  }
+
+  const handleSyncSympla = async () => {
+    if (!symplaToken.trim()) {
+      toast.error("Token do Sympla é obrigatório")
+      return
+    }
+
+    if (!currentUser.user?._id) {
+      toast.error("Usuário não encontrado")
+      return
+    }
+
+    setSyncLoading(true)
+    try {
+      await syncFromSympla({
+        symplaToken: symplaToken.trim(),
+        partnerId: currentUser.user._id
+      })
+      toast.success("Sincronização com Sympla realizada com sucesso!")
+      setShowSyncModal(false)
+      setSymplaToken("")
+    } catch (error) {
+      toast.error("Erro ao sincronizar com Sympla")
+      console.error(error)
+    } finally {
+      setSyncLoading(false)
+    }
+  }
+
   const handleToggleFeatured = async (eventId: string, featured: boolean) => {
     try {
-      await toggleEventFeatured({ eventId, featured })
+      await toggleEventFeatured({ id: eventId, isFeatured: featured })
       toast.success(featured ? "Evento destacado!" : "Destaque removido!")
     } catch (error) {
       toast.error("Erro ao alterar destaque")
@@ -123,7 +216,7 @@ export default function EventsPage() {
 
   const handleToggleActive = async (eventId: string, active: boolean) => {
     try {
-      await toggleEventActive({ eventId, active })
+      await toggleEventActive({ id: eventId, isActive: active })
       toast.success(active ? "Evento ativado!" : "Evento desativado!")
     } catch (error) {
       toast.error("Erro ao alterar status")
@@ -138,12 +231,11 @@ export default function EventsPage() {
 
   const getEventStatus = (event: any) => {
     const now = new Date()
-    const startDate = new Date(event.startDate)
-    const endDate = new Date(event.endDate)
+    const eventDate = new Date(event.date)
 
     if (!event.isActive) return { label: "Inativo", color: "bg-gray-100 text-gray-800" }
-    if (endDate < now) return { label: "Finalizado", color: "bg-blue-100 text-blue-800" }
-    if (startDate > now) return { label: "Futuro", color: "bg-green-100 text-green-800" }
+    if (eventDate < now) return { label: "Finalizado", color: "bg-blue-100 text-blue-800" }
+    if (eventDate > now) return { label: "Futuro", color: "bg-green-100 text-green-800" }
     return { label: "Em Andamento", color: "bg-yellow-100 text-yellow-800" }
   }
 
@@ -171,10 +263,24 @@ export default function EventsPage() {
             </div>
           </div>
           
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
-            <Plus className="h-4 w-4" />
-            Criar Evento
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => setShowSyncModal(true)}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Sincronizar Sympla
+            </Button>
+            
+            <Button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Criar Evento
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -315,7 +421,10 @@ export default function EventsPage() {
                 }
               </p>
               {!searchTerm && (
-                <Button className="gap-2">
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="gap-2"
+                >
                   <Plus className="h-4 w-4" />
                   Criar Primeiro Evento
                 </Button>
@@ -370,11 +479,11 @@ export default function EventsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Calendar className="w-4 h-4" />
-                                {format(new Date(event.startDate), "PPP", { locale: ptBR })}
+                                {format(new Date(event.date), "PPP", { locale: ptBR })}
                               </div>
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Clock className="w-4 h-4" />
-                                {format(new Date(event.startDate), "p", { locale: ptBR })}
+                                {event.time}
                               </div>
                               {event.location && (
                                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -385,7 +494,7 @@ export default function EventsPage() {
                               {event.maxParticipants && (
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Users className="w-4 h-4" />
-                                  Máx. {event.maxParticipants} pessoas
+                                  Máx. {Number(event.maxParticipants)} pessoas
                                 </div>
                               )}
                               {event.price && (
@@ -427,6 +536,10 @@ export default function EventsPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => {
+                              setSelectedEvent(event)
+                              setShowCreateModal(true)
+                            }}
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -487,15 +600,15 @@ export default function EventsPage() {
                   <p className="text-foreground mt-1">{selectedEvent.category || "Não informada"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Data de Início</label>
+                  <label className="text-sm font-medium text-muted-foreground">Data do Evento</label>
                   <p className="text-foreground mt-1">
-                    {format(new Date(selectedEvent.startDate), "PPP 'às' p", { locale: ptBR })}
+                    {format(new Date(selectedEvent.date), "PPP", { locale: ptBR })}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Data de Término</label>
+                  <label className="text-sm font-medium text-muted-foreground">Horário</label>
                   <p className="text-foreground mt-1">
-                    {format(new Date(selectedEvent.endDate), "PPP 'às' p", { locale: ptBR })}
+                    {selectedEvent.time}
                   </p>
                 </div>
                 <div>
@@ -511,7 +624,7 @@ export default function EventsPage() {
                 {selectedEvent.maxParticipants && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Máximo de Participantes</label>
-                    <p className="text-foreground mt-1">{selectedEvent.maxParticipants} pessoas</p>
+                    <p className="text-foreground mt-1">{Number(selectedEvent.maxParticipants)} pessoas</p>
                   </div>
                 )}
                 <div>
@@ -529,7 +642,12 @@ export default function EventsPage() {
               <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
                 Fechar
               </Button>
-              <Button>
+              <Button
+                onClick={() => {
+                  setShowDetailsDialog(false)
+                  setShowCreateModal(true)
+                }}
+              >
                 <Edit3 className="w-4 h-4 mr-2" />
                 Editar Evento
               </Button>
@@ -574,6 +692,111 @@ export default function EventsPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Create Event Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Calendar className="h-6 w-6 text-purple-600" />
+              {selectedEvent ? "Editar Evento" : "Criar Novo Evento"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedEvent 
+                ? "Edite as informações do evento abaixo" 
+                : "Preencha as informações do evento para criá-lo na plataforma"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <EventForm
+            event={selectedEvent}
+            onSubmit={handleCreateEvent}
+            onCancel={() => {
+              setShowCreateModal(false)
+              setSelectedEvent(null)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Sympla Sync Modal */}
+      <Dialog open={showSyncModal} onOpenChange={setShowSyncModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Download className="h-6 w-6 text-blue-600" />
+              Sincronizar com Sympla
+            </DialogTitle>
+            <DialogDescription>
+              Importe eventos diretamente da sua conta Sympla
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                Token de Acesso do Sympla
+              </label>
+              <Input
+                type="password"
+                placeholder="Cole seu token do Sympla aqui..."
+                value={symplaToken}
+                onChange={(e) => setSymplaToken(e.target.value)}
+                className="mt-2"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Você pode encontrar seu token na seção "API" do painel do Sympla
+              </p>
+            </div>
+            
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex gap-3">
+                <RefreshCw className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-800">
+                    Como funciona a sincronização?
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Seus eventos do Sympla serão importados e sincronizados automaticamente.
+                    Eventos existentes serão atualizados, novos eventos serão criados.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowSyncModal(false)
+                setSymplaToken("")
+              }}
+              disabled={syncLoading}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSyncSympla}
+              disabled={!symplaToken.trim() || syncLoading}
+              className="gap-2"
+            >
+              {syncLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Sincronizar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   )
 }

@@ -21,6 +21,7 @@ import {
   Users,
   Palette,
   DollarSign,
+  MessageCircle,
 } from "lucide-react";
 
 // Shadcn components
@@ -31,10 +32,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
+import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
 
 export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const [isFavorite, setIsFavorite] = useState(false);
+  
+  // Get WhatsApp link generator
+  const { generateWhatsAppLink } = useWhatsAppLink();
   
   // Fetch vehicle data from Convex
   const vehicle = useQuery(api.domains.vehicles.queries.getVehicle, {
@@ -327,8 +332,17 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                     <p className="text-sm text-gray-600 mb-3">
                       Nossa equipe está disponível para responder suas perguntas.
                     </p>
-                    <Button variant="outline" className="w-full">
-                      Entre em contato
+                    <Button 
+                      variant="outline" 
+                      className="w-full gap-2 text-green-600 border-green-300 hover:bg-green-50"
+                      onClick={() => {
+                        const message = `Olá! Gostaria de tirar dúvidas sobre o aluguel do veículo ${vehicle.brand} ${vehicle.model}. Vocês podem me ajudar?`;
+                        const whatsappUrl = generateWhatsAppLink(message);
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Entre em contato via WhatsApp
                     </Button>
                   </CardContent>
                 </Card>
