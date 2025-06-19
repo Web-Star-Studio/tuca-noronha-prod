@@ -31,6 +31,7 @@ import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { ChatNotifications } from "@/components/dashboard/ChatNotifications"
 import { StatsCard, DashboardSection, ActionCard, DashboardPageHeader } from "./components"
+import { EmailTestDialog } from "@/components/dashboard/EmailTestDialog"
 
 // Master Dashboard Component for system-wide view
 function MasterDashboard() {
@@ -93,6 +94,7 @@ function MasterDashboard() {
         iconColorClassName="text-purple-600"
       >
         <div className="flex gap-3">
+          <EmailTestDialog />
           <Link href="/admin/dashboard/suporte">
             <Button variant="outline" className="gap-2">
               <MessageSquare className="h-4 w-4" />
