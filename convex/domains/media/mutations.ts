@@ -264,6 +264,7 @@ export const refreshMediaUrl = mutation({
   args: {
     id: v.id("media"),
   },
+  returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {
     // Verificar se o usuário está autenticado
     const identity = await ctx.auth.getUserIdentity();
@@ -280,7 +281,9 @@ export const refreshMediaUrl = mutation({
 
     const media = await ctx.db.get(args.id);
     if (!media) {
-      throw new Error("Mídia não encontrada");
+      // Mídia foi excluída ou não existe - retorna null ao invés de lançar erro
+      // Isso evita quebrar a aplicação quando URL refresh é chamado após exclusão
+      return null;
     }
 
     // Verificar permissões

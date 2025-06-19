@@ -113,12 +113,22 @@ export function useVerifyMediaUrls() {
         // Se a URL não for válida (erro 4xx ou 5xx), atualiza a URL
         if (!response.ok) {
           console.log(`Atualizando URL para mídia ${media._id} (${media.fileName})`);
-          await refreshUrl({ id: media._id });
+          const newUrl = await refreshUrl({ id: media._id });
+          if (newUrl === null) {
+            console.log(`Mídia ${media._id} foi excluída, ignorando atualização de URL`);
+          }
         }
       } catch (error) {
         // Em caso de erro de rede, também atualiza a URL
         console.log(`Erro ao verificar URL para mídia ${media._id}, atualizando...`);
-        await refreshUrl({ id: media._id });
+        try {
+          const newUrl = await refreshUrl({ id: media._id });
+          if (newUrl === null) {
+            console.log(`Mídia ${media._id} foi excluída, ignorando atualização de URL`);
+          }
+        } catch (refreshError) {
+          console.log(`Erro ao atualizar URL para mídia ${media._id}:`, refreshError);
+        }
       }
     }
   };
