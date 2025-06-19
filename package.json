@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test:openai": "node scripts/test-openai.js",
     "test:integration": "node scripts/test-convex-integration.js",
+    "test:email": "node scripts/test-email.js",
     "browser-tools-server": "npx @agentdeskai/browser-tools-server@latest"
   },
   "dependencies": {

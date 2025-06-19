@@ -8,14 +8,23 @@ import { getEmailTemplate } from "./templates";
 // Serviço principal de email
 export class EmailService {
   private transporter: nodemailer.Transporter | null = null;
+  private isInitialized: boolean = false;
   
   constructor() {
-    this.initializeTransporter();
+    // Não inicializar no constructor - fazer lazy initialization
   }
   
-  private async initializeTransporter(): Promise<void> {
+  private async ensureInitialized(): Promise<void> {
+    if (this.isInitialized && this.transporter) {
+      return;
+    }
+    
     try {
       const config = getEmailConfig();
+      
+      console.log("🔧 Initializing email service...");
+      console.log(`📧 SMTP Host: ${config.host}:${config.port}`);
+      console.log(`👤 SMTP User: ${config.auth.user}`);
       
       // Criar transporter com as configurações
       this.transporter = nodemailer.createTransport({
@@ -31,11 +40,14 @@ export class EmailService {
       // Verificar conexão
       if (this.transporter) {
         await this.transporter.verify();
+        console.log("✅ Email service initialized successfully");
+        this.isInitialized = true;
       }
-      console.log("✅ Email service initialized successfully");
     } catch (error) {
       console.error("❌ Failed to initialize email service:", error);
       this.transporter = null;
+      this.isInitialized = false;
+      throw error;
     }
   }
   
@@ -49,6 +61,9 @@ export class EmailService {
     };
     
     try {
+      // Garantir que o serviço está inicializado
+      await this.ensureInitialized();
+      
       if (!this.transporter) {
         throw new Error("Email transporter not initialized");
       }
@@ -142,9 +157,7 @@ export class EmailService {
   // Método para testar configuração de email
   async testConnection(): Promise<boolean> {
     try {
-      if (!this.transporter) {
-        await this.initializeTransporter();
-      }
+      await this.ensureInitialized();
       
       if (!this.transporter) {
         return false;

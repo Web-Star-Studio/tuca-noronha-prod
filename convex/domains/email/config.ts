@@ -4,11 +4,39 @@ import { EmailConfig } from "./types";
 
 // Configuração principal de email
 export const getEmailConfig = (): EmailConfig => {
-  // Em produção, use variáveis de ambiente seguras
+  // Verificar se variáveis SMTP estão configuradas
+  const hasSmtpConfig = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
   const isDevelopment = process.env.NODE_ENV === "development";
+  
+  // Debug das variáveis de ambiente
+  console.log("🔍 Email Config Debug:");
+  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`SMTP_HOST: ${process.env.SMTP_HOST ? '✅ Set' : '❌ Missing'}`);
+  console.log(`SMTP_USER: ${process.env.SMTP_USER ? '✅ Set' : '❌ Missing'}`);
+  console.log(`SMTP_PASS: ${process.env.SMTP_PASS ? '✅ Set' : '❌ Missing'}`);
+  console.log(`Has SMTP Config: ${hasSmtpConfig ? '✅ Yes' : '❌ No'}`);
+  
+  // Se tem configuração SMTP, usar ela independente do ambiente
+  if (hasSmtpConfig) {
+    console.log("🚀 Using real SMTP configuration");
+    return {
+      host: process.env.SMTP_HOST!,
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: process.env.SMTP_SECURE === "true",
+      auth: {
+        user: process.env.SMTP_USER!,
+        pass: process.env.SMTP_PASS!,
+      },
+      from: {
+        name: process.env.EMAIL_FROM_NAME || "Tucano Noronha",
+        email: process.env.EMAIL_FROM || "noreply@tucanoronha.com",
+      },
+    };
+  }
   
   if (isDevelopment) {
     // Configuração para desenvolvimento usando Ethereal Email (teste)
+    console.log("🧪 Using Ethereal Email for development");
     return {
       host: "smtp.ethereal.email",
       port: 587,
@@ -24,7 +52,8 @@ export const getEmailConfig = (): EmailConfig => {
     };
   }
   
-  // Configuração para produção
+  // Fallback para produção sem configuração SMTP
+  console.log("⚠️ No SMTP configuration found, using default Gmail settings");
   return {
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT || "587"),
