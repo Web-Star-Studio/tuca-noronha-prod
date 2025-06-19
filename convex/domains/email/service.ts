@@ -1,6 +1,6 @@
 "use node";
 
-import * as nodemailer from "nodemailer";
+import nodemailer from "nodemailer";
 import type { EmailData, EmailLog } from "./types";
 import { getEmailConfig, EMAIL_SETTINGS } from "./config";
 import { getEmailTemplate } from "./templates";
