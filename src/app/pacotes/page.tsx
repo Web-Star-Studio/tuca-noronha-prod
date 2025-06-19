@@ -118,7 +118,7 @@ export default function PackagesPage() {
 
   // Gerar opções de meses para datas flexíveis
   const getMonthOptions = () => {
-    const months = []
+    const months: { label: string; value: string }[] = []
     const now = new Date()
     for (let i = 0; i < 24; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() + i, 1)

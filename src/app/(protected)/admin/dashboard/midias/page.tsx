@@ -20,6 +20,7 @@ import type { Id } from "@/../convex/_generated/dataModel"
 import { AnimatePresence, motion } from "framer-motion"
 import { ui } from "@/lib/ui-config"
 import { cn } from "@/lib/utils"
+import { DashboardPageHeader } from "../components"
 
 export default function MediaPage() {
   const { media, isLoading } = useMedia()
@@ -113,21 +114,13 @@ export default function MediaPage() {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-            <Image className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-              Biblioteca de Mídia
-            </h1>
-            <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
-              Gerencie imagens, arquivos e recursos visuais do sistema
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Biblioteca de Mídia"
+        description="Gerencie imagens, arquivos e recursos visuais do sistema"
+        icon={Image}
+        iconBgClassName="bg-purple-50"
+        iconColorClassName="text-purple-600"
+      />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -262,7 +255,7 @@ export default function MediaPage() {
       
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-w-[95vw]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-blue-600" />

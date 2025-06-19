@@ -235,7 +235,7 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
       
       {/* Dialog de confirmação de exclusão */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-white">
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
@@ -265,7 +265,9 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{mediaToDelete.fileName}</p>
+                <p className="font-medium text-sm truncate" title={mediaToDelete.fileName}>
+                  {mediaToDelete.fileName}
+                </p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(mediaToDelete.fileSize)}</p>
               </div>
             </div>

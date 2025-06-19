@@ -30,7 +30,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { ChatNotifications } from "@/components/dashboard/ChatNotifications"
-import { StatsCard, DashboardSection, ActionCard } from "./components"
+import { StatsCard, DashboardSection, ActionCard, DashboardPageHeader } from "./components"
 
 // Master Dashboard Component for system-wide view
 function MasterDashboard() {
@@ -85,21 +85,13 @@ function MasterDashboard() {
   return (
     <div className="space-y-8">
       {/* Header do Master Admin */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-            <Shield className="h-7 w-7 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Painel Master Admin</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
-                Master
-              </Badge>
-              <span className="text-gray-600">Administração do Sistema</span>
-            </div>
-          </div>
-        </div>
+      <DashboardPageHeader
+        title="Painel Master Admin"
+        description="Visão geral e administração completa do sistema"
+        icon={Shield}
+        iconBgClassName="bg-purple-100"
+        iconColorClassName="text-purple-600"
+      >
         <div className="flex gap-3">
           <Link href="/admin/dashboard/suporte">
             <Button variant="outline" className="gap-2">
@@ -119,12 +111,13 @@ function MasterDashboard() {
             </Button>
           </Link>
         </div>
-      </div>
+      </DashboardPageHeader>
 
       {/* Estatísticas Gerais */}
       <DashboardSection 
         title="Estatísticas do Sistema" 
         description="Visão geral dos recursos do sistema"
+        variant="elevated"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatsCard

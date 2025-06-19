@@ -95,7 +95,7 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("sm:max-w-[500px]", cardStyles.base)}>
+      <DialogContent className={cn("sm:max-w-[500px] max-w-[95vw]", cardStyles.base)}>
         <DialogHeader>
           <DialogTitle className={cn("flex items-center gap-2", typography.title.cool)}>
             <PencilLine className="h-5 w-5" />
@@ -106,7 +106,7 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4 py-4 overflow-hidden">
           <div className="flex items-center gap-4 p-3 bg-muted rounded-md">
             <div className="h-16 w-16 flex-shrink-0 rounded-md overflow-hidden bg-background">
               {media.fileType.startsWith("image/") ? (
@@ -121,8 +121,10 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
                 </div>
               )}
             </div>
-            <div>
-              <h4 className="font-medium text-sm">{media.fileName}</h4>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-sm truncate" title={media.fileName}>
+                {media.fileName}
+              </h4>
               <p className="text-xs text-muted-foreground">
                 {media.fileType} • {media._creationTime 
                   ? new Date(media._creationTime).toLocaleDateString('pt-BR') 

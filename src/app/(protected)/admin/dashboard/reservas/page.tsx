@@ -49,6 +49,7 @@ import { ui } from "@/lib/ui-config";
 import { useAsset } from "@/lib/providers/asset-context";
 import { AssetSelector } from "@/components/dashboard/AssetSelector";
 import { motion } from "framer-motion";
+import { DashboardPageHeader } from "../components";
 
 // Helper function to safely format dates
 const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string => {
@@ -167,7 +168,7 @@ export default function AdminBookingsPage() {
     selectedAsset?.assetType === "vehicles" ? {
       paginationOpts: { numItems: 100, cursor: null },
       ...(statusFilter !== "all" && { status: statusFilter }),
-      ...(selectedAsset && { organizationId: selectedAsset._id }),
+      // Para veículos, não passamos organizationId pois queremos todos os veículos do partner
     } : "skip"
   );
 
@@ -361,30 +362,22 @@ export default function AdminBookingsPage() {
       transition={{ duration: 0.5 }}
     >
       {/* Header - Design Minimalista */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-            <Calendar className="h-6 w-6 text-blue-600" />
+      <DashboardPageHeader
+        title="Gerenciamento de Reservas"
+        description={
+          selectedAsset 
+            ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
+            : "Selecione um asset para visualizar suas reservas"
+        }
+        icon={Calendar}
+      >
+        {selectedAsset && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl border border-blue-200">
+            {getAssetIcon(selectedAsset.assetType)}
+            <span className="text-sm font-medium text-blue-700">{selectedAsset.name}</span>
           </div>
-          <div className="flex-1">
-            <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-              Gerenciamento de Reservas
-            </h1>
-            <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
-              {selectedAsset 
-                ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
-                : "Selecione um asset para visualizar suas reservas"
-              }
-            </p>
-          </div>
-          {selectedAsset && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl border border-blue-200">
-              {getAssetIcon(selectedAsset.assetType)}
-              <span className="text-sm font-medium text-blue-700">{selectedAsset.name}</span>
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </DashboardPageHeader>
 
       {/* Asset Selector */}
       <Card className="border-0 shadow-sm">

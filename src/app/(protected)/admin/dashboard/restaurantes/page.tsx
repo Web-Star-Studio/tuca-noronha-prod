@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ui } from "@/lib/ui-config"
 import { motion } from "framer-motion"
+import { DashboardPageHeader } from "../components"
 
 export default function RestaurantsPage() {
   const { restaurants, isLoading } = useRestaurantsWithCreators()
@@ -197,31 +198,21 @@ export default function RestaurantsPage() {
       transition={{ duration: 0.5 }}
     >
       {/* Header - Design Minimalista */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
-              <Store className="h-6 w-6 text-orange-600" />
-            </div>
-            <div>
-              <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-                Restaurantes
-              </h1>
-              <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
-                Gerencie todos os restaurantes da plataforma
-              </p>
-            </div>
-          </div>
-          
-          <Button
-            onClick={openCreateDialog}
-            className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Adicionar Restaurante
-          </Button>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Restaurantes"
+        description="Gerencie todos os restaurantes da plataforma"
+        icon={Store}
+        iconBgClassName="bg-orange-50"
+        iconColorClassName="text-orange-600"
+      >
+        <Button
+          onClick={openCreateDialog}
+          className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Adicionar Restaurante
+        </Button>
+      </DashboardPageHeader>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">

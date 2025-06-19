@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { DashboardPageHeader } from "../components";
 
 export default function ConfiguracoesPage() {
   const currentUser = useCurrentUser();
@@ -226,19 +227,11 @@ export default function ConfiguracoesPage() {
   return (
     <div className="container max-w-6xl mx-auto py-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-          <Settings className="h-6 w-6 text-blue-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Configurações do Sistema
-          </h1>
-          <p className="text-gray-600">
-            Gerencie as configurações globais da plataforma
-          </p>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Configurações do Sistema"
+        description="Gerencie as configurações globais da plataforma"
+        icon={Settings}
+      />
 
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -268,7 +261,6 @@ export default function ConfiguracoesPage() {
                   <Switch
                     checked={systemSettings.maintenanceMode}
                     onCheckedChange={handleToggleMaintenanceMode}
-                    size="sm"
                   />
                   <span className="text-sm text-gray-600">
                     {systemSettings.maintenanceMode ? "Ativo" : "Inativo"}

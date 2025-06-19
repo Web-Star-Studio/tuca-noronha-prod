@@ -56,6 +56,19 @@ export const createVehicle = mutation({
       organizationId: orgId || undefined, // Convert null to undefined to fix type error
     });
     
+    // Se existe uma organização, adiciona o veículo à tabela partnerAssets
+    if (orgId) {
+      await ctx.db.insert("partnerAssets", {
+        organizationId: orgId as any,
+        assetId: vehicleId.toString(),
+        assetType: "vehicles",
+        partnerId: currentUserId,
+        isActive: true,
+        createdAt: currentTime,
+        updatedAt: currentTime,
+      });
+    }
+    
     return vehicleId;
   },
 });
@@ -163,6 +176,16 @@ export const deleteVehicle = mutation({
     
     if (bookings.length > 0) {
       throw new Error("Este veículo possui reservas pendentes ou confirmadas e não pode ser removido");
+    }
+    
+    // Remove from partnerAssets if exists
+    const partnerAsset = await ctx.db
+      .query("partnerAssets")
+      .withIndex("by_asset", (q) => q.eq("assetId", args.id.toString()).eq("assetType", "vehicles"))
+      .first();
+    
+    if (partnerAsset) {
+      await ctx.db.delete(partnerAsset._id);
     }
     
     // Delete the vehicle
@@ -324,5 +347,63 @@ export const updateVehicleBooking = mutation({
     }
     
     return id;
+  },
+});
+
+// Sync existing vehicles with partnerAssets table
+export const syncVehiclesWithOrganizations = mutation({
+  args: {},
+  returns: v.object({
+    synced: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const role = await getCurrentUserRole(ctx);
+    
+    if (role !== "master") {
+      throw new Error("Apenas masters podem executar esta sincronização");
+    }
+    
+    const vehicles = await ctx.db.query("vehicles").collect();
+    let synced = 0;
+    const errors: string[] = [];
+    
+    for (const vehicle of vehicles) {
+      try {
+        // Verifica se já existe na tabela partnerAssets
+        const existingAsset = await ctx.db
+          .query("partnerAssets")
+          .withIndex("by_asset", (q) => q.eq("assetId", vehicle._id.toString()).eq("assetType", "vehicles"))
+          .first();
+        
+        if (!existingAsset && vehicle.ownerId) {
+          // Busca a organização do owner
+          const organization = await ctx.db
+            .query("partnerOrganizations")
+            .withIndex("by_partner", (q) => q.eq("partnerId", vehicle.ownerId!))
+            .filter((q) => q.eq(q.field("type"), "rental_service"))
+            .first();
+          
+          if (organization) {
+            await ctx.db.insert("partnerAssets", {
+              organizationId: organization._id,
+              assetId: vehicle._id.toString(),
+              assetType: "vehicles",
+              partnerId: vehicle.ownerId,
+              isActive: vehicle.status === "available",
+              createdAt: vehicle.createdAt || Date.now(),
+              updatedAt: Date.now(),
+            });
+            synced++;
+          } else {
+            errors.push(`Veículo ${vehicle.name} (${vehicle._id}) não possui organização de rental_service`);
+          }
+        }
+      } catch (error) {
+        errors.push(`Erro ao sincronizar veículo ${vehicle.name}: ${error}`);
+      }
+    }
+    
+    return { synced, errors };
   },
 }); 

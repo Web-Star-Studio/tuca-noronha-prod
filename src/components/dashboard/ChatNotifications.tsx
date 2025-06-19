@@ -279,7 +279,7 @@ export function ChatNotifications({
             </VisuallyHidden>
             {selectedChatId && (
               <ChatWindow 
-                chatId={selectedChatId}
+                chatRoomId={selectedChatId}
                 onClose={() => setSelectedChatId(null)}
               />
             )}
@@ -305,7 +305,7 @@ export function ChatNotifications({
           </VisuallyHidden>
           {selectedChatId && (
             <ChatWindow 
-              chatId={selectedChatId}
+              chatRoomId={selectedChatId}
               onClose={() => setSelectedChatId(null)}
             />
           )}

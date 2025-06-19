@@ -56,6 +56,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { ui } from "@/lib/ui-config";
 import { motion } from "framer-motion";
+import { DashboardPageHeader } from "../components";
 
 type UserRole = "master" | "admin" | "partner" | "traveler" | "customer" | "employee";
 
@@ -163,24 +164,15 @@ export default function UsersPage() {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-            <Users className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-              Gerenciar Usuários
-            </h1>
-                      <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
-            {user?.publicMetadata?.role === "partner" 
+      <DashboardPageHeader
+        title="Gerenciar Usuários"
+        description={
+          user?.publicMetadata?.role === "partner" 
               ? "Visualize usuários que fizeram reservas confirmadas em seus assets"
               : "Visualize e gerencie todos os usuários da plataforma"
             }
-          </p>
-          </div>
-        </div>
-      </div>
+        icon={Users}
+      />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-5">

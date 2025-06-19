@@ -11,6 +11,7 @@ import { api } from "@/../convex/_generated/api";
 import { ui } from "@/lib/ui-config";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { DashboardPageHeader } from "../components";
 
 export default function ChatPage() {
   const { user } = useCurrentUser();
@@ -53,21 +54,13 @@ export default function ChatPage() {
       transition={{ duration: 0.5 }}
     >
       {/* Header - Design Minimalista */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-            <MessageCircle className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-              Central de Chat
-            </h1>
-            <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
-              Gerencie suas conversas e notificações de chat
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Central de Chat"
+        description="Gerencie suas conversas e notificações de chat"
+        icon={MessageCircle}
+        iconBgClassName="bg-purple-50"
+        iconColorClassName="text-purple-600"
+      />
 
       {/* Statistics Cards - Layout Clean */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

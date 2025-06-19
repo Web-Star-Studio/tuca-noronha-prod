@@ -38,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { Id } from "@/../convex/_generated/dataModel";
+import { DashboardPageHeader } from "../components";
 
 type SupportMessage = {
   _id: Id<"supportMessages">;
@@ -169,19 +170,11 @@ export default function SupportPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-            <MessageSquare className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mensagens de Suporte</h1>
-            <p className="text-sm text-gray-600">
-              Gerenciar solicitações de suporte dos usuários
-            </p>
-          </div>
-        </div>
-      </div>
+      <DashboardPageHeader
+        title="Mensagens de Suporte"
+        description="Gerenciar solicitações de suporte dos usuários"
+        icon={MessageSquare}
+      />
 
       {/* Estatísticas */}
       {supportStats && (

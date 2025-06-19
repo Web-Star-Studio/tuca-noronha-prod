@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { Id } from "../../_generated/dataModel";
+import { mutation } from "../../_generated/server";
 
 /**
  * Get user's activity bookings
@@ -714,15 +715,49 @@ export const getPartnerBookings = query({
           .collect();
       } else if (user.role === "employee") {
         // Employees see vehicles they have permission to manage
-        const permissions = await ctx.db
+        let accessibleVehicleIds: string[] = [];
+        
+        // 1. Check direct vehicle permissions
+        const assetPermissions = await ctx.db
           .query("assetPermissions")
           .withIndex("by_employee_asset_type", (q) => q.eq("employeeId", user._id).eq("assetType", "vehicles"))
           .collect();
         
-        const vehicleIds = permissions.map(p => p.assetId);
-        vehicles = [];
+        const directVehicleIds = assetPermissions.map(p => p.assetId);
+        accessibleVehicleIds.push(...directVehicleIds);
         
-        for (const vehicleId of vehicleIds) {
+        // 2. Check organization permissions and get vehicles from those organizations
+        const organizationPermissions = await ctx.db
+          .query("organizationPermissions")
+          .withIndex("by_employee", (q) => q.eq("employeeId", user._id))
+          .collect();
+        
+                 for (const orgPermission of organizationPermissions) {
+           // Check if employee has any meaningful permission for the organization
+           const hasAnyPermission = orgPermission.permissions && orgPermission.permissions.length > 0;
+           const hasSpecificPermission = orgPermission.permissions.some(p => 
+             ["view", "edit", "manage", "full_access"].includes(p)
+           );
+           
+           if (hasAnyPermission && hasSpecificPermission) {
+             // Get all vehicles from this organization
+             const organizationVehicles = await ctx.db
+               .query("partnerAssets")
+               .withIndex("by_organization_type", (q) => 
+                 q.eq("organizationId", orgPermission.organizationId).eq("assetType", "vehicles")
+               )
+               .collect();
+             
+             const orgVehicleIds = organizationVehicles.map(asset => asset.assetId);
+             accessibleVehicleIds.push(...orgVehicleIds);
+           }
+         }
+        
+        // Remove duplicates
+        accessibleVehicleIds = [...new Set(accessibleVehicleIds)];
+        
+        vehicles = [];
+        for (const vehicleId of accessibleVehicleIds) {
           const vehicle = await ctx.db.get(vehicleId as any);
           if (vehicle) {
             vehicles.push(vehicle);
@@ -1552,6 +1587,11 @@ export const getVehicleBookings = query({
       partnerNotes: v.optional(v.string()),
       additionalDrivers: v.optional(v.number()),
       additionalOptions: v.optional(v.array(v.string())),
+      customerInfo: v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+      }),
       createdAt: v.number(),
       updatedAt: v.number(),
     })),
@@ -1593,11 +1633,17 @@ export const getVehicleBookings = query({
         const bookings = await vehicleQuery.collect();
         const bookingsWithDetails = await Promise.all(
           bookings.map(async (booking) => {
+            const user = await ctx.db.get(booking.userId);
             return {
               ...booking,
               vehicleName: vehicle.name,
               vehicleBrand: vehicle.brand,
               vehicleModel: vehicle.model,
+              customerInfo: {
+                name: user?.name || "Nome não disponível",
+                email: user?.email || "Email não disponível", 
+                phone: user?.phone || "Telefone não disponível",
+              },
             };
           })
         );
@@ -1670,11 +1716,20 @@ export const getVehicleBookings = query({
       const bookingsWithDetails = await Promise.all(
         filteredBookings.map(async (booking) => {
           const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          const user = await ctx.db
+            .query("users")
+            .filter((q) => q.eq(q.field("_id"), booking.userId))
+            .unique();
           return {
             ...booking,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
+            customerInfo: {
+              name: user?.name || "Nome não disponível",
+              email: user?.email || "Email não disponível", 
+              phone: user?.phone || "Telefone não disponível",
+            },
           };
         })
       );
@@ -1688,7 +1743,9 @@ export const getVehicleBookings = query({
 
     // For employees, show bookings for vehicles they have permission to access
     if (user.role === "employee") {
-      // Check employee permissions directly via database query
+      let accessibleVehicleIds: string[] = [];
+      
+      // 1. Check direct vehicle permissions
       const assetPermissions = await ctx.db
         .query("assetPermissions")
         .withIndex("by_employee_asset_type", (q) => 
@@ -1696,10 +1753,41 @@ export const getVehicleBookings = query({
         )
         .collect();
       
-      // Get IDs of vehicles the employee has permission to access
-      const accessibleVehicleIds = assetPermissions
+      const directVehicleIds = assetPermissions
         .filter(p => p.permissions.includes("view") || p.permissions.includes("manage"))
         .map(p => p.assetId);
+      
+      accessibleVehicleIds.push(...directVehicleIds);
+      
+      // 2. Check organization permissions and get vehicles from those organizations
+      const organizationPermissions = await ctx.db
+        .query("organizationPermissions")
+        .withIndex("by_employee", (q) => q.eq("employeeId", user._id))
+        .collect();
+      
+      for (const orgPermission of organizationPermissions) {
+        // Check if employee has any meaningful permission for the organization
+        const hasAnyPermission = orgPermission.permissions && orgPermission.permissions.length > 0;
+        const hasSpecificPermission = orgPermission.permissions.some(p => 
+          ["view", "edit", "manage", "full_access"].includes(p)
+        );
+        
+        if (hasAnyPermission && hasSpecificPermission) {
+          // Get all vehicles from this organization
+          const organizationVehicles = await ctx.db
+            .query("partnerAssets")
+            .withIndex("by_organization_type", (q) => 
+              q.eq("organizationId", orgPermission.organizationId).eq("assetType", "vehicles")
+            )
+            .collect();
+          
+          const orgVehicleIds = organizationVehicles.map(asset => asset.assetId);
+          accessibleVehicleIds.push(...orgVehicleIds);
+        }
+      }
+      
+      // Remove duplicates
+      accessibleVehicleIds = [...new Set(accessibleVehicleIds)];
       
       if (accessibleVehicleIds.length === 0) {
         return {
@@ -1729,11 +1817,20 @@ export const getVehicleBookings = query({
       const bookingsWithDetails = await Promise.all(
         filteredBookings.map(async (booking) => {
           const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          const user = await ctx.db
+            .query("users")
+            .filter((q) => q.eq(q.field("_id"), booking.userId))
+            .unique();
           return {
             ...booking,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
+            customerInfo: {
+              name: user?.name || "Nome não disponível",
+              email: user?.email || "Email não disponível", 
+              phone: user?.phone || "Telefone não disponível",
+            },
           };
         })
       );
@@ -1798,11 +1895,20 @@ export const getVehicleBookings = query({
       const bookingsWithDetails = await Promise.all(
         paginatedBookings.map(async (booking) => {
           const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          const user = await ctx.db
+            .query("users")
+            .filter((q) => q.eq(q.field("_id"), booking.userId))
+            .unique();
           return {
             ...booking,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
+            customerInfo: {
+              name: user?.name || "Nome não disponível",
+              email: user?.email || "Email não disponível", 
+              phone: user?.phone || "Telefone não disponível",
+            },
           };
         })
       );
@@ -1828,11 +1934,20 @@ export const getVehicleBookings = query({
       const bookingsWithDetails = await Promise.all(
         result.page.map(async (booking) => {
           const vehicle = await ctx.db.get(booking.vehicleId) as any;
+          const user = await ctx.db
+            .query("users")
+            .filter((q) => q.eq(q.field("_id"), booking.userId))
+            .unique();
           return {
             ...booking,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
+            customerInfo: {
+              name: user?.name || "Nome não disponível",
+              email: user?.email || "Email não disponível", 
+              phone: user?.phone || "Telefone não disponível",
+            },
           };
         })
       );
@@ -2796,6 +2911,9 @@ export const getReservationWithPartnerDetails = query({
     // Get customer name based on reservation type
     const customerName = reservation.customerInfo?.name || reservation.name || "Cliente";
 
+    // Get confirmation code - use reservation ID as fallback for vehicle bookings
+    const confirmationCode = reservation.confirmationCode || reservation._id;
+
     return {
       _id: reservation._id,
       _creationTime: reservation._creationTime,
@@ -2804,7 +2922,7 @@ export const getReservationWithPartnerDetails = query({
       assetName,
       userId: reservation.userId,
       status: reservation.status,
-      confirmationCode: reservation.confirmationCode,
+      confirmationCode,
       partnerId: partner._id,
       partnerName: partner.name,
       partnerEmail: partner.email,
@@ -2815,5 +2933,9 @@ export const getReservationWithPartnerDetails = query({
     };
   },
 });
+
+
+
+
 
 

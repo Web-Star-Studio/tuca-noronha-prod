@@ -45,6 +45,7 @@ import { ui } from "@/lib/ui-config"
 import { motion } from "framer-motion"
 import { EventForm } from "@/components/dashboard/events/EventForm"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { DashboardPageHeader } from "../components"
 
 export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -247,42 +248,35 @@ export default function EventsPage() {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-purple-600" />
-            </div>
-            <div>
-              <h1 className={`${ui.typography.h1.className} ${ui.colors.text.primary}`}>
-                Eventos
-              </h1>
-              <p className={`${ui.colors.text.secondary} text-sm leading-relaxed`}>
-                Gerencie todos os eventos da plataforma
-              </p>
-            </div>
-          </div>
+      <DashboardPageHeader
+        title="Eventos"
+        description="Gerencie todos os eventos da plataforma"
+        icon={Calendar}
+        iconBgClassName="bg-purple-50"
+        iconColorClassName="text-purple-600"
+      >
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline"
+            onClick={() => setShowSyncModal(true)}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Sincronizar Sympla
+          </Button>
           
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline"
-              onClick={() => setShowSyncModal(true)}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Sincronizar Sympla
-            </Button>
-            
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Criar Evento
-            </Button>
-          </div>
+          <Button 
+            onClick={() => {
+              setSelectedEvent(null)
+              setShowCreateModal(true)
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Criar Evento
+          </Button>
         </div>
-      </div>
+      </DashboardPageHeader>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-5">

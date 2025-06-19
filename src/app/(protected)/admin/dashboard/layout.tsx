@@ -252,6 +252,7 @@ function MasterSidebar() {
 
   const masterConfigLinks = [
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
+    { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
   ]
 
   return (
@@ -415,7 +416,7 @@ function AdminSidebar() {
         break
       case "rental_service":
         assetSpecificLinks = [
-          { href: `${baseLink}/vehicles`, icon: Car, label: "Frota de Veículos" },
+          { href: `${baseLink}/veiculos`, icon: Car, label: "Frota de Veículos" },
         ]
         break
       case "activity_service":
