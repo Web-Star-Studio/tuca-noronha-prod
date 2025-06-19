@@ -62,13 +62,23 @@ export const createActivityBooking = mutation({
       );
     }
 
-    // Validate customer info
-    if (!isValidEmail(args.customerInfo.email)) {
+    // Definir informações do cliente usando dados do usuário caso não fornecidas
+    const customerInfo = args.customerInfo ?? {
+      name: user.name || identity.name || "",
+      email: user.email || identity.email || "",
+      phone: user.phone || "",
+    };
+
+    // Validar informações do cliente
+    if (!isValidEmail(customerInfo.email)) {
       throw new Error("Email inválido");
     }
-    if (!isValidPhone(args.customerInfo.phone)) {
+    if (!isValidPhone(customerInfo.phone)) {
       throw new Error("Telefone inválido");
     }
+
+    // Substituir args.customerInfo
+    args.customerInfo = customerInfo as any;
 
     // Get activity
     const activity = await ctx.db.get(args.activityId);
@@ -114,7 +124,7 @@ export const createActivityBooking = mutation({
       status: BOOKING_STATUS.PENDING,
       paymentStatus: PAYMENT_STATUS.PENDING,
       confirmationCode,
-      customerInfo: args.customerInfo,
+      customerInfo,
       specialRequests: args.specialRequests,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -125,8 +135,8 @@ export const createActivityBooking = mutation({
 
     // Send email confirmation to customer
     await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: args.customerInfo.email,
-      customerName: args.customerInfo.name,
+      customerEmail: customerInfo.email,
+      customerName: customerInfo.name,
       assetName: activity.title,
       bookingType: "activity",
       confirmationCode,
@@ -146,9 +156,9 @@ export const createActivityBooking = mutation({
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
         partnerEmail: partner.email,
         partnerName: partner.name || "Parceiro",
-        customerName: args.customerInfo.name,
-        customerEmail: args.customerInfo.email,
-        customerPhone: args.customerInfo.phone,
+        customerName: customerInfo.name,
+        customerEmail: customerInfo.email,
+        customerPhone: customerInfo.phone,
         assetName: activity.title,
         bookingType: "activity",
         confirmationCode,
@@ -197,13 +207,23 @@ export const createEventBooking = mutation({
       throw new Error("Usuário não encontrado");
     }
 
-    // Validate customer info
-    if (!isValidEmail(args.customerInfo.email)) {
+    // Definir informações do cliente usando dados do usuário caso não fornecidas
+    const customerInfo = args.customerInfo ?? {
+      name: user.name || identity.name || "",
+      email: user.email || identity.email || "",
+      phone: user.phone || "",
+    };
+
+    // Validar informações do cliente
+    if (!isValidEmail(customerInfo.email)) {
       throw new Error("Email inválido");
     }
-    if (!isValidPhone(args.customerInfo.phone)) {
+    if (!isValidPhone(customerInfo.phone)) {
       throw new Error("Telefone inválido");
     }
+
+    // Substituir args.customerInfo por customerInfo consolidado
+    args.customerInfo = customerInfo as any;
 
     // Get event
     const event = await ctx.db.get(args.eventId);
@@ -238,7 +258,7 @@ export const createEventBooking = mutation({
       status: BOOKING_STATUS.PENDING,
       paymentStatus: PAYMENT_STATUS.PENDING,
       confirmationCode,
-      customerInfo: args.customerInfo,
+      customerInfo,
       specialRequests: args.specialRequests,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -246,8 +266,8 @@ export const createEventBooking = mutation({
 
     // Send email confirmation to customer
     await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: args.customerInfo.email,
-      customerName: args.customerInfo.name,
+      customerEmail: customerInfo.email,
+      customerName: customerInfo.name,
       assetName: event.title,
       bookingType: "event",
       confirmationCode,
@@ -268,9 +288,9 @@ export const createEventBooking = mutation({
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
         partnerEmail: partner.email,
         partnerName: partner.name || "Parceiro",
-        customerName: args.customerInfo.name,
-        customerEmail: args.customerInfo.email,
-        customerPhone: args.customerInfo.phone,
+        customerName: customerInfo.name,
+        customerEmail: customerInfo.email,
+        customerPhone: customerInfo.phone,
         assetName: event.title,
         bookingType: "event",
         confirmationCode,
@@ -319,13 +339,23 @@ export const createRestaurantReservation = mutation({
       throw new Error("Usuário não encontrado");
     }
 
-    // Validate customer info
-    if (!isValidEmail(args.customerInfo.email)) {
+    // Definir informações do cliente usando dados do usuário caso não fornecidas
+    const customerInfo = args.customerInfo ?? {
+      name: user.name || identity.name || "",
+      email: user.email || identity.email || "",
+      phone: user.phone || "",
+    };
+
+    // Validar informações do cliente
+    if (!isValidEmail(customerInfo.email)) {
       throw new Error("Email inválido");
     }
-    if (!isValidPhone(args.customerInfo.phone)) {
+    if (!isValidPhone(customerInfo.phone)) {
       throw new Error("Telefone inválido");
     }
+
+    // Substituir args.customerInfo por customerInfo consolidado
+    args.customerInfo = customerInfo as any;
 
     // Get restaurant
     const restaurant = await ctx.db.get(args.restaurantId);
@@ -354,9 +384,9 @@ export const createRestaurantReservation = mutation({
       date: args.date,
       time: args.time,
       partySize: args.partySize,
-      name: args.customerInfo.name,
-      email: args.customerInfo.email,
-      phone: args.customerInfo.phone,
+      name: customerInfo.name,
+      email: customerInfo.email,
+      phone: customerInfo.phone,
       specialRequests: args.specialRequests,
       status: BOOKING_STATUS.PENDING,
       confirmationCode,
@@ -364,8 +394,8 @@ export const createRestaurantReservation = mutation({
 
     // Send email confirmation to customer
     await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: args.customerInfo.email,
-      customerName: args.customerInfo.name,
+      customerEmail: customerInfo.email,
+      customerName: customerInfo.name,
       assetName: restaurant.name,
       bookingType: "restaurant",
       confirmationCode,
@@ -385,9 +415,9 @@ export const createRestaurantReservation = mutation({
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
         partnerEmail: partner.email,
         partnerName: partner.name || "Parceiro",
-        customerName: args.customerInfo.name,
-        customerEmail: args.customerInfo.email,
-        customerPhone: args.customerInfo.phone,
+        customerName: customerInfo.name,
+        customerEmail: customerInfo.email,
+        customerPhone: customerInfo.phone,
         assetName: restaurant.name,
         bookingType: "restaurant",
         confirmationCode,
@@ -434,13 +464,23 @@ export const createVehicleBooking = mutation({
       throw new Error("Usuário não encontrado");
     }
 
-    // Validate customer info
-    if (!isValidEmail(args.customerInfo.email)) {
+    // Definir informações do cliente usando dados do usuário caso não fornecidas
+    const customerInfo = args.customerInfo ?? {
+      name: user.name || identity.name || "",
+      email: user.email || identity.email || "",
+      phone: user.phone || "",
+    };
+
+    // Validar informações do cliente
+    if (!isValidEmail(customerInfo.email)) {
       throw new Error("Email inválido");
     }
-    if (!isValidPhone(args.customerInfo.phone)) {
+    if (!isValidPhone(customerInfo.phone)) {
       throw new Error("Telefone inválido");
     }
+
+    // Substituir args.customerInfo por customerInfo consolidado
+    args.customerInfo = customerInfo as any;
 
     // Get vehicle
     const vehicle = await ctx.db.get(args.vehicleId);
@@ -1157,9 +1197,9 @@ export const seedTestReservations = mutation({
         status: "confirmed",
         confirmationCode: "ACT001",
         customerInfo: {
-          name: travelerUser.name || "João Silva",
+          name: travelerUser.name || "Usuário",
           email: travelerUser.email || args.travelerEmail,
-          phone: "+55 81 99999-9999",
+          phone: travelerUser.phone || "+55 00 00000-0000",
         },
         createdAt: now,
         updatedAt: now,
@@ -1220,9 +1260,9 @@ export const seedTestReservations = mutation({
         date: new Date(tomorrow).toISOString().split('T')[0],
         time: "19:30",
         partySize: 2,
-        name: travelerUser.name || "João Silva",
+        name: travelerUser.name || "Usuário",
         email: travelerUser.email || args.travelerEmail,
-        phone: "+55 81 99999-9999",
+        phone: travelerUser.phone || "+55 00 00000-0000",
         status: "confirmed",
         confirmationCode: "REST001",
       });
@@ -1292,9 +1332,9 @@ export const seedTestReservations = mutation({
         status: "confirmed",
         confirmationCode: "HOTEL001",
         customerInfo: {
-          name: travelerUser.name || "João Silva",
+          name: travelerUser.name || "Usuário",
           email: travelerUser.email || args.travelerEmail,
-          phone: "+55 81 99999-9999",
+          phone: travelerUser.phone || "+55 00 00000-0000",
         },
         createdAt: now,
         updatedAt: now,

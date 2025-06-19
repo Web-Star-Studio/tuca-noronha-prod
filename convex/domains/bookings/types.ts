@@ -39,7 +39,7 @@ export const createActivityBookingValidator = v.object({
   date: v.string(),
   time: v.optional(v.string()),
   participants: v.number(),
-  customerInfo: customerInfoValidator,
+  customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
 });
 
@@ -56,7 +56,7 @@ export const createEventBookingValidator = v.object({
   eventId: v.id("events"),
   ticketId: v.optional(v.id("eventTickets")),
   quantity: v.number(),
-  customerInfo: customerInfoValidator,
+  customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
 });
 
@@ -74,7 +74,7 @@ export const createRestaurantReservationValidator = v.object({
   date: v.string(),
   time: v.string(),
   partySize: v.number(),
-  customerInfo: customerInfoValidator,
+  customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
 });
 
@@ -89,7 +89,7 @@ export const createVehicleBookingValidator = v.object({
   vehicleId: v.id("vehicles"),
   startDate: v.number(),
   endDate: v.number(),
-  customerInfo: customerInfoValidator,
+  customerInfo: v.optional(customerInfoValidator),
   pickupLocation: v.optional(v.string()),
   returnLocation: v.optional(v.string()),
   additionalDrivers: v.optional(v.number()),

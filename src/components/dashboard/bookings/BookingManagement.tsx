@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Car, CalendarDays } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Car, CalendarDays, Eye } from "lucide-react";
 import { ChatButton } from "@/components/chat/ChatButton";
 import { toast } from "sonner";
 
@@ -138,6 +138,14 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
               <StatusIcon className="h-3 w-3 mr-1" />
               {statusInfo.label}
             </Badge>
+            <BookingDetailsModal
+              data={booking}
+              trigger={
+                <Button size="sm" variant="outline">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              }
+            />
             <ChatButton
               assetId={booking.activityId}
               assetType="activities"
@@ -234,6 +242,14 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
               <StatusIcon className="h-3 w-3 mr-1" />
               {statusInfo.label}
             </Badge>
+            <BookingDetailsModal
+              data={reservation}
+              trigger={
+                <Button size="sm" variant="outline">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              }
+            />
             <ConfirmBookingDialog
               bookingId={reservation._id}
               bookingType="restaurant"
@@ -351,6 +367,14 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
             </Badge>
           </div>
           <div className="flex space-x-2">
+            <BookingDetailsModal
+              data={booking}
+              trigger={
+                <Button size="sm" variant="outline">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              }
+            />
             {booking.status === "pending" && (
               <>
                 <Button
@@ -373,7 +397,6 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
                 </Button>
               </>
             )}
-
           </div>
         </div>
       </CardHeader>
@@ -409,6 +432,40 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+interface BookingDetailsModalProps {
+  data: any;
+  trigger?: React.ReactNode;
+}
+
+function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Helper para converter chave em label
+  const formatLabel = (key: string) =>
+    key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (s) => s.toUpperCase());
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Detalhes da Reserva</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 space-y-2 text-sm max-h-[60vh] overflow-y-auto">
+          {Object.entries(data).map(([key, value]) => (
+            <div key={key} className="flex">
+              <span className="font-medium mr-2">{formatLabel(key)}:</span>
+              <span className="break-words">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
