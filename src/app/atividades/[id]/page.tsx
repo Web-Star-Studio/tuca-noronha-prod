@@ -170,27 +170,27 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                 <TabsList className="mb-6 w-full justify-start bg-transparent rounded-none p-3 h-auto">
                   <TabsTrigger
                     value="info"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
                   >
                     Detalhes
                   </TabsTrigger>
                   <TabsTrigger
                     value="itinerary"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
                   >
                     Itinerário
                   </TabsTrigger>
                   {activity.hasMultipleTickets && (
                     <TabsTrigger
                       value="tickets"
-                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
+                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
                     >
                       Ingressos
                     </TabsTrigger>
                   )}
                   <TabsTrigger
                     value="policies"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-0 px-4 font-medium"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
                   >
                     Políticas
                   </TabsTrigger>

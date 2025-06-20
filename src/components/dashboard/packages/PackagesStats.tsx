@@ -33,7 +33,7 @@ export function PackagesStats() {
   
   // Calculate average price
   const averagePrice = packages.length > 0 
-    ? packages.reduce((sum, pkg) => sum + pkg.basePrice, 0) / packages.length 
+    ? packages.reduce((sum, pkg) => sum + Number(pkg.basePrice), 0) / packages.length 
     : 0
 
   // Get most popular category

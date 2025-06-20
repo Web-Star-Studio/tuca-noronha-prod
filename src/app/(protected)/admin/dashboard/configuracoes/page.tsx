@@ -23,8 +23,11 @@ import {
   CheckCircle,
   Phone,
   Mail,
-  Globe
+  Globe,
+  Eye,
+  Plus
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { DashboardPageHeader } from "../components";
@@ -83,10 +86,12 @@ export default function ConfiguracoesPage() {
   const publicSettings = useQuery(api.domains.systemSettings.queries.getPublicSettings);
   const allSettings = useQuery(api.domains.systemSettings.queries.getAllSettings);
 
-  // Mutations
+  // Mutations  
   const updateSetting = useMutation(api.domains.systemSettings.mutations.updateSetting);
+  const upsertSetting = useMutation(api.domains.systemSettings.mutations.upsertSetting);
   const createSetting = useMutation(api.domains.systemSettings.mutations.createSetting);
   const initializeSettings = useMutation(api.domains.systemSettings.mutations.initializeDefaultSettings);
+  const initializeMissingSettings = useMutation(api.domains.systemSettings.mutations.initializeMissingSettings);
   const toggleMaintenance = useMutation(api.domains.systemSettings.mutations.toggleMaintenanceMode);
 
   // Carregar configurações quando disponíveis
@@ -115,23 +120,34 @@ export default function ConfiguracoesPage() {
   const handleSaveCommunication = async () => {
     setIsLoading(true);
     try {
+      // Primeiro tenta inicializar configurações faltantes
+      try {
+        await initializeMissingSettings();
+      } catch (initError) {
+        // Se falhar porque já existem, tudo bem
+        console.log("Configurações já existem ou erro de inicialização:", initError);
+      }
+
+      // Usar upsertSetting se disponível, senão fallback para updateSetting
+      const settingFunction = upsertSetting || updateSetting;
+      
       await Promise.all([
-        updateSetting({
+        settingFunction({
           key: "whatsapp.admin_number",
           value: communicationSettings.whatsappNumber,
           type: "string",
         }),
-        updateSetting({
+        settingFunction({
           key: "whatsapp.business_name",
           value: communicationSettings.businessName,
           type: "string",
         }),
-        updateSetting({
+        settingFunction({
           key: "support.email",
           value: communicationSettings.supportEmail,
           type: "string",
         }),
-        updateSetting({
+        settingFunction({
           key: "support.phone",
           value: communicationSettings.supportPhone,
           type: "string",
@@ -151,13 +167,22 @@ export default function ConfiguracoesPage() {
   const handleSaveBusiness = async () => {
     setIsLoading(true);
     try {
+      // Primeiro tenta inicializar configurações faltantes
+      try {
+        await initializeMissingSettings();
+      } catch (initError) {
+        console.log("Configurações já existem ou erro de inicialização:", initError);
+      }
+
+      const settingFunction = upsertSetting || updateSetting;
+      
       await Promise.all([
-        updateSetting({
+        settingFunction({
           key: "business.company_name",
           value: businessSettings.companyName,
           type: "string",
         }),
-        updateSetting({
+        settingFunction({
           key: "business.address",
           value: businessSettings.address,
           type: "object",
@@ -177,13 +202,22 @@ export default function ConfiguracoesPage() {
   const handleSaveUI = async () => {
     setIsLoading(true);
     try {
+      // Primeiro tenta inicializar configurações faltantes
+      try {
+        await initializeMissingSettings();
+      } catch (initError) {
+        console.log("Configurações já existem ou erro de inicialização:", initError);
+      }
+
+      const settingFunction = upsertSetting || updateSetting;
+      
       await Promise.all([
-        updateSetting({
+        settingFunction({
           key: "ui.primary_color",
           value: uiSettings.primaryColor,
           type: "string",
         }),
-        updateSetting({
+        settingFunction({
           key: "ui.footer_text",
           value: uiSettings.footerText,
           type: "string",
@@ -224,14 +258,77 @@ export default function ConfiguracoesPage() {
     }
   };
 
+  const handleInitializeMissingSettings = async () => {
+    try {
+      await initializeMissingSettings();
+      toast.success("Configurações faltantes inicializadas!");
+      // Forçar re-fetch das configurações
+      window.location.reload();
+    } catch (error) {
+      toast.error("Erro ao inicializar configurações faltantes");
+      console.error(error);
+    }
+  };
+
   return (
     <div className="container max-w-6xl mx-auto py-8 space-y-8">
       {/* Header */}
-      <DashboardPageHeader
-        title="Configurações do Sistema"
-        description="Gerencie as configurações globais da plataforma"
-        icon={Settings}
-      />
+      <div className="flex items-center justify-between">
+        <DashboardPageHeader
+          title="Configurações do Sistema"
+          description="Gerencie as configurações globais da plataforma"
+          icon={Settings}
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleInitializeMissingSettings}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Inicializar Faltantes
+          </Button>
+          <Button
+            variant="outline"
+            asChild
+            className="gap-2"
+          >
+            <Link href="/admin/dashboard/configuracoes/preview">
+              <Eye className="h-4 w-4" />
+              Preview
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Alert para configurações faltantes */}
+      {!publicSettings && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium text-amber-900 mb-1">
+                  Configurações Não Inicializadas
+                </h3>
+                <p className="text-sm text-amber-700 mb-3">
+                  Algumas configurações essenciais não foram encontradas. 
+                  Clique no botão "Inicializar Faltantes" acima para criar as configurações padrão.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInitializeMissingSettings}
+                  className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                >
+                  <Plus className="h-4 w-4" />
+                  Inicializar Agora
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -341,7 +438,7 @@ export default function ConfiguracoesPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500">
-                    Número usado nos botões de WhatsApp em toda a plataforma
+                    Número usado nos botões de WhatsApp em toda a plataforma (formato: +5581999999999)
                   </p>
                 </div>
 
@@ -362,7 +459,7 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="support-email">Email de Suporte</Label>
+                  <Label htmlFor="support-email">Email de Contato Principal</Label>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-gray-400" />
                     <Input
@@ -379,10 +476,13 @@ export default function ConfiguracoesPage() {
                       placeholder="contato@turismonoronha.com.br"
                     />
                   </div>
+                  <p className="text-xs text-gray-500">
+                    Email usado para contato geral, formulários e footer do site
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="support-phone">Telefone de Suporte</Label>
+                  <Label htmlFor="support-phone">Telefone de Contato</Label>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-gray-400" />
                     <Input
@@ -398,6 +498,9 @@ export default function ConfiguracoesPage() {
                       placeholder="+5581987654321"
                     />
                   </div>
+                  <p className="text-xs text-gray-500">
+                    Telefone usado para contato geral (exibido no footer)
+                  </p>
                 </div>
               </div>
 

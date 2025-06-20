@@ -301,10 +301,10 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="itinerary">Roteiro</TabsTrigger>
-              <TabsTrigger value="includes">O que inclui</TabsTrigger>
-              <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+              <TabsTrigger value="overview" className="flex items-center justify-center py-3">Visão Geral</TabsTrigger>
+              <TabsTrigger value="itinerary" className="flex items-center justify-center py-3">Roteiro</TabsTrigger>
+              <TabsTrigger value="includes" className="flex items-center justify-center py-3">O que inclui</TabsTrigger>
+              <TabsTrigger value="reviews" className="flex items-center justify-center py-3">Avaliações</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 mt-6">

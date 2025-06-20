@@ -15,6 +15,14 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
+import StripeProvider from "@/lib/providers/StripeProvider"
+import BookingPaymentForm from "@/components/payments/BookingPaymentForm"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 
 export type AccommodationBookingFormProps = {
   accommodationId: string
@@ -45,7 +53,8 @@ export function AccommodationBookingForm({
     to: undefined,
   })
   const [guests, setGuests] = useState<number>(2)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, _setIsSubmitting] = useState(false)
+  const [paymentOpen, setPaymentOpen] = useState(false)
   
   // Formatar preço para moeda brasileira
   const formatCurrency = (value: number) => {
@@ -66,6 +75,29 @@ export function AccommodationBookingForm({
   const nights = calculateNights()
   const totalPrice = pricePerNight * nights
   
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    // Create booking after payment success
+    if (onSubmit) {
+      onSubmit({
+        hotelId: accommodationId,
+        hotelName: accommodationName,
+        checkIn: dateRange!.from!,
+        checkOut: dateRange!.to!,
+        roomType: "Standard",
+        guests,
+      })
+    }
+
+    toast.success("Reserva confirmada e pagamento aprovado!", {
+      description: `${formatCurrency(totalPrice)} pagos com sucesso.`,
+    })
+
+    // Reset form
+    setDateRange({ from: undefined, to: undefined })
+    setGuests(2)
+    setPaymentOpen(false)
+  }
+
   const handleSubmit = async () => {
     if (!dateRange?.from || !dateRange?.to) {
       toast.error("Selecione as datas de check-in e check-out")
@@ -76,41 +108,9 @@ export function AccommodationBookingForm({
       toast.error(`Número máximo de hóspedes: ${maxGuests}`)
       return
     }
-    
-    setIsSubmitting(true)
-    
-    try {
-      // Simular um atraso de rede
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (onSubmit) {
-        onSubmit({
-          hotelId: accommodationId,
-          hotelName: accommodationName,
-          checkIn: dateRange.from,
-          checkOut: dateRange.to,
-          roomType: "Standard",
-          guests
-        })
-      }
-      
-      // Feedback de sucesso
-      toast.success("Reserva de hospedagem confirmada", {
-        description: `Sua reserva para ${guests} ${guests === 1 ? "hóspede" : "hóspedes"} foi confirmada de ${format(dateRange.from, "PPP", { locale: ptBR })} a ${format(dateRange.to, "PPP", { locale: ptBR })}.`,
-        className: "bg-green-500 text-white"
-      })
-      
-      // Resetar formulário
-      setDateRange({ from: undefined, to: undefined })
-      setGuests(2)
-    } catch {
-      toast.error("Erro ao reservar", {
-        description: "Não foi possível completar sua reserva de hospedagem. Por favor, tente novamente.",
-        className: "bg-red-500 text-white"
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+
+    // Open payment modal
+    setPaymentOpen(true)
   }
 
   const incrementGuests = () => {
@@ -233,13 +233,13 @@ export function AccommodationBookingForm({
         {/* Submit button */}
         <Button
           onClick={handleSubmit}
-          disabled={!isFormValid || isSubmitting}
+          disabled={!isFormValid}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-medium"
         >
-          {isSubmitting ? (
+          {paymentOpen ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-              Confirmando...
+              Processando pagamento...
             </>
           ) : (
             <>
@@ -257,6 +257,17 @@ export function AccommodationBookingForm({
           </p>
         )}
       </div>
+
+      {/* Payment dialog */}
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent className="w-full max-w-md">
+          <DialogTitle>Pagamento da Reserva</DialogTitle>
+          <DialogDescription>Complete o pagamento para confirmar a reserva.</DialogDescription>
+          <StripeProvider>
+            <BookingPaymentForm amountCents={totalPrice * 100} onSuccess={handlePaymentSuccess} />
+          </StripeProvider>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

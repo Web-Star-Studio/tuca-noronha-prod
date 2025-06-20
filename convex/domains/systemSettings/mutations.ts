@@ -76,6 +76,104 @@ export const updateSetting = mutation({
   },
 });
 
+// Mutation para atualizar ou criar uma configuração (upsert)
+export const upsertSetting = mutation({
+  args: settingValidators.updateSetting,
+  returns: v.null(),
+  handler: async (ctx, { key, value, type }) => {
+    // Verificar se o usuário é admin master
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) {
+      throw new Error("Acesso negado: usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", user.subject))
+      .unique();
+
+    if (!currentUser || currentUser.role !== "master") {
+      throw new Error("Acesso negado: apenas administradores master podem atualizar configurações");
+    }
+
+    // Buscar a configuração existente
+    const existingSetting = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+
+    const now = Date.now();
+    let settingId;
+    let isUpdate = false;
+
+    if (existingSetting) {
+      // Atualizar configuração existente
+      await ctx.db.patch(existingSetting._id, {
+        value,
+        type,
+        lastModifiedBy: currentUser._id,
+        lastModifiedAt: now,
+      });
+      settingId = existingSetting._id;
+      isUpdate = true;
+    } else {
+      // Criar nova configuração usando valores padrão se disponível
+      const defaultSetting = DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS];
+      
+      settingId = await ctx.db.insert("systemSettings", {
+        key,
+        value,
+        type,
+        category: defaultSetting?.category || "system",
+        description: defaultSetting?.description || `Configuração ${key}`,
+        isPublic: defaultSetting?.isPublic ?? true,
+        lastModifiedBy: currentUser._id,
+        lastModifiedAt: now,
+        createdAt: now,
+      });
+      isUpdate = false;
+    }
+
+    // Log da alteração
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUser._id,
+        role: currentUser.role,
+        name: currentUser.name || "Usuário",
+        email: currentUser.email,
+      },
+      event: {
+        type: "system_config_change",
+        action: isUpdate 
+          ? `Configuração '${key}' atualizada`
+          : `Configuração '${key}' criada`,
+        category: "system_admin",
+        severity: "medium",
+      },
+      resource: {
+        type: "systemSettings",
+        id: settingId,
+        name: key,
+      },
+      source: {
+        ipAddress: "0.0.0.0", // TODO: Capturar IP real
+        platform: "web",
+      },
+      status: "success",
+      metadata: {
+        before: existingSetting?.value,
+        after: value,
+        reason: isUpdate 
+          ? "Configuração atualizada pelo administrador"
+          : "Configuração criada pelo administrador",
+      },
+      timestamp: now,
+    });
+
+    return null;
+  },
+});
+
 // Mutation para criar uma nova configuração
 export const createSetting = mutation({
   args: settingValidators.createSetting,
@@ -373,6 +471,84 @@ export const toggleMaintenanceMode = mutation({
       },
       timestamp: Date.now(),
     });
+
+    return null;
+  },
+});
+
+// Mutation para inicializar configurações específicas que estão faltando
+export const initializeMissingSettings = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    // Verificar se o usuário é admin master
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) {
+      throw new Error("Acesso negado: usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", user.subject))
+      .unique();
+
+    if (!currentUser || currentUser.role !== "master") {
+      throw new Error("Acesso negado: apenas administradores master podem inicializar configurações");
+    }
+
+    // Verificar quais configurações padrão estão faltando
+    const now = Date.now();
+    let createdCount = 0;
+
+    for (const [key, config] of Object.entries(DEFAULT_SETTINGS)) {
+      const existingSetting = await ctx.db
+        .query("systemSettings")
+        .withIndex("by_key", (q) => q.eq("key", key))
+        .unique();
+
+      if (!existingSetting) {
+        await ctx.db.insert("systemSettings", {
+          key,
+          value: config.value,
+          type: config.type,
+          category: config.category,
+          description: config.description,
+          isPublic: config.isPublic,
+          lastModifiedBy: currentUser._id,
+          lastModifiedAt: now,
+          createdAt: now,
+        });
+        createdCount++;
+      }
+    }
+
+    if (createdCount > 0) {
+      // Log da inicialização
+      await ctx.db.insert("auditLogs", {
+        actor: {
+          userId: currentUser._id,
+          role: currentUser.role,
+          name: currentUser.name || "Usuário",
+          email: currentUser.email,
+        },
+        event: {
+          type: "system_config_change",
+          action: `${createdCount} configurações faltantes inicializadas`,
+          category: "system_admin",
+          severity: "medium",
+        },
+        source: {
+          ipAddress: "0.0.0.0", // TODO: Capturar IP real
+          platform: "web",
+        },
+        status: "success",
+        metadata: {
+          reason: "Inicialização de configurações faltantes",
+          quantity: createdCount,
+        },
+        timestamp: now,
+      });
+    }
 
     return null;
   },

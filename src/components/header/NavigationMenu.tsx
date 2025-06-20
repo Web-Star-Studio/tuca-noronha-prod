@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed, User, Car, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useSystemSettings } from "@/lib/hooks/useSystemSettings";
 
 interface NavigationMenuProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface NavigationMenuProps {
 
 const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
   const pathname = usePathname();
+  const { supportEmail } = useSystemSettings();
   const navigationItems = [
     { path: "/meu-painel", label: "Meu Painel", icon: User },
     { path: "/meu-painel/chats", label: "Conversas", icon: MessageCircle },
@@ -145,11 +147,11 @@ const NavigationMenu = ({ onClose }: NavigationMenuProps) => {
       >
         <p className="text-gray-500 text-sm mb-4">Entre em contato conosco</p>
         <Link 
-          href="mailto:contato@tucanoronha.com" 
+          href={`mailto:${supportEmail}`} 
           className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
         >
           <Mail className="h-4 w-4 mr-2" />
-          <span className="font-medium">contato@tucanoronha.com</span>
+          <span className="font-medium">{supportEmail}</span>
         </Link>
       </motion.div>
     </div>

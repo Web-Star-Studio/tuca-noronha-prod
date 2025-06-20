@@ -1031,6 +1031,21 @@ const eventAssetValidator = v.object({
   speaker: v.optional(v.string()),
   speakerBio: v.optional(v.string()),
   whatsappContact: v.optional(v.string()),
+  symplaUrl: v.optional(v.string()),
+  // Campos do Sympla
+  symplaId: v.optional(v.string()),
+  symplaHost: v.optional(v.object({
+    name: v.string(),
+    description: v.string(),
+  })),
+  sympla_private_event: v.optional(v.boolean()),
+  sympla_published: v.optional(v.boolean()),
+  sympla_cancelled: v.optional(v.boolean()),
+  external_id: v.optional(v.string()),
+  sympla_categories: v.optional(v.object({
+    primary: v.optional(v.string()),
+    secondary: v.optional(v.string()),
+  })),
   includes: v.optional(v.array(v.string())),
   additionalInfo: v.optional(v.array(v.string())),
   highlights: v.optional(v.array(v.string())),
@@ -1049,9 +1064,13 @@ const activityAssetValidator = v.object({
   difficulty: v.optional(v.string()),
   minAge: v.optional(v.number()),
   maxParticipants: v.optional(v.number()),
+  minParticipants: v.optional(v.number()),
   includes: v.optional(v.array(v.string())),
+  excludes: v.optional(v.array(v.string())),
+  itineraries: v.optional(v.array(v.string())),
   additionalInfo: v.optional(v.array(v.string())),
   highlights: v.optional(v.array(v.string())),
+  cancelationPolicy: v.optional(v.array(v.string())),
   requiresBooking: v.optional(v.boolean()),
   hasMultipleTickets: v.optional(v.boolean()),
 });
@@ -1388,6 +1407,7 @@ export const listAllActivities = query({
           partnerEmail: partner?.email,
           bookingsCount: 0, // TODO: Implement booking counting for activities
           maxParticipants: activity.maxParticipants ? Number(activity.maxParticipants) : undefined,
+          minParticipants: activity.minParticipants ? Number(activity.minParticipants) : undefined,
         };
       })
     );

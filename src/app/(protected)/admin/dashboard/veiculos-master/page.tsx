@@ -49,13 +49,13 @@ type VehicleData = {
   brand: string;
   model: string;
   category: string;
-  year: number;
+  year: number | bigint;
   licensePlate: string;
   color: string;
-  seats: number;
+  seats: number | bigint;
   fuelType: string;
   transmission: string;
-  pricePerDay: number;
+  pricePerDay: number | bigint;
   description?: string;
   features: string[];
   imageUrl?: string;
@@ -173,8 +173,8 @@ export default function VehiclesMasterPage() {
     available: vehicles.filter(v => v.status === "available").length,
     rented: vehicles.filter(v => v.status === "rented").length,
     maintenance: vehicles.filter(v => v.status === "maintenance").length,
-    totalRevenuePotential: vehicles.reduce((sum, v) => sum + v.pricePerDay, 0),
-    avgPricePerDay: vehicles.length > 0 ? vehicles.reduce((sum, v) => sum + v.pricePerDay, 0) / vehicles.length : 0,
+    totalRevenuePotential: vehicles.reduce((sum, v) => sum + Number(v.pricePerDay), 0),
+    avgPricePerDay: vehicles.length > 0 ? vehicles.reduce((sum, v) => sum + Number(v.pricePerDay), 0) / vehicles.length : 0,
   } : null;
 
   return (
@@ -407,7 +407,7 @@ export default function VehiclesMasterPage() {
                         <div className="space-y-1">
                           <div className="font-medium">{vehicle.name}</div>
                           <div className="text-sm text-gray-500">
-                            {vehicle.brand} {vehicle.model} ({vehicle.year})
+                            {vehicle.brand} {vehicle.model} ({Number(vehicle.year)})
                           </div>
                           <div className="text-sm text-gray-400 flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -431,12 +431,12 @@ export default function VehiclesMasterPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(vehicle.pricePerDay)}
+                        {formatCurrency(Number(vehicle.pricePerDay))}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4 text-gray-400" />
-                          {vehicle.seats} pessoas
+                          {Number(vehicle.seats)} pessoas
                         </div>
                       </TableCell>
                       <TableCell>

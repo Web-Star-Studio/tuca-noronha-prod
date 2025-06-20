@@ -148,6 +148,7 @@ export const getAllSettings = query({
   args: {},
   returns: v.array(v.object({
     _id: v.id("systemSettings"),
+    _creationTime: v.number(),
     key: v.string(),
     value: v.any(),
     type: v.string(),
