@@ -92,7 +92,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         variant={variant === "floating" ? "default" : variant}
         size={size === "sm" ? "sm" : size === "lg" ? "lg" : "default"}
         className={`${variant === "floating" 
-          ? `fixed bottom-6 right-6 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 ${className}`
+          ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-gray-400 to-gray-500 border-none text-white ${className}`
           : className} opacity-50 cursor-not-allowed`}
         title="Informações insuficientes para iniciar conversa"
       >
@@ -174,7 +174,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   };
 
   const buttonClasses = variant === "floating" 
-    ? `fixed bottom-6 right-6 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 ${className}`
+    ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none text-white ${className}`
     : className;
 
   return (
@@ -197,7 +197,9 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           disabled
           variant={getButtonVariant()}
           size={getButtonSize()}
-          className={`${buttonClasses} opacity-50 cursor-not-allowed`}
+          className={`${variant === "floating" 
+            ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-gray-400 to-gray-500 border-none text-white opacity-50 cursor-not-allowed ${className}`
+            : `${className} opacity-50 cursor-not-allowed`}`}
           title="Faça login para conversar"
         >
           {getButtonIcon()}

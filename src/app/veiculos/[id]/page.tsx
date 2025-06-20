@@ -33,6 +33,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
 import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
+import { HelpSection } from "@/components/contact";
 
 export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
@@ -143,19 +144,19 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                 <TabsList className="mb-6 w-full justify-start bg-transparent border-b rounded-none p-0 h-auto">
                   <TabsTrigger
                     value="info"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
                   >
                     Detalhes
                   </TabsTrigger>
                   <TabsTrigger
                     value="features"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
                   >
                     Características
                   </TabsTrigger>
                   <TabsTrigger
                     value="photos"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-0 px-4"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
                   >
                     Fotos
                   </TabsTrigger>
@@ -326,26 +327,11 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                   </CardContent>
                 </Card>
                 
-                <Card className="mt-4 border-gray-100">
-                  <CardContent className="p-5">
-                    <h3 className="font-medium text-gray-900 mb-2">Precisa de ajuda?</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Nossa equipe está disponível para responder suas perguntas.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="w-full gap-2 text-green-600 border-green-300 hover:bg-green-50"
-                      onClick={() => {
-                        const message = `Olá! Gostaria de tirar dúvidas sobre o aluguel do veículo ${vehicle.brand} ${vehicle.model}. Vocês podem me ajudar?`;
-                        const whatsappUrl = generateWhatsAppLink(message);
-                        window.open(whatsappUrl, '_blank');
-                      }}
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Entre em contato via WhatsApp
-                    </Button>
-                  </CardContent>
-                </Card>
+                <HelpSection 
+                  className="mt-4"
+                  customMessage={`Olá! Gostaria de tirar dúvidas sobre o aluguel do veículo ${vehicle.brand} ${vehicle.model}. Vocês podem me ajudar?`}
+                  showDropdown={false}
+                />
               </div>
             </div>
           </div>

@@ -52,10 +52,10 @@ type ActivityData = {
   _id: Id<"activities">;
   title: string;
   category: string;
-  price: number;
-  maxParticipants: number;
+  price: number | bigint;
+  maxParticipants: number | bigint;
   difficulty: string;
-  rating: number;
+  rating: number | bigint;
   isFeatured: boolean;
   isActive: boolean;
   partnerId: Id<"users">;
@@ -158,8 +158,8 @@ export default function ActivitiesMasterPage() {
     total: activities.length,
     active: activities.filter(a => a.isActive).length,
     featured: activities.filter(a => a.isFeatured).length,
-    totalRevenuePotential: activities.reduce((sum, a) => sum + (a.price * a.maxParticipants), 0),
-    avgRating: activities.length > 0 ? activities.reduce((sum, a) => sum + a.rating, 0) / activities.length : 0,
+    totalRevenuePotential: activities.reduce((sum, a) => sum + (Number(a.price) * Number(a.maxParticipants)), 0),
+    avgRating: activities.length > 0 ? activities.reduce((sum, a) => sum + Number(a.rating || 0), 0) / activities.length : 0,
   } : null;
 
   return (
@@ -376,7 +376,7 @@ export default function ActivitiesMasterPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500">⭐</span>
-                            <span className="text-sm">{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
+                            <span className="text-sm">{activity.rating ? Number(activity.rating).toFixed(1) : 'N/A'}</span>
                           </div>
                         </div>
                       </TableCell>
@@ -396,12 +396,12 @@ export default function ActivitiesMasterPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(activity.price)}
+                        {formatCurrency(Number(activity.price))}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4 text-gray-400" />
-                          {activity.maxParticipants}
+                          {Number(activity.maxParticipants)}
                         </div>
                       </TableCell>
                       <TableCell>

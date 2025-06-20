@@ -190,6 +190,22 @@ const getBaseTemplate = (content: string): string => {
 
 // Template para confirmação de reserva
 export const getBookingConfirmationTemplate = (data: any): string => {
+  // Gerar lista HTML com todos os detalhes extras da reserva (campos dinâmicos)
+  const extraDetailsHtml = data.bookingDetails
+    ? Object.entries(data.bookingDetails)
+        .map(([key, value]) => {
+          // Transformar chave em formato legível (ex: "pickupLocation" => "Pickup Location")
+          const label = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, (s) => s.toUpperCase());
+          const displayValue =
+            typeof value === "object"
+              ? JSON.stringify(value)
+              : String(value);
+          return `<li><strong>${label}:</strong> ${displayValue}</li>`;
+        })
+        .join("")
+    : "";
   const content = `
     <div class="container">
         <div class="header">
@@ -233,6 +249,15 @@ export const getBookingConfirmationTemplate = (data: any): string => {
                     ` : ''}
                 </div>
             </div>
+            
+            ${data.bookingDetails ? `
+            <div class="highlight-box">
+                <h3>Informações Adicionais da Reserva</h3>
+                <ul style="margin: 0 0 0 1.5rem;">
+                    ${extraDetailsHtml}
+                </ul>
+            </div>
+            ` : ''}
             
             <p><strong>Importante:</strong> Guarde este código de confirmação. Você precisará dele no dia da sua experiência.</p>
             
@@ -396,6 +421,17 @@ export const getPackageRequestReceivedTemplate = (data: any): string => {
 
 // Template para nova reserva (para parceiros)
 export const getPartnerNewBookingTemplate = (data: any): string => {
+  const extraDetailsHtml = data.bookingDetails
+    ? Object.entries(data.bookingDetails)
+        .map(([key, value]) => {
+          const label = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, (s) => s.toUpperCase());
+          const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+          return `<li><strong>${label}:</strong> ${displayValue}</li>`;
+        })
+        .join('')
+    : '';
   const content = `
     <div class="container">
         <div class="header">
@@ -451,6 +487,15 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
                     </div>
                 </div>
             </div>
+            
+            ${data.bookingDetails ? `
+            <div class="highlight-box">
+                <h3>Informações Adicionais da Reserva</h3>
+                <ul style="margin: 0 0 0 1.5rem;">
+                    ${extraDetailsHtml}
+                </ul>
+            </div>
+            ` : ''}
             
             <p><strong>Ação necessária:</strong> Acesse o painel de parceiro para confirmar ou gerenciar esta reserva.</p>
             

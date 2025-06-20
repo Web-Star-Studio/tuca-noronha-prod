@@ -44,7 +44,8 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
         partnerId={event.partnerId as any}
         variant="floating"
         size="lg"
-        showLabel={false}
+        showLabel={true}
+        customLabel="Suporte"
       />
     </>
   );

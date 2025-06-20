@@ -35,7 +35,7 @@ export default function BookingCTA() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 shadow-xl">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-blue-600 to-blue-500 shadow-xl">
             {/* Background image/pattern */}
             <div className="absolute inset-0 opacity-10">
               <Image
@@ -104,9 +104,9 @@ export default function BookingCTA() {
                     transition={{ duration: 0.8, delay: 0.2 }}
                     viewport={{ once: true }}
                   >
-                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-l from-transparent to-blue-600 z-10" />
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-l from-transparent to-blue-500 z-10" />
                     <Image
-                      src="https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?q=80&w=1200&auto=format&fit=crop"
+                      src="https://images.unsplash.com/photo-1653937270172-74c3977ad2b8?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                       alt="Fernando de Noronha"
                       fill
                       className="object-cover rounded-l-3xl"
