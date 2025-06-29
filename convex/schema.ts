@@ -263,6 +263,18 @@ export default defineSchema({
     isActive: v.boolean(),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
+    // Stripe integration fields
+    stripeProductId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
+    stripeMetadata: v.optional(v.object({
+      productType: v.string(),
+      partnerId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })),
   })
     .index("by_partner", ["partnerId"])
     .index("featured_activities", ["isFeatured", "isActive"])
@@ -318,6 +330,18 @@ export default defineSchema({
     sympla_categories: v.optional(v.object({       // Categories from Sympla
       primary: v.optional(v.string()),
       secondary: v.optional(v.string()),
+    })),
+    // Stripe integration fields
+    stripeProductId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
+    stripeMetadata: v.optional(v.object({
+      productType: v.string(),
+      partnerId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
     })),
   })
     .index("by_partner", ["partnerId"])
@@ -393,6 +417,18 @@ export default defineSchema({
     isActive: v.boolean(),                              // Status ativo/inativo
     isFeatured: v.boolean(),                            // Status destacado
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
+    // Stripe integration fields
+    stripeProductId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
+    stripeMetadata: v.optional(v.object({
+      productType: v.string(),
+      partnerId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })),
   })
     .index("by_slug", ["slug"])                         // Índice por slug (URL)
     .index("by_partner", ["partnerId"])                 // Índice por parceiro
@@ -413,6 +449,26 @@ export default defineSchema({
     status: v.string(),                                 // Status (ex: "pending", "confirmed", "canceled")
     confirmationCode: v.string(),                       // Código de confirmação
     tableId: v.optional(v.id("restaurantTables")),      // Mesa atribuída (opcional)
+    // Stripe integration fields
+    paymentStatus: v.optional(v.string()),              // Status do pagamento
+    paymentMethod: v.optional(v.string()),              // Método de pagamento
+    totalPrice: v.optional(v.number()),                 // Preço total se aplicável
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paymentDetails: v.optional(v.object({
+      receiptUrl: v.optional(v.string()),
+    })),
+    refunds: v.optional(v.array(v.object({
+      refundId: v.string(),
+      amount: v.number(),
+      reason: v.string(),
+      status: v.string(),
+      createdAt: v.number(),
+      processedAt: v.optional(v.number()),
+    }))),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
   })
     .index("by_restaurant", ["restaurantId"])
     .index("by_user", ["userId"])
@@ -555,6 +611,21 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     }),
+    // Stripe integration fields
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paymentDetails: v.optional(v.object({
+      receiptUrl: v.optional(v.string()),
+    })),
+    refunds: v.optional(v.array(v.object({
+      refundId: v.string(),
+      amount: v.number(),
+      reason: v.string(),
+      status: v.string(),
+      createdAt: v.number(),
+      processedAt: v.optional(v.number()),
+    }))),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -582,6 +653,21 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     }),
+    // Stripe integration fields
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paymentDetails: v.optional(v.object({
+      receiptUrl: v.optional(v.string()),
+    })),
+    refunds: v.optional(v.array(v.object({
+      refundId: v.string(),
+      amount: v.number(),
+      reason: v.string(),
+      status: v.string(),
+      createdAt: v.number(),
+      processedAt: v.optional(v.number()),
+    }))),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -620,6 +706,18 @@ export default defineSchema({
     updatedAt: v.number(),
     ownerId: v.optional(v.id("users")), // Reference to user who created/owns this vehicle
     organizationId: v.optional(v.string()), // For multi-tenant applications
+    // Stripe integration fields
+    stripeProductId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
+    stripeMetadata: v.optional(v.object({
+      productType: v.string(),
+      partnerId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })),
   })
     .index("by_status", ["status"])
     .index("by_ownerId", ["ownerId"]),
@@ -639,6 +737,27 @@ export default defineSchema({
     additionalOptions: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
     partnerNotes: v.optional(v.string()), // Notes from partner/employee
+    confirmationCode: v.optional(v.string()), // Unique confirmation code
+    customerInfo: v.optional(v.object({     // Customer contact information
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+    })),
+    // Stripe integration fields
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paymentDetails: v.optional(v.object({
+      receiptUrl: v.optional(v.string()),
+    })),
+    refunds: v.optional(v.array(v.object({
+      refundId: v.string(),
+      amount: v.number(),
+      reason: v.string(),
+      status: v.string(),
+      createdAt: v.number(),
+      processedAt: v.optional(v.number()),
+    }))),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -709,6 +828,18 @@ export default defineSchema({
     isFeatured: v.boolean(),                            // Status destacado
     tags: v.array(v.string()),                          // Tags para busca
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
+    // Stripe integration fields
+    stripeProductId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
+    stripeMetadata: v.optional(v.object({
+      productType: v.string(),
+      partnerId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })),
   })
     .index("by_slug", ["slug"])                         // Índice por slug (URL)
     .index("by_partner", ["partnerId"])                 // Índice por parceiro
@@ -734,6 +865,21 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     }),
+    // Stripe integration fields
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paymentDetails: v.optional(v.object({
+      receiptUrl: v.optional(v.string()),
+    })),
+    refunds: v.optional(v.array(v.object({
+      refundId: v.string(),
+      amount: v.number(),
+      reason: v.string(),
+      status: v.string(),
+      createdAt: v.number(),
+      processedAt: v.optional(v.number()),
+    }))),
     createdAt: v.number(),                              // Timestamp de criação
     updatedAt: v.number(),                              // Timestamp de atualização
   })
@@ -844,6 +990,18 @@ export default defineSchema({
     partnerId: v.id("users"),                   // ID do parceiro criador
     createdAt: v.number(),                      // Timestamp de criação
     updatedAt: v.number(),                      // Timestamp de atualização
+    // Stripe integration fields
+    stripeProductId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
+    stripeMetadata: v.optional(v.object({
+      productType: v.string(),
+      partnerId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })),
   })
     .index("by_slug", ["slug"])
     .index("by_partner", ["partnerId"])
@@ -887,6 +1045,21 @@ export default defineSchema({
     specialRequests: v.optional(v.string()),
     partnerNotes: v.optional(v.string()),
     confirmationCode: v.string(),
+    // Stripe integration fields
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    paymentDetails: v.optional(v.object({
+      receiptUrl: v.optional(v.string()),
+    })),
+    refunds: v.optional(v.array(v.object({
+      refundId: v.string(),
+      amount: v.number(),
+      reason: v.string(),
+      status: v.string(),
+      createdAt: v.number(),
+      processedAt: v.optional(v.number()),
+    }))),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -1368,4 +1541,53 @@ export default defineSchema({
     .index("by_sent_at", ["sentAt"])
     .index("by_type_status", ["type", "status"])
     .index("by_recipient_type", ["to", "type"]),
+
+  // Stripe Integration Tables
+  stripeWebhookEvents: defineTable({
+    stripeEventId: v.string(),                  // Stripe Event ID (for idempotency)
+    eventType: v.string(),                      // Event type (e.g., payment_intent.succeeded)
+    livemode: v.boolean(),                      // Whether this is a live or test event
+    processed: v.boolean(),                     // Whether the event has been processed
+    processedAt: v.optional(v.number()),        // When it was processed
+    relatedBookingId: v.optional(v.string()),   // Related booking ID
+    relatedAssetType: v.optional(v.string()),   // Type of asset (activity, event, etc.)
+    relatedAssetId: v.optional(v.string()),     // Asset ID
+    eventData: v.object({
+      amount: v.optional(v.number()),           // Amount involved
+      currency: v.optional(v.string()),         // Currency
+      paymentIntentId: v.optional(v.string()),  // Payment Intent ID
+      customerId: v.optional(v.string()),       // Customer ID
+    }),
+    processingErrors: v.optional(v.array(v.object({
+      error: v.string(),
+      timestamp: v.number(),
+      retryCount: v.number(),
+    }))),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_stripe_event_id", ["stripeEventId"])
+    .index("by_event_type", ["eventType"])
+    .index("by_processed", ["processed"])
+    .index("by_booking", ["relatedBookingId"])
+    .index("by_asset", ["relatedAssetType", "relatedAssetId"])
+    .index("by_created_at", ["createdAt"]),
+
+  stripeCustomers: defineTable({
+    userId: v.id("users"),                      // User Reference
+    stripeCustomerId: v.string(),               // Stripe Customer ID
+    email: v.string(),                          // Customer email
+    name: v.optional(v.string()),               // Customer name
+    phone: v.optional(v.string()),              // Customer phone
+    metadata: v.optional(v.object({
+      source: v.string(),                       // Where customer was created from
+      userRole: v.string(),                     // User role when created
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_stripe_customer_id", ["stripeCustomerId"])
+    .index("by_email", ["email"])
+    .index("by_created_at", ["createdAt"]),
 });

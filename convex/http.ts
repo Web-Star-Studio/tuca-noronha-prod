@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { handleStripeWebhook, testWebhook } from "./domains/stripe/webhooks";
 
 // Tipo para os eventos do webhook Clerk
 type ClerkWebhookEvent = {
@@ -128,6 +129,19 @@ http.route({
       );
     }
   }),
+});
+
+// Stripe webhook routes
+http.route({
+  path: "/stripe/webhook",
+  method: "POST",
+  handler: handleStripeWebhook,
+});
+
+http.route({
+  path: "/stripe/test-webhook",
+  method: "POST",
+  handler: testWebhook,
 });
 
 export default http;

@@ -15,8 +15,9 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
-import StripeProvider from "@/lib/providers/StripeProvider"
-import BookingPaymentForm from "@/components/payments/BookingPaymentForm"
+import { useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
+import PaymentLinkCheckout from "@/components/payments/PaymentLinkCheckout"
 import {
   Dialog,
   DialogContent,
@@ -53,8 +54,11 @@ export function AccommodationBookingForm({
     to: undefined,
   })
   const [guests, setGuests] = useState<number>(2)
-  const [isSubmitting, _setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
+  const [currentBookingId, setCurrentBookingId] = useState<string | null>(null)
+
+  const createAccommodationBooking = useMutation(api.domains.bookings.mutations.createAccommodationBooking)
   
   // Formatar preço para moeda brasileira
   const formatCurrency = (value: number) => {
@@ -75,8 +79,7 @@ export function AccommodationBookingForm({
   const nights = calculateNights()
   const totalPrice = pricePerNight * nights
   
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
-    // Create booking after payment success
+  const handlePaymentSuccess = () => {
     if (onSubmit) {
       onSubmit({
         hotelId: accommodationId,
@@ -88,14 +91,15 @@ export function AccommodationBookingForm({
       })
     }
 
-    toast.success("Reserva confirmada e pagamento aprovado!", {
-      description: `${formatCurrency(totalPrice)} pagos com sucesso.`,
+    toast.success("Reserva criada com sucesso!", {
+      description: "Você será redirecionado para o pagamento.",
     })
 
     // Reset form
     setDateRange({ from: undefined, to: undefined })
     setGuests(2)
     setPaymentOpen(false)
+    setCurrentBookingId(null)
   }
 
   const handleSubmit = async () => {
@@ -109,8 +113,31 @@ export function AccommodationBookingForm({
       return
     }
 
-    // Open payment modal
-    setPaymentOpen(true)
+    try {
+      setIsSubmitting(true)
+
+      // Create booking first (status: pending, paymentStatus: pending)
+      const bookingId = await createAccommodationBooking({
+        accommodationId,
+        checkIn: dateRange.from.toISOString(),
+        checkOut: dateRange.to.toISOString(),
+        guests,
+        totalPrice,
+        customerInfo: {
+          name: "Guest", // This should come from user profile or form
+          email: "guest@example.com", // This should come from user profile
+          phone: "+5511999999999", // This should come from user profile or form
+        },
+      })
+
+      setCurrentBookingId(bookingId)
+      setPaymentOpen(true)
+    } catch (error: any) {
+      console.error("Erro ao criar reserva:", error)
+      toast.error(error.message || "Erro ao criar reserva")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const incrementGuests = () => {
@@ -233,18 +260,18 @@ export function AccommodationBookingForm({
         {/* Submit button */}
         <Button
           onClick={handleSubmit}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isSubmitting}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-medium"
         >
-          {paymentOpen ? (
+          {isSubmitting ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-              Processando pagamento...
+              Criando reserva...
             </>
           ) : (
             <>
               <Check className="mr-2 h-5 w-5" />
-              Confirmar reserva
+              Criar reserva e pagar
             </>
           )}
         </Button>
@@ -262,10 +289,19 @@ export function AccommodationBookingForm({
       <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
         <DialogContent className="w-full max-w-md">
           <DialogTitle>Pagamento da Reserva</DialogTitle>
-          <DialogDescription>Complete o pagamento para confirmar a reserva.</DialogDescription>
-          <StripeProvider>
-            <BookingPaymentForm amountCents={totalPrice * 100} onSuccess={handlePaymentSuccess} />
-          </StripeProvider>
+          <DialogDescription>
+            Sua reserva foi criada! Clique abaixo para prosseguir com o pagamento seguro via Stripe.
+          </DialogDescription>
+          {currentBookingId && (
+            <PaymentLinkCheckout
+              bookingId={currentBookingId as any}
+              assetType="accommodation"
+              assetId={accommodationId}
+              totalAmount={totalPrice}
+              onSuccess={handlePaymentSuccess}
+              onCancel={() => setPaymentOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

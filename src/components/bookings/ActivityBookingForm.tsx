@@ -4,7 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Users, Clock, Ticket, MessageCircle } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
@@ -67,6 +67,7 @@ export function ActivityBookingForm({
   });
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
+  const createPaymentLink = useAction(api.domains.stripe.actions.createPaymentLinkForBooking);
   
   // Get WhatsApp link generator
   const { generateWhatsAppLink } = useWhatsAppLink();
@@ -102,6 +103,7 @@ export function ActivityBookingForm({
     setIsSubmitting(true);
 
     try {
+      // 1. Create the booking first
       const result = await createBooking({
         activityId,
         ticketId: selectedTicketId,
@@ -116,17 +118,63 @@ export function ActivityBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      if (onBookingSuccess) {
-        onBookingSuccess(result);
+      // 2. Create Stripe payment link and redirect to checkout
+      try {
+        const paymentLink = await createPaymentLink({
+          bookingId: result.bookingId,
+          assetType: "activity",
+          assetId: activityId,
+          totalAmount: result.totalPrice,
+          currency: "brl",
+          successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/booking/cancel`,
+        });
+
+        if (paymentLink.success && paymentLink.paymentLinkUrl) {
+          // Show success message with payment info
+          toast.success("Redirecionando para pagamento...", {
+            description: "Você será levado para o checkout seguro do Stripe",
+          });
+
+          // Call onBookingSuccess if provided
+          if (onBookingSuccess) {
+            onBookingSuccess({
+              confirmationCode: result.confirmationCode,
+              totalPrice: result.totalPrice,
+            });
+          }
+
+          // Reset form before redirecting
+          setDate(undefined);
+          setTime("");
+          setParticipants(activity.minParticipants);
+          setSelectedTicketId(undefined);
+          setCustomerInfo({ name: "", email: "", phone: "" });
+          setSpecialRequests("");
+
+          // Small delay to show the toast, then redirect
+          setTimeout(() => {
+            window.location.href = paymentLink.paymentLinkUrl;
+          }, 1500);
+
+        } else {
+          throw new Error(paymentLink.error || "Erro ao criar link de pagamento");
+        }
+      } catch (paymentError) {
+        console.error("Erro ao criar payment link:", paymentError);
+        toast.error("Reserva criada, mas erro no pagamento", {
+          description: "Entre em contato conosco para finalizar o pagamento",
+        });
+        
+        // Still call onBookingSuccess since booking was created
+        if (onBookingSuccess) {
+          onBookingSuccess({
+            confirmationCode: result.confirmationCode,
+            totalPrice: result.totalPrice,
+          });
+        }
       }
 
-      // Reset form
-      setDate(undefined);
-      setTime("");
-      setParticipants(activity.minParticipants);
-      setSelectedTicketId(undefined);
-      setCustomerInfo({ name: "", email: "", phone: "" });
-      setSpecialRequests("");
     } catch (error) {
       toast.error("Erro ao criar reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
@@ -318,8 +366,6 @@ export function ActivityBookingForm({
               <span>R$ {getPrice().toFixed(2)}</span>
             </div>
           </div>
-
-
 
           {/* Submit Button */}
           <Button
