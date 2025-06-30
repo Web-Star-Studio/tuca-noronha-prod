@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -51,4 +53,31 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+// Configuração do Sentry deve ser a última antes de exportar
+export default withSentryConfig(nextConfig, {
+  // Configurações da organização
+  org: "web-star-studio",
+  project: "tn-next-convex",
+
+  // Apenas mostrar logs em CI
+  silent: !process.env.CI,
+
+  // Tree-shake automaticamente logs do Sentry para reduzir bundle size
+  disableLogger: true,
+  
+  // Upload de source maps mais abrangente para stack traces mais legíveis
+  widenClientFileUpload: true,
+  
+  // Túnel para evitar bloqueadores de anúncios
+  tunnelRoute: "/monitoring",
+  
+  // Configurações de source maps
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  
+  // Instrumentação automática
+  autoInstrumentServerFunctions: true,
+  autoInstrumentMiddleware: true,
+  autoInstrumentAppDirectory: true,
+});
