@@ -82,11 +82,20 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
+      // Status antigos (compatibilidade)
       pending: { variant: "warning" as const, label: "Pendente", icon: AlertCircle },
       confirmed: { variant: "success" as const, label: "Confirmado", icon: CheckCircle },
       canceled: { variant: "danger" as const, label: "Cancelado", icon: XCircle },
       completed: { variant: "info" as const, label: "Concluído", icon: CheckCircle },
       refunded: { variant: "secondary" as const, label: "Reembolsado", icon: XCircle },
+      
+      // Novos status
+      draft: { variant: "secondary" as const, label: "Rascunho", icon: AlertCircle },
+      payment_pending: { variant: "warning" as const, label: "Aguardando Pagamento", icon: AlertCircle },
+      awaiting_confirmation: { variant: "warning" as const, label: "Aguardando Confirmação", icon: AlertCircle },
+      in_progress: { variant: "info" as const, label: "Em Andamento", icon: CheckCircle },
+      no_show: { variant: "danger" as const, label: "Não Compareceu", icon: XCircle },
+      expired: { variant: "secondary" as const, label: "Expirada", icon: XCircle },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -172,9 +181,11 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="pending">Pendente</SelectItem>
+            <SelectItem value="awaiting_confirmation">Aguardando Confirmação</SelectItem>
             <SelectItem value="confirmed">Confirmado</SelectItem>
-            <SelectItem value="canceled">Cancelado</SelectItem>
+            <SelectItem value="in_progress">Em Andamento</SelectItem>
             <SelectItem value="completed">Concluído</SelectItem>
+            <SelectItem value="canceled">Cancelado</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -270,7 +281,7 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
                               <p>{booking.specialRequests}</p>
                             </div>
                           )}
-                          {booking.status === "pending" && (
+                          {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
                             <Button
                               variant="destructive"
                               onClick={() => handleCancelBooking("activity", booking._id)}
@@ -372,7 +383,7 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
                               <p>{booking.specialRequests}</p>
                             </div>
                           )}
-                          {booking.status === "pending" && (
+                          {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
                             <Button
                               variant="destructive"
                               onClick={() => handleCancelBooking("event", booking._id)}
@@ -462,7 +473,7 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
                               <p>{reservation.specialRequests}</p>
                             </div>
                           )}
-                          {reservation.status === "pending" && (
+                          {(reservation.status === "pending" || reservation.status === "awaiting_confirmation") && (
                             <Button
                               variant="destructive"
                               onClick={() => handleCancelBooking("restaurant", reservation._id)}
@@ -551,17 +562,13 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
                               <p>{booking.returnLocation}</p>
                             </div>
                           )}
-                          <div>
-                            <h4 className="font-medium">Valor Total</h4>
-                            <p>R$ {booking.totalPrice.toFixed(2)}</p>
-                          </div>
                           {booking.notes && (
                             <div>
                               <h4 className="font-medium">Observações</h4>
                               <p>{booking.notes}</p>
                             </div>
                           )}
-                          {booking.status === "pending" && (
+                          {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
                             <Button
                               variant="destructive"
                               onClick={() => handleCancelBooking("vehicle", booking._id)}

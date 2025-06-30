@@ -310,10 +310,19 @@ export default function AdminBookingsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
+      // Status antigos (compatibilidade)
       pending: { variant: "secondary" as const, label: "Pendente", icon: AlertCircle, color: "text-orange-600" },
       confirmed: { variant: "default" as const, label: "Confirmado", icon: CheckCircle, color: "text-green-600" },
       canceled: { variant: "destructive" as const, label: "Cancelado", icon: XCircle, color: "text-red-600" },
       completed: { variant: "outline" as const, label: "Concluído", icon: CheckCircle, color: "text-blue-600" },
+      
+      // Novos status
+      draft: { variant: "secondary" as const, label: "Rascunho", icon: AlertCircle, color: "text-gray-600" },
+      payment_pending: { variant: "secondary" as const, label: "Aguardando Pagamento", icon: AlertCircle, color: "text-yellow-600" },
+      awaiting_confirmation: { variant: "secondary" as const, label: "Aguardando Confirmação", icon: AlertCircle, color: "text-orange-600" },
+      in_progress: { variant: "outline" as const, label: "Em Andamento", icon: CheckCircle, color: "text-blue-600" },
+      no_show: { variant: "destructive" as const, label: "Não Compareceu", icon: XCircle, color: "text-red-600" },
+      expired: { variant: "destructive" as const, label: "Expirada", icon: XCircle, color: "text-gray-600" },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -468,9 +477,11 @@ export default function AdminBookingsPage() {
                   <SelectContent>
                     <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="awaiting_confirmation">Aguardando Confirmação</SelectItem>
                     <SelectItem value="confirmed">Confirmado</SelectItem>
-                    <SelectItem value="canceled">Cancelado</SelectItem>
+                    <SelectItem value="in_progress">Em Andamento</SelectItem>
                     <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="canceled">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -552,7 +563,7 @@ export default function AdminBookingsPage() {
                           </div>
 
                           <div className="flex items-center gap-2 ml-4">
-                            {booking.status === "pending" && (
+                            {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
                               <>
                                 <Button
                                   size="sm"

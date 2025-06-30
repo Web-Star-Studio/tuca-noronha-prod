@@ -7,13 +7,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Ticket } from "lucide-react";
 
-type BookingStatus = "pending" | "confirmed" | "canceled" | "completed";
+type BookingStatus = "pending" | "confirmed" | "canceled" | "completed" | "draft" | "payment_pending" | "awaiting_confirmation" | "in_progress" | "no_show" | "expired";
 
 const statusConfig = {
+  // Status antigos (compatibilidade)
   pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
   confirmed: { label: "Confirmada", color: "bg-green-100 text-green-800", icon: CheckCircle },
   canceled: { label: "Cancelada", color: "bg-red-100 text-red-800", icon: XCircle },
   completed: { label: "Concluída", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+  
+  // Novos status
+  draft: { label: "Rascunho", color: "bg-gray-100 text-gray-800", icon: AlertCircle },
+  payment_pending: { label: "Aguardando Pagamento", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
+  awaiting_confirmation: { label: "Aguardando Confirmação", color: "bg-orange-100 text-orange-800", icon: AlertCircle },
+  in_progress: { label: "Em Andamento", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+  no_show: { label: "Não Compareceu", color: "bg-red-100 text-red-800", icon: XCircle },
+  expired: { label: "Expirada", color: "bg-gray-100 text-gray-800", icon: XCircle },
+};
+
+// Helper function to get status config with fallback for unknown statuses
+const getStatusConfig = (status: string) => {
+  return statusConfig[status as BookingStatus] || {
+    label: status,
+    color: "bg-gray-100 text-gray-800",
+    icon: AlertCircle
+  };
 };
 
 interface ActivityBookingCardProps {
@@ -21,7 +39,7 @@ interface ActivityBookingCardProps {
 }
 
 function ActivityBookingCard({ booking }: ActivityBookingCardProps) {
-  const statusInfo = statusConfig[booking.status as BookingStatus];
+  const statusInfo = getStatusConfig(booking.status);
   const StatusIcon = statusInfo.icon;
 
   return (
@@ -90,7 +108,7 @@ interface EventBookingCardProps {
 }
 
 function EventBookingCard({ booking }: EventBookingCardProps) {
-  const statusInfo = statusConfig[booking.status as BookingStatus];
+  const statusInfo = getStatusConfig(booking.status);
   const StatusIcon = statusInfo.icon;
 
   return (
@@ -163,7 +181,7 @@ interface RestaurantReservationCardProps {
 }
 
 function RestaurantReservationCard({ reservation }: RestaurantReservationCardProps) {
-  const statusInfo = statusConfig[reservation.status as BookingStatus];
+  const statusInfo = getStatusConfig(reservation.status);
   const StatusIcon = statusInfo.icon;
 
   return (
@@ -233,7 +251,7 @@ interface VehicleBookingCardProps {
 }
 
 function VehicleBookingCard({ booking }: VehicleBookingCardProps) {
-  const statusInfo = statusConfig[booking.status as BookingStatus];
+  const statusInfo = getStatusConfig(booking.status);
   const StatusIcon = statusInfo.icon;
 
   return (
