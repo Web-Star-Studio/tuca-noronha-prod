@@ -456,6 +456,7 @@ export default defineSchema({
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -615,6 +616,7 @@ export default defineSchema({
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -657,6 +659,7 @@ export default defineSchema({
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -747,6 +750,7 @@ export default defineSchema({
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -869,6 +873,7 @@ export default defineSchema({
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -1049,6 +1054,7 @@ export default defineSchema({
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),

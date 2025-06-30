@@ -3,6 +3,7 @@ import { query } from "../../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { Id } from "../../_generated/dataModel";
 import { mutation } from "../../_generated/server";
+import { BOOKING_STATUS, PAYMENT_STATUS } from "./types";
 
 /**
  * Get user's activity bookings
@@ -32,6 +33,14 @@ export const getUserActivityBookings = query({
         phone: v.string(),
       }),
       specialRequests: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),
@@ -115,6 +124,11 @@ export const getUserEventBookings = query({
         phone: v.string(),
       }),
       specialRequests: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -194,6 +208,11 @@ export const getUserRestaurantReservations = query({
       status: v.string(),
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -272,6 +291,11 @@ export const getUserVehicleBookings = query({
       pickupLocation: v.optional(v.string()),
       returnLocation: v.optional(v.string()),
       notes: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -840,6 +864,14 @@ export const getActivityBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),
@@ -1086,6 +1118,11 @@ export const getEventBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),
@@ -1332,6 +1369,11 @@ export const getRestaurantReservations = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       tableId: v.optional(v.id("restaurantTables")),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -1592,6 +1634,11 @@ export const getVehicleBookings = query({
         email: v.string(),
         phone: v.string(),
       }),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     })),
@@ -1988,6 +2035,14 @@ export const getActivityBookingById = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -2024,6 +2079,11 @@ export const getEventBookingById = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -2059,6 +2119,11 @@ export const getRestaurantReservationById = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       tableId: v.optional(v.id("restaurantTables")),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
     }),
     v.null()
   ),
@@ -2092,6 +2157,11 @@ export const getVehicleBookingById = query({
       additionalOptions: v.optional(v.array(v.string())),
       notes: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -2931,6 +3001,224 @@ export const getReservationWithPartnerDetails = query({
                  `${args.reservationType}s`,
       customerName,
     };
+  },
+});
+
+/**
+ * Get bookings by semantic status groups for admin dashboard
+ */
+export const getBookingsByStatusGroup = query({
+  args: v.object({
+    statusGroup: v.union(
+      v.literal("awaiting_payment"),     // DRAFT, PAYMENT_PENDING
+      v.literal("awaiting_confirmation"), // AWAITING_CONFIRMATION (paid or not requiring upfront payment)
+      v.literal("active"),               // CONFIRMED, IN_PROGRESS
+      v.literal("completed"),            // COMPLETED
+      v.literal("problematic"),          // CANCELED, EXPIRED, NO_SHOW, payment FAILED
+      v.literal("all")
+    ),
+    assetType: v.optional(v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("accommodation"),
+      v.literal("vehicle"),
+      v.literal("restaurant")
+    )),
+    partnerId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  }),
+  returns: v.array(v.object({
+    _id: v.string(),
+    type: v.string(),
+    assetName: v.string(),
+    customerName: v.string(),
+    customerEmail: v.string(),
+    customerPhone: v.string(),
+    bookingDate: v.string(),
+    totalPrice: v.optional(v.number()),
+    status: v.string(),
+    paymentStatus: v.optional(v.string()),
+    confirmationCode: v.string(),
+    createdAt: v.number(),
+    urgencyLevel: v.string(), // "high", "medium", "low"
+    actionRequired: v.boolean(),
+    actionMessage: v.string(), // Changed from v.optional(v.string())
+  })),
+  handler: async (ctx, args) => {
+    const limit = args.limit || 50;
+    const results: Array<{
+      _id: string;
+      type: string;
+      assetName: string;
+      customerName: string;
+      customerEmail: string;
+      customerPhone: string;
+      bookingDate: string;
+      totalPrice: number | undefined;
+      status: string;
+      paymentStatus: string | undefined;
+      confirmationCode: string;
+      createdAt: number;
+      urgencyLevel: string;
+      actionRequired: boolean;
+      actionMessage: string; // Removed undefined
+    }> = [];
+
+    // Define status groups
+    const statusGroups = {
+      awaiting_payment: [BOOKING_STATUS.DRAFT, BOOKING_STATUS.PAYMENT_PENDING],
+      awaiting_confirmation: [BOOKING_STATUS.AWAITING_CONFIRMATION],
+      active: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.IN_PROGRESS],
+      completed: [BOOKING_STATUS.COMPLETED],
+      problematic: [BOOKING_STATUS.CANCELED, BOOKING_STATUS.EXPIRED, BOOKING_STATUS.NO_SHOW],
+    };
+
+    const targetStatuses = args.statusGroup === "all" 
+      ? Object.values(BOOKING_STATUS) 
+      : statusGroups[args.statusGroup as keyof typeof statusGroups];
+
+    // Query activity bookings
+    if (!args.assetType || args.assetType === "activity") {
+      const activities = await ctx.db.query("activityBookings").take(limit);
+      
+      for (const booking of activities) {
+        if (!targetStatuses.includes(booking.status as any)) continue;
+        
+        const activity = await ctx.db.get(booking.activityId);
+        if (!activity) continue;
+        
+        if (args.partnerId && activity.partnerId !== args.partnerId) continue;
+
+        // Determine urgency and action required
+        let urgencyLevel = "low";
+        let actionRequired = false;
+        let actionMessage = ""; // Initialize with empty string instead of undefined
+
+        // High urgency scenarios
+        if (booking.status === BOOKING_STATUS.DRAFT && 
+            Date.now() - booking.createdAt > 15 * 60 * 1000) { // 15 minutes
+          urgencyLevel = "high";
+          actionRequired = true;
+          actionMessage = "Pagamento pendente há mais de 15 minutos";
+        } else if (booking.status === BOOKING_STATUS.AWAITING_CONFIRMATION &&
+                   booking.paymentStatus === PAYMENT_STATUS.PAID) {
+          urgencyLevel = "high";
+          actionRequired = true;
+          actionMessage = "Pagamento confirmado - aguardando confirmação";
+        } else if (booking.status === BOOKING_STATUS.PAYMENT_PENDING) {
+          urgencyLevel = "medium";
+          actionMessage = "Cliente está no checkout";
+        }
+
+        results.push({
+          _id: booking._id,
+          type: "activity",
+          assetName: activity.title,
+          customerName: booking.customerInfo.name,
+          customerEmail: booking.customerInfo.email,
+          customerPhone: booking.customerInfo.phone,
+          bookingDate: booking.date + (booking.time ? ` ${booking.time}` : ""),
+          totalPrice: booking.totalPrice,
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          confirmationCode: booking.confirmationCode,
+          createdAt: booking.createdAt,
+          urgencyLevel,
+          actionRequired,
+          actionMessage,
+        });
+      }
+    }
+
+    // Similar logic for other booking types...
+    // (events, accommodations, vehicles, restaurants)
+
+    // Sort by urgency and creation date
+    return results.sort((a, b) => {
+      // First by urgency (high > medium > low)
+      const urgencyOrder = { high: 0, medium: 1, low: 2 };
+      const urgencyDiff = urgencyOrder[a.urgencyLevel as keyof typeof urgencyOrder] - 
+                          urgencyOrder[b.urgencyLevel as keyof typeof urgencyOrder];
+      if (urgencyDiff !== 0) return urgencyDiff;
+      
+      // Then by creation date (newest first)
+      return b.createdAt - a.createdAt;
+    });
+  },
+});
+
+/**
+ * Get booking statistics by status for dashboard
+ */
+export const getBookingStatusStatistics = query({
+  args: v.object({
+    partnerId: v.optional(v.id("users")),
+    dateRange: v.optional(v.object({
+      startDate: v.string(),
+      endDate: v.string(),
+    })),
+  }),
+  returns: v.object({
+    total: v.number(),
+    byStatus: v.object({
+      draft: v.number(),
+      paymentPending: v.number(),
+      awaitingConfirmation: v.number(),
+      confirmed: v.number(),
+      inProgress: v.number(),
+      completed: v.number(),
+      canceled: v.number(),
+      expired: v.number(),
+      noShow: v.number(),
+    }),
+    byPaymentStatus: v.object({
+      notRequired: v.number(),
+      pending: v.number(),
+      processing: v.number(),
+      paid: v.number(),
+      failed: v.number(),
+      refunded: v.number(),
+    }),
+    requiresAction: v.number(),
+    recentActivity: v.array(v.object({
+      message: v.string(),
+      timestamp: v.number(),
+      type: v.string(), // "booking_created", "payment_completed", etc.
+    })),
+  }),
+  handler: async (ctx, args) => {
+    // Implementation to calculate statistics
+    // This would aggregate data from all booking tables
+    
+    const stats = {
+      total: 0,
+      byStatus: {
+        draft: 0,
+        paymentPending: 0,
+        awaitingConfirmation: 0,
+        confirmed: 0,
+        inProgress: 0,
+        completed: 0,
+        canceled: 0,
+        expired: 0,
+        noShow: 0,
+      },
+      byPaymentStatus: {
+        notRequired: 0,
+        pending: 0,
+        processing: 0,
+        paid: 0,
+        failed: 0,
+        refunded: 0,
+      },
+      requiresAction: 0,
+      recentActivity: [] as any[],
+    };
+
+    // Query and aggregate from all booking tables
+    // Implementation details...
+
+    return stats;
   },
 });
 

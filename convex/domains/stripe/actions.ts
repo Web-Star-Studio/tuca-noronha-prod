@@ -495,12 +495,11 @@ async function handlePaymentIntentSucceeded(ctx: any, paymentIntentData: any) {
       stripePaymentIntentId: paymentIntentData.id,
     });
 
-    // Update booking status to confirmed if payment succeeded
-    await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatus, {
+    // Update booking status to awaiting_confirmation after payment succeeded
+    await ctx.runMutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
+      stripePaymentIntentId: paymentIntentData.id,
       bookingId: metadata.bookingId,
-      assetType: metadata.assetType,
-      status: "confirmed",
-      paymentStatus: "paid",
+      bookingType: metadata.assetType,
     });
   }
 }
@@ -557,11 +556,15 @@ export const createPaymentLinkForBooking = action({
   }),
   handler: async (ctx, args) => {
     try {
+      console.log("🔄 createPaymentLinkForBooking started with args:", args);
+
       // Get booking details
       const booking = await ctx.runQuery(internal.domains.stripe.queries.getBookingForCheckout, {
         bookingId: args.bookingId,
         assetType: args.assetType,
       });
+
+      console.log("📋 Booking details:", booking);
 
       if (!booking) {
         throw new Error("Booking not found");
@@ -572,17 +575,32 @@ export const createPaymentLinkForBooking = action({
       }
 
       // Get or create Stripe customer
+      console.log("👤 Creating/getting Stripe customer for:", {
+        userId: booking.userId,
+        email: booking.customerInfo.email,
+        name: booking.customerInfo.name,
+      });
+
       const customer = await ctx.runAction(internal.domains.stripe.actions.getOrCreateStripeCustomer, {
         userId: booking.userId,
         email: booking.customerInfo.email,
         name: booking.customerInfo.name,
       });
 
+      console.log("👤 Stripe customer result:", customer);
+
       // Get asset Stripe information to use existing price ID
+      console.log("🏷️ Getting asset Stripe info for:", {
+        assetId: args.assetId,
+        assetType: args.assetType,
+      });
+
       const assetStripeInfo = await ctx.runQuery(internal.domains.stripe.queries.getAssetStripeInfo, {
         assetId: args.assetId,
         assetType: args.assetType,
       });
+
+      console.log("🏷️ Asset Stripe info result:", assetStripeInfo);
 
       if (!assetStripeInfo?.stripePriceId) {
         throw new Error("Asset does not have Stripe price configured. Please run the backfill script first.");
@@ -594,14 +612,25 @@ export const createPaymentLinkForBooking = action({
       let quantity = 1;
       if (args.assetType === "activity") {
         // Get the activity to find base price using a query
+        console.log("🎯 Getting activity details for price calculation...");
         const activity = await ctx.runQuery(internal.domains.activities.queries.getById, {
           id: args.assetId,
         });
         
+        console.log("🎯 Activity details:", activity);
+        
         if (activity && activity.price > 0) {
           quantity = Math.round(args.totalAmount / activity.price);
+          console.log("🔢 Calculated quantity:", { totalAmount: args.totalAmount, basePrice: activity.price, quantity });
         }
       }
+
+      console.log("💳 Creating Stripe payment link with:", {
+        stripePriceId: assetStripeInfo.stripePriceId,
+        quantity: quantity,
+        successUrl: args.successUrl,
+        cancelUrl: args.cancelUrl,
+      });
 
       // Create payment link using existing price ID
       const paymentLink = await stripe.paymentLinks.create({
@@ -637,7 +666,13 @@ export const createPaymentLinkForBooking = action({
         },
       });
 
+      console.log("✅ Payment link created successfully:", {
+        id: paymentLink.id,
+        url: paymentLink.url,
+      });
+
       // Update booking with payment link info
+      console.log("📝 Updating booking with payment link info...");
       await ctx.runMutation(internal.domains.stripe.mutations.updateBookingStripeInfo, {
         bookingId: args.bookingId,
         assetType: args.assetType,
@@ -646,13 +681,18 @@ export const createPaymentLinkForBooking = action({
         stripePaymentLinkId: paymentLink.id,
       });
 
+      console.log("🎉 createPaymentLinkForBooking completed successfully");
+
       return {
         paymentLinkId: paymentLink.id,
         paymentLinkUrl: paymentLink.url,
         success: true,
       };
     } catch (error) {
-      console.error("Failed to create payment link for booking:", error);
+      console.error("💥 ERRO ao criar payment link:", error);
+      console.error("💥 Stack trace:", error instanceof Error ? error.stack : "No stack trace");
+      console.error("💥 Args que causaram o erro:", args);
+      
       return {
         paymentLinkId: "",
         paymentLinkUrl: "",

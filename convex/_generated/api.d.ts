@@ -31,6 +31,7 @@ import type * as domains_audit_mutations from "../domains/audit/mutations.js";
 import type * as domains_audit_queries from "../domains/audit/queries.js";
 import type * as domains_audit_types from "../domains/audit/types.js";
 import type * as domains_audit_utils from "../domains/audit/utils.js";
+import type * as domains_bookings_cron from "../domains/bookings/cron.js";
 import type * as domains_bookings_index from "../domains/bookings/index.js";
 import type * as domains_bookings_mutations from "../domains/bookings/mutations.js";
 import type * as domains_bookings_queries from "../domains/bookings/queries.js";
@@ -157,6 +158,7 @@ declare const fullApi: ApiFromModules<{
   "domains/audit/queries": typeof domains_audit_queries;
   "domains/audit/types": typeof domains_audit_types;
   "domains/audit/utils": typeof domains_audit_utils;
+  "domains/bookings/cron": typeof domains_bookings_cron;
   "domains/bookings/index": typeof domains_bookings_index;
   "domains/bookings/mutations": typeof domains_bookings_mutations;
   "domains/bookings/queries": typeof domains_bookings_queries;

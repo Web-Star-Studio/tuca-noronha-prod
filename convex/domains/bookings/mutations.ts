@@ -112,6 +112,26 @@ export const createActivityBooking = mutation({
     const finalPrice = calculateActivityBookingPrice(totalPrice, args.participants);
     const confirmationCode = generateConfirmationCode();
 
+    // Determine initial booking status based on payment requirement
+    let initialStatus: string = BOOKING_STATUS.DRAFT;
+    let initialPaymentStatus: string = PAYMENT_STATUS.PENDING;
+    
+    // Se a atividade não requer pagamento ou é gratuita
+    if (finalPrice === 0) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.NOT_REQUIRED;
+    }
+    // Se requer pagamento online
+    else if (activity.acceptsOnlinePayment && activity.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.DRAFT;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+    // Se aceita pagamento no local
+    else if (!activity.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+
     // Create booking
     const bookingId = await ctx.db.insert("activityBookings", {
       activityId: args.activityId,
@@ -121,8 +141,8 @@ export const createActivityBooking = mutation({
       time: args.time,
       participants: args.participants,
       totalPrice: finalPrice,
-      status: BOOKING_STATUS.PENDING,
-      paymentStatus: PAYMENT_STATUS.PENDING,
+      status: initialStatus,
+      paymentStatus: initialPaymentStatus,
       confirmationCode,
       customerInfo,
       specialRequests: args.specialRequests,
@@ -133,32 +153,12 @@ export const createActivityBooking = mutation({
     // Record successful booking attempt for rate limiting
     await recordRateLimitAttempt(ctx, user._id, "CREATE_BOOKING");
 
-    // Send email confirmation to customer
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: customerInfo.email,
-      customerName: customerInfo.name,
-      assetName: activity.title,
-      bookingType: "activity",
-      confirmationCode,
-      bookingDate: args.date,
-      totalPrice: finalPrice,
-      bookingDetails: {
-        activityId: activity._id,
-        participants: args.participants,
-        date: args.date,
-        specialRequests: args.specialRequests,
-      },
-    });
-
-    // Send notification to partner about new booking
-    const partner = await ctx.db.get(activity.partnerId);
-    if (partner && partner.email) {
-      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
-        partnerEmail: partner.email,
-        partnerName: partner.name || "Parceiro",
-        customerName: customerInfo.name,
+    // Only send confirmation emails if payment is not required or not upfront
+    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !activity.requiresUpfrontPayment) {
+      // Send email confirmation to customer
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
-        customerPhone: customerInfo.phone,
+        customerName: customerInfo.name,
         assetName: activity.title,
         bookingType: "activity",
         confirmationCode,
@@ -171,6 +171,29 @@ export const createActivityBooking = mutation({
           specialRequests: args.specialRequests,
         },
       });
+
+      // Send notification to partner about new booking
+      const partner = await ctx.db.get(activity.partnerId);
+      if (partner && partner.email) {
+        await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+          partnerEmail: partner.email,
+          partnerName: partner.name || "Parceiro",
+          customerName: customerInfo.name,
+          customerEmail: customerInfo.email,
+          customerPhone: customerInfo.phone,
+          assetName: activity.title,
+          bookingType: "activity",
+          confirmationCode,
+          bookingDate: args.date,
+          totalPrice: finalPrice,
+          bookingDetails: {
+            activityId: activity._id,
+            participants: args.participants,
+            date: args.date,
+            specialRequests: args.specialRequests,
+          },
+        });
+      }
     }
 
     return {
@@ -248,6 +271,26 @@ export const createEventBooking = mutation({
     const finalPrice = calculateEventBookingPrice(totalPrice, args.quantity);
     const confirmationCode = generateConfirmationCode();
 
+    // Determine initial booking status based on payment requirement
+    let initialStatus: string = BOOKING_STATUS.DRAFT;
+    let initialPaymentStatus: string = PAYMENT_STATUS.PENDING;
+    
+    // Se o evento não requer pagamento ou é gratuito
+    if (finalPrice === 0) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.NOT_REQUIRED;
+    }
+    // Se requer pagamento online
+    else if (event.acceptsOnlinePayment && event.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.DRAFT;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+    // Se aceita pagamento no local
+    else if (!event.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+
     // Create booking
     const bookingId = await ctx.db.insert("eventBookings", {
       eventId: args.eventId,
@@ -255,8 +298,8 @@ export const createEventBooking = mutation({
       ticketId: args.ticketId,
       quantity: args.quantity,
       totalPrice: finalPrice,
-      status: BOOKING_STATUS.PENDING,
-      paymentStatus: PAYMENT_STATUS.PENDING,
+      status: initialStatus,
+      paymentStatus: initialPaymentStatus,
       confirmationCode,
       customerInfo,
       specialRequests: args.specialRequests,
@@ -264,33 +307,12 @@ export const createEventBooking = mutation({
       updatedAt: Date.now(),
     });
 
-    // Send email confirmation to customer
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: customerInfo.email,
-      customerName: customerInfo.name,
-      assetName: event.title,
-      bookingType: "event",
-      confirmationCode,
-      bookingDate: `${event.date} às ${event.time}`,
-      totalPrice: finalPrice,
-      bookingDetails: {
-        eventId: event._id,
-        quantity: args.quantity,
-        ticketId: args.ticketId,
-        location: event.location,
-        specialRequests: args.specialRequests,
-      },
-    });
-
-    // Send notification to partner about new booking
-    const partner = await ctx.db.get(event.partnerId);
-    if (partner && partner.email) {
-      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
-        partnerEmail: partner.email,
-        partnerName: partner.name || "Parceiro",
-        customerName: customerInfo.name,
+    // Only send confirmation emails if payment is not required or not upfront
+    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !event.requiresUpfrontPayment) {
+      // Send email confirmation to customer
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
-        customerPhone: customerInfo.phone,
+        customerName: customerInfo.name,
         assetName: event.title,
         bookingType: "event",
         confirmationCode,
@@ -304,6 +326,30 @@ export const createEventBooking = mutation({
           specialRequests: args.specialRequests,
         },
       });
+
+      // Send notification to partner about new booking
+      const partner = await ctx.db.get(event.partnerId);
+      if (partner && partner.email) {
+        await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+          partnerEmail: partner.email,
+          partnerName: partner.name || "Parceiro",
+          customerName: customerInfo.name,
+          customerEmail: customerInfo.email,
+          customerPhone: customerInfo.phone,
+          assetName: event.title,
+          bookingType: "event",
+          confirmationCode,
+          bookingDate: `${event.date} às ${event.time}`,
+          totalPrice: finalPrice,
+          bookingDetails: {
+            eventId: event._id,
+            quantity: args.quantity,
+            ticketId: args.ticketId,
+            location: event.location,
+            specialRequests: args.specialRequests,
+          },
+        });
+      }
     }
 
     return {
@@ -388,7 +434,7 @@ export const createRestaurantReservation = mutation({
       email: customerInfo.email,
       phone: customerInfo.phone,
       specialRequests: args.specialRequests,
-      status: BOOKING_STATUS.PENDING,
+      status: BOOKING_STATUS.AWAITING_CONFIRMATION,
       confirmationCode,
     });
 
@@ -514,6 +560,26 @@ export const createVehicleBooking = mutation({
       args.additionalDrivers
     );
 
+    // Determine initial booking status based on payment requirement
+    let initialStatus: string = BOOKING_STATUS.DRAFT;
+    let initialPaymentStatus: string = PAYMENT_STATUS.PENDING;
+    
+    // Se o veículo não requer pagamento ou é gratuito
+    if (totalPrice === 0) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.NOT_REQUIRED;
+    }
+    // Se requer pagamento online
+    else if (vehicle.acceptsOnlinePayment && vehicle.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.DRAFT;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+    // Se aceita pagamento no local
+    else if (!vehicle.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+
     // Create booking
     const bookingId = await ctx.db.insert("vehicleBookings", {
       vehicleId: args.vehicleId,
@@ -521,8 +587,8 @@ export const createVehicleBooking = mutation({
       startDate: args.startDate,
       endDate: args.endDate,
       totalPrice,
-      status: BOOKING_STATUS.PENDING,
-      paymentStatus: PAYMENT_STATUS.PENDING,
+      status: initialStatus,
+      paymentStatus: initialPaymentStatus,
       pickupLocation: args.pickupLocation,
       returnLocation: args.returnLocation,
       additionalDrivers: args.additionalDrivers,
@@ -1263,7 +1329,7 @@ export const seedTestReservations = mutation({
         name: travelerUser.name || "Usuário",
         email: travelerUser.email || args.travelerEmail,
         phone: travelerUser.phone || "+55 00 00000-0000",
-        status: "confirmed",
+        status: BOOKING_STATUS.AWAITING_CONFIRMATION,
         confirmationCode: "REST001",
       });
       reservationsCreated++;
@@ -1735,5 +1801,371 @@ export const cancelAccommodationBookingInternal = mutation({
     });
 
     return null;
+  },
+});
+
+/**
+ * Update booking status after payment initiation
+ * Called when user is redirected to Stripe Checkout
+ */
+export const updateBookingPaymentInitiated = mutation({
+  args: v.object({
+    bookingId: v.string(),
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("accommodation"), v.literal("vehicle"), v.literal("restaurant")),
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    // Get the appropriate booking based on type
+    let booking;
+    let tableName;
+    
+    switch (args.bookingType) {
+      case "activity":
+        booking = await ctx.db.get(args.bookingId as Id<"activityBookings">);
+        tableName = "activityBookings";
+        break;
+      case "event":
+        booking = await ctx.db.get(args.bookingId as Id<"eventBookings">);
+        tableName = "eventBookings";
+        break;
+      case "accommodation":
+        booking = await ctx.db.get(args.bookingId as Id<"accommodationBookings">);
+        tableName = "accommodationBookings";
+        break;
+      case "vehicle":
+        booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
+        tableName = "vehicleBookings";
+        break;
+      case "restaurant":
+        booking = await ctx.db.get(args.bookingId as Id<"restaurantReservations">);
+        tableName = "restaurantReservations";
+        break;
+    }
+
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Update booking with payment session info and status
+    await ctx.db.patch(booking._id, {
+      status: BOOKING_STATUS.PAYMENT_PENDING,
+      paymentStatus: PAYMENT_STATUS.PROCESSING,
+      stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+      stripePaymentLinkId: args.stripePaymentLinkId,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Update booking after successful payment
+ * Called by Stripe webhook or after checkout completion
+ */
+export const updateBookingPaymentSuccess = mutation({
+  args: v.object({
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    bookingId: v.optional(v.string()),
+    bookingType: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    let booking;
+    
+    // Find booking by Stripe session ID if provided
+    if (args.stripeCheckoutSessionId) {
+      // Search across all booking tables
+      const activityBooking = await ctx.db
+        .query("activityBookings")
+        .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
+        .first();
+        
+      const eventBooking = await ctx.db
+        .query("eventBookings")
+        .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
+        .first();
+        
+      const accommodationBooking = await ctx.db
+        .query("accommodationBookings")
+        .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
+        .first();
+        
+      const vehicleBooking = await ctx.db
+        .query("vehicleBookings")
+        .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
+        .first();
+        
+      booking = activityBooking || eventBooking || accommodationBooking || vehicleBooking;
+    }
+    // Or find by booking ID if provided
+    else if (args.bookingId && args.bookingType) {
+      switch (args.bookingType) {
+        case "activity":
+          booking = await ctx.db.get(args.bookingId as Id<"activityBookings">);
+          break;
+        case "event":
+          booking = await ctx.db.get(args.bookingId as Id<"eventBookings">);
+          break;
+        case "accommodation":
+          booking = await ctx.db.get(args.bookingId as Id<"accommodationBookings">);
+          break;
+        case "vehicle":
+          booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
+          break;
+      }
+    }
+
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Update booking status
+    await ctx.db.patch(booking._id, {
+      status: BOOKING_STATUS.AWAITING_CONFIRMATION,
+      paymentStatus: PAYMENT_STATUS.PAID,
+      stripePaymentIntentId: args.stripePaymentIntentId,
+      updatedAt: Date.now(),
+    });
+
+    // Send confirmation emails
+    await sendBookingPaymentConfirmationEmails(ctx, booking);
+  },
+});
+
+/**
+ * Update booking after payment failure
+ */
+export const updateBookingPaymentFailed = mutation({
+  args: v.object({
+    stripeCheckoutSessionId: v.optional(v.string()),
+    bookingId: v.optional(v.string()),
+    bookingType: v.optional(v.string()),
+    failureReason: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    let booking;
+    
+    // Find booking (similar logic to updateBookingPaymentSuccess)
+    if (args.stripeCheckoutSessionId) {
+      // Search logic here...
+    } else if (args.bookingId && args.bookingType) {
+      // Direct lookup logic here...
+    }
+
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Update booking status
+    await ctx.db.patch(booking._id, {
+      status: BOOKING_STATUS.DRAFT,
+      paymentStatus: PAYMENT_STATUS.FAILED,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Expire bookings with incomplete payments
+ * Should be called by a cron job
+ */
+export const expireIncompletedBookings = mutation({
+  args: v.object({}),
+  handler: async (ctx) => {
+    const expirationTime = Date.now() - (30 * 60 * 1000); // 30 minutes
+    
+    // Find all draft bookings older than expiration time
+    const draftActivityBookings = await ctx.db
+      .query("activityBookings")
+      .filter(q => 
+        q.and(
+          q.eq(q.field("status"), BOOKING_STATUS.DRAFT),
+          q.lt(q.field("createdAt"), expirationTime)
+        )
+      )
+      .collect();
+      
+    // Update each to expired
+    for (const booking of draftActivityBookings) {
+      await ctx.db.patch(booking._id, {
+        status: BOOKING_STATUS.EXPIRED,
+        paymentStatus: PAYMENT_STATUS.CANCELED,
+        updatedAt: Date.now(),
+      });
+    }
+    
+    // Repeat for other booking types...
+  },
+});
+
+// Helper function to send payment confirmation emails
+async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: any) {
+  // Implementation to send emails after successful payment
+  // This would include logic to identify booking type and send appropriate emails
+}
+
+/**
+ * Update booking statuses based on activity dates
+ * Called by cron job hourly
+ */
+export const updateBookingStatusesByDate = mutation({
+  args: v.object({}),
+  handler: async (ctx) => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
+
+    // Update activity bookings
+    const confirmedActivityBookings = await ctx.db
+      .query("activityBookings")
+      .filter(q => q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED))
+      .collect();
+
+    for (const booking of confirmedActivityBookings) {
+      // Check if activity date/time has started
+      if (booking.date < todayStr || 
+          (booking.date === todayStr && booking.time && booking.time <= currentTime)) {
+        await ctx.db.patch(booking._id, {
+          status: BOOKING_STATUS.IN_PROGRESS,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    // Update in-progress bookings that should be completed
+    const inProgressActivityBookings = await ctx.db
+      .query("activityBookings")
+      .filter(q => q.eq(q.field("status"), BOOKING_STATUS.IN_PROGRESS))
+      .collect();
+
+    for (const booking of inProgressActivityBookings) {
+      // If the activity date has passed, mark as completed
+      if (booking.date < todayStr) {
+        await ctx.db.patch(booking._id, {
+          status: BOOKING_STATUS.COMPLETED,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    // Similar logic for other booking types...
+    // Events - check date and time
+    const confirmedEventBookings = await ctx.db
+      .query("eventBookings")
+      .filter(q => q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED))
+      .collect();
+
+    for (const booking of confirmedEventBookings) {
+      const event = await ctx.db.get(booking.eventId);
+      if (event && (event.date < todayStr || 
+          (event.date === todayStr && event.time <= currentTime))) {
+        await ctx.db.patch(booking._id, {
+          status: BOOKING_STATUS.IN_PROGRESS,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    // Accommodations - check check-in date
+    const confirmedAccommodationBookings = await ctx.db
+      .query("accommodationBookings")
+      .filter(q => q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED))
+      .collect();
+
+    for (const booking of confirmedAccommodationBookings) {
+      if (booking.checkInDate <= todayStr && booking.checkOutDate > todayStr) {
+        await ctx.db.patch(booking._id, {
+          status: BOOKING_STATUS.IN_PROGRESS,
+          updatedAt: Date.now(),
+        });
+      } else if (booking.checkOutDate <= todayStr) {
+        await ctx.db.patch(booking._id, {
+          status: BOOKING_STATUS.COMPLETED,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+  },
+});
+
+/**
+ * Mark no-show bookings
+ * Called daily to identify confirmed bookings where customers didn't show up
+ */
+export const markNoShowBookings = mutation({
+  args: v.object({}),
+  handler: async (ctx) => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Find confirmed bookings from yesterday that weren't marked as in-progress or completed
+    
+    // Activity bookings
+    const missedActivityBookings = await ctx.db
+      .query("activityBookings")
+      .filter(q => 
+        q.and(
+          q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED),
+          q.lte(q.field("date"), yesterdayStr)
+        )
+      )
+      .collect();
+
+    for (const booking of missedActivityBookings) {
+      await ctx.db.patch(booking._id, {
+        status: BOOKING_STATUS.NO_SHOW,
+        updatedAt: Date.now(),
+      });
+
+      // Notify partner about no-show
+      const activity = await ctx.db.get(booking.activityId);
+      if (activity) {
+        await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendNotification, {
+          userId: activity.partnerId,
+          type: "booking_no_show",
+          title: "Cliente não compareceu",
+          message: `O cliente ${booking.customerInfo.name} não compareceu à atividade ${activity.title}`,
+          relatedId: booking._id,
+          relatedType: "activity_booking",
+        });
+      }
+    }
+
+    // Similar logic for other booking types...
+    
+    // Event bookings
+    const missedEventBookings = await ctx.db
+      .query("eventBookings")
+      .filter(q => q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED))
+      .collect();
+
+    for (const booking of missedEventBookings) {
+      const event = await ctx.db.get(booking.eventId);
+      if (event && event.date <= yesterdayStr) {
+        await ctx.db.patch(booking._id, {
+          status: BOOKING_STATUS.NO_SHOW,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    // Restaurant reservations
+    const missedRestaurantReservations = await ctx.db
+      .query("restaurantReservations")
+      .filter(q => 
+        q.and(
+          q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED),
+          q.lte(q.field("date"), yesterdayStr)
+        )
+      )
+      .collect();
+
+    for (const reservation of missedRestaurantReservations) {
+      await ctx.db.patch(reservation._id, {
+        status: BOOKING_STATUS.NO_SHOW,
+        updatedAt: Date.now(),
+      });
+    }
   },
 });

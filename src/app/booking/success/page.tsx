@@ -7,30 +7,56 @@ import { api } from '../../../../convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, MapPin, Users, Download, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Calendar, MapPin, Users, Download, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BookingSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get('session_id');
+  const bookingId = searchParams.get('booking_id');
   const [bookingData, setBookingData] = useState<any>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 20; // Máximo de 20 tentativas (20 segundos)
 
-  // Query to get booking details based on session ID
-  const bookingDetails = useQuery(
+  // Query to get booking details based on session ID or booking ID
+  const bookingBySession = useQuery(
     api.domains.stripe.queries.getBookingBySessionId,
     sessionId ? { sessionId } : "skip"
   );
 
+  const bookingByConfirmation = useQuery(
+    api.domains.stripe.queries.getBookingByConfirmationCode,
+    bookingId ? { confirmationCode: bookingId } : "skip"
+  );
+
+  // Use polling to check for booking data
   useEffect(() => {
-    if (bookingDetails) {
-      setBookingData(bookingDetails);
-      toast.success('Pagamento confirmado com sucesso!', {
-        description: 'Sua reserva foi aprovada. Você receberá um email de confirmação.',
-        duration: 5000,
-      });
-    }
-  }, [bookingDetails]);
+    const checkBookingStatus = () => {
+      const booking = bookingBySession || bookingByConfirmation;
+      
+      if (booking) {
+        console.log('📊 Booking found:', booking);
+        setBookingData(booking);
+        
+        // Show success toast when payment is confirmed
+        if (booking.paymentStatus === 'succeeded') {
+          toast.success('Pagamento confirmado com sucesso!', {
+            description: 'Sua reserva foi aprovada. Você receberá um email de confirmação.',
+            duration: 5000,
+          });
+        }
+      } else if (retryCount < maxRetries) {
+        // If no booking found and haven't exceeded max retries, try again
+        console.log(`🔄 Retry ${retryCount + 1}/${maxRetries} - Booking not found yet`);
+        setRetryCount(prev => prev + 1);
+      }
+    };
+
+    const timer = setTimeout(checkBookingStatus, 1000); // Check every second
+
+    return () => clearTimeout(timer);
+  }, [bookingBySession, bookingByConfirmation, retryCount, maxRetries]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -76,7 +102,7 @@ export default function BookingSuccessPage() {
     router.push('/meu-painel/reservas');
   };
 
-  if (!sessionId) {
+  if (!sessionId && !bookingId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -93,14 +119,21 @@ export default function BookingSuccessPage() {
     );
   }
 
-  if (!bookingData) {
+  // Se ainda está procurando a reserva e não excedeu o limite de tentativas
+  if (!bookingData && retryCount < maxRetries) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" />
-              <p>Verificando pagamento...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-lg font-medium mb-2">Processando pagamento...</p>
+              <p className="text-sm text-gray-600">
+                Aguarde enquanto confirmamos seu pagamento com o Stripe
+              </p>
+              <p className="text-xs text-gray-500 mt-4">
+                Tentativa {retryCount} de {maxRetries}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -108,6 +141,36 @@ export default function BookingSuccessPage() {
     );
   }
 
+  // Se excedeu o limite de tentativas sem encontrar a reserva
+  if (!bookingData && retryCount >= maxRetries) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-orange-600 mb-4">
+                O processamento está demorando mais que o esperado.
+              </p>
+              <p className="text-sm text-gray-600 mb-6">
+                Não se preocupe! Se o pagamento foi processado, você receberá um email de confirmação.
+                Você também pode verificar o status em "Minhas Reservas".
+              </p>
+              <div className="space-y-3">
+                <Button onClick={handleViewBookings} className="w-full">
+                  Ver Minhas Reservas
+                </Button>
+                <Button onClick={handleBackToHome} variant="outline" className="w-full">
+                  Voltar ao Início
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Se encontrou a reserva, mostra os detalhes
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
@@ -115,10 +178,12 @@ export default function BookingSuccessPage() {
         <div className="text-center mb-8">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Pagamento Confirmado!
+            {bookingData.paymentStatus === 'succeeded' ? 'Pagamento Confirmado!' : 'Reserva Registrada!'}
           </h1>
           <p className="text-gray-600">
-            Sua reserva foi processada com sucesso
+            {bookingData.paymentStatus === 'succeeded' 
+              ? 'Sua reserva foi processada com sucesso'
+              : 'Aguardando confirmação do pagamento'}
           </p>
         </div>
 
@@ -206,6 +271,12 @@ export default function BookingSuccessPage() {
                 <p className="text-sm text-gray-500 mt-1">
                   Pagamento processado via Stripe
                 </p>
+                {bookingData.paymentStatus === 'processing' && (
+                  <Badge variant="outline" className="mt-2">
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    Processando pagamento...
+                  </Badge>
+                )}
               </div>
             </div>
           </CardContent>

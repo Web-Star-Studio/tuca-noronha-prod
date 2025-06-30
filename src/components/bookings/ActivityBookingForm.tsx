@@ -67,7 +67,7 @@ export function ActivityBookingForm({
   });
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
-  const createPaymentLink = useAction(api.domains.stripe.actions.createPaymentLinkForBooking);
+  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
   
   // Get WhatsApp link generator
   const { generateWhatsAppLink } = useWhatsAppLink();
@@ -118,31 +118,30 @@ export function ActivityBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. Create Stripe payment link and redirect to checkout
+      // 2. Create Stripe checkout session and redirect
       try {
-        const paymentLink = await createPaymentLink({
+        console.log("🔄 Criando checkout session para:", {
+          bookingId: result.bookingId,
+          activityId,
+          totalAmount: result.totalPrice,
+        });
+
+        const checkoutSession = await createCheckoutSession({
           bookingId: result.bookingId,
           assetType: "activity",
-          assetId: activityId,
-          totalAmount: result.totalPrice,
-          currency: "brl",
           successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/booking/cancel`,
         });
 
-        if (paymentLink.success && paymentLink.paymentLinkUrl) {
+        console.log("💳 Resultado do checkout session:", checkoutSession);
+
+        if (checkoutSession.success && checkoutSession.sessionUrl) {
           // Show success message with payment info
           toast.success("Redirecionando para pagamento...", {
             description: "Você será levado para o checkout seguro do Stripe",
           });
 
-          // Call onBookingSuccess if provided
-          if (onBookingSuccess) {
-            onBookingSuccess({
-              confirmationCode: result.confirmationCode,
-              totalPrice: result.totalPrice,
-            });
-          }
+          console.log("✅ Checkout session criado com sucesso, redirecionando para:", checkoutSession.sessionUrl);
 
           // Reset form before redirecting
           setDate(undefined);
@@ -154,16 +153,19 @@ export function ActivityBookingForm({
 
           // Small delay to show the toast, then redirect
           setTimeout(() => {
-            window.location.href = paymentLink.paymentLinkUrl;
+            window.location.href = checkoutSession.sessionUrl;
           }, 1500);
 
+          return; // Don't call onBookingSuccess here, only redirect
+
         } else {
-          throw new Error(paymentLink.error || "Erro ao criar link de pagamento");
+          console.error("❌ Checkout session falhou:", checkoutSession.error);
+          throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
         }
       } catch (paymentError) {
-        console.error("Erro ao criar payment link:", paymentError);
+        console.error("💥 Erro ao criar payment link:", paymentError);
         toast.error("Reserva criada, mas erro no pagamento", {
-          description: "Entre em contato conosco para finalizar o pagamento",
+          description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
         });
         
         // Still call onBookingSuccess since booking was created

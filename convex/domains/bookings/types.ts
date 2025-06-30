@@ -1,20 +1,35 @@
 import { v } from "convex/values";
 
-// Common booking status values
+// Common booking status values - More semantic and descriptive
 export const BOOKING_STATUS = {
-  PENDING: "pending",
-  CONFIRMED: "confirmed", 
-  CANCELED: "canceled",
-  COMPLETED: "completed",
-  REFUNDED: "refunded",
+  // Initial states
+  DRAFT: "draft",                       // Reserva criada mas pagamento não iniciado
+  PAYMENT_PENDING: "payment_pending",   // Aguardando conclusão do pagamento
+  AWAITING_CONFIRMATION: "awaiting_confirmation", // Pagamento concluído, aguardando confirmação do partner
+  
+  // Active states
+  CONFIRMED: "confirmed",               // Confirmada pelo partner
+  IN_PROGRESS: "in_progress",          // Em andamento (para atividades/eventos)
+  
+  // Final states
+  COMPLETED: "completed",              // Concluída com sucesso
+  CANCELED: "canceled",                // Cancelada
+  NO_SHOW: "no_show",                 // Cliente não compareceu
+  EXPIRED: "expired",                  // Expirada (pagamento não concluído no prazo)
 } as const;
 
-// Payment status values
+// Payment status values - More detailed
 export const PAYMENT_STATUS = {
-  PENDING: "pending",
-  PAID: "paid",
-  REFUNDED: "refunded", 
-  FAILED: "failed",
+  NOT_REQUIRED: "not_required",        // Pagamento não necessário (reserva gratuita)
+  PENDING: "pending",                  // Aguardando início do pagamento
+  PROCESSING: "processing",            // Pagamento sendo processado
+  AWAITING_PAYMENT_METHOD: "awaiting_payment_method", // Aguardando método de pagamento (ex: PIX)
+  PAID: "paid",                       // Pago com sucesso
+  PARTIALLY_PAID: "partially_paid",   // Parcialmente pago
+  FAILED: "failed",                   // Falha no pagamento
+  REFUNDED: "refunded",               // Reembolsado
+  PARTIALLY_REFUNDED: "partially_refunded", // Parcialmente reembolsado
+  CANCELED: "canceled",               // Pagamento cancelado
 } as const;
 
 // Payment method values
