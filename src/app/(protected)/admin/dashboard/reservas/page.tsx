@@ -41,6 +41,7 @@ import {
   Activity,
   Mail,
   Phone,
+  Eye,
 } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -50,6 +51,7 @@ import { useAsset } from "@/lib/providers/asset-context";
 import { AssetSelector } from "@/components/dashboard/AssetSelector";
 import { motion } from "framer-motion";
 import { DashboardPageHeader } from "../components";
+import { BookingDetailsModal } from "@/components/dashboard/bookings/BookingManagement";
 
 // Helper function to safely format dates
 const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string => {
@@ -563,6 +565,19 @@ export default function AdminBookingsPage() {
                           </div>
 
                           <div className="flex items-center gap-2 ml-4">
+                            <BookingDetailsModal
+                              data={booking}
+                              trigger={
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  title="Ver detalhes completos"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              }
+                            />
+                            
                             {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
                               <>
                                 <Button

@@ -502,7 +502,7 @@ export const getBookingByConfirmationCode = query({
 });
 
 /**
- * Get partner's bookings for their assets
+ * Get bookings for partners and employees
  */
 export const getPartnerBookings = query({
   args: { 
@@ -513,43 +513,88 @@ export const getPartnerBookings = query({
   returns: v.object({
     activities: v.array(v.object({
       _id: v.id("activityBookings"),
+      activityId: v.id("activities"),
       activityTitle: v.string(),
       date: v.string(),
+      time: v.optional(v.string()),
       participants: v.number(),
       totalPrice: v.number(),
       status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      confirmationCode: v.string(),
       customerInfo: v.object({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
       }),
+      specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      partnerId: v.id("users"),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
     })),
     events: v.array(v.object({
       _id: v.id("eventBookings"),
+      eventId: v.id("events"),
       eventTitle: v.string(),
       eventDate: v.string(),
+      eventTime: v.string(),
       quantity: v.number(),
       totalPrice: v.number(),
       status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      confirmationCode: v.string(),
       customerInfo: v.object({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
       }),
+      specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      partnerId: v.id("users"),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
     })),
     restaurants: v.array(v.object({
       _id: v.id("restaurantReservations"),
+      restaurantId: v.id("restaurants"),
       restaurantName: v.string(),
       date: v.string(),
       time: v.string(),
       partySize: v.number(),
       status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      confirmationCode: v.string(),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
+      partnerId: v.id("users"),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
     })),
     vehicles: v.array(v.object({
       _id: v.id("vehicleBookings"),
+      vehicleId: v.id("vehicles"),
       vehicleName: v.string(),
       vehicleBrand: v.string(),
       vehicleModel: v.string(),
@@ -557,6 +602,8 @@ export const getPartnerBookings = query({
       endDate: v.number(),
       totalPrice: v.number(),
       status: v.string(),
+      paymentStatus: v.optional(v.string()),
+      confirmationCode: v.optional(v.string()),
       pickupLocation: v.optional(v.string()),
       returnLocation: v.optional(v.string()),
       notes: v.optional(v.string()),
@@ -567,6 +614,15 @@ export const getPartnerBookings = query({
         phone: v.string(),
       }),
       userId: v.id("users"),
+      partnerId: v.id("users"),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
     })),
   }),
   handler: async (ctx, args) => {
@@ -587,35 +643,71 @@ export const getPartnerBookings = query({
     const result = {
       activities: [] as Array<{
         _id: any;
+        activityId: any;
         activityTitle: string;
         date: string;
+        time?: string;
         participants: number;
         totalPrice: number;
         status: string;
+        paymentStatus?: string;
+        confirmationCode: string;
         customerInfo: any;
+        specialRequests?: string;
+        partnerNotes?: string;
+        partnerId: any;
+        stripeCheckoutSessionId?: string;
+        stripePaymentIntentId?: string;
+        stripeCustomerId?: string;
+        stripePaymentLinkId?: string;
+        paymentDetails?: any;
       }>,
       events: [] as Array<{
         _id: any;
+        eventId: any;
         eventTitle: string;
         eventDate: string;
+        eventTime: string;
         quantity: number;
         totalPrice: number;
         status: string;
+        paymentStatus?: string;
+        confirmationCode: string;
         customerInfo: any;
+        specialRequests?: string;
+        partnerNotes?: string;
+        partnerId: any;
+        stripeCheckoutSessionId?: string;
+        stripePaymentIntentId?: string;
+        stripeCustomerId?: string;
+        stripePaymentLinkId?: string;
+        paymentDetails?: any;
       }>,
       restaurants: [] as Array<{
         _id: any;
+        restaurantId: any;
         restaurantName: string;
         date: string;
         time: string;
         partySize: number;
         status: string;
+        paymentStatus?: string;
+        confirmationCode: string;
         name: string;
         email: string;
         phone: string;
+        specialRequests?: string;
+        partnerNotes?: string;
+        partnerId: any;
+        stripeCheckoutSessionId?: string;
+        stripePaymentIntentId?: string;
+        stripeCustomerId?: string;
+        stripePaymentLinkId?: string;
+        paymentDetails?: any;
       }>,
       vehicles: [] as Array<{
         _id: any;
+        vehicleId: any;
         vehicleName: string;
         vehicleBrand: string;
         vehicleModel: string;
@@ -623,12 +715,20 @@ export const getPartnerBookings = query({
         endDate: number;
         totalPrice: number;
         status: string;
+        paymentStatus?: string;
+        confirmationCode?: string;
         pickupLocation?: string;
         returnLocation?: string;
         notes?: string;
         partnerNotes?: string;
         customerInfo: any;
         userId: any;
+        partnerId: any;
+        stripeCheckoutSessionId?: string;
+        stripePaymentIntentId?: string;
+        stripeCustomerId?: string;
+        stripePaymentLinkId?: string;
+        paymentDetails?: any;
       }>,
     };
 
@@ -652,12 +752,24 @@ export const getPartnerBookings = query({
         
         result.activities.push(...bookings.map(booking => ({
           _id: booking._id,
+          activityId: booking.activityId,
           activityTitle: activity.title,
           date: booking.date,
+          time: booking.time,
           participants: booking.participants,
           totalPrice: booking.totalPrice,
           status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          confirmationCode: booking.confirmationCode,
           customerInfo: booking.customerInfo,
+          specialRequests: booking.specialRequests,
+          partnerNotes: booking.partnerNotes,
+          partnerId: activity.partnerId,
+          stripeCheckoutSessionId: booking.stripeCheckoutSessionId,
+          stripePaymentIntentId: booking.stripePaymentIntentId,
+          stripeCustomerId: booking.stripeCustomerId,
+          stripePaymentLinkId: booking.stripePaymentLinkId,
+          paymentDetails: booking.paymentDetails,
         })));
       }
     }
@@ -682,12 +794,24 @@ export const getPartnerBookings = query({
         
         result.events.push(...bookings.map(booking => ({
           _id: booking._id,
+          eventId: booking.eventId,
           eventTitle: event.title,
           eventDate: event.date,
+          eventTime: event.time,
           quantity: booking.quantity,
           totalPrice: booking.totalPrice,
           status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          confirmationCode: booking.confirmationCode,
           customerInfo: booking.customerInfo,
+          specialRequests: booking.specialRequests,
+          partnerNotes: booking.partnerNotes,
+          partnerId: event.partnerId,
+          stripeCheckoutSessionId: booking.stripeCheckoutSessionId,
+          stripePaymentIntentId: booking.stripePaymentIntentId,
+          stripeCustomerId: booking.stripeCustomerId,
+          stripePaymentLinkId: booking.stripePaymentLinkId,
+          paymentDetails: booking.paymentDetails,
         })));
       }
     }
@@ -712,14 +836,25 @@ export const getPartnerBookings = query({
         
         result.restaurants.push(...reservations.map(reservation => ({
           _id: reservation._id,
+          restaurantId: reservation.restaurantId,
           restaurantName: restaurant.name,
           date: reservation.date,
           time: reservation.time,
           partySize: reservation.partySize,
           status: reservation.status,
+          paymentStatus: reservation.paymentStatus,
+          confirmationCode: reservation.confirmationCode,
           name: reservation.name,
           email: reservation.email,
           phone: reservation.phone,
+          specialRequests: reservation.specialRequests,
+          partnerNotes: reservation.partnerNotes,
+          partnerId: restaurant.partnerId,
+          stripeCheckoutSessionId: reservation.stripeCheckoutSessionId,
+          stripePaymentIntentId: reservation.stripePaymentIntentId,
+          stripeCustomerId: reservation.stripeCustomerId,
+          stripePaymentLinkId: reservation.stripePaymentLinkId,
+          paymentDetails: reservation.paymentDetails,
         })));
       }
     }
@@ -808,6 +943,7 @@ export const getPartnerBookings = query({
           
           result.vehicles.push({
             _id: booking._id,
+            vehicleId: booking.vehicleId,
             vehicleName: vehicle.name,
             vehicleBrand: vehicle.brand,
             vehicleModel: vehicle.model,
@@ -815,6 +951,8 @@ export const getPartnerBookings = query({
             endDate: booking.endDate,
             totalPrice: booking.totalPrice,
             status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            confirmationCode: booking.confirmationCode,
             pickupLocation: booking.pickupLocation,
             returnLocation: booking.returnLocation,
             notes: booking.notes,
@@ -825,6 +963,12 @@ export const getPartnerBookings = query({
               phone: user?.phone || "Telefone não disponível",
             },
             userId: booking.userId,
+            partnerId: vehicle.ownerId,
+            stripeCheckoutSessionId: booking.stripeCheckoutSessionId,
+            stripePaymentIntentId: booking.stripePaymentIntentId,
+            stripeCustomerId: booking.stripeCustomerId,
+            stripePaymentLinkId: booking.stripePaymentLinkId,
+            paymentDetails: booking.paymentDetails,
           });
         }
       }

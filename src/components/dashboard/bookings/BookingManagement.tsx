@@ -127,6 +127,103 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
   );
 }
 
+interface CancelBookingDialogProps {
+  bookingId: string;
+  bookingType: "activity" | "event" | "restaurant" | "vehicle";
+  currentStatus: BookingStatus;
+  onSuccess: () => void;
+}
+
+function CancelBookingDialog({ bookingId, bookingType, currentStatus, onSuccess }: CancelBookingDialogProps) {
+  const [reason, setReason] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const cancelActivityBooking = useMutation(api.domains.bookings.mutations.cancelActivityBooking);
+  const cancelEventBooking = useMutation(api.domains.bookings.mutations.cancelEventBooking);
+  const cancelRestaurantReservation = useMutation(api.domains.bookings.mutations.cancelRestaurantReservation);
+  const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
+
+  const handleCancel = async () => {
+    try {
+      const args = {
+        bookingId: bookingId as Id<any>,
+        reason: reason.trim() || "Cancelada pelo partner",
+      };
+
+      switch (bookingType) {
+        case "activity":
+          await cancelActivityBooking(args);
+          break;
+        case "event":
+          await cancelEventBooking(args);
+          break;
+        case "restaurant":
+          await cancelRestaurantReservation({ 
+            reservationId: bookingId as Id<"restaurantReservations">,
+            reason: reason.trim() || "Cancelada pelo partner",
+          });
+          break;
+        case "vehicle":
+          await cancelVehicleBooking(args);
+          break;
+      }
+
+      toast.success("Reserva cancelada com sucesso!");
+      setIsOpen(false);
+      setReason("");
+      onSuccess();
+    } catch (error) {
+      console.error("Erro ao cancelar reserva:", error);
+      toast.error("Erro ao cancelar reserva. Tente novamente.");
+    }
+  };
+
+  if (currentStatus === "canceled" || currentStatus === "completed") {
+    return null;
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50">
+          <XCircle className="h-4 w-4 mr-1" />
+          Cancelar
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Cancelar Reserva</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="reason">Motivo do cancelamento</Label>
+            <Textarea
+              id="reason"
+              placeholder="Explique o motivo do cancelamento..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Voltar
+            </Button>
+            <Button 
+              onClick={handleCancel} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={!reason.trim()}
+            >
+              Confirmar Cancelamento
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 interface ActivityBookingCardProps {
   booking: any;
   onRefresh: () => void;
@@ -136,6 +233,13 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
   const statusInfo = statusConfig[booking.status as BookingStatus];
   const StatusIcon = statusInfo.icon;
 
+  const paymentStatusConfig = {
+    paid: { label: "Pago", color: "bg-green-100 text-green-800" },
+    pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+    failed: { label: "Falhou", color: "bg-red-100 text-red-800" },
+    refunded: { label: "Reembolsado", color: "bg-gray-100 text-gray-800" },
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -144,36 +248,51 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
             <CardTitle className="text-lg">{booking.activityTitle}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">#{booking.confirmationCode}</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge className={statusInfo.color}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {statusInfo.label}
-            </Badge>
-            <BookingDetailsModal
-              data={booking}
-              trigger={
-                <Button size="sm" variant="outline">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              }
-            />
-            <ChatButton
-              assetId={booking.activityId}
-              assetType="activities"
-              assetName={booking.activityTitle}
-              partnerId={booking.partnerId}
-              bookingId={booking._id}
-              bookingContext={`Reserva #${booking.confirmationCode}`}
-              variant="outline"
-              size="sm"
-              showLabel={false}
-            />
-            <ConfirmBookingDialog
-              bookingId={booking._id}
-              bookingType="activity"
-              currentStatus={booking.status}
-              onSuccess={onRefresh}
-            />
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center space-x-2">
+              <Badge className={statusInfo.color}>
+                <StatusIcon className="h-3 w-3 mr-1" />
+                {statusInfo.label}
+              </Badge>
+              {booking.paymentStatus && (
+                <Badge className={paymentStatusConfig[booking.paymentStatus as keyof typeof paymentStatusConfig]?.color || "bg-gray-100 text-gray-800"}>
+                  {paymentStatusConfig[booking.paymentStatus as keyof typeof paymentStatusConfig]?.label || booking.paymentStatus}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <BookingDetailsModal
+                data={booking}
+                trigger={
+                  <Button size="sm" variant="outline" title="Ver detalhes">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <ChatButton
+                assetId={booking.activityId}
+                assetType="activities"
+                assetName={booking.activityTitle}
+                partnerId={booking.partnerId}
+                bookingId={booking._id}
+                bookingContext={`Reserva #${booking.confirmationCode}`}
+                variant="outline"
+                size="sm"
+                showLabel={false}
+              />
+              <ConfirmBookingDialog
+                bookingId={booking._id}
+                bookingType="activity"
+                currentStatus={booking.status}
+                onSuccess={onRefresh}
+              />
+              <CancelBookingDialog
+                bookingId={booking._id}
+                bookingType="activity"
+                currentStatus={booking.status}
+                onSuccess={onRefresh}
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -240,6 +359,13 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
   const statusInfo = statusConfig[reservation.status as BookingStatus];
   const StatusIcon = statusInfo.icon;
 
+  const paymentStatusConfig = {
+    paid: { label: "Pago", color: "bg-green-100 text-green-800" },
+    pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+    failed: { label: "Falhou", color: "bg-red-100 text-red-800" },
+    refunded: { label: "Reembolsado", color: "bg-gray-100 text-gray-800" },
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -248,25 +374,51 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
             <CardTitle className="text-lg">{reservation.restaurantName}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">#{reservation.confirmationCode}</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge className={statusInfo.color}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {statusInfo.label}
-            </Badge>
-            <BookingDetailsModal
-              data={reservation}
-              trigger={
-                <Button size="sm" variant="outline">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              }
-            />
-            <ConfirmBookingDialog
-              bookingId={reservation._id}
-              bookingType="restaurant"
-              currentStatus={reservation.status}
-              onSuccess={onRefresh}
-            />
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center space-x-2">
+              <Badge className={statusInfo.color}>
+                <StatusIcon className="h-3 w-3 mr-1" />
+                {statusInfo.label}
+              </Badge>
+              {reservation.paymentStatus && (
+                <Badge className={paymentStatusConfig[reservation.paymentStatus as keyof typeof paymentStatusConfig]?.color || "bg-gray-100 text-gray-800"}>
+                  {paymentStatusConfig[reservation.paymentStatus as keyof typeof paymentStatusConfig]?.label || reservation.paymentStatus}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <BookingDetailsModal
+                data={reservation}
+                trigger={
+                  <Button size="sm" variant="outline" title="Ver detalhes">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <ChatButton
+                assetId={reservation.restaurantId}
+                assetType="restaurants"
+                assetName={reservation.restaurantName}
+                partnerId={reservation.partnerId}
+                bookingId={reservation._id}
+                bookingContext={`Reserva #${reservation.confirmationCode}`}
+                variant="outline"
+                size="sm"
+                showLabel={false}
+              />
+              <ConfirmBookingDialog
+                bookingId={reservation._id}
+                bookingType="restaurant"
+                currentStatus={reservation.status}
+                onSuccess={onRefresh}
+              />
+              <CancelBookingDialog
+                bookingId={reservation._id}
+                bookingType="restaurant"
+                currentStatus={reservation.status}
+                onSuccess={onRefresh}
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -325,105 +477,75 @@ interface VehicleBookingCardProps {
 }
 
 function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
-  const confirmVehicleBooking = useMutation(api.domains.bookings.mutations.confirmVehicleBooking);
-  const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
+  const statusInfo = statusConfig[booking.status as BookingStatus];
+  const StatusIcon = statusInfo.icon;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      // Status antigos
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "confirmed": return "bg-green-100 text-green-800";
-      case "canceled": return "bg-red-100 text-red-800";
-      case "completed": return "bg-blue-100 text-blue-800";
-      
-      // Novos status
-      case "draft": return "bg-gray-100 text-gray-800";
-      case "payment_pending": return "bg-yellow-100 text-yellow-800";
-      case "awaiting_confirmation": return "bg-orange-100 text-orange-800";
-      case "in_progress": return "bg-blue-100 text-blue-800";
-      case "no_show": return "bg-red-100 text-red-800";
-      case "expired": return "bg-gray-100 text-gray-800";
-      
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const handleConfirm = async () => {
-    try {
-      await confirmVehicleBooking({ bookingId: booking._id });
-      toast.success("Reserva confirmada com sucesso!");
-      onRefresh();
-    } catch (error) {
-      toast.error("Erro ao confirmar reserva");
-    }
-  };
-
-  const handleCancel = async () => {
-    try {
-      await cancelVehicleBooking({ 
-        bookingId: booking._id,
-        reason: "Cancelada pelo partner"
-      });
-      toast.success("Reserva cancelada com sucesso!");
-      onRefresh();
-    } catch (error) {
-      toast.error("Erro ao cancelar reserva");
-    }
+  const paymentStatusConfig = {
+    paid: { label: "Pago", color: "bg-green-100 text-green-800" },
+    pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+    failed: { label: "Falhou", color: "bg-red-100 text-red-800" },
+    refunded: { label: "Reembolsado", color: "bg-gray-100 text-gray-800" },
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader>
+    <Card className="mb-4">
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg flex items-center">
               <Car className="h-5 w-5 mr-2 text-blue-600" />
               {booking.vehicleName}
             </CardTitle>
-            <Badge className={getStatusColor(booking.status)}>
-              {booking.status === "pending" && "Pendente"}
-              {booking.status === "confirmed" && "Confirmada"}
-              {booking.status === "canceled" && "Cancelada"}
-              {booking.status === "completed" && "Concluída"}
-              {booking.status === "draft" && "Rascunho"}
-              {booking.status === "payment_pending" && "Aguardando Pagamento"}
-              {booking.status === "awaiting_confirmation" && "Aguardando Confirmação"}
-              {booking.status === "in_progress" && "Em Andamento"}
-              {booking.status === "no_show" && "Não Compareceu"}
-              {booking.status === "expired" && "Expirada"}
-            </Badge>
+            <p className="text-sm text-gray-600 mt-1">
+              {booking.vehicleBrand} {booking.vehicleModel}
+              {booking.confirmationCode && ` - #${booking.confirmationCode}`}
+            </p>
           </div>
-          <div className="flex space-x-2">
-            <BookingDetailsModal
-              data={booking}
-              trigger={
-                <Button size="sm" variant="outline">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              }
-            />
-            {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleConfirm}
-                  className="text-green-600 border-green-600 hover:bg-green-50"
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Confirmar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCancel}
-                  className="text-red-600 border-red-600 hover:bg-red-50"
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Cancelar
-                </Button>
-              </>
-            )}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center space-x-2">
+              <Badge className={statusInfo.color}>
+                <StatusIcon className="h-3 w-3 mr-1" />
+                {statusInfo.label}
+              </Badge>
+              {booking.paymentStatus && (
+                <Badge className={paymentStatusConfig[booking.paymentStatus as keyof typeof paymentStatusConfig]?.color || "bg-gray-100 text-gray-800"}>
+                  {paymentStatusConfig[booking.paymentStatus as keyof typeof paymentStatusConfig]?.label || booking.paymentStatus}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <BookingDetailsModal
+                data={booking}
+                trigger={
+                  <Button size="sm" variant="outline" title="Ver detalhes">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <ChatButton
+                assetId={booking.vehicleId}
+                assetType="vehicles"
+                assetName={booking.vehicleName}
+                partnerId={booking.partnerId}
+                bookingId={booking._id}
+                bookingContext={booking.confirmationCode ? `Reserva #${booking.confirmationCode}` : `Reserva de ${booking.vehicleName}`}
+                variant="outline"
+                size="sm"
+                showLabel={false}
+              />
+              <ConfirmBookingDialog
+                bookingId={booking._id}
+                bookingType="vehicle"
+                currentStatus={booking.status}
+                onSuccess={onRefresh}
+              />
+              <CancelBookingDialog
+                bookingId={booking._id}
+                bookingType="vehicle"
+                currentStatus={booking.status}
+                onSuccess={onRefresh}
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -435,28 +557,45 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
               {new Date(booking.startDate).toLocaleDateString('pt-BR')} - {new Date(booking.endDate).toLocaleDateString('pt-BR')}
             </span>
           </div>
-          <div className="flex items-center">
-            <span className="font-medium">Total: R$ {booking.totalPrice.toFixed(2)}</span>
+          <div className="font-semibold">
+            Total: R$ {booking.totalPrice.toFixed(2)}
           </div>
         </div>
-        {booking.pickupLocation && (
-          <div className="mt-3">
-            <span className="font-medium">Local de retirada:</span>
-            <p className="text-gray-600 mt-1">{booking.pickupLocation}</p>
+        <div className="mt-4 pt-4 border-t">
+          <h4 className="font-medium mb-2">Informações do Cliente</h4>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex items-center">
+              <span className="font-medium mr-2">Nome:</span>
+              <span>{booking.customerInfo.name}</span>
+            </div>
+            <div className="flex items-center">
+              <Mail className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{booking.customerInfo.email}</span>
+            </div>
+            <div className="flex items-center">
+              <Phone className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{booking.customerInfo.phone}</span>
+            </div>
           </div>
-        )}
-        {booking.notes && (
-          <div className="mt-3">
-            <span className="font-medium">Observações do cliente:</span>
-            <p className="text-gray-600 mt-1">{booking.notes}</p>
-          </div>
-        )}
-        {booking.partnerNotes && (
-          <div className="mt-3">
-            <span className="font-medium">Observações do parceiro:</span>
-            <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
-          </div>
-        )}
+          {booking.pickupLocation && (
+            <div className="mt-3">
+              <span className="font-medium">Local de retirada:</span>
+              <p className="text-gray-600 mt-1">{booking.pickupLocation}</p>
+            </div>
+          )}
+          {booking.notes && (
+            <div className="mt-3">
+              <span className="font-medium">Observações do cliente:</span>
+              <p className="text-gray-600 mt-1">{booking.notes}</p>
+            </div>
+          )}
+          {booking.partnerNotes && (
+            <div className="mt-3">
+              <span className="font-medium">Observações do parceiro:</span>
+              <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -467,32 +606,383 @@ interface BookingDetailsModalProps {
   trigger?: React.ReactNode;
 }
 
-function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps) {
+export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Helper para converter chave em label
-  const formatLabel = (key: string) =>
-    key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (s) => s.toUpperCase());
+  // Função para formatar datas
+  const formatDate = (date: string | number) => {
+    if (typeof date === 'number') {
+      return new Date(date).toLocaleString('pt-BR');
+    }
+    return date;
+  };
+
+  // Função para formatar valores monetários
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  // Definir o tipo de reserva baseado nos campos
+  const getBookingType = () => {
+    if (data.activityTitle) return 'activity';
+    if (data.eventTitle) return 'event';
+    if (data.restaurantName) return 'restaurant';
+    if (data.vehicleName) return 'vehicle';
+    return 'unknown';
+  };
+
+  const bookingType = getBookingType();
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button size="sm" variant="outline" title="Ver detalhes completos">
+            <Eye className="h-4 w-4 mr-1" />
+            Detalhes
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Detalhes da Reserva</DialogTitle>
+          <DialogTitle className="text-xl">Detalhes da Reserva</DialogTitle>
         </DialogHeader>
-        <div className="mt-4 space-y-2 text-sm max-h-[60vh] overflow-y-auto">
-          {Object.entries(data).map(([key, value]) => (
-            <div key={key} className="flex">
-              <span className="font-medium mr-2">{formatLabel(key)}:</span>
-              <span className="break-words">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+        
+        <div className="overflow-y-auto flex-1 pr-2">
+          {/* Informações Principais */}
+          <div className="space-y-6">
+            {/* Cabeçalho com Status */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {data.activityTitle || data.eventTitle || data.restaurantName || data.vehicleName}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Código de Confirmação: <span className="font-mono font-semibold">{data.confirmationCode}</span>
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Badge className={statusConfig[data.status as BookingStatus]?.color}>
+                    {statusConfig[data.status as BookingStatus]?.label || data.status}
+                  </Badge>
+                  {data.paymentStatus && (
+                    <Badge className={
+                      data.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                      data.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      data.paymentStatus === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }>
+                      {data.paymentStatus === 'paid' ? 'Pago' :
+                       data.paymentStatus === 'pending' ? 'Pagamento Pendente' :
+                       data.paymentStatus === 'failed' ? 'Pagamento Falhou' :
+                       data.paymentStatus === 'refunded' ? 'Reembolsado' :
+                       data.paymentStatus}
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </div>
-          ))}
+
+            {/* Informações da Reserva */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                Informações da Reserva
+              </h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {(data.date || data.eventDate) && (
+                  <div>
+                    <span className="text-gray-600">Data:</span>
+                    <p className="font-medium">{data.date || data.eventDate}</p>
+                  </div>
+                )}
+                {(data.time || data.eventTime) && (
+                  <div>
+                    <span className="text-gray-600">Horário:</span>
+                    <p className="font-medium">{data.time || data.eventTime}</p>
+                  </div>
+                )}
+                {data.startDate && (
+                  <div>
+                    <span className="text-gray-600">Período:</span>
+                    <p className="font-medium">
+                      {formatDate(data.startDate)} até {formatDate(data.endDate)}
+                    </p>
+                  </div>
+                )}
+                {(data.participants || data.quantity || data.partySize) && (
+                  <div>
+                    <span className="text-gray-600">
+                      {bookingType === 'activity' ? 'Participantes' :
+                       bookingType === 'event' ? 'Ingressos' :
+                       bookingType === 'restaurant' ? 'Pessoas' : 'Quantidade'}:
+                    </span>
+                    <p className="font-medium">{data.participants || data.quantity || data.partySize}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Valor Total:</span>
+                  <p className="font-medium text-lg">{formatCurrency(data.totalPrice)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Informações do Cliente */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center">
+                <Users className="h-4 w-4 mr-2 text-gray-500" />
+                Informações do Cliente
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center">
+                  <span className="text-gray-600 w-20">Nome:</span>
+                  <span className="font-medium">{data.customerInfo?.name || data.name}</span>
+                </div>
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{data.customerInfo?.email || data.email}</span>
+                </div>
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{data.customerInfo?.phone || data.phone}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Localização (para veículos) */}
+            {(data.pickupLocation || data.returnLocation) && (
+              <div className="space-y-4">
+                <h4 className="font-semibold flex items-center">
+                  <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                  Localização
+                </h4>
+                <div className="space-y-2 text-sm">
+                  {data.pickupLocation && (
+                    <div>
+                      <span className="text-gray-600">Local de Retirada:</span>
+                      <p className="font-medium">{data.pickupLocation}</p>
+                    </div>
+                  )}
+                  {data.returnLocation && (
+                    <div>
+                      <span className="text-gray-600">Local de Devolução:</span>
+                      <p className="font-medium">{data.returnLocation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Observações e Solicitações */}
+            {(data.specialRequests || data.notes || data.partnerNotes) && (
+              <div className="space-y-4">
+                <h4 className="font-semibold flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-2 text-gray-500" />
+                  Observações
+                </h4>
+                <div className="space-y-3 text-sm">
+                  {(data.specialRequests || data.notes) && (
+                    <div className="bg-blue-50 p-3 rounded">
+                      <span className="text-gray-700 font-medium">Solicitações do Cliente:</span>
+                      <p className="mt-1">{data.specialRequests || data.notes}</p>
+                    </div>
+                  )}
+                  {data.partnerNotes && (
+                    <div className="bg-yellow-50 p-3 rounded">
+                      <span className="text-gray-700 font-medium">Observações do Parceiro:</span>
+                      <p className="mt-1">{data.partnerNotes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Informações de Pagamento */}
+            {(data.stripePaymentIntentId || data.stripeCheckoutSessionId || data.paymentDetails) && (
+              <div className="space-y-4">
+                <h4 className="font-semibold">Informações de Pagamento</h4>
+                <div className="space-y-2 text-sm">
+                  {data.stripePaymentIntentId && (
+                    <div>
+                      <span className="text-gray-600">ID do Pagamento:</span>
+                      <p className="font-mono text-xs">{data.stripePaymentIntentId}</p>
+                    </div>
+                  )}
+                  {data.paymentDetails?.receiptUrl && (
+                    <div>
+                      <a 
+                        href={data.paymentDetails.receiptUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline inline-flex items-center"
+                      >
+                        Ver Recibo do Pagamento
+                        <span className="ml-1">↗</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Metadados */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-semibold text-sm text-gray-600">Informações do Sistema</h4>
+              <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+                <div>
+                  <span>ID da Reserva:</span>
+                  <p className="font-mono">{data._id}</p>
+                </div>
+                <div>
+                  <span>Criado em:</span>
+                  <p>{formatDate(data._creationTime)}</p>
+                </div>
+                {data.updatedAt && (
+                  <div>
+                    <span>Atualizado em:</span>
+                    <p>{formatDate(data.updatedAt)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-4 pt-4 border-t">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Fechar
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface EventBookingCardProps {
+  booking: any;
+  onRefresh: () => void;
+}
+
+function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
+  const statusInfo = statusConfig[booking.status as BookingStatus];
+  const StatusIcon = statusInfo.icon;
+
+  const paymentStatusConfig = {
+    paid: { label: "Pago", color: "bg-green-100 text-green-800" },
+    pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+    failed: { label: "Falhou", color: "bg-red-100 text-red-800" },
+    refunded: { label: "Reembolsado", color: "bg-gray-100 text-gray-800" },
+  };
+
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg">{booking.eventTitle}</CardTitle>
+            <p className="text-sm text-gray-600 mt-1">#{booking.confirmationCode}</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center space-x-2">
+              <Badge className={statusInfo.color}>
+                <StatusIcon className="h-3 w-3 mr-1" />
+                {statusInfo.label}
+              </Badge>
+              {booking.paymentStatus && (
+                <Badge className={paymentStatusConfig[booking.paymentStatus as keyof typeof paymentStatusConfig]?.color || "bg-gray-100 text-gray-800"}>
+                  {paymentStatusConfig[booking.paymentStatus as keyof typeof paymentStatusConfig]?.label || booking.paymentStatus}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <BookingDetailsModal
+                data={booking}
+                trigger={
+                  <Button size="sm" variant="outline" title="Ver detalhes">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <ChatButton
+                assetId={booking.eventId}
+                assetType="events"
+                assetName={booking.eventTitle}
+                partnerId={booking.partnerId}
+                bookingId={booking._id}
+                bookingContext={`Reserva #${booking.confirmationCode}`}
+                variant="outline"
+                size="sm"
+                showLabel={false}
+              />
+              <ConfirmBookingDialog
+                bookingId={booking._id}
+                bookingType="event"
+                currentStatus={booking.status}
+                onSuccess={onRefresh}
+              />
+              <CancelBookingDialog
+                bookingId={booking._id}
+                bookingType="event"
+                currentStatus={booking.status}
+                onSuccess={onRefresh}
+              />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+            <span>{booking.eventDate}</span>
+          </div>
+          <div className="flex items-center">
+            <Clock className="h-4 w-4 mr-2 text-gray-500" />
+            <span>{booking.eventTime}</span>
+          </div>
+          <div className="flex items-center">
+            <Users className="h-4 w-4 mr-2 text-gray-500" />
+            <span>{booking.quantity} ingressos</span>
+          </div>
+          <div className="font-semibold">
+            R$ {booking.totalPrice.toFixed(2)}
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t">
+          <h4 className="font-medium mb-2">Informações do Cliente</h4>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex items-center">
+              <span className="font-medium mr-2">Nome:</span>
+              <span>{booking.customerInfo.name}</span>
+            </div>
+            <div className="flex items-center">
+              <Mail className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{booking.customerInfo.email}</span>
+            </div>
+            <div className="flex items-center">
+              <Phone className="h-4 w-4 mr-2 text-gray-500" />
+              <span>{booking.customerInfo.phone}</span>
+            </div>
+          </div>
+          {booking.specialRequests && (
+            <div className="mt-3">
+              <span className="font-medium">Solicitações especiais:</span>
+              <p className="text-gray-600 mt-1">{booking.specialRequests}</p>
+            </div>
+          )}
+          {booking.partnerNotes && (
+            <div className="mt-3">
+              <span className="font-medium">Observações do parceiro:</span>
+              <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -689,7 +1179,7 @@ export default function BookingManagement() {
           ) : (
             <div className="space-y-4">
               {partnerBookings.events.map((booking) => (
-                <ActivityBookingCard
+                <EventBookingCard
                   key={booking._id}
                   booking={booking}
                   onRefresh={handleRefresh}

@@ -323,32 +323,32 @@ export default function UsersPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredUsers.map((user) => {
-                const roleConfig = getRoleConfig(user.role as UserRole);
+              {filteredUsers.map((userItem) => {
+                const roleConfig = getRoleConfig(userItem.role as UserRole);
                 const IconComponent = roleConfig.icon;
                 
                 return (
-                  <Card key={user._id} className="border border-border/50 hover:shadow-md transition-all duration-300">
+                  <Card key={userItem._id} className="border border-border/50 hover:shadow-md transition-all duration-300">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.image} alt={(user.fullName || user.name) || "Usuário"} />
+                            <AvatarImage src={userItem.image} alt={(userItem.fullName || userItem.name) || "Usuário"} />
                             <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
-                              {(user.fullName || user.name)?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                              {(userItem.fullName || userItem.name)?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="font-semibold text-foreground">
-                                {user.fullName || user.name || "Nome não informado"}
+                                {userItem.fullName || userItem.name || "Nome não informado"}
                               </h3>
                               <Badge variant="outline" className={`${roleConfig.bg} ${roleConfig.color} border-current/20`}>
                                 <IconComponent className="w-3 h-3 mr-1" />
                                 {roleConfig.label}
                               </Badge>
-                              {user.isActive !== false ? (
+                              {userItem.isActive !== false ? (
                                 <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
                                   Ativo
                                 </Badge>
@@ -360,26 +360,26 @@ export default function UsersPage() {
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                              {user.email && (
+                              {userItem.email && (
                                 <div className="flex items-center gap-2">
                                   <Mail className="h-4 w-4" />
-                                  {user.email}
+                                  {userItem.email}
                                 </div>
                               )}
-                              {(user.phoneNumber || user.phone) && (
+                              {(userItem.phoneNumber || userItem.phone) && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-4 w-4" />
-                                  {user.phoneNumber || user.phone}
+                                  {userItem.phoneNumber || userItem.phone}
                                 </div>
                               )}
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4" />
-                                {format(new Date(user._creationTime), "PPP", { locale: ptBR })}
+                                {format(new Date(userItem._creationTime), "PPP", { locale: ptBR })}
                               </div>
-                              {user.clerkId && (
+                              {userItem.clerkId && (
                                 <div className="flex items-center gap-2">
                                   <Shield className="h-4 w-4" />
-                                  ID: {user.clerkId.substring(0, 8)}...
+                                  ID: {userItem.clerkId.substring(0, 8)}...
                                 </div>
                               )}
                             </div>
@@ -390,26 +390,28 @@ export default function UsersPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openUserDetails(user)}
+                            onClick={() => openUserDetails(userItem)}
                           >
                             Ver Detalhes
                           </Button>
                           
-                          <Button
-                            variant={user.isActive !== false ? "outline" : "default"}
-                            size="sm"
-                            onClick={() => handleToggleUserStatus(user._id, user.isActive !== false)}
-                            className={user.isActive !== false 
-                              ? "text-red-600 border-red-200 hover:bg-red-50" 
-                              : "bg-green-600 hover:bg-green-700 text-white"
-                            }
-                          >
-                            {user.isActive !== false ? (
-                              <><Ban className="w-4 h-4 mr-1" /> Desativar</>
-                            ) : (
-                              <><CheckCircle className="w-4 h-4 mr-1" /> Ativar</>
-                            )}
-                          </Button>
+                          {user?.publicMetadata?.role === "master" && (
+                            <Button
+                              variant={userItem.isActive !== false ? "outline" : "default"}
+                              size="sm"
+                              onClick={() => handleToggleUserStatus(userItem._id, userItem.isActive !== false)}
+                              className={userItem.isActive !== false 
+                                ? "text-red-600 border-red-200 hover:bg-red-50" 
+                                : "bg-green-600 hover:bg-green-700 text-white"
+                              }
+                            >
+                              {userItem.isActive !== false ? (
+                                <><Ban className="w-4 h-4 mr-1" /> Desativar</>
+                              ) : (
+                                <><CheckCircle className="w-4 h-4 mr-1" /> Ativar</>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -458,20 +460,35 @@ export default function UsersPage() {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Papel</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Select
-                      value={selectedUser.role || "customer"}
-                      onValueChange={(newRole) => handleUpdateRole(selectedUser._id, newRole as UserRole)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="master">Master</SelectItem>
-                        <SelectItem value="partner">Parceiro</SelectItem>
-                        <SelectItem value="traveler">Viajante</SelectItem>
-                        <SelectItem value="employee">Funcionário</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {user?.publicMetadata?.role === "master" ? (
+                      <Select
+                        value={selectedUser.role || "customer"}
+                        onValueChange={(newRole) => handleUpdateRole(selectedUser._id, newRole as UserRole)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="master">Master</SelectItem>
+                          <SelectItem value="partner">Parceiro</SelectItem>
+                          <SelectItem value="traveler">Viajante</SelectItem>
+                          <SelectItem value="employee">Funcionário</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={`${getRoleConfig(selectedUser.role as UserRole).bg} ${getRoleConfig(selectedUser.role as UserRole).color} border-current/20`}>
+                          {getRoleConfig(selectedUser.role as UserRole).icon && (
+                            <>{(() => {
+                              const Icon = getRoleConfig(selectedUser.role as UserRole).icon;
+                              return <Icon className="w-3 h-3 mr-1" />;
+                            })()}</>
+                          )}
+                          {getRoleConfig(selectedUser.role as UserRole).label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">(Apenas masters podem editar papéis)</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
