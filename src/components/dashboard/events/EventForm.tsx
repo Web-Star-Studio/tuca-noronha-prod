@@ -677,7 +677,7 @@ export function EventForm({
                 <Label htmlFor="hasMultipleTickets" className="font-medium">Habilitar múltiplos tipos de ingressos</Label>
                 <Switch 
                   id="hasMultipleTickets" 
-                  variant="primary"
+                  variant="default"
                   checked={formData.hasMultipleTickets}
                   onCheckedChange={(checked) => {
                     setFormData({

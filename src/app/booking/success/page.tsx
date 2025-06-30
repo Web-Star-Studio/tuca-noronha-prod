@@ -297,7 +297,7 @@ export default function BookingSuccessPage() {
           
           <Button 
             onClick={handleBackToHome} 
-            variant="primary" 
+            variant="default" 
             className="w-full"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

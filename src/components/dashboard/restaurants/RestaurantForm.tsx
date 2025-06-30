@@ -640,7 +640,7 @@ export function RestaurantForm({
             <div className="flex items-center space-x-2">
               <Switch 
                 id="acceptsReservations" 
-                variant="primary"
+                variant="default"
                 checked={watch("acceptsReservations")} 
                 onCheckedChange={(checked) => setValue("acceptsReservations", checked)} 
               />

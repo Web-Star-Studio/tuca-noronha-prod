@@ -41,7 +41,7 @@ export function SwitchDemo() {
           <Label htmlFor="primary-switch">Primary (Azul)</Label>
           <Switch
             id="primary-switch"
-            variant="primary"
+            variant="default"
             checked={switches.primary}
             onCheckedChange={(checked) => updateSwitch("primary", checked)}
           />
