@@ -71,13 +71,13 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                     <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
                       <span className="text-sm text-gray-600">Confirmadas</span>
                       <Badge variant="secondary" className="bg-green-100 text-green-600">
-                        {reservations.filter(r => r.status === 'confirmed').length}
+                        {reservations.filter(r => r.status === 'confirmed' || r.status === 'in_progress' || r.status === 'completed').length}
                       </Badge>
                     </button>
                     <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
                       <span className="text-sm text-gray-600">Pendentes</span>
                       <Badge variant="secondary" className="bg-yellow-100 text-yellow-600">
-                        {reservations.filter(r => r.status === 'pending').length}
+                        {reservations.filter(r => r.status === 'pending' || r.status === 'payment_pending' || r.status === 'awaiting_confirmation' || r.status === 'draft').length}
                       </Badge>
                     </button>
                   </div>

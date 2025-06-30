@@ -295,13 +295,9 @@ export default function BookingSuccessPage() {
             </Button>
           )}
           
-          <Button onClick={handleViewBookings} className="w-full">
-            Ver Minhas Reservas
-          </Button>
-          
           <Button 
             onClick={handleBackToHome} 
-            variant="outline" 
+            variant="primary" 
             className="w-full"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

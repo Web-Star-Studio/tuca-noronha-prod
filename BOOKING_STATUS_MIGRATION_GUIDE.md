@@ -1,142 +1,124 @@
-# Guia de Migração: Sistema de Status de Reservas
+# Guia de Migração de Status de Reservas
 
-## Visão Geral
+## Problema Resolvido
 
-Este documento descreve as mudanças implementadas no sistema de status de reservas para torná-lo mais semântico e informativo sobre o estado real das reservas e pagamentos.
+As reservas não estavam aparecendo nas listagens porque o sistema estava usando um novo modelo de status, mas as queries e componentes ainda esperavam os status antigos.
 
-## Principais Mudanças
+## Status Antigos vs Novos
 
-### 1. Novos Status de Reserva (BOOKING_STATUS)
+### Status Antigos
+- `pending` - Pendente
+- `confirmed` - Confirmada
+- `cancelled` - Cancelada
 
-#### Estados Iniciais
-- **DRAFT** - Reserva criada mas pagamento não iniciado
-- **PAYMENT_PENDING** - Aguardando conclusão do pagamento (cliente no checkout)
-- **AWAITING_CONFIRMATION** - Pagamento concluído ou não necessário, aguardando confirmação do parceiro
+### Novos Status (BOOKING_STATUS)
+- `draft` - Rascunho (reserva criada mas pagamento não iniciado)
+- `payment_pending` - Aguardando conclusão do pagamento
+- `awaiting_confirmation` - Pagamento concluído, aguardando confirmação do partner
+- `confirmed` - Confirmada pelo partner
+- `in_progress` - Em andamento (para atividades/eventos)
+- `completed` - Concluída com sucesso
+- `canceled` - Cancelada
+- `no_show` - Cliente não compareceu
+- `expired` - Expirada (pagamento não concluído no prazo)
 
-#### Estados Ativos
-- **CONFIRMED** - Confirmada pelo parceiro
-- **IN_PROGRESS** - Em andamento (atividade/serviço sendo executado)
-
-#### Estados Finais
-- **COMPLETED** - Concluída com sucesso
-- **CANCELED** - Cancelada
-- **NO_SHOW** - Cliente não compareceu
-- **EXPIRED** - Expirada por falta de pagamento
-
-### 2. Status de Pagamento Aprimorados (PAYMENT_STATUS)
-
-- **NOT_REQUIRED** - Pagamento não necessário (reserva gratuita)
-- **PENDING** - Aguardando início do pagamento
-- **PROCESSING** - Pagamento sendo processado
-- **AWAITING_PAYMENT_METHOD** - Aguardando PIX/Boleto
-- **PAID** - Pago com sucesso
-- **PARTIALLY_PAID** - Parcialmente pago
-- **FAILED** - Falha no pagamento
-- **REFUNDED** - Reembolsado
-- **PARTIALLY_REFUNDED** - Parcialmente reembolsado
-- **CANCELED** - Pagamento cancelado
+### Status de Pagamento (PAYMENT_STATUS)
+- `not_required` - Pagamento não necessário
+- `pending` - Aguardando início do pagamento
+- `processing` - Pagamento sendo processado
+- `awaiting_payment_method` - Aguardando método de pagamento
+- `paid` - Pago com sucesso
+- `partially_paid` - Parcialmente pago
+- `failed` - Falha no pagamento
+- `refunded` - Reembolsado
+- `partially_refunded` - Parcialmente reembolsado
+- `canceled` - Pagamento cancelado
 
 ## Fluxo de Status
 
-```mermaid
-flowchart TD
-    Start([Usuário inicia reserva]) --> CreateBooking[Criar reserva como DRAFT]
-    
-    CreateBooking --> CheckPayment{Requer<br/>pagamento?}
-    
-    CheckPayment -->|Não/Gratuito| SetNotRequired[Status: AWAITING_CONFIRMATION<br/>Payment: NOT_REQUIRED]
-    CheckPayment -->|Sim| CheckUpfront{Pagamento<br/>antecipado?}
-    
-    CheckUpfront -->|Sim| InitiatePayment[Iniciar pagamento Stripe]
-    CheckUpfront -->|Não| SetPendingConfirmation[Status: AWAITING_CONFIRMATION<br/>Payment: PENDING]
-    
-    InitiatePayment --> UpdatePaymentPending[Status: PAYMENT_PENDING<br/>Payment: PROCESSING]
-    
-    UpdatePaymentPending --> StripeCheckout[Usuário no Stripe Checkout]
-    
-    StripeCheckout --> PaymentResult{Resultado do<br/>pagamento}
-    
-    PaymentResult -->|Sucesso| UpdatePaid[Status: AWAITING_CONFIRMATION<br/>Payment: PAID]
-    PaymentResult -->|Falhou| UpdateFailed[Status: DRAFT<br/>Payment: FAILED]
-    PaymentResult -->|Abandonado| TimeCheck{Tempo<br/>expirado?}
-```
+### 1. Criação da Reserva
+- Reserva criada com status `draft`
+- Payment status: `pending`
 
-## Benefícios para o Admin
+### 2. Pagamento Iniciado
+- Status muda para `payment_pending`
+- Payment status: `processing`
 
-### 1. Visualização Clara do Estado
-- **Pagamento Pendente**: Reservas em DRAFT ou PAYMENT_PENDING
-- **Ação Necessária**: Reservas em AWAITING_CONFIRMATION com pagamento confirmado
-- **Problemas**: Reservas EXPIRED, NO_SHOW ou com pagamento FAILED
+### 3. Pagamento Concluído
+- Status muda para `awaiting_confirmation`
+- Payment status: `paid`
+- Webhook do Stripe atualiza esses status automaticamente
 
-### 2. Indicadores de Urgência
-- **Alta Urgência**: 
-  - Pagamento confirmado aguardando confirmação
-  - Reservas DRAFT há mais de 15 minutos
-- **Média Urgência**: 
-  - Cliente no checkout (PAYMENT_PENDING)
-- **Baixa Urgência**: 
-  - Reservas confirmadas ou concluídas
+### 4. Confirmação do Partner
+- Partner confirma a reserva
+- Status muda para `confirmed`
 
-### 3. Automação de Status
-- **Cron Jobs** atualizam automaticamente:
-  - Reservas DRAFT → EXPIRED após 30 minutos
-  - CONFIRMED → IN_PROGRESS na data/hora da atividade
-  - IN_PROGRESS → COMPLETED após o término
-  - CONFIRMED → NO_SHOW se não houver check-in
+### 5. Execução do Serviço
+- No dia/hora do serviço, status muda para `in_progress`
 
-## Implementação
+### 6. Conclusão
+- Após o serviço, status muda para `completed`
 
-### 1. Mutations Adicionadas
+## Arquivos Atualizados
+
+### 1. Utils de Status (`src/app/(protected)/meu-painel/utils/reservations.ts`)
+- Adicionado suporte para todos os novos status
+- Mantida compatibilidade com status antigos
+- Mapeamento correto de cores e labels
+
+### 2. Queries de Bookings (`convex/domains/bookings/queries.ts`)
+- `getUserStats` atualizada para incluir novos status ativos
+- Considera `awaiting_confirmation` e `payment_pending` como reservas ativas
+
+### 3. Componente de Reservas (`src/app/(protected)/meu-painel/components/ReservationsSection.tsx`)
+- Filtros atualizados para contar corretamente os novos status
+- "Confirmadas" agora inclui: `confirmed`, `in_progress`, `completed`
+- "Pendentes" agora inclui: `pending`, `payment_pending`, `awaiting_confirmation`, `draft`
+
+### 4. Página de Sucesso (`src/app/booking/success/page.tsx`)
+- Removido botão "Ver Minhas Reservas" conforme solicitado
+- Mantido apenas botão "Voltar ao Início"
+
+## Mapeamento de Status para Exibição
 
 ```typescript
-// Atualizar quando pagamento é iniciado
-updateBookingPaymentInitiated()
+// Para determinar se uma reserva está "ativa"
+const isActiveBooking = (status: string) => {
+  return [
+    'confirmed',
+    'pending',
+    'awaiting_confirmation',
+    'payment_pending',
+    'in_progress'
+  ].includes(status);
+};
 
-// Atualizar após sucesso no pagamento
-updateBookingPaymentSuccess()
+// Para determinar se uma reserva foi "finalizada"
+const isCompletedBooking = (status: string) => {
+  return ['completed'].includes(status);
+};
 
-// Atualizar após falha no pagamento
-updateBookingPaymentFailed()
-
-// Expirar reservas abandonadas (cron job)
-expireIncompletedBookings()
-
-// Atualizar status baseado em datas (cron job)
-updateBookingStatusesByDate()
-
-// Marcar no-shows (cron job)
-markNoShowBookings()
+// Para determinar se uma reserva tem "problema"
+const isProblematicBooking = (status: string) => {
+  return ['canceled', 'cancelled', 'no_show', 'expired'].includes(status);
+};
 ```
-
-### 2. Queries Aprimoradas
-
-```typescript
-// Buscar reservas por grupo de status
-getBookingsByStatusGroup({
-  statusGroup: "awaiting_payment" | "awaiting_confirmation" | "active" | "completed" | "problematic" | "all"
-})
-
-// Obter estatísticas de status
-getBookingStatusStatistics()
-```
-
-### 3. Componentes Visuais
-
-- **BookingStatusBadge**: Exibe status com cores e ícones semânticos
-- **BookingUrgencyIndicator**: Mostra indicadores de urgência e ações necessárias
-
-## Migração de Dados Existentes
-
-Para reservas existentes com status antigo "pending":
-
-1. Se `paymentStatus === "paid"` → migrar para `AWAITING_CONFIRMATION`
-2. Se `paymentStatus === "pending"` e criada há menos de 30 min → migrar para `DRAFT`
-3. Se `paymentStatus === "pending"` e criada há mais de 30 min → migrar para `EXPIRED`
-4. Se `paymentStatus === "failed"` → manter status mas marcar como `DRAFT`
 
 ## Próximos Passos
 
-1. Executar migration script para atualizar reservas existentes
-2. Atualizar interfaces de admin para usar novos componentes
-3. Configurar notificações baseadas em mudanças de status
-4. Treinar equipe sobre novos status e fluxos 
+1. **Atualizar Dashboard do Partner/Employee**
+   - Garantir que as queries de listagem incluam os novos status
+   - Adicionar filtros por grupo de status (aguardando pagamento, aguardando confirmação, etc.)
+
+2. **Implementar Ações por Status**
+   - `awaiting_confirmation`: Botão para confirmar reserva
+   - `confirmed`: Botão para marcar como em andamento
+   - `in_progress`: Botão para marcar como concluída
+
+3. **Notificações por Status**
+   - Notificar partner quando status muda para `awaiting_confirmation`
+   - Notificar traveler quando status muda para `confirmed`
+
+4. **Cron Jobs para Status**
+   - Expirar reservas com `payment_pending` após 30 minutos
+   - Marcar como `no_show` reservas não marcadas como `in_progress` após o horário 

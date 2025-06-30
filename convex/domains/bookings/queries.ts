@@ -2828,10 +2828,34 @@ export const getUserStats = query({
     const totalReservations = activityBookings.length + eventBookings.length + restaurantReservations.length + vehicleBookings.length;
     
     const activeReservations = [
-      ...activityBookings.filter(b => b.status === "confirmed" || b.status === "pending"),
-      ...eventBookings.filter(b => b.status === "confirmed" || b.status === "pending"),
-      ...restaurantReservations.filter(b => b.status === "confirmed" || b.status === "pending"),
-      ...vehicleBookings.filter(b => b.status === "confirmed" || b.status === "pending"),
+      ...activityBookings.filter(b => 
+        b.status === "confirmed" || 
+        b.status === "pending" || 
+        b.status === "awaiting_confirmation" || 
+        b.status === "payment_pending" ||
+        b.status === "in_progress"
+      ),
+      ...eventBookings.filter(b => 
+        b.status === "confirmed" || 
+        b.status === "pending" || 
+        b.status === "awaiting_confirmation" || 
+        b.status === "payment_pending" ||
+        b.status === "in_progress"
+      ),
+      ...restaurantReservations.filter(b => 
+        b.status === "confirmed" || 
+        b.status === "pending" || 
+        b.status === "awaiting_confirmation" || 
+        b.status === "payment_pending" ||
+        b.status === "in_progress"
+      ),
+      ...vehicleBookings.filter(b => 
+        b.status === "confirmed" || 
+        b.status === "pending" || 
+        b.status === "awaiting_confirmation" || 
+        b.status === "payment_pending" ||
+        b.status === "in_progress"
+      ),
     ].length;
 
     const totalSpent = [

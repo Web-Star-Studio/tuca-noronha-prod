@@ -15,13 +15,24 @@ import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, Aler
 import { ChatButton } from "@/components/chat/ChatButton";
 import { toast } from "sonner";
 
-type BookingStatus = "pending" | "confirmed" | "canceled" | "completed";
+type BookingStatus = "pending" | "confirmed" | "canceled" | "completed" | 
+  "draft" | "payment_pending" | "awaiting_confirmation" | "in_progress" | 
+  "no_show" | "expired";
 
 const statusConfig = {
+  // Status antigos (compatibilidade)
   pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
   confirmed: { label: "Confirmada", color: "bg-green-100 text-green-800", icon: CheckCircle },
   canceled: { label: "Cancelada", color: "bg-red-100 text-red-800", icon: XCircle },
   completed: { label: "Concluída", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+  
+  // Novos status
+  draft: { label: "Rascunho", color: "bg-gray-100 text-gray-800", icon: AlertCircle },
+  payment_pending: { label: "Aguardando Pagamento", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
+  awaiting_confirmation: { label: "Aguardando Confirmação", color: "bg-orange-100 text-orange-800", icon: AlertCircle },
+  in_progress: { label: "Em Andamento", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+  no_show: { label: "Não Compareceu", color: "bg-red-100 text-red-800", icon: XCircle },
+  expired: { label: "Expirada", color: "bg-gray-100 text-gray-800", icon: XCircle },
 };
 
 interface ConfirmBookingDialogProps {
@@ -75,7 +86,7 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
     }
   };
 
-  if (currentStatus !== "pending") {
+  if (currentStatus !== "pending" && currentStatus !== "awaiting_confirmation") {
     return null;
   }
 
@@ -319,10 +330,20 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      // Status antigos
       case "pending": return "bg-yellow-100 text-yellow-800";
       case "confirmed": return "bg-green-100 text-green-800";
       case "canceled": return "bg-red-100 text-red-800";
       case "completed": return "bg-blue-100 text-blue-800";
+      
+      // Novos status
+      case "draft": return "bg-gray-100 text-gray-800";
+      case "payment_pending": return "bg-yellow-100 text-yellow-800";
+      case "awaiting_confirmation": return "bg-orange-100 text-orange-800";
+      case "in_progress": return "bg-blue-100 text-blue-800";
+      case "no_show": return "bg-red-100 text-red-800";
+      case "expired": return "bg-gray-100 text-gray-800";
+      
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -364,6 +385,12 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
               {booking.status === "confirmed" && "Confirmada"}
               {booking.status === "canceled" && "Cancelada"}
               {booking.status === "completed" && "Concluída"}
+              {booking.status === "draft" && "Rascunho"}
+              {booking.status === "payment_pending" && "Aguardando Pagamento"}
+              {booking.status === "awaiting_confirmation" && "Aguardando Confirmação"}
+              {booking.status === "in_progress" && "Em Andamento"}
+              {booking.status === "no_show" && "Não Compareceu"}
+              {booking.status === "expired" && "Expirada"}
             </Badge>
           </div>
           <div className="flex space-x-2">
@@ -375,7 +402,7 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
                 </Button>
               }
             />
-            {booking.status === "pending" && (
+            {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
               <>
                 <Button
                   size="sm"
@@ -506,28 +533,47 @@ export default function BookingManagement() {
         </p>
       </div>
 
-      <div className="flex space-x-4">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant={selectedStatus === "all" ? "default" : "outline"}
           onClick={() => setSelectedStatus("all")}
+          size="sm"
         >
           Todas
         </Button>
         <Button
+          variant={selectedStatus === "awaiting_confirmation" ? "default" : "outline"}
+          onClick={() => setSelectedStatus("awaiting_confirmation")}
+          size="sm"
+          className="bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200"
+        >
+          Aguardando Confirmação
+        </Button>
+        <Button
           variant={selectedStatus === "pending" ? "default" : "outline"}
           onClick={() => setSelectedStatus("pending")}
+          size="sm"
         >
           Pendentes
         </Button>
         <Button
           variant={selectedStatus === "confirmed" ? "default" : "outline"}
           onClick={() => setSelectedStatus("confirmed")}
+          size="sm"
         >
           Confirmadas
         </Button>
         <Button
+          variant={selectedStatus === "payment_pending" ? "default" : "outline"}
+          onClick={() => setSelectedStatus("payment_pending")}
+          size="sm"
+        >
+          Aguardando Pagamento
+        </Button>
+        <Button
           variant={selectedStatus === "canceled" ? "default" : "outline"}
           onClick={() => setSelectedStatus("canceled")}
+          size="sm"
         >
           Canceladas
         </Button>
