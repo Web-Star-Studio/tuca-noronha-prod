@@ -4,12 +4,21 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { NotificationCenter } from "@/components/ui/notification-center";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import Link from "next/link";
+import { LayoutDashboard } from "lucide-react";
+import { ui } from "@/lib/ui-config";
 
 interface UserMenuProps {
   isTransparent?: boolean;
 }
 
 const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
+  const { user, isLoading } = useCurrentUser();
+  
+  // Verifica se o usuário tem permissão para acessar o dashboard
+  const canAccessDashboard = user && (user.role === "partner" || user.role === "employee" || user.role === "master");
+  
   return (
     <>
       <SignedOut>
@@ -28,6 +37,24 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
       </SignedOut>
       <SignedIn>
         <div className="flex items-center gap-3">
+          {/* Dashboard Button - apenas para roles autorizadas */}
+          {!isLoading && canAccessDashboard && (
+            <Link href="/admin/dashboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-2 transition-all duration-200 ${
+                  isTransparent
+                    ? "text-white hover:bg-white/10 hover:text-white"
+                    : "text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Button>
+            </Link>
+          )}
+          
           {/* Notification Center */}
           <NotificationCenter 
             className={`${

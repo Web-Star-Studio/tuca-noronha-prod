@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Send, MapPin, Calendar, Users, DollarSign, CheckCircle, Sparkles, Heart, Star, Globe, Phone, Mail, User, Briefcase, Clock, Target, Car, Camera, Utensils, Waves, TreePine, Fish, Palette, Bike, Sunset, Ship, Sun, Zap, Mountain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,7 @@ export default function PackagesPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [requestNumber, setRequestNumber] = useState("")
   const [focusedField, setFocusedField] = useState<string | null>(null)
+  const [dateError, setDateError] = useState(false)
   const [completedSections, setCompletedSections] = useState({
     personal: false,
     trip: false,
@@ -57,6 +58,23 @@ export default function PackagesPage() {
     endMonth: ""
   })
 
+  // Verificar se as datas são válidas sempre que mudarem
+  useEffect(() => {
+    if (formData.startDate && formData.endDate && !formData.flexibleDates) {
+      const startDate = new Date(formData.startDate)
+      const endDate = new Date(formData.endDate)
+      
+      if (endDate <= startDate) {
+        setDateError(true)
+        toast.error("A data de volta não pode ser anterior ou igual à data de ida")
+      } else {
+        setDateError(false)
+      }
+    } else {
+      setDateError(false)
+    }
+  }, [formData.startDate, formData.endDate, formData.flexibleDates])
+
   const handleInputChange = (field: string, value: string | string[] | boolean) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value }
@@ -65,7 +83,7 @@ export default function PackagesPage() {
       const personalComplete = updated.name && updated.email && updated.phone
       const tripDatesComplete = updated.flexibleDates 
         ? (updated.startMonth && updated.endMonth)
-        : (updated.startDate && updated.endDate)
+        : (updated.startDate && updated.endDate && !dateError)
       const tripComplete = tripDatesComplete && updated.budget && updated.groupSize
       const preferencesComplete = updated.accommodationType || updated.activities.length > 0
 
@@ -116,6 +134,21 @@ export default function PackagesPage() {
     })
   }
 
+  // Função para validar data de volta
+  const handleEndDateChange = (value: string) => {
+    if (formData.startDate && value) {
+      const startDate = new Date(formData.startDate)
+      const endDate = new Date(value)
+      
+      if (endDate <= startDate) {
+        toast.error("A data de volta deve ser posterior à data de ida")
+        return
+      }
+    }
+    
+    handleInputChange("endDate", value)
+  }
+
   // Gerar opções de meses para datas flexíveis
   const getMonthOptions = () => {
     const months: { label: string; value: string }[] = []
@@ -138,11 +171,17 @@ export default function PackagesPage() {
     // Validação básica
     const datesValid = formData.flexibleDates 
       ? (formData.startMonth && formData.endMonth)
-      : (formData.startDate && formData.endDate)
+      : (formData.startDate && formData.endDate && !dateError)
       
     if (!formData.name || !formData.email || !formData.phone ||
       !datesValid || !formData.budget || !formData.groupSize) {
       toast.error("Por favor, preencha todos os campos obrigatórios")
+      return
+    }
+
+    // Validação adicional para datas não flexíveis
+    if (!formData.flexibleDates && dateError) {
+      toast.error("A data de volta não pode ser anterior ou igual à data de ida")
       return
     }
 
@@ -204,6 +243,16 @@ export default function PackagesPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Verificar se o formulário está válido
+  const isFormValid = () => {
+    const datesValid = formData.flexibleDates 
+      ? (formData.startMonth && formData.endMonth)
+      : (formData.startDate && formData.endDate && !dateError)
+      
+    return formData.name && formData.email && formData.phone &&
+      datesValid && formData.budget && formData.groupSize && !dateError
   }
 
   if (isSubmitted) {
@@ -653,15 +702,25 @@ export default function PackagesPage() {
                           id="endDate"
                           type="date"
                           value={formData.endDate}
-                          onChange={(e) => handleInputChange("endDate", e.target.value)}
+                          onChange={(e) => handleEndDateChange(e.target.value)}
                           min={getMinEndDate()}
-                          className="border-gray-200 focus:border-blue-400"
+                          className={cn(
+                            "transition-colors",
+                            dateError 
+                              ? "border-red-300 focus:border-red-400 focus:ring-red-100" 
+                              : "border-gray-200 focus:border-blue-400"
+                          )}
                           required
                           disabled={!formData.startDate}
                         />
                         {!formData.startDate && (
                           <p className="text-xs text-gray-400">
                             Selecione a data de ida primeiro
+                          </p>
+                        )}
+                        {dateError && formData.startDate && formData.endDate && (
+                          <p className="text-xs text-red-600 mt-1">
+                            A data de volta deve ser posterior à data de ida
                           </p>
                         )}
                       </div>
@@ -858,12 +917,27 @@ export default function PackagesPage() {
               </Card>
 
             {/* Botão de Envio */}
-            <div className="flex justify-center pt-6">
+            <div className="flex flex-col items-center gap-3 pt-6">
+              {dateError && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">
+                    A data de volta deve ser posterior à data de ida
+                  </span>
+                </div>
+              )}
               <Button
                 type="submit"
                 size="lg"
-                disabled={isSubmitting}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+                disabled={isSubmitting || !isFormValid()}
+                className={cn(
+                  "px-8 py-3 text-white rounded-lg font-medium transition-all duration-200",
+                  isFormValid() && !isSubmitting
+                    ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                    : "bg-gray-400 cursor-not-allowed opacity-60"
+                )}
               >
                 {isSubmitting ? (
                   <div className="flex items-center">

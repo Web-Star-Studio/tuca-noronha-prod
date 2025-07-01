@@ -3,7 +3,7 @@
 import RestaurantCard from "@/components/cards/RestaurantCard";
 import { useRestaurants, type Restaurant } from "@/lib/services/restaurantService";
 import RestaurantFilter from "@/components/filters/RestaurantFilter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 export default function RestaurantesPage() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
@@ -11,24 +11,29 @@ export default function RestaurantesPage() {
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>(
     []
   );
+  const [minPrice, setMinPrice] = useState<number | null>(0);
+  const [maxPrice, setMaxPrice] = useState<number | null>(400);
   const { restaurants, isLoading } = useRestaurants();
-  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(
-    []
-  );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Extrair todas as culinárias disponíveis (sem duplicatas)
-  const cuisines = Array.from(
-    new Set((restaurants || []).flatMap((restaurant) => restaurant.cuisine))
-  ).sort();
+  const cuisines = useMemo(() => {
+    if (!restaurants || restaurants.length === 0) return [];
+    return Array.from(
+      new Set((restaurants || []).flatMap((restaurant) => restaurant.cuisine))
+    ).sort();
+  }, [restaurants]);
 
   // Extrair todas as faixas de preço disponíveis
   const priceRanges = ["$", "$$", "$$$", "$$$$"];
 
   // Extrair todos os bairros disponíveis (sem duplicatas)
-  const neighborhoods = Array.from(
-    new Set((restaurants || []).map((restaurant) => restaurant.address.neighborhood))
-  ).sort();
+  const neighborhoods = useMemo(() => {
+    if (!restaurants || restaurants.length === 0) return [];
+    return Array.from(
+      new Set((restaurants || []).map((restaurant) => restaurant.address.neighborhood))
+    ).sort();
+  }, [restaurants]);
 
   const toggleCuisineFilter = (cuisine: string) => {
     setSelectedCuisines((prev) => {
@@ -60,9 +65,22 @@ export default function RestaurantesPage() {
     });
   };
 
-  const applyFilters = () => {
-    if (!restaurants) return;
-    const filtered = restaurants.filter((restaurant: Restaurant) => {
+  // Converter símbolo de preço para valor numérico aproximado
+  const getPriceValue = (priceRange: string): number => {
+    switch (priceRange) {
+      case "$": return 25;
+      case "$$": return 75;
+      case "$$$": return 150;
+      case "$$$$": return 300;
+      default: return 0;
+    }
+  };
+
+  // Filtrar restaurantes automaticamente quando qualquer filtro mudar
+  const filteredRestaurants = useMemo(() => {
+    if (!restaurants || isLoading) return [];
+    
+    return restaurants.filter((restaurant: Restaurant) => {
       // Filtragem por culinária
       const cuisineMatch =
         selectedCuisines.length === 0 ||
@@ -70,10 +88,12 @@ export default function RestaurantesPage() {
           selectedCuisines.includes(cuisine)
         );
 
-      // Filtragem por faixa de preço
+      // Filtragem por faixa de preço usando o slider
+      const priceValue = getPriceValue(restaurant.priceRange);
       const priceMatch =
-        selectedPriceRanges.length === 0 ||
-        selectedPriceRanges.includes(restaurant.priceRange);
+        minPrice !== null && maxPrice !== null
+          ? priceValue >= minPrice && priceValue <= maxPrice
+          : true;
 
       // Filtragem por bairro
       const neighborhoodMatch =
@@ -82,23 +102,26 @@ export default function RestaurantesPage() {
 
       return cuisineMatch && priceMatch && neighborhoodMatch;
     });
-
-    setFilteredRestaurants(filtered);
-  };
+  }, [restaurants, selectedCuisines, minPrice, maxPrice, selectedNeighborhoods, isLoading]);
 
   const resetFilters = () => {
     setSelectedCuisines([]);
     setSelectedPriceRanges([]);
     setSelectedNeighborhoods([]);
-    if (restaurants) setFilteredRestaurants(restaurants);
+    setMinPrice(0);
+    setMaxPrice(400);
+    setIsFilterOpen(false);
   };
 
-  // Inicialização dos filteredRestaurants quando o componente monta
+  // Fechar filtros no mobile após aplicar
   useEffect(() => {
-    if (restaurants && restaurants.length > 0) {
-      setFilteredRestaurants(restaurants);
+    if (isFilterOpen && window.innerWidth < 768) {
+      const timer = setTimeout(() => {
+        setIsFilterOpen(false);
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [restaurants]);
+  }, [selectedCuisines, selectedNeighborhoods, minPrice, maxPrice]);
 
   return (
     <>
@@ -135,27 +158,45 @@ export default function RestaurantesPage() {
           neighborhoods={neighborhoods}
           selectedNeighborhoods={selectedNeighborhoods}
           toggleNeighborhoodFilter={toggleNeighborhoodFilter}
-          applyFilters={applyFilters}
+          applyFilters={() => {}} // Mantém por compatibilidade mas não é mais usado
           resetFilters={resetFilters}
           isFilterOpen={isFilterOpen}
           setIsFilterOpen={setIsFilterOpen}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          setMinPrice={setMinPrice}
+          setMaxPrice={setMaxPrice}
+          totalResults={filteredRestaurants.length}
+          isLoading={isLoading}
         />
         <div className="flex-1 md:w-2/3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredRestaurants && filteredRestaurants.length > 0 ? (
-              filteredRestaurants.map((restaurant: Restaurant) => (
-                <div key={restaurant.id} className="w-full h-full">
-                  <RestaurantCard restaurant={restaurant} />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredRestaurants && filteredRestaurants.length > 0 ? (
+                filteredRestaurants.map((restaurant: Restaurant) => (
+                  <div key={restaurant.id} className="w-full h-full">
+                    <RestaurantCard restaurant={restaurant} />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-10">
+                  <p className="text-lg text-gray-500">
+                    Nenhum restaurante encontrado com os filtros selecionados
+                  </p>
+                  <button
+                    onClick={resetFilters}
+                    className="mt-4 text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
+                  >
+                    Limpar filtros
+                  </button>
                 </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-10">
-                <p className="text-lg text-gray-500">
-                  Nenhum restaurante encontrado
-                </p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </>

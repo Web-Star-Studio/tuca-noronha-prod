@@ -500,7 +500,7 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
             <p><strong>Ação necessária:</strong> Acesse o painel de parceiro para confirmar ou gerenciar esta reserva.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tucanoronha.com/admin/dashboard/reservas" class="button">
+                <a href="https://tuca-noronha.vercel.app/admin/dashboard/reservas/" class="button">
                     Gerenciar Reserva
                 </a>
             </div>

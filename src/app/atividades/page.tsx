@@ -3,12 +3,12 @@
 import ActivitiesCard from "@/components/cards/ActivitiesCard";
 import ActivitiesFilter from "@/components/filters/ActivitiesFilter";
 import type { Activity } from "@/lib/store/activitiesStore";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePublicActivitiesQuery } from "@/lib/hooks/useActivityQueries";
 
 export default function AtividadesPage() {
-  const [minPrice, setMinPrice] = useState<number | null>(null);
-  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [minPrice, setMinPrice] = useState<number | null>(0);
+  const [maxPrice, setMaxPrice] = useState<number | null>(700);
   const [durationFilter, setDurationFilter] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -111,20 +111,22 @@ export default function AtividadesPage() {
   }, [activities, minPrice, maxPrice, selectedCategories, durationFilter, isLoading]);
 
   const resetFilters = () => {
-    setMinPrice(null);
-    setMaxPrice(null);
+    setMinPrice(0);
+    setMaxPrice(700);
     setDurationFilter([]);
     setSelectedCategories([]);
-    setIsFilterOpen(false); // Fechar o filtro após aplicar
+    setIsFilterOpen(false); // Fechar o filtro após resetar
   };
 
-  // Handler for applying filters - now just closes the filter UI
-  const applyFilters = () => {
-    setIsFilterOpen(false);
-  };
-
-  // No need for the useEffect to set initial filtered activities anymore
-  // as we're now using useMemo for filteredActivities
+  // Fechar filtros no mobile após aplicar
+  useEffect(() => {
+    if (isFilterOpen && window.innerWidth < 768) {
+      const timer = setTimeout(() => {
+        setIsFilterOpen(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedCategories, durationFilter, minPrice, maxPrice]);
 
   return (
     <>
@@ -161,33 +163,41 @@ export default function AtividadesPage() {
           setMaxPrice={setMaxPrice}
           durationFilter={durationFilter}
           toggleDurationFilter={toggleDurationFilter}
-          applyFilters={applyFilters}
+          applyFilters={() => {}} // Mantém por compatibilidade mas não é mais usado
           resetFilters={resetFilters}
           isFilterOpen={isFilterOpen}
           setIsFilterOpen={setIsFilterOpen}
+          totalResults={filteredActivities.length}
+          isLoading={isLoading}
         />
         <div className="flex-1 md:w-2/3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredActivities && filteredActivities.length > 0 ? (
-              filteredActivities.map((activity: Activity) => (
-                <div key={activity.id} className="w-full h-full">
-                  <ActivitiesCard activity={activity} />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredActivities && filteredActivities.length > 0 ? (
+                filteredActivities.map((activity: Activity) => (
+                  <div key={activity.id} className="w-full h-full">
+                    <ActivitiesCard activity={activity} />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-10">
+                  <p className="text-lg text-gray-500">
+                    Nenhuma atividade encontrada com os filtros selecionados
+                  </p>
+                  <button
+                    onClick={resetFilters}
+                    className="mt-4 text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
+                  >
+                    Limpar filtros
+                  </button>
                 </div>
-              ))
-            ) : activities && activities.length > 0 ? (
-              activities.map((activity: Activity) => (
-                <div key={activity.id} className="w-full h-full">
-                  <ActivitiesCard activity={activity} />
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-10">
-                <p className="text-lg text-gray-500">
-                  Nenhuma atividade encontrada
-                </p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </>
