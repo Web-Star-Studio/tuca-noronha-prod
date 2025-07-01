@@ -734,10 +734,24 @@ export const getPartnerBookings = query({
 
     // Get partner's activities bookings
     if (!args.assetType || args.assetType === "activities") {
-      const activities = await ctx.db
-        .query("activities")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      let activities;
+      
+      if (user.role === "master") {
+        // Masters see ALL activities in the system
+        activities = await ctx.db.query("activities").collect();
+      } else if (user.role === "partner") {
+        // Partners see only their own activities  
+        activities = await ctx.db
+          .query("activities")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      } else if (user.role === "employee") {
+        // Employees see activities they have permission to manage
+        // (This logic will be more complex and should check assetPermissions)
+        activities = []; // TODO: Implement employee permissions
+      } else {
+        activities = [];
+      }
 
       for (const activity of activities) {
         let query = ctx.db
@@ -776,10 +790,24 @@ export const getPartnerBookings = query({
 
     // Get partner's events bookings
     if (!args.assetType || args.assetType === "events") {
-      const events = await ctx.db
-        .query("events")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      let events;
+      
+      if (user.role === "master") {
+        // Masters see ALL events in the system
+        events = await ctx.db.query("events").collect();
+      } else if (user.role === "partner") {
+        // Partners see only their own events
+        events = await ctx.db
+          .query("events")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      } else if (user.role === "employee") {
+        // Employees see events they have permission to manage
+        // (This logic will be more complex and should check assetPermissions)
+        events = []; // TODO: Implement employee permissions
+      } else {
+        events = [];
+      }
 
       for (const event of events) {
         let query = ctx.db
@@ -818,10 +846,24 @@ export const getPartnerBookings = query({
 
     // Get partner's restaurants reservations
     if (!args.assetType || args.assetType === "restaurants") {
-      const restaurants = await ctx.db
-        .query("restaurants")
-        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
-        .collect();
+      let restaurants;
+      
+      if (user.role === "master") {
+        // Masters see ALL restaurants in the system
+        restaurants = await ctx.db.query("restaurants").collect();
+      } else if (user.role === "partner") {
+        // Partners see only their own restaurants
+        restaurants = await ctx.db
+          .query("restaurants")
+          .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+          .collect();
+      } else if (user.role === "employee") {
+        // Employees see restaurants they have permission to manage
+        // (This logic will be more complex and should check assetPermissions)
+        restaurants = []; // TODO: Implement employee permissions
+      } else {
+        restaurants = [];
+      }
 
       for (const restaurant of restaurants) {
         let query = ctx.db
@@ -1036,6 +1078,103 @@ export const getActivityBookings = query({
 
     if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
       throw new Error("Acesso negado - apenas admins, masters, partners e employees");
+    }
+
+    // Masters see all bookings without restrictions
+    if (user.role === "master") {
+      // Se activityId específico foi passado, filtra por ele
+      if (args.activityId) {
+        let activityQuery = ctx.db
+          .query("activityBookings")
+          .withIndex("by_activity", (q) => q.eq("activityId", args.activityId!));
+
+        if (args.status && typeof args.status === "string") {
+          activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await activityQuery.collect();
+        const activity = await ctx.db.get(args.activityId);
+        
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              activityTitle: activity?.title || "Atividade não encontrada",
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+      
+      // Se organizationId foi passado, pode ser um ID de asset (bug na interface)
+      // Vamos verificar se é um asset activity
+      if (args.organizationId) {
+        try {
+          const activity = await ctx.db.get(args.organizationId as any);
+          if (activity && 'title' in activity) {
+            // É um asset activity, não uma organização
+            let activityQuery = ctx.db
+              .query("activityBookings")
+              .withIndex("by_activity", (q) => q.eq("activityId", args.organizationId as any));
+
+            if (args.status && typeof args.status === "string") {
+              activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
+            }
+
+            const bookings = await activityQuery.collect();
+            
+            const bookingsWithDetails = await Promise.all(
+              bookings.map(async (booking) => {
+                return {
+                  ...booking,
+                  activityTitle: activity.title || "Atividade não encontrada",
+                };
+              })
+            );
+
+            return {
+              page: bookingsWithDetails,
+              isDone: true,
+              continueCursor: "",
+            };
+          }
+        } catch (error) {
+          // Não é um asset válido, continua com a lógica normal
+        }
+      }
+      
+      // Masters veem todas as reservas sem filtros
+      let query = ctx.db.query("activityBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("activityBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const activity = await ctx.db.get(booking.activityId) as any;
+          return {
+            ...booking,
+            activityTitle: activity?.title || "Atividade não encontrada",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
     }
 
     // For partners, only show bookings for their activities
@@ -1289,6 +1428,103 @@ export const getEventBookings = query({
       throw new Error("Acesso negado - apenas admins, masters, partners e employees");
     }
 
+    // Masters see all bookings without restrictions
+    if (user.role === "master") {
+      // Se eventId específico foi passado, filtra por ele
+      if (args.eventId) {
+        let eventQuery = ctx.db
+          .query("eventBookings")
+          .withIndex("by_event", (q) => q.eq("eventId", args.eventId!));
+
+        if (args.status && typeof args.status === "string") {
+          eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await eventQuery.collect();
+        const event = await ctx.db.get(args.eventId);
+        
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              eventTitle: event?.title || "Evento não encontrado",
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+      
+      // Se organizationId foi passado, pode ser um ID de asset (bug na interface)
+      // Vamos verificar se é um asset event
+      if (args.organizationId) {
+        try {
+          const event = await ctx.db.get(args.organizationId as any);
+          if (event && 'title' in event) {
+            // É um asset event, não uma organização
+            let eventQuery = ctx.db
+              .query("eventBookings")
+              .withIndex("by_event", (q) => q.eq("eventId", args.organizationId as any));
+
+            if (args.status && typeof args.status === "string") {
+              eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
+            }
+
+            const bookings = await eventQuery.collect();
+            
+            const bookingsWithDetails = await Promise.all(
+              bookings.map(async (booking) => {
+                return {
+                  ...booking,
+                  eventTitle: event.title || "Evento não encontrado",
+                };
+              })
+            );
+
+            return {
+              page: bookingsWithDetails,
+              isDone: true,
+              continueCursor: "",
+            };
+          }
+        } catch (error) {
+          // Não é um asset válido, continua com a lógica normal
+        }
+      }
+      
+      // Masters veem todas as reservas sem filtros
+      let query = ctx.db.query("eventBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("eventBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const event = await ctx.db.get(booking.eventId);
+          return {
+            ...booking,
+            eventTitle: event?.title || "Evento não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
+    }
+
     // For partners, only show bookings for their events
     if (user.role === "partner") {
       // If specific event is requested, check ownership first
@@ -1535,6 +1771,103 @@ export const getRestaurantReservations = query({
 
     if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
       throw new Error("Acesso negado - apenas admins, masters, partners e employees");
+    }
+
+    // Masters see all bookings without restrictions
+    if (user.role === "master") {
+      // Se restaurantId específico foi passado, filtra por ele
+      if (args.restaurantId) {
+        let restaurantQuery = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId!));
+
+        if (args.status && typeof args.status === "string") {
+          restaurantQuery = restaurantQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const reservations = await restaurantQuery.collect();
+        const restaurant = await ctx.db.get(args.restaurantId);
+        
+        const reservationsWithDetails = await Promise.all(
+          reservations.map(async (reservation) => {
+            return {
+              ...reservation,
+              restaurantName: restaurant?.name || "Restaurante não encontrado",
+            };
+          })
+        );
+
+        return {
+          page: reservationsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+      
+      // Se organizationId foi passado, pode ser um ID de asset (bug na interface)
+      // Vamos verificar se é um asset restaurant
+      if (args.organizationId) {
+        try {
+          const restaurant = await ctx.db.get(args.organizationId as any);
+          if (restaurant && 'name' in restaurant && 'cuisine' in restaurant) {
+            // É um asset restaurant, não uma organização
+            let restaurantQuery = ctx.db
+              .query("restaurantReservations")
+              .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.organizationId as any));
+
+            if (args.status && typeof args.status === "string") {
+              restaurantQuery = restaurantQuery.filter((q) => q.eq(q.field("status"), args.status));
+            }
+
+            const reservations = await restaurantQuery.collect();
+            
+            const reservationsWithDetails = await Promise.all(
+              reservations.map(async (reservation) => {
+                return {
+                  ...reservation,
+                  restaurantName: restaurant.name || "Restaurante não encontrado",
+                };
+              })
+            );
+
+            return {
+              page: reservationsWithDetails,
+              isDone: true,
+              continueCursor: "",
+            };
+          }
+        } catch (error) {
+          // Não é um asset válido, continua com a lógica normal
+        }
+      }
+      
+      // Masters veem todas as reservas sem filtros
+      let query = ctx.db.query("restaurantReservations").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("restaurantReservations")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const reservationsWithDetails = await Promise.all(
+        result.page.map(async (reservation) => {
+          const restaurant = await ctx.db.get(reservation.restaurantId);
+          return {
+            ...reservation,
+            restaurantName: restaurant?.name || "Restaurante não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: reservationsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
     }
 
     // For partners, only show reservations for their restaurants
@@ -1802,6 +2135,103 @@ export const getVehicleBookings = query({
 
     if (!user || (user.role !== "admin" && user.role !== "partner" && user.role !== "master" && user.role !== "employee")) {
       throw new Error("Acesso negado - apenas admins, masters, partners e employees");
+    }
+
+    // Masters see all bookings without restrictions
+    if (user.role === "master") {
+      // Se vehicleId específico foi passado, filtra por ele
+      if (args.vehicleId) {
+        let vehicleQuery = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_vehicleId", (q) => q.eq("vehicleId", args.vehicleId!));
+
+        if (args.status && typeof args.status === "string") {
+          vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+        }
+
+        const bookings = await vehicleQuery.collect();
+        const vehicle = await ctx.db.get(args.vehicleId);
+        
+        const bookingsWithDetails = await Promise.all(
+          bookings.map(async (booking) => {
+            return {
+              ...booking,
+              vehicleName: vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado",
+            };
+          })
+        );
+
+        return {
+          page: bookingsWithDetails,
+          isDone: true,
+          continueCursor: "",
+        };
+      }
+      
+      // Se organizationId foi passado, pode ser um ID de asset (bug na interface)
+      // Vamos verificar se é um asset vehicle
+      if (args.organizationId) {
+        try {
+          const vehicle = await ctx.db.get(args.organizationId as any);
+          if (vehicle && 'brand' in vehicle && 'model' in vehicle) {
+            // É um asset vehicle, não uma organização
+            let vehicleQuery = ctx.db
+              .query("vehicleBookings")
+              .withIndex("by_vehicleId", (q) => q.eq("vehicleId", args.organizationId as any));
+
+            if (args.status && typeof args.status === "string") {
+              vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("status"), args.status));
+            }
+
+            const bookings = await vehicleQuery.collect();
+            
+            const bookingsWithDetails = await Promise.all(
+              bookings.map(async (booking) => {
+                return {
+                  ...booking,
+                  vehicleName: `${vehicle.brand} ${vehicle.model}` || "Veículo não encontrado",
+                };
+              })
+            );
+
+            return {
+              page: bookingsWithDetails,
+              isDone: true,
+              continueCursor: "",
+            };
+          }
+        } catch (error) {
+          // Não é um asset válido, continua com a lógica normal
+        }
+      }
+      
+      // Masters veem todas as reservas sem filtros
+      let query = ctx.db.query("vehicleBookings").order("desc");
+
+      if (args.status && typeof args.status === "string") {
+        query = ctx.db
+          .query("vehicleBookings")
+          .withIndex("by_status", (q) => q.eq("status", args.status as string))
+          .order("desc");
+      }
+
+      const result = await query.paginate(args.paginationOpts);
+
+      const bookingsWithDetails = await Promise.all(
+        result.page.map(async (booking) => {
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          return {
+            ...booking,
+            vehicleName: vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado",
+          };
+        })
+      );
+      
+      return {
+        page: bookingsWithDetails,
+        isDone: result.isDone,
+        continueCursor: result.continueCursor,
+      };
     }
 
     // For partners, only show bookings for their vehicles

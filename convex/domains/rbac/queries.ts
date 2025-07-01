@@ -1017,32 +1017,44 @@ export const getPartnerStats = queryWithRole(["partner", "master"])({
       throw new Error("Usuário não autenticado");
     }
 
-    // Busca todos os assets do partner
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-      .collect();
+    // Busca todos os assets do partner ou TODOS os assets se for master
+    let activities, events, restaurants, accommodations, vehicles;
+    
+    if (currentUserRole === "master") {
+      // Masters see ALL assets in the system
+      activities = await ctx.db.query("activities").collect();
+      events = await ctx.db.query("events").collect();
+      restaurants = await ctx.db.query("restaurants").collect();
+      accommodations = await ctx.db.query("accommodations").collect();
+      vehicles = await ctx.db.query("vehicles").collect();
+    } else {
+      // Partners see only their own assets
+      activities = await ctx.db
+        .query("activities")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
 
-    const events = await ctx.db
-      .query("events")
-      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-      .collect();
+      events = await ctx.db
+        .query("events")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
 
-    const restaurants = await ctx.db
-      .query("restaurants")
-      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-      .collect();
+      restaurants = await ctx.db
+        .query("restaurants")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
 
-    const accommodations = await ctx.db
-      .query("accommodations")
-      .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-      .collect();
+      accommodations = await ctx.db
+        .query("accommodations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
+        .collect();
 
-    // Para veículos, usa ownerId em vez de partnerId
-    const vehicles = await ctx.db
-      .query("vehicles")
-      .withIndex("by_ownerId", (q) => q.eq("ownerId", currentUserId))
-      .collect();
+      // Para veículos, usa ownerId em vez de partnerId
+      vehicles = await ctx.db
+        .query("vehicles")
+        .withIndex("by_ownerId", (q) => q.eq("ownerId", currentUserId))
+        .collect();
+    }
 
     const totalAssets = activities.length + events.length + restaurants.length + accommodations.length + vehicles.length;
 

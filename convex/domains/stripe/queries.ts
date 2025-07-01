@@ -450,39 +450,67 @@ export const getPartnerBookingsWithPayments = query({
     createdAt: v.number(),
   })),
   handler: async (ctx, args) => {
+    // Verificar a role do usuário atual
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
     const results: any[] = [];
     const limit = args.limit || 50;
 
-    // Get all partner's assets first
-    const activities = await ctx.db
-      .query("activities")
-      .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
-      .collect();
-    
-    const events = await ctx.db
-      .query("events")
-      .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
-      .collect();
+    // Get all assets based on role
+    let activities, events, restaurants, accommodations, vehicles, packages;
 
-    const restaurants = await ctx.db
-      .query("restaurants")
-      .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
-      .collect();
+    if (currentUser.role === "master") {
+      // Masters see ALL assets in the system
+      activities = await ctx.db.query("activities").collect();
+      events = await ctx.db.query("events").collect();
+      restaurants = await ctx.db.query("restaurants").collect();
+      accommodations = await ctx.db.query("accommodations").collect();
+      vehicles = await ctx.db.query("vehicles").collect();
+      packages = await ctx.db.query("packages").collect();
+    } else {
+      // For non-masters, filter by the provided partnerId
+      activities = await ctx.db
+        .query("activities")
+        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+        .collect();
+      
+      events = await ctx.db
+        .query("events")
+        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+        .collect();
 
-    const accommodations = await ctx.db
-      .query("accommodations")
-      .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
-      .collect();
+      restaurants = await ctx.db
+        .query("restaurants")
+        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+        .collect();
 
-    const vehicles = await ctx.db
-      .query("vehicles")
-      .filter((q) => q.eq(q.field("ownerId"), args.partnerId))
-      .collect();
+      accommodations = await ctx.db
+        .query("accommodations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+        .collect();
 
-    const packages = await ctx.db
-      .query("packages")
-      .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
-      .collect();
+      vehicles = await ctx.db
+        .query("vehicles")
+        .filter((q) => q.eq(q.field("ownerId"), args.partnerId))
+        .collect();
+
+      packages = await ctx.db
+        .query("packages")
+        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+        .collect();
+    }
 
     // Get bookings for activities
     for (const activity of activities) {

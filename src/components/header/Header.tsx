@@ -18,8 +18,8 @@ export default function Header() {
 
     useEffect(() => {
       const handleScroll = () => {
-        // Se estiver em uma página de detalhes ou reservas (exceto meu-painel), nunca usar transparência
-        if (isDetailPage || isReservationPage) {
+        // Se estiver em uma página de detalhes, reservas ou meu-painel, nunca usar transparência
+        if (isDetailPage || isReservationPage || isProfilePage) {
           setIsTransparent(false)
           return
         }
@@ -29,8 +29,8 @@ export default function Header() {
         setIsTransparent(scrollPosition <= 50)
       }
       
-      // Se estiver em páginas específicas (exceto meu-painel), sempre definir como não transparente
-      if (isDetailPage || isReservationPage) {
+      // Se estiver em páginas específicas, sempre definir como não transparente
+      if (isDetailPage || isReservationPage || isProfilePage) {
         setIsTransparent(false)
       } else {
         // Adicionar evento de scroll
@@ -45,8 +45,8 @@ export default function Header() {
       }
     }, [isDetailPage, isProfilePage, isReservationPage])
     
-    // Determinar se deve usar texto branco (quando transparente E não está em páginas de detalhes/reservas)
-    const shouldUseWhiteText = isTransparent && !isDetailPage && !isReservationPage
+    // Determinar se deve usar texto branco (quando transparente E não está em páginas de detalhes/reservas/meu-painel)
+    const shouldUseWhiteText = isTransparent && !isDetailPage && !isReservationPage && !isProfilePage
     
     return (
       <header

@@ -974,15 +974,15 @@ const addressValidator = v.object({
 const restaurantAssetValidator = v.object({
   ...baseAssetFields,
   assetType: v.literal("restaurants"),
-  slug: v.optional(v.string()),
-  description_long: v.optional(v.string()),
-  address: v.optional(addressValidator),
-  phone: v.optional(v.string()),
+  slug: v.string(),
+  description_long: v.string(),
+  address: addressValidator,
+  phone: v.string(),
   website: v.optional(v.string()),
-  cuisine: v.optional(v.array(v.string())),
-  priceRange: v.optional(v.string()),
-  diningStyle: v.optional(v.string()),
-  hours: v.optional(v.object({
+  cuisine: v.array(v.string()),
+  priceRange: v.string(),
+  diningStyle: v.string(),
+  hours: v.object({
     Monday: v.array(v.string()),
     Tuesday: v.array(v.string()),
     Wednesday: v.array(v.string()),
@@ -990,18 +990,14 @@ const restaurantAssetValidator = v.object({
     Friday: v.array(v.string()),
     Saturday: v.array(v.string()),
     Sunday: v.array(v.string()),
-  })),
-  features: v.optional(v.array(v.string())),
+  }),
+  features: v.array(v.string()),
   dressCode: v.optional(v.string()),
-  paymentOptions: v.optional(v.array(v.string())),
+  paymentOptions: v.array(v.string()),
   parkingDetails: v.optional(v.string()),
+  mainImage: v.optional(v.string()),
   menuImages: v.optional(v.array(v.string())),
-  acceptsReservations: v.optional(v.boolean()),
-  maximumPartySize: v.optional(v.number()),
-  executiveChef: v.optional(v.string()),
-  privatePartyInfo: v.optional(v.string()),
-  // Handle complex rating object that might be returned
-  rating: v.optional(v.union(
+  rating: v.union(
     v.number(),
     v.object({
       overall: v.number(),
@@ -1012,27 +1008,43 @@ const restaurantAssetValidator = v.object({
       noiseLevel: v.string(),
       totalReviews: v.number(),
     })
-  )),
+  ),
+  acceptsReservations: v.boolean(),
+  maximumPartySize: v.optional(v.number()),
+  executiveChef: v.optional(v.string()),
+  privatePartyInfo: v.optional(v.string()),
+  additionalInfo: v.optional(v.array(v.string())),
+  highlights: v.optional(v.array(v.string())),
+  // Stripe payment fields
+  acceptsOnlinePayment: v.optional(v.boolean()),
+  requiresUpfrontPayment: v.optional(v.boolean()),
+  stripeMetadata: v.optional(v.object({
+    createdAt: v.number(),
+    partnerId: v.string(),
+    productType: v.string(),
+    updatedAt: v.number(),
+  })),
+  stripePaymentLinkId: v.optional(v.string()),
+  stripePriceId: v.optional(v.string()),
+  stripeProductId: v.optional(v.string()),
 });
 
 const eventAssetValidator = v.object({
   ...baseAssetFields,
   assetType: v.literal("events"),
-  title: v.string(),
-  shortDescription: v.optional(v.string()),
-  description_long: v.optional(v.string()),
-  category: v.optional(v.string()),
-  location: v.optional(v.string()),
-  address: v.optional(v.union(v.string(), addressValidator)),
+  date: v.string(),
+  time: v.string(),
+  location: v.string(),
+  address: v.string(),
   maxParticipants: v.optional(v.number()),
-  hasMultipleTickets: v.optional(v.boolean()),
-  date: v.optional(v.string()),
-  time: v.optional(v.string()),
   speaker: v.optional(v.string()),
   speakerBio: v.optional(v.string()),
-  whatsappContact: v.optional(v.string()),
+  includes: v.optional(v.array(v.string())),
+  additionalInfo: v.optional(v.array(v.string())),
+  highlights: v.optional(v.array(v.string())),
+  hasMultipleTickets: v.optional(v.boolean()),
   symplaUrl: v.optional(v.string()),
-  // Campos do Sympla
+  whatsappContact: v.optional(v.string()),
   symplaId: v.optional(v.string()),
   symplaHost: v.optional(v.object({
     name: v.string(),
@@ -1046,9 +1058,18 @@ const eventAssetValidator = v.object({
     primary: v.optional(v.string()),
     secondary: v.optional(v.string()),
   })),
-  includes: v.optional(v.array(v.string())),
-  additionalInfo: v.optional(v.array(v.string())),
-  highlights: v.optional(v.array(v.string())),
+  // Stripe payment fields
+  acceptsOnlinePayment: v.optional(v.boolean()),
+  requiresUpfrontPayment: v.optional(v.boolean()),
+  stripeMetadata: v.optional(v.object({
+    createdAt: v.number(),
+    partnerId: v.string(),
+    productType: v.string(),
+    updatedAt: v.number(),
+  })),
+  stripePaymentLinkId: v.optional(v.string()),
+  stripePriceId: v.optional(v.string()),
+  stripeProductId: v.optional(v.string()),
 });
 
 const activityAssetValidator = v.object({
@@ -1073,6 +1094,18 @@ const activityAssetValidator = v.object({
   cancelationPolicy: v.optional(v.array(v.string())),
   requiresBooking: v.optional(v.boolean()),
   hasMultipleTickets: v.optional(v.boolean()),
+  // Stripe payment fields
+  acceptsOnlinePayment: v.optional(v.boolean()),
+  requiresUpfrontPayment: v.optional(v.boolean()),
+  stripeMetadata: v.optional(v.object({
+    createdAt: v.number(),
+    partnerId: v.string(),
+    productType: v.string(),
+    updatedAt: v.number(),
+  })),
+  stripePaymentLinkId: v.optional(v.string()),
+  stripePriceId: v.optional(v.string()),
+  stripeProductId: v.optional(v.string()),
 });
 
 const vehicleAssetValidator = v.object({
@@ -1098,6 +1131,18 @@ const vehicleAssetValidator = v.object({
   updatedAt: v.optional(v.number()),
   // Override base field to make partnerId optional since vehicles use ownerId
   partnerId: v.optional(v.id("users")),
+  // Stripe payment fields
+  acceptsOnlinePayment: v.optional(v.boolean()),
+  requiresUpfrontPayment: v.optional(v.boolean()),
+  stripeMetadata: v.optional(v.object({
+    createdAt: v.number(),
+    partnerId: v.string(),
+    productType: v.string(),
+    updatedAt: v.number(),
+  })),
+  stripePaymentLinkId: v.optional(v.string()),
+  stripePriceId: v.optional(v.string()),
+  stripeProductId: v.optional(v.string()),
 });
 
 const accommodationAssetValidator = v.object({
