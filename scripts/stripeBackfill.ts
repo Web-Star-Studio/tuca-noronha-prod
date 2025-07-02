@@ -1,6 +1,6 @@
-import { action } from "../_generated/server";
+import { action } from "../convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../_generated/api";
+import { internal } from "../convex/_generated/api";
 
 /**
  * Public action to run Stripe backfill (accessible from dashboard/frontend)
@@ -94,7 +94,7 @@ IMPORTANTE: Configure as variáveis de ambiente antes de executar:
 1. VERIFICAR STATUS ATUAL
 ================================================================================
 
-import { api } from "./convex/_generated/api";
+import { api } from "../convex/_generated/api";
 import { useAction } from "convex/react";
 
 // No React/Frontend:

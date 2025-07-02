@@ -223,7 +223,7 @@ export default function GuiaAssinaturaPage() {
                   onClick={handleCheckout}
                   disabled={isProcessing}
                   className={cn(
-                    buttonStyles.primary,
+                    buttonStyles.variant.default,
                     "w-full sm:w-auto text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300"
                   )}
                 >
@@ -448,7 +448,7 @@ export default function GuiaAssinaturaPage() {
               onClick={handleCheckout}
               disabled={isProcessing}
               className={cn(
-                buttonStyles.primary,
+                buttonStyles.variant.default,
                 "text-lg px-10 py-6 shadow-xl hover:shadow-2xl transition-all duration-300"
               )}
             >

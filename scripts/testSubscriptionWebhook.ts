@@ -136,7 +136,7 @@ async function testSubscriptionWebhook() {
       const hasActive = await convex.query(internal.domains.subscriptions.queries.hasActiveSubscription, {});
       console.log("✅ hasActiveSubscription result:", hasActive);
     } catch (error) {
-      console.log("⚠️ hasActiveSubscription failed (expected due to no auth context):", error.message);
+      console.log("⚠️ hasActiveSubscription failed (expected due to no auth context):", error instanceof Error ? error.message : String(error));
     }
 
   } catch (error) {
