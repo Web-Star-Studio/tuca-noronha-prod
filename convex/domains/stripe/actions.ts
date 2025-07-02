@@ -16,7 +16,7 @@ import {
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: "2025-06-30.basil",
 });
 
 /**
@@ -433,6 +433,16 @@ export const processWebhookEvent = internalAction({
         case "payment_intent.canceled":
           await handlePaymentIntentCanceled(ctx, args.data);
           break;
+        case "customer.subscription.created":
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted":
+          await handleSubscriptionEvent(ctx, args.eventType, args.data);
+          break;
+        case "invoice.paid":
+        case "invoice.payment_succeeded":
+        case "invoice.payment_failed":
+          await handleInvoiceEvent(ctx, args.eventType, args.data);
+          break;
         default:
           console.log(`Unhandled webhook event type: ${args.eventType}`);
       }
@@ -468,7 +478,37 @@ export const processWebhookEvent = internalAction({
 async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
   const { metadata } = sessionData;
   
-  if (metadata?.bookingId) {
+  // Handle guide subscription checkout
+  if (metadata?.type === "guide_subscription") {
+    console.log("Processing guide subscription checkout:", sessionData.id);
+    
+    // Get subscription ID from the session
+    const subscription = sessionData.subscription;
+    if (subscription) {
+      // Fetch full subscription details from Stripe
+      const stripe = new (require("stripe"))(process.env.STRIPE_SECRET_KEY);
+      const subscriptionData = await stripe.subscriptions.retrieve(subscription);
+      
+      // Process subscription creation
+      await ctx.runAction(internal.domains.subscriptions.actions.processSubscriptionWebhook, {
+        eventType: "customer.subscription.created",
+        subscription: subscriptionData,
+      });
+      
+      // Also process the initial invoice payment
+      if (sessionData.invoice) {
+        const invoiceData = await stripe.invoices.retrieve(sessionData.invoice);
+        await ctx.runAction(internal.domains.subscriptions.actions.processInvoiceWebhook, {
+          eventType: "invoice.paid",
+          invoice: invoiceData,
+        });
+      }
+    }
+    
+    console.log("Guide subscription checkout processed successfully");
+  }
+  // Handle booking checkout
+  else if (metadata?.bookingId) {
     await ctx.runMutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
       bookingId: metadata.bookingId,
       paymentStatus: "succeeded",
@@ -496,7 +536,7 @@ async function handlePaymentIntentSucceeded(ctx: any, paymentIntentData: any) {
     });
 
     // Update booking status to awaiting_confirmation after payment succeeded
-    await ctx.runMutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
+    await ctx.runMutation(internal.domains.bookings.updateBookingPaymentSuccess, {
       stripePaymentIntentId: paymentIntentData.id,
       bookingId: metadata.bookingId,
       bookingType: metadata.assetType,
@@ -524,6 +564,26 @@ async function handlePaymentIntentCanceled(ctx: any, paymentIntentData: any) {
       bookingId: metadata.bookingId,
       paymentStatus: "canceled",
       stripePaymentIntentId: paymentIntentData.id,
+    });
+  }
+}
+
+async function handleSubscriptionEvent(ctx: any, eventType: string, subscriptionData: any) {
+  // Process subscription events for guide subscription
+  if (subscriptionData.metadata?.type === "guide_subscription") {
+    await ctx.runAction(internal.domains.subscriptions.actions.processSubscriptionWebhook, {
+      eventType,
+      subscription: subscriptionData,
+    });
+  }
+}
+
+async function handleInvoiceEvent(ctx: any, eventType: string, invoiceData: any) {
+  // Process invoice events for guide subscription
+  if (invoiceData.subscription) {
+    await ctx.runAction(internal.domains.subscriptions.actions.processInvoiceWebhook, {
+      eventType,
+      invoice: invoiceData,
     });
   }
 }
@@ -613,7 +673,7 @@ export const createPaymentLinkForBooking = action({
       if (args.assetType === "activity") {
         // Get the activity to find base price using a query
         console.log("🎯 Getting activity details for price calculation...");
-        const activity = await ctx.runQuery(internal.domains.activities.queries.getById, {
+        const activity = await ctx.runQuery(internal.domains.activities.getById, {
           id: args.assetId,
         });
         

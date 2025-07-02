@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { cachedRecommendationsTable } from "./domains/recommendations/schema";
+import { guideSubscriptions, subscriptionPayments } from "./domains/subscriptions/schema";
 
 export default defineSchema({
   authAccounts: defineTable({
@@ -1596,4 +1597,8 @@ export default defineSchema({
     .index("by_stripe_customer_id", ["stripeCustomerId"])
     .index("by_email", ["email"])
     .index("by_created_at", ["createdAt"]),
+
+  // Tabelas para assinaturas do guia
+  guideSubscriptions,
+  subscriptionPayments,
 });

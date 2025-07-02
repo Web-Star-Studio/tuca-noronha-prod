@@ -30,7 +30,7 @@ const getBaseTemplate = (content: string): string => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tucano Noronha</title>
+    <title>Tuca Noronha</title>
     <style>
         * {
             margin: 0;
@@ -269,11 +269,11 @@ export const getBookingConfirmationTemplate = (data: any): string => {
             
             <p>Se você tiver alguma dúvida, entre em contato conosco através do nosso suporte.</p>
             
-            <p>Obrigado por escolher o Tucano Noronha! ✈️🏝️</p>
+            <p>Obrigado por escolher o Tuca Noronha! ✈️🏝️</p>
         </div>
         
         <div class="footer">
-            <p>Tucano Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
             <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
         </div>
@@ -341,7 +341,7 @@ export const getBookingCancelledTemplate = (data: any): string => {
         </div>
         
         <div class="footer">
-            <p>Tucano Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
             <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
         </div>
@@ -398,18 +398,18 @@ export const getPackageRequestReceivedTemplate = (data: any): string => {
             </ul>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tucanoronha.com/meu-painel" class="button">
+                <a href="https://tuca-noronha.vercel.app/meu-painel" class="button">
                     Acompanhar Solicitação
                 </a>
             </div>
             
             <p>Você pode usar o número de acompanhamento <strong>${data.requestNumber}</strong> para verificar o status da sua solicitação a qualquer momento.</p>
             
-            <p>Obrigado por confiar no Tucano Noronha para criar sua experiência perfeita! 🏝️</p>
+            <p>Obrigado por confiar no Tuca Noronha para criar sua experiência perfeita! 🏝️</p>
         </div>
         
         <div class="footer">
-            <p>Tucano Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
             <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
         </div>
@@ -509,7 +509,7 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
         </div>
         
         <div class="footer">
-            <p>Tucano Noronha - Portal do Parceiro</p>
+            <p>Tuca Noronha - Portal do Parceiro</p>
             <p>📧 parceiros@tucanoronha.com | 📱 (81) 99999-9999</p>
             <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
         </div>
@@ -523,7 +523,7 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
 export const getWelcomeNewUserTemplate = (data: any): string => {
   const roleMessages = {
     traveler: {
-      title: "🏝️ Bem-vindo ao Tucano Noronha!",
+      title: "🏝️ Bem-vindo ao Tuca Noronha!",
       message: "Estamos animados para ajudá-lo a descobrir as maravilhas de Fernando de Noronha!",
       features: [
         "🎯 Explore atividades exclusivas",
@@ -554,7 +554,7 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
     },
     master: {
       title: "🚀 Bem-vindo, Administrador!",
-      message: "Você tem acesso completo à plataforma Tucano Noronha!",
+      message: "Você tem acesso completo à plataforma Tuca Noronha!",
       features: [
         "🔧 Controle total do sistema",
         "👥 Gestão de usuários",
@@ -606,11 +606,11 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
             
             <p>Se você tiver alguma dúvida ou precisar de ajuda, nossa equipe de suporte está sempre disponível.</p>
             
-            <p>Bem-vindo à família Tucano Noronha! 🌺</p>
+            <p>Bem-vindo à família Tuca Noronha! 🌺</p>
         </div>
         
         <div class="footer">
-            <p>Tucano Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
             <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
         </div>
@@ -638,15 +638,15 @@ export const getEmailTemplate = (data: EmailData): string => {
       return getBaseTemplate(`
         <div class="container">
             <div class="header">
-                <h1>Tucano Noronha</h1>
+                <h1>Tuca Noronha</h1>
                 <p>Notificação importante</p>
             </div>
             <div class="content">
-                <p>Você recebeu uma notificação do Tucano Noronha.</p>
+                <p>Você recebeu uma notificação do Tuca Noronha.</p>
                 <p>Entre em contato conosco se precisar de ajuda.</p>
             </div>
             <div class="footer">
-                <p>Tucano Noronha - Sua experiência em Fernando de Noronha</p>
+                <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
                 <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
             </div>
         </div>

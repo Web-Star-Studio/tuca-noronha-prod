@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { format, isSameMonth, isAfter, isBefore, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { SubscriptionGuard } from "@/components/auth/SubscriptionGuard";
 import { 
   ChevronRight, MapPin, Calendar, Utensils, Waves, Building, Info, Star, 
   Plane, Home, Car, UtensilsCrossed, Sun, Clock, Filter, Heart, DollarSign, 
@@ -11,7 +12,7 @@ import {
   Shield, Phone, Mail, MessageCircle, Share2, Bookmark, Download, 
   ChevronLeft, CheckCircle, AlertCircle, Eye, Globe, Compass, ArrowLeft,
   Settings, BarChart3, TrendingDown, Wind, Sunrise, Sunset, Activity,
-  Fish, Key, ArrowUp
+  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers
 } from "lucide-react";
 import { cardStyles, decorativeBackgrounds, buttonStyles, ui } from "@/lib/ui-config";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ import { RealTimeConditions } from "@/components/ui/real-time-conditions";
 import { WeatherAlerts } from "@/components/ui/weather-alerts";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
 import {
   Sheet,
   SheetContent,
@@ -53,6 +54,62 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import { useGesture } from "@use-gesture/react";
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+
+// Glassmorphism styles (keeping for gradual migration)
+const glassStyles = {
+  base: "backdrop-blur-xl bg-white/80 border border-white/20 shadow-xl",
+  dark: "backdrop-blur-xl bg-gray-900/80 border border-white/10 shadow-2xl",
+  colored: (color: string) => `backdrop-blur-xl bg-${color}-500/10 border border-${color}-500/20 shadow-xl`,
+  hover: "hover:bg-white/90 hover:shadow-2xl hover:border-white/30 transition-all duration-300",
+  card: "backdrop-blur-md bg-white/60 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300",
+  button: "backdrop-blur-md bg-white/20 border border-white/30 hover:bg-white/30 transition-all duration-200"
+};
+
+// Minimalist design system
+const minimalStyles = {
+  // Base styles with subtle effects
+  base: "bg-white border border-gray-100 shadow-sm",
+  elevated: "bg-white border border-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300",
+  
+  // Typography hierarchy
+  text: {
+    hero: "text-4xl md:text-5xl lg:text-6xl font-light tracking-tight",
+    title: "text-2xl md:text-3xl font-light tracking-tight",
+    subtitle: "text-lg md:text-xl font-normal text-gray-600",
+    body: "text-base font-normal text-gray-700 leading-relaxed",
+    caption: "text-sm text-gray-500"
+  },
+  
+  // Spacing system
+  spacing: {
+    section: "py-16 md:py-24",
+    container: "max-w-7xl mx-auto px-4 md:px-6 lg:px-8",
+    stack: "space-y-6 md:space-y-8"
+  },
+  
+  // Interactive elements
+  button: {
+    primary: "bg-gray-900 text-white hover:bg-gray-800 transition-colors duration-200",
+    secondary: "bg-white text-gray-900 border border-gray-200 hover:border-gray-300 transition-colors duration-200",
+    ghost: "text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+  },
+  
+  // Cards with minimal styling
+  card: "bg-white rounded-lg p-6 border border-gray-100 hover:border-gray-200 transition-all duration-300"
+};
 
 const guideSections = [
   {
@@ -61,7 +118,9 @@ const guideSections = [
     icon: Plane,
     color: "blue",
     description: "Informações completas sobre voos, taxas obrigatórias e documentação necessária para sua viagem",
-    quickInfo: "3 voos diários • R$ 600 taxas"
+    quickInfo: "3 voos diários • R$ 600 taxas",
+    gradient: "from-blue-400 to-indigo-600",
+    accentGradient: "from-blue-500/20 to-indigo-600/20"
   },
   {
     id: "accommodation", 
@@ -69,7 +128,9 @@ const guideSections = [
     icon: Home,
     color: "purple",
     description: "Conheça as melhores regiões da ilha e escolha a hospedagem ideal para sua estadia",
-    quickInfo: "90+ opções • Todas as faixas"
+    quickInfo: "90+ opções • Todas as faixas",
+    gradient: "from-purple-400 to-pink-600",
+    accentGradient: "from-purple-500/20 to-pink-600/20"
   },
   {
     id: "transportation",
@@ -77,7 +138,9 @@ const guideSections = [
     icon: Car,
     color: "green",
     description: "Compare todas as opções de transporte disponíveis na ilha e escolha a melhor para você",
-    quickInfo: "Buggy, taxi, ônibus"
+    quickInfo: "Buggy, taxi, ônibus",
+    gradient: "from-green-400 to-emerald-600",
+    accentGradient: "from-green-500/20 to-emerald-600/20"
   },
   {
     id: "beaches",
@@ -85,7 +148,9 @@ const guideSections = [
     icon: Waves,
     color: "cyan",
     description: "Descubra as praias mais incríveis do arquipélago com dicas práticas e informações de acesso",
-    quickInfo: "21 praias • Snorkel grátis"
+    quickInfo: "21 praias • Snorkel grátis",
+    gradient: "from-cyan-400 to-blue-600",
+    accentGradient: "from-cyan-500/20 to-blue-600/20"
   },
   {
     id: "dining", 
@@ -93,7 +158,9 @@ const guideSections = [
     icon: UtensilsCrossed,
     color: "orange",
     description: "Saboreie os melhores restaurantes e especialidades locais da ilha paradisíaca",
-    quickInfo: "30+ restaurantes • R$ 60-200"
+    quickInfo: "30+ restaurantes • R$ 60-200",
+    gradient: "from-orange-400 to-red-600",
+    accentGradient: "from-orange-500/20 to-red-600/20"
   },
   {
     id: "monthly-guide",
@@ -101,7 +168,9 @@ const guideSections = [
     icon: Sun,
     color: "yellow",
     description: "Planeje sua viagem conhecendo o clima e as melhores atividades para cada época do ano",
-    quickInfo: "Melhor: Set-Fev • Surf: Jan-Mar"
+    quickInfo: "Melhor: Set-Fev • Surf: Jan-Mar",
+    gradient: "from-yellow-400 to-orange-600",
+    accentGradient: "from-yellow-500/20 to-orange-600/20"
   }
 ];
 
@@ -112,6 +181,10 @@ interface UserPreferences {
   budget: [number, number];
   interests: string[];
   difficultyLevel: string;
+  travelStyle: 'adventure' | 'relaxation' | 'cultural' | 'romantic' | 'family';
+  groupSize: number;
+  dietaryRestrictions: string[];
+  accessibility: boolean;
 }
 
 // Interface para dados dinâmicos
@@ -121,14 +194,45 @@ interface TravelData {
     humidity: number;
     rainChance: number;
     season: string;
+    seaCondition: 'calm' | 'moderate' | 'rough';
+    visibility: number;
   };
   prices: {
     accommodation: number;
     transport: number;
     activities: number;
+    meals: number;
   };
   crowds: 'low' | 'medium' | 'high';
   bestActivities: string[];
+  events: Array<{
+    name: string;
+    date: string;
+    type: string;
+  }>;
+}
+
+// Interface para filtros avançados
+interface AdvancedFilters {
+  priceRange: 'budget' | 'mid' | 'luxury' | 'all';
+  activityType: string[];
+  beachType: string[];
+  restaurantCuisine: string[];
+  accommodationType: string[];
+  accessibility: boolean;
+  familyFriendly: boolean;
+  petFriendly: boolean;
+}
+
+// Dados de busca indexados
+interface SearchableContent {
+  id: string;
+  type: 'beach' | 'restaurant' | 'activity' | 'accommodation' | 'tip';
+  title: string;
+  description: string;
+  tags: string[];
+  section: string;
+  keywords: string[];
 }
 
 // Mapa de cores para badges e cards
@@ -195,6 +299,77 @@ const colorMap = {
   }
 };
 
+
+
+// Animated counter for numbers
+function AnimatedNumber({ value, duration = 2000 }: { value: number; duration?: number }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const startValue = displayValue;
+    const endValue = value;
+
+    const updateValue = () => {
+      const now = Date.now();
+      const progress = Math.min((now - startTime) / duration, 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const current = Math.round(startValue + (endValue - startValue) * easeOutQuart);
+      
+      setDisplayValue(current);
+      
+      if (progress < 1) {
+        requestAnimationFrame(updateValue);
+      }
+    };
+
+    requestAnimationFrame(updateValue);
+  }, [value, duration]);
+
+  return <span ref={ref}>{displayValue.toLocaleString()}</span>;
+}
+
+// Magnetic button component
+function MagneticButton({ 
+  children, 
+  className,
+  ...props 
+}: React.ComponentProps<typeof Button>) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!ref.current) return;
+    
+    const rect = ref.current.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    
+    setPosition({ x: x * 0.1, y: y * 0.1 });
+  };
+
+  const handleMouseLeave = () => {
+    setPosition({ x: 0, y: 0 });
+  };
+
+  return (
+    <Button
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={className}
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        transition: 'transform 0.2s ease-out'
+      }}
+      {...props}
+    >
+      {children}
+    </Button>
+  );
+}
+
 // Componente de conteúdo das seções
 function SectionContent({ 
   sectionId, 
@@ -212,22 +387,38 @@ function SectionContent({
   const content = {
     "getting-started": (
       <div className="space-y-8">
-        {/* Introdução com card destacado */}
+        {/* Introdução com card destacado e glassmorphism */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn(cardStyles.base, "p-6 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50")}
+          className={cn(glassStyles.card, "p-6 border-2 border-blue-200/50")}
         >
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Plane className="w-6 h-6 text-blue-600" />
-            </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-xl" />
+          <div className="relative flex items-start gap-4">
+            <motion.div 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg"
+            >
+              <Plane className="w-6 h-6 text-white" />
+            </motion.div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Bem-vindo ao Paraíso!</h2>
-              <p className="text-gray-600 leading-relaxed">
+              <motion.h2 
+                className="text-xl font-bold text-gray-900 mb-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                Bem-vindo ao Paraíso!
+              </motion.h2>
+              <motion.p 
+                className="text-gray-600 leading-relaxed"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 Fernando de Noronha é um arquipélago brasileiro localizado a 545 km da costa de Pernambuco. 
                 Para visitar este santuário ecológico, você precisa seguir alguns passos importantes.
-              </p>
+              </motion.p>
             </div>
           </div>
         </motion.div>
@@ -265,18 +456,30 @@ function SectionContent({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -4 }}
-                className={cn(cardStyles.base, cardStyles.hover.lift, "p-5")}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={cn(glassStyles.card, "p-5 cursor-pointer group")}
               >
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
-                  `bg-gradient-to-br ${itemColor.gradient} shadow-md`
-                )}>
+                <motion.div 
+                  className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
+                    `bg-gradient-to-br ${itemColor.gradient} shadow-lg`
+                  )}
+                  whileHover={{ rotate: 360, scale: 1.1 }}
+                  transition={{ duration: 0.5 }}
+                >
                   <item.icon className="w-6 h-6 text-white" />
-                </div>
+                </motion.div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-600 mb-2">{item.description}</p>
                 <p className={cn("text-xs font-medium", itemColor.text)}>{item.details}</p>
+                
+                {/* Animated indicator */}
+                <motion.div
+                  className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full opacity-0 group-hover:opacity-100"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
               </motion.div>
             );
           })}
@@ -314,8 +517,98 @@ function SectionContent({
           </div>
         </div>
 
+        {/* Interactive Flight Price Chart */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className={cn(glassStyles.card, "p-6")}
+        >
+          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-indigo-600" />
+            Variação de Preços de Passagens por Mês
+          </h3>
+          
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={[
+                  { month: 'Jan', price: 1800, visitors: 85 },
+                  { month: 'Fev', price: 1600, visitors: 80 },
+                  { month: 'Mar', price: 1200, visitors: 60 },
+                  { month: 'Abr', price: 900, visitors: 40 },
+                  { month: 'Mai', price: 800, visitors: 30 },
+                  { month: 'Jun', price: 950, visitors: 35 },
+                  { month: 'Jul', price: 1400, visitors: 70 },
+                  { month: 'Ago', price: 1300, visitors: 65 },
+                  { month: 'Set', price: 1100, visitors: 55 },
+                  { month: 'Out', price: 1200, visitors: 60 },
+                  { month: 'Nov', price: 1300, visitors: 65 },
+                  { month: 'Dez', price: 2000, visitors: 90 }
+                ]}
+              >
+                <defs>
+                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="month" stroke="#6B7280" />
+                <YAxis yAxisId="price" stroke="#6B7280" />
+                <YAxis yAxisId="visitors" orientation="right" stroke="#6B7280" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(229, 231, 235, 0.5)',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: any, name: string) => {
+                    if (name === 'price') return [`R$ ${value}`, 'Preço médio'];
+                    return [`${value}%`, 'Ocupação'];
+                  }}
+                />
+                <Area
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="price"
+                  stroke="#4F46E5"
+                  fillOpacity={1}
+                  fill="url(#colorPrice)"
+                  strokeWidth={2}
+                />
+                <Area
+                  yAxisId="visitors"
+                  type="monotone"
+                  dataKey="visitors"
+                  stroke="#10B981"
+                  fillOpacity={1}
+                  fill="url(#colorVisitors)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="mt-4 flex items-center justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-indigo-600 rounded" />
+              <span className="text-gray-600">Preço médio passagens</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-500 rounded" />
+              <span className="text-gray-600">Taxa de ocupação</span>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Dicas importantes */}
-        <div className={cn(cardStyles.base, "p-6 bg-yellow-50 border-2 border-yellow-200")}>
+        <div className={cn(glassStyles.card, "p-6 bg-yellow-50/50 border-2 border-yellow-200/50")}>
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div>
@@ -495,13 +788,13 @@ function SectionContent({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn(cardStyles.base, "p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200")}
+            className={cn(minimalStyles.card, "bg-gradient-to-br from-indigo-50/50 to-purple-50/50")}
           >
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className={cn(minimalStyles.text.title, "mb-4 flex items-center gap-2")}>
               <Sparkles className="w-5 h-5 text-indigo-600" />
               Recomendação Personalizada
             </h3>
-            <p className="text-gray-700 leading-relaxed">
+            <p className={minimalStyles.text.body}>
               Para sua viagem de <strong>{preferences.duration} dias</strong> em{" "}
               <strong>{format(preferences.travelDate, "MMMM", { locale: ptBR })}</strong>, 
               com orçamento de <strong>R$ {preferences.budget[0].toLocaleString()} a R$ {preferences.budget[1].toLocaleString()}</strong>, 
@@ -511,6 +804,29 @@ function SectionContent({
                 : " Na temporada seca, aproveite pousadas com piscina e próximas às praias."
               }
             </p>
+            
+            {/* Additional personalized insights */}
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700">Condições do Mar</h4>
+                <div className="flex items-center gap-2">
+                  <Waves className={cn(
+                    "w-4 h-4",
+                    travelData.weather.seaCondition === 'calm' ? "text-green-600" :
+                    travelData.weather.seaCondition === 'moderate' ? "text-yellow-600" :
+                    "text-red-600"
+                  )} />
+                  <span className="text-sm capitalize">{travelData.weather.seaCondition}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700">Visibilidade</h4>
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm">{travelData.weather.visibility}m</span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </div>
@@ -1430,14 +1746,18 @@ function SectionContent({
   );
 }
 
-export default function GuiaPage() {
+function GuiaPageContent() {
   const [activeSection, setActiveSection] = useState<string>("getting-started");
   const [preferences, setPreferences] = useState<UserPreferences>({
     travelDate: undefined,
     duration: 7,
     budget: [3000, 8000],
     interests: [],
-    difficultyLevel: 'moderate'
+    difficultyLevel: 'moderate',
+    travelStyle: 'adventure',
+    groupSize: 2,
+    dietaryRestrictions: [],
+    accessibility: false
   });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showPreferences, setShowPreferences] = useState(false);
@@ -1446,35 +1766,119 @@ export default function GuiaPage() {
   const [bookmarkedSections, setBookmarkedSections] = useState<string[]>([]);
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [sectionProgress, setSectionProgress] = useState<Record<string, number>>({});
+  const [searchResults, setSearchResults] = useState<SearchableContent[]>([]);
+  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<AdvancedFilters>({
+    priceRange: 'all',
+    activityType: [],
+    beachType: [],
+    restaurantCuisine: [],
+    accommodationType: [],
+    accessibility: false,
+    familyFriendly: false,
+    petFriendly: false
+  });
   const contentRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  
+  // Parallax scroll values
+  const { scrollY } = useScroll();
+  const heroParallax = useTransform(scrollY, [0, 500], [0, 150]);
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
+  
+  // Mouse position for interactive effects
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  // Gesture handling for mobile swipes
+  const bind = useGesture({
+    onDrag: ({ movement: [mx], velocity: [vx], direction: [dx], cancel }) => {
+      if (Math.abs(mx) > 200 || Math.abs(vx) > 2) {
+        const currentIndex = guideSections.findIndex(s => s.id === activeSection);
+        if (dx > 0 && currentIndex > 0) {
+          setActiveSection(guideSections[currentIndex - 1].id);
+          cancel();
+        } else if (dx < 0 && currentIndex < guideSections.length - 1) {
+          setActiveSection(guideSections[currentIndex + 1].id);
+          cancel();
+        }
+      }
+    }
+  });
 
   // Dados dinâmicos baseados na data de viagem
   const travelData = useMemo((): TravelData => {
     if (!preferences.travelDate) {
       return {
-        weather: { temperature: 27, humidity: 75, rainChance: 30, season: 'Seca' },
-        prices: { accommodation: 450, transport: 200, activities: 150 },
+        weather: { 
+          temperature: 27, 
+          humidity: 75, 
+          rainChance: 30, 
+          season: 'Seca',
+          seaCondition: 'moderate',
+          visibility: 30
+        },
+        prices: { 
+          accommodation: 450, 
+          transport: 200, 
+          activities: 150,
+          meals: 100
+        },
         crowds: 'medium',
-        bestActivities: ['Mergulho', 'Trilhas', 'Praias']
+        bestActivities: ['Mergulho', 'Trilhas', 'Praias'],
+        events: []
       };
     }
 
     const month = preferences.travelDate.getMonth();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     
     // Estação chuvosa (Dec-Jun) vs Seca (Jul-Nov)
     if (month >= 11 || month <= 5) {
       return {
-        weather: { temperature: 28, humidity: 85, rainChance: 70, season: 'Chuvosa' },
-        prices: { accommodation: 650, transport: 300, activities: 200 },
+        weather: { 
+          temperature: 28, 
+          humidity: 85, 
+          rainChance: 70, 
+          season: 'Chuvosa',
+          seaCondition: month >= 0 && month <= 2 ? 'rough' : 'moderate',
+          visibility: 20
+        },
+        prices: { 
+          accommodation: 650, 
+          transport: 300, 
+          activities: 200,
+          meals: 120
+        },
         crowds: 'high',
-        bestActivities: ['Mergulho', 'Gastronomia', 'Observação de fauna']
+        bestActivities: ['Mergulho', 'Gastronomia', 'Observação de fauna'],
+        events: month === 1 ? [{name: 'Carnaval', date: 'Fevereiro', type: 'cultural'}] : 
+                month === 5 ? [{name: 'São João', date: '29 de Junho', type: 'tradicional'}] : []
       };
     } else {
       return {
-        weather: { temperature: 25, humidity: 65, rainChance: 15, season: 'Seca' },
-        prices: { accommodation: 400, transport: 180, activities: 120 },
+        weather: { 
+          temperature: 25, 
+          humidity: 65, 
+          rainChance: 15, 
+          season: 'Seca',
+          seaCondition: 'calm',
+          visibility: 50
+        },
+        prices: { 
+          accommodation: 400, 
+          transport: 180, 
+          activities: 120,
+          meals: 90
+        },
         crowds: 'low',
-        bestActivities: ['Todas as praias', 'Trilhas', 'Fotografia', 'Mergulho livre']
+        bestActivities: ['Todas as praias', 'Trilhas', 'Fotografia', 'Mergulho livre'],
+        events: month === 8 ? [{name: 'Festival Gastronômico', date: 'Setembro', type: 'gastronomia'}] :
+                month === 9 ? [{name: 'Regata Refeno', date: 'Outubro', type: 'esportivo'}] : []
       };
     }
   }, [preferences.travelDate]);
@@ -1491,11 +1895,66 @@ export default function GuiaPage() {
       
       setReadProgress(progress);
       setShowScrollTop(scrollTop > 300);
+      
+      // Track section progress
+      const sections = contentRef.current.querySelectorAll('[data-section]');
+      const newProgress: Record<string, number> = {};
+      
+      sections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const sectionId = section.getAttribute('data-section') || '';
+        const sectionTop = rect.top + scrollTop;
+        const sectionHeight = rect.height;
+        const viewportBottom = scrollTop + windowHeight;
+        
+        if (viewportBottom > sectionTop) {
+          const visibleHeight = Math.min(viewportBottom - sectionTop, sectionHeight);
+          newProgress[sectionId] = Math.min((visibleHeight / sectionHeight) * 100, 100);
+        } else {
+          newProgress[sectionId] = 0;
+        }
+      });
+      
+      setSectionProgress(newProgress);
     };
 
     window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial call
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [activeSection]);
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandOpen(true);
+      }
+      
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const currentIndex = guideSections.findIndex(s => s.id === activeSection);
+        if (e.key === 'ArrowLeft' && currentIndex > 0) {
+          setActiveSection(guideSections[currentIndex - 1].id);
+        } else if (e.key === 'ArrowRight' && currentIndex < guideSections.length - 1) {
+          setActiveSection(guideSections[currentIndex + 1].id);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeSection]);
+  
+  // Mouse tracking for parallax effects
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
 
   // Funções auxiliares
   const toggleInterest = (interest: string) => {
@@ -1550,6 +2009,14 @@ export default function GuiaPage() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    const element = document.querySelector(`[data-section="${sectionId}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Função para obter a imagem do hero baseada na seção ativa
   const getHeroImage = (sectionId: string) => {
@@ -1566,24 +2033,458 @@ export default function GuiaPage() {
 
   const currentSectionData = guideSections.find(s => s.id === activeSection);
   const currentColor = colorMap[currentSectionData?.color as keyof typeof colorMap] || colorMap.blue;
+  
+  // Searchable content database
+  const searchableContent: SearchableContent[] = [
+    // Beaches
+    { id: 'sancho', type: 'beach', title: 'Baía do Sancho', description: 'Melhor praia do mundo com águas cristalinas', tags: ['praia', 'mergulho', 'snorkel'], section: 'beaches', keywords: ['sancho', 'melhor praia', 'escada'] },
+    { id: 'leao', type: 'beach', title: 'Praia do Leão', description: 'Desova de tartarugas e pôr do sol', tags: ['praia', 'tartarugas', 'por do sol'], section: 'beaches', keywords: ['leao', 'tartaruga', 'desova'] },
+    { id: 'porcos', type: 'beach', title: 'Baía dos Porcos', description: 'Piscinas naturais e vista dos Dois Irmãos', tags: ['praia', 'piscina natural'], section: 'beaches', keywords: ['porcos', 'piscina', 'dois irmaos'] },
+    { id: 'cacimba', type: 'beach', title: 'Cacimba do Padre', description: 'Praia de surf com faixa extensa de areia', tags: ['praia', 'surf'], section: 'beaches', keywords: ['cacimba', 'surf', 'areia'] },
+    { id: 'sueste', type: 'beach', title: 'Praia do Sueste', description: 'Tartarugas marinhas e tubarões', tags: ['praia', 'fauna'], section: 'beaches', keywords: ['sueste', 'tubarao', 'tartaruga'] },
+    { id: 'atalaia', type: 'beach', title: 'Atalaia', description: 'Aquário natural com limite de visitantes', tags: ['praia', 'aquario'], section: 'beaches', keywords: ['atalaia', 'aquario natural', 'piscina'] },
+    
+    // Restaurants
+    { id: 'varanda', type: 'restaurant', title: 'Varanda', description: 'Gastronomia contemporânea com vista panorâmica', tags: ['restaurante', 'fino'], section: 'dining', keywords: ['varanda', 'vista', 'gourmet'] },
+    { id: 'xica', type: 'restaurant', title: 'Xica da Silva', description: 'Melhor peixe na folha de bananeira', tags: ['restaurante', 'regional'], section: 'dining', keywords: ['xica', 'peixe', 'folha'] },
+    { id: 'mergulhao', type: 'restaurant', title: 'Mergulhão', description: 'Frutos do mar e pôr do sol', tags: ['restaurante', 'frutos do mar'], section: 'dining', keywords: ['mergulhao', 'lagosta', 'por do sol'] },
+    
+    // Activities
+    { id: 'mergulho', type: 'activity', title: 'Mergulho', description: 'Mergulho com cilindro em pontos famosos', tags: ['atividade', 'mar'], section: 'beaches', keywords: ['mergulho', 'cilindro', 'submarino'] },
+    { id: 'trilha-atalaia', type: 'activity', title: 'Trilha do Atalaia', description: 'Trilha curta até piscinas naturais', tags: ['atividade', 'trilha'], section: 'beaches', keywords: ['trilha', 'atalaia', 'caminhada'] },
+    { id: 'planasub', type: 'activity', title: 'Planasub', description: 'Snorkel puxado por barco', tags: ['atividade', 'mar'], section: 'beaches', keywords: ['planasub', 'snorkel', 'barco'] },
+    
+    // Tips
+    { id: 'taxa', type: 'tip', title: 'Taxa de Preservação', description: 'R$ 92,89 por dia de permanência', tags: ['dica', 'taxa'], section: 'getting-started', keywords: ['taxa', 'preservacao', 'tpa'] },
+    { id: 'protetor', type: 'tip', title: 'Protetor Solar', description: 'Use apenas protetor reef-safe', tags: ['dica', 'protetor'], section: 'beaches', keywords: ['protetor', 'reef safe', 'coral'] },
+    
+    // Getting Started - Como Chegar
+    { id: 'voos', type: 'tip', title: 'Voos para Noronha', description: 'Voos diários saindo de Recife, Natal e São Paulo', tags: ['transporte', 'aviao', 'como chegar'], section: 'getting-started', keywords: ['voo', 'aeroporto', 'gol', 'azul', 'latam'] },
+    { id: 'documentos', type: 'tip', title: 'Documentação Necessária', description: 'RG ou CNH, cartão de vacina e comprovante TPA', tags: ['documentos', 'obrigatorio'], section: 'getting-started', keywords: ['documento', 'identidade', 'vacina'] },
+    { id: 'tcfa', type: 'tip', title: 'Cartão de Controle Migratório', description: 'Formulário preenchido online ou no aeroporto', tags: ['documento', 'migracao'], section: 'getting-started', keywords: ['tcfa', 'formulario', 'migratorio'] },
+    
+    // Accommodation - Hospedagem
+    { id: 'vila-remedios', type: 'accommodation', title: 'Vila dos Remédios', description: 'Centro comercial, mais opções de pousadas econômicas', tags: ['hospedagem', 'centro'], section: 'accommodation', keywords: ['vila', 'remedios', 'centro', 'barato'] },
+    { id: 'floresta-nova', type: 'accommodation', title: 'Floresta Nova', description: 'Área residencial tranquila, perto do aeroporto', tags: ['hospedagem', 'tranquilo'], section: 'accommodation', keywords: ['floresta', 'nova', 'aeroporto'] },
+    { id: 'praia-sueste', type: 'accommodation', title: 'Praia do Sueste', description: 'Pousadas de luxo com vista para o mar', tags: ['hospedagem', 'luxo'], section: 'accommodation', keywords: ['sueste', 'luxo', 'vista mar'] },
+    
+    // Transportation - Transporte
+    { id: 'buggy', type: 'activity', title: 'Aluguel de Buggy', description: 'R$ 300-500/dia, melhor opção de autonomia', tags: ['transporte', 'buggy'], section: 'transportation', keywords: ['buggy', 'aluguel', 'carro'] },
+    { id: 'taxi', type: 'activity', title: 'Táxi', description: 'R$ 30-50 por corrida, disponível 24h', tags: ['transporte', 'taxi'], section: 'transportation', keywords: ['taxi', 'corrida'] },
+    { id: 'onibus', type: 'activity', title: 'Ônibus Coletivo', description: 'R$ 5 por trecho, passa de hora em hora', tags: ['transporte', 'onibus'], section: 'transportation', keywords: ['onibus', 'coletivo', 'economico'] },
+    
+    // More beaches
+    { id: 'americano', type: 'beach', title: 'Praia do Americano', description: 'Pequena e protegida, ótima para crianças', tags: ['praia', 'familia'], section: 'beaches', keywords: ['americano', 'crianca', 'protegida'] },
+    { id: 'boldro', type: 'beach', title: 'Praia do Boldro', description: 'Melhor pôr do sol da ilha', tags: ['praia', 'por do sol'], section: 'beaches', keywords: ['boldro', 'sunset', 'entardecer'] },
+    { id: 'conceicao', type: 'beach', title: 'Praia da Conceição', description: 'Popular entre locais, boa para surf', tags: ['praia', 'surf'], section: 'beaches', keywords: ['conceicao', 'surf', 'local'] },
+    
+    // Restaurants
+    { id: 'paludo', type: 'restaurant', title: 'Restaurante do Paludo', description: 'Comida caseira e preços justos', tags: ['restaurante', 'economico'], section: 'dining', keywords: ['paludo', 'caseiro', 'barato'] },
+    { id: 'zeze', type: 'restaurant', title: 'Restaurante do Zé Maria', description: 'Festival gastronômico às quartas e sábados', tags: ['restaurante', 'festival'], section: 'dining', keywords: ['ze maria', 'festival', 'gastronomico'] },
+    { id: 'teju', type: 'restaurant', title: 'Teju-Açu', description: 'Cozinha contemporânea com ingredientes locais', tags: ['restaurante', 'contemporaneo'], section: 'dining', keywords: ['teju', 'acu', 'moderno'] },
+    
+    // Monthly Guide
+    { id: 'janeiro', type: 'tip', title: 'Janeiro - Alta temporada', description: 'Praias lotadas, preços altos, mar agitado', tags: ['quando ir', 'mes'], section: 'monthly-guide', keywords: ['janeiro', 'verao', 'alta temporada'] },
+    { id: 'setembro', type: 'tip', title: 'Setembro - Melhor época', description: 'Mar calmo, pouca chuva, preços médios', tags: ['quando ir', 'mes'], section: 'monthly-guide', keywords: ['setembro', 'melhor epoca', 'ideal'] },
+    { id: 'marco', type: 'tip', title: 'Março - Época das chuvas', description: 'Chuvas frequentes mas curtas, preços baixos', tags: ['quando ir', 'mes'], section: 'monthly-guide', keywords: ['marco', 'chuva', 'baixa temporada'] },
+  ];
+  
+  // Enhanced search function with fuzzy matching
+  const searchContent = (query: string): SearchableContent[] => {
+    const normalizedQuery = query.toLowerCase().trim();
+    if (!normalizedQuery) return [];
+    
+    // Split query into terms for better matching
+    const queryTerms = normalizedQuery.split(' ').filter(term => term.length > 0);
+    
+    return searchableContent
+      .map(content => {
+        const searchTargets = [
+          content.title,
+          content.description,
+          ...content.tags,
+          ...content.keywords
+        ].join(' ').toLowerCase();
+        
+        // Calculate relevance score
+        let score = 0;
+        queryTerms.forEach(term => {
+          if (content.title.toLowerCase().includes(term)) score += 3;
+          if (content.description.toLowerCase().includes(term)) score += 2;
+          if (searchTargets.includes(term)) score += 1;
+        });
+        
+        return { ...content, score };
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ score, ...content }) => content);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 opacity-70" />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-tl from-cyan-100 via-indigo-100 to-purple-100 opacity-40"
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -100, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      </div>
+      
+      {/* Global styles for search highlight animation */}
+      <style jsx global>{`
+        @keyframes highlight {
+          0% {
+            background-color: rgba(99, 102, 241, 0.2);
+            transform: scale(1);
+          }
+          50% {
+            background-color: rgba(99, 102, 241, 0.1);
+            transform: scale(1.02);
+          }
+          100% {
+            background-color: transparent;
+            transform: scale(1);
+          }
+        }
+        
+        .highlight-animation {
+          animation: highlight 2s ease-out;
+          border-radius: 0.5rem;
+          padding: 0.5rem;
+          margin: -0.5rem;
+        }
+      `}</style>
+      
+      {/* Command Palette with Search */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput 
+          placeholder="Buscar em todo o guia: praias, restaurantes, hospedagem, dicas..." 
+          onValueChange={(value) => {
+            const results = searchContent(value);
+            setSearchResults(results);
+          }}
+        />
+        <CommandList>
+          <CommandEmpty>
+            <div className="text-center py-8">
+              <Search className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500">Nenhum resultado encontrado</p>
+              <p className="text-sm text-gray-400 mt-1">Tente buscar por praias, restaurantes ou atividades</p>
+            </div>
+          </CommandEmpty>
+          
+          {/* Dynamic search results */}
+          {searchResults.length > 0 && (
+            <>
+              <CommandGroup heading={`Resultados (${searchResults.length})`}>
+                {searchResults.map((result) => {
+                  const Icon = result.type === 'beach' ? Waves :
+                              result.type === 'restaurant' ? Utensils :
+                              result.type === 'activity' ? Activity :
+                              result.type === 'accommodation' ? Home : Info;
+                  
+                  const typeLabel = {
+                    beach: 'Praia',
+                    restaurant: 'Restaurante',
+                    activity: 'Atividade',
+                    accommodation: 'Hospedagem',
+                    tip: 'Dica'
+                  }[result.type] || result.type;
+                  
+                  const sectionInfo = guideSections.find(s => s.id === result.section);
+                  
+                  return (
+                    <CommandItem
+                      key={result.id}
+                      onSelect={() => {
+                        scrollToSection(result.section);
+                        // Small delay to allow section scroll before focusing on specific content
+                        setTimeout(() => {
+                          const element = document.getElementById(result.id);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            element.classList.add('highlight-animation');
+                            setTimeout(() => element.classList.remove('highlight-animation'), 2000);
+                          }
+                        }, 500);
+                        setCommandOpen(false);
+                        toast.success(`Navegando para ${result.title}`);
+                      }}
+                    >
+                      <Icon className="mr-3 h-4 w-4 text-gray-600" />
+                      <div className="flex-1">
+                        <p className="font-medium">{result.title}</p>
+                        <p className="text-sm text-gray-500 line-clamp-1">{result.description}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {sectionInfo?.title} • {typeLabel}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+              <CommandSeparator />
+            </>
+          )}
+          
+          <CommandGroup heading="Navegação Rápida">
+            {guideSections.map((section) => (
+              <CommandItem
+                key={section.id}
+                onSelect={() => {
+                  scrollToSection(section.id);
+                  setCommandOpen(false);
+                }}
+              >
+                <section.icon className="mr-3 h-4 w-4" />
+                <div className="flex-1">
+                  <p className="font-medium">{section.title}</p>
+                  <p className="text-sm text-gray-500">{section.quickInfo}</p>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          
+          <CommandSeparator />
+          
+          <CommandGroup heading="Ações Rápidas">
+            <CommandItem
+              onSelect={() => {
+                setShowPreferences(true);
+                setCommandOpen(false);
+              }}
+            >
+              <Settings className="mr-3 h-4 w-4" />
+              <span>Personalizar Viagem</span>
+              <CommandShortcut>⌘P</CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              onSelect={() => {
+                shareSection();
+                setCommandOpen(false);
+              }}
+            >
+              <Share2 className="mr-3 h-4 w-4" />
+              <span>Compartilhar Seção</span>
+              <CommandShortcut>⌘S</CommandShortcut>
+            </CommandItem>
+
+          </CommandGroup>
+          
+          <CommandSeparator />
+          
+          {/* Travel Style Shortcuts */}
+          <CommandGroup heading="Estilos de Viagem">
+            {(['adventure', 'relaxation', 'cultural', 'romantic', 'family'] as const).map((style) => {
+              const styleIcons = {
+                adventure: Activity,
+                relaxation: Sun,
+                cultural: Globe,
+                romantic: Heart,
+                family: Users
+              };
+              const StyleIcon = styleIcons[style];
+              
+              return (
+                <CommandItem
+                  key={style}
+                  onSelect={() => {
+                    setPreferences(prev => ({ ...prev, travelStyle: style }));
+                    toast.success(`Estilo de viagem alterado para ${style}`);
+                    setCommandOpen(false);
+                  }}
+                >
+                  <StyleIcon className="mr-3 h-4 w-4" />
+                  <span className="capitalize">{style}</span>
+                  {preferences.travelStyle === style && (
+                    <CheckCircle className="ml-auto h-4 w-4 text-green-600" />
+                  )}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+
+
       {/* Progress Bar - Always visible on mobile */}
       <div className="fixed top-0 left-0 right-0 z-[60] lg:z-50">
-        <Progress value={readProgress} className="h-1 rounded-none" />
+        <Progress value={readProgress} className="h-1 rounded-none bg-gradient-to-r from-blue-500 to-purple-600" />
       </div>
 
-      {/* Mobile Header - Completamente redesenhado */}
-      <header className="lg:hidden fixed top-1 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-gray-100 z-40 shadow-sm">
+      {/* Advanced Filters Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            className={cn(
+              "fixed left-0 top-0 bottom-0 w-80 z-50",
+              minimalStyles.elevated,
+              "border-r"
+            )}
+          >
+            <div className={minimalStyles.spacing.container}>
+              <div className="flex items-center justify-between py-6 border-b border-gray-100">
+                <h2 className={minimalStyles.text.title}>Filtros Avançados</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <ScrollArea className="h-[calc(100vh-88px)]">
+                <div className={minimalStyles.spacing.stack}>
+                  {/* Price Range Filter */}
+                  <div className="py-6">
+                    <h3 className="font-medium mb-4">Faixa de Preço</h3>
+                    <div className="space-y-2">
+                      {['budget', 'mid', 'luxury', 'all'].map((range) => (
+                        <label key={range} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="priceRange"
+                            value={range}
+                            checked={filters.priceRange === range}
+                            onChange={(e) => setFilters(prev => ({ ...prev, priceRange: e.target.value as any }))}
+                            className="text-gray-900"
+                          />
+                          <span className="text-sm capitalize">
+                            {range === 'budget' ? 'Econômico' : 
+                             range === 'mid' ? 'Intermediário' : 
+                             range === 'luxury' ? 'Luxo' : 'Todos'}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Activity Type Filter */}
+                  <div className="py-6 border-t border-gray-100">
+                    <h3 className="font-medium mb-4">Tipo de Atividade</h3>
+                    <div className="space-y-2">
+                      {['mergulho', 'trilha', 'praia', 'gastronomia', 'cultura'].map((activity) => (
+                        <label key={activity} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.activityType.includes(activity)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFilters(prev => ({ ...prev, activityType: [...prev.activityType, activity] }));
+                              } else {
+                                setFilters(prev => ({ ...prev, activityType: prev.activityType.filter(a => a !== activity) }));
+                              }
+                            }}
+                            className="text-gray-900"
+                          />
+                          <span className="text-sm capitalize">{activity}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Beach Type Filter */}
+                  <div className="py-6 border-t border-gray-100">
+                    <h3 className="font-medium mb-4">Tipo de Praia</h3>
+                    <div className="space-y-2">
+                      {['piscinas naturais', 'surf', 'snorkel', 'familiar', 'isolada'].map((beach) => (
+                        <label key={beach} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.beachType.includes(beach)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFilters(prev => ({ ...prev, beachType: [...prev.beachType, beach] }));
+                              } else {
+                                setFilters(prev => ({ ...prev, beachType: prev.beachType.filter(b => b !== beach) }));
+                              }
+                            }}
+                            className="text-gray-900"
+                          />
+                          <span className="text-sm capitalize">{beach}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Accessibility Options */}
+                  <div className="py-6 border-t border-gray-100">
+                    <h3 className="font-medium mb-4">Acessibilidade</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.accessibility}
+                          onChange={(e) => setFilters(prev => ({ ...prev, accessibility: e.target.checked }))}
+                          className="text-gray-900"
+                        />
+                        <span className="text-sm">Acessível para PCD</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.familyFriendly}
+                          onChange={(e) => setFilters(prev => ({ ...prev, familyFriendly: e.target.checked }))}
+                          className="text-gray-900"
+                        />
+                        <span className="text-sm">Amigável para Famílias</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.petFriendly}
+                          onChange={(e) => setFilters(prev => ({ ...prev, petFriendly: e.target.checked }))}
+                          className="text-gray-900"
+                        />
+                        <span className="text-sm">Pet Friendly</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {/* Apply Filters Button */}
+                  <div className="py-6 border-t border-gray-100">
+                    <Button 
+                      className={cn(minimalStyles.button.primary, "w-full")}
+                      onClick={() => {
+                        toast.success("Filtros aplicados!");
+                        setShowFilters(false);
+                      }}
+                    >
+                      Aplicar Filtros
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Header - Minimalist Design */}
+      <header className={cn("lg:hidden fixed top-1 left-0 right-0 z-40", minimalStyles.elevated)}>
         <div className="flex items-center justify-between px-4 h-16 pt-3">
-          {/* Menu Button com indicador visual */}
+          {/* Menu Button */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
               className={cn(
                 "relative p-2.5 rounded-xl transition-all duration-300",
-                currentColor.lightBg,
+                minimalStyles.button.ghost,
                 "hover:scale-105 active:scale-95"
               )}
             >
@@ -1971,25 +2872,46 @@ export default function GuiaPage() {
                 <Bookmark className="mr-2 h-4 w-4" />
                 Favoritos ({bookmarkedSections.length})
               </Button>
-              <Button 
-                variant="outline"
-                size="sm" 
-                className="w-full justify-start"
-                onClick={() => toast.info("Download do guia em PDF disponível em breve!")}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Baixar Guia PDF
-              </Button>
+
             </div>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
 
-      {/* Desktop Sidebar - Mantido mas melhorado */}
-      <aside className="w-80 bg-white border-r border-gray-200 fixed h-full overflow-y-auto hidden lg:block shadow-sm">
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-br from-indigo-50 to-purple-50">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Guia de Noronha</h1>
-          <p className="text-sm text-gray-600">Seu guia completo e personalizado</p>
+      {/* Desktop Sidebar - Mantido mas melhorado com glassmorphism */}
+      <aside className={cn("w-80 mt-16 fixed h-full overflow-y-auto hidden lg:block", glassStyles.base, "border-r border-white/20")}>
+        <div className="p-6 border-b border-white/20 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-md">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-2xl font-bold text-gray-900 mb-2"
+          >
+            Guia de Noronha
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-sm text-gray-600"
+          >
+            Seu guia completo e personalizado
+          </motion.p>
+          
+          {/* Quick search button */}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            onClick={() => setCommandOpen(true)}
+            className={cn(
+              glassStyles.button,
+              "mt-4 w-full p-2 rounded-lg flex items-center gap-2 text-sm text-gray-600"
+            )}
+          >
+            <Search className="w-4 h-4" />
+            <span>Buscar...</span>
+            <kbd className="ml-auto text-xs bg-gray-100 px-2 py-0.5 rounded">⌘K</kbd>
+          </motion.button>
         </div>
 
         {/* Desktop Navigation */}
@@ -2001,13 +2923,15 @@ export default function GuiaPage() {
             return (
               <motion.button
                 key={section.id}
-                whileHover={{ x: 4 }}
+                whileHover={{ x: 4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
                   "w-full flex items-start gap-4 p-4 rounded-xl transition-all duration-300",
+                  "backdrop-blur-md border",
                   isActive
-                    ? `${sectionColor.bg} ${sectionColor.border} border-2 shadow-sm`
-                    : "hover:bg-gray-50"
+                    ? `bg-gradient-to-r ${section.accentGradient} ${sectionColor.border} shadow-lg`
+                    : "hover:bg-white/50 border-transparent hover:border-gray-200/50"
                 )}
               >
                 <div className={cn(
@@ -2251,7 +3175,7 @@ export default function GuiaPage() {
         </div>
 
         {/* Footer Actions Desktop */}
-        <div className="p-4 border-t border-gray-200 space-y-2">
+        <div className="p-4 border-t border-gray-200 space-y-2 mb-20">
           <Button 
             variant="outline" 
             size="sm" 
@@ -2266,202 +3190,439 @@ export default function GuiaPage() {
             <Bookmark className="mr-2 h-4 w-4" />
             Ver Favoritos ({bookmarkedSections.length})
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
-            onClick={() => toast.info("Download do guia em PDF disponível em breve!")}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Baixar Guia PDF
-          </Button>
+
         </div>
       </aside>
 
       {/* Main Content - Melhorado para mobile */}
-      <main className="flex-1 lg:ml-80 bg-gray-50" ref={contentRef}>
-        {/* Hero Section - Redesenhada para mobile */}
-        <section className="relative h-[40vh] sm:h-[50vh] lg:h-[60vh] overflow-hidden mt-[128px] lg:mt-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeSection}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.5 }}
-              className="absolute inset-0"
-            >
-              <div
-                className="h-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url('${getHeroImage(activeSection)}')`,
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/20" />
-            </motion.div>
-          </AnimatePresence>
+      <main className="flex-1 lg:ml-80 bg-gray-50" ref={contentRef} {...bind()}>
+        {/* Hero Section - Minimalist Design */}
+        <motion.section 
+          ref={heroRef}
+          className="relative h-[60vh] lg:h-[70vh] overflow-hidden z-0"
+          style={{ y: heroParallax }}
+        >
+          {/* Background Image with Parallax */}
+          <motion.div 
+            className="absolute inset-0"
+            style={{ scale: heroScale }}
+          >
+            <Image
+              src={getHeroImage(activeSection)}
+              alt={currentSectionData?.title || 'Fernando de Noronha'}
+              fill
+              className="object-cover"
+              priority
+              quality={90}
+            />
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+              style={{ opacity: heroOpacity }}
+            />
+          </motion.div>
 
-          {/* Hero Content - Otimizado para mobile */}
-          <div className="absolute inset-0 flex items-end p-6 sm:p-8 lg:p-12">
+          {/* Hero Content - Clean Typography */}
+          <div className={cn(minimalStyles.spacing.container, "relative h-full flex items-end pb-12 lg:pb-16")}>
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="max-w-4xl w-full"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="max-w-3xl"
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.5, type: "spring" }}
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4",
-                  "backdrop-blur-md bg-white/20 text-white border border-white/30"
-                )}
-              >
-                {currentSectionData?.icon && (
-                  <currentSectionData.icon className="w-4 h-4" />
-                )}
-                <span>Guia Completo</span>
-              </motion.div>
-              
-              <motion.h1 
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 lg:mb-4"
-              >
-                {currentSectionData?.title}
-              </motion.h1>
-              
               <motion.p 
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-base sm:text-lg lg:text-xl text-white/90 max-w-2xl leading-relaxed"
+                className="text-white/80 text-sm uppercase tracking-wider mb-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
               >
-                {currentSectionData?.description}
+                {currentSectionData?.quickInfo}
               </motion.p>
+              <h1 className={cn(minimalStyles.text.hero, "text-white mb-6")}>
+                {currentSectionData?.title}
+              </h1>
+              <p className={cn(minimalStyles.text.subtitle, "text-white/90 max-w-2xl")}>
+                {currentSectionData?.description}
+              </p>
               
-              {/* Hero Stats - Responsivo */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="flex flex-wrap gap-3 sm:gap-4 mt-4 lg:mt-6"
-              >
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full">
-                  <Eye className="w-3 h-3 text-white/80" />
-                  <span className="text-xs sm:text-sm text-white/80">15 min leitura</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full">
-                  <Globe className="w-3 h-3 text-white/80" />
-                  <span className="text-xs sm:text-sm text-white/80">Atualizado hoje</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full">
-                  <Users className="w-3 h-3 text-white/80" />
-                  <span className="text-xs sm:text-sm text-white/80">2.5k views</span>
-                </div>
-              </motion.div>
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-4 mt-8">
+                <Button 
+                  onClick={() => setShowFilters(true)}
+                  className={cn(minimalStyles.button.primary, "gap-2")}
+                >
+                  <Filter className="w-4 h-4" />
+                  Filtros
+                </Button>
+                <Button 
+                  onClick={() => setCommandOpen(true)}
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 gap-2"
+                >
+                  <Search className="w-4 h-4" />
+                  Buscar (⌘K)
+                </Button>
+                <Button
+                  onClick={() => setViewMode(viewMode === 'detailed' ? 'compact' : 'detailed')}
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 gap-2"
+                >
+                  <Layers className="w-4 h-4" />
+                  {viewMode === 'detailed' ? 'Compacto' : 'Detalhado'}
+                </Button>
+              </div>
             </motion.div>
           </div>
-        </section>
 
-        {/* Content Area - Melhorado para mobile */}
-        <div className="relative bg-white -mt-6 sm:-mt-8 lg:-mt-12 rounded-t-3xl shadow-xl">
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-gray-300 rounded-full" />
-          
-          <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-12 pt-8 sm:pt-10 lg:pt-12">
-            <AnimatePresence mode="wait">
+          {/* Scroll Indicator */}
+          <motion.div 
+            className="absolute bottom-8 left-1/2 -translate-x-1/2"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <ChevronDown className="w-6 h-6 text-white/60" />
+          </motion.div>
+        </motion.section>
+
+        {/* Content Container with Minimalist Layout */}
+        <div className={cn(minimalStyles.spacing.container, minimalStyles.spacing.section, "relative z-10 bg-gray-50")}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            {/* Main Content Column */}
+            <div className="lg:col-span-8">
+              {/* Personalized Recommendations Card */}
+              {preferences.travelDate && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(minimalStyles.card, "mb-8 bg-gradient-to-br from-indigo-50/30 to-purple-50/30")}
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h3 className={cn(minimalStyles.text.title, "flex items-center gap-2")}>
+                        <Sparkles className="w-5 h-5 text-indigo-600" />
+                        Seu Guia Personalizado
+                      </h3>
+                      <p className={cn(minimalStyles.text.caption, "mt-1")}>
+                        Baseado nas suas preferências de viagem
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                      {preferences.travelStyle}
+                    </Badge>
+                  </div>
+
+                  {/* Key Travel Info Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="space-y-1">
+                      <p className={minimalStyles.text.caption}>Período</p>
+                      <p className="font-medium">{format(preferences.travelDate, "dd/MM", { locale: ptBR })}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={minimalStyles.text.caption}>Duração</p>
+                      <p className="font-medium">{preferences.duration} dias</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={minimalStyles.text.caption}>Grupo</p>
+                      <p className="font-medium">{preferences.groupSize} pessoas</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className={minimalStyles.text.caption}>Orçamento</p>
+                      <p className="font-medium">R$ {preferences.budget[1].toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Weather and Sea Conditions */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white/50 rounded-lg mb-6">
+                    <div className="flex items-center gap-2">
+                      <Thermometer className="w-4 h-4 text-orange-600" />
+                      <div>
+                        <p className="text-xs text-gray-500">Temperatura</p>
+                        <p className="font-medium">{travelData.weather.temperature}°C</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Droplets className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="text-xs text-gray-500">Chuva</p>
+                        <p className="font-medium">{travelData.weather.rainChance}%</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Waves className={cn(
+                        "w-4 h-4",
+                        travelData.weather.seaCondition === 'calm' ? "text-green-600" :
+                        travelData.weather.seaCondition === 'moderate' ? "text-yellow-600" :
+                        "text-red-600"
+                      )} />
+                      <div>
+                        <p className="text-xs text-gray-500">Mar</p>
+                        <p className="font-medium capitalize">{
+                          travelData.weather.seaCondition === 'calm' ? 'Calmo' :
+                          travelData.weather.seaCondition === 'moderate' ? 'Moderado' : 'Agitado'
+                        }</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-cyan-600" />
+                      <div>
+                        <p className="text-xs text-gray-500">Visibilidade</p>
+                        <p className="font-medium">{travelData.weather.visibility}m</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personalized Recommendations */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Melhores Atividades para {format(preferences.travelDate, "MMMM", { locale: ptBR })}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {travelData.bestActivities.map((activity) => (
+                          <Badge key={activity} variant="outline">
+                            {activity}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {travelData.events.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-2">Eventos Especiais</h4>
+                        <div className="space-y-2">
+                          {travelData.events.map((event) => (
+                            <div key={event.name} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
+                              <div>
+                                <p className="font-medium">{event.name}</p>
+                                <p className="text-sm text-gray-500">{event.date}</p>
+                              </div>
+                              <Badge variant="secondary">
+                                {event.type}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Price Estimates */}
+                    <div>
+                      <h4 className="font-medium mb-2">Estimativa de Custos Diários</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Hospedagem</span>
+                          <span className="font-medium">R$ {travelData.prices.accommodation}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Alimentação</span>
+                          <span className="font-medium">R$ {travelData.prices.meals}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Transporte</span>
+                          <span className="font-medium">R$ {travelData.prices.transport}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Atividades</span>
+                          <span className="font-medium">R$ {travelData.prices.activities}</span>
+                        </div>
+                        <div className="flex justify-between text-sm pt-2 border-t">
+                          <span className="font-medium">Total Estimado</span>
+                          <span className="font-medium">
+                            R$ {travelData.prices.accommodation + travelData.prices.meals + travelData.prices.transport + travelData.prices.activities}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Section Content with View Mode */}
               <motion.div
                 key={activeSection}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                data-section={activeSection}
+                className={viewMode === 'compact' ? 'space-y-4' : 'space-y-8'}
               >
-                <SectionContent 
-                  sectionId={activeSection} 
+                <SectionContent
+                  sectionId={activeSection}
                   preferences={preferences}
                   travelData={travelData}
                   favorites={favorites}
                   onToggleFavorite={toggleFavorite}
                 />
               </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Floating Action Buttons - Mobile Redesenhado */}
-        <AnimatePresence>
-          {showScrollTop && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="lg:hidden fixed bottom-24 right-4 sm:right-6"
-            >
-              <Button
-                size="icon"
-                onClick={scrollToTop}
-                className="h-12 w-12 rounded-full shadow-lg bg-white border border-gray-200"
-              >
-                <ArrowUp className="h-5 w-5 text-gray-700" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Bottom Navigation - Mobile Only */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30">
-          <div className="grid grid-cols-3 items-center h-16">
-            <button
-              onClick={() => {
-                const currentIndex = guideSections.findIndex(s => s.id === activeSection);
-                if (currentIndex > 0) {
-                  setActiveSection(guideSections[currentIndex - 1].id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }}
-              disabled={guideSections.findIndex(s => s.id === activeSection) === 0}
-              className={cn(
-                "flex items-center justify-center gap-2 h-full transition-all duration-300",
-                guideSections.findIndex(s => s.id === activeSection) === 0
-                  ? "opacity-30 cursor-not-allowed"
-                  : "active:bg-gray-50"
-              )}
-            >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="text-sm font-medium hidden sm:inline">Anterior</span>
-            </button>
-
-            <div className="flex items-center justify-center">
-              <span className="text-xs text-gray-500">
-                {guideSections.findIndex(s => s.id === activeSection) + 1} / {guideSections.length}
-              </span>
             </div>
 
-            <button
-              onClick={() => {
-                const currentIndex = guideSections.findIndex(s => s.id === activeSection);
-                if (currentIndex < guideSections.length - 1) {
-                  setActiveSection(guideSections[currentIndex + 1].id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }}
-              disabled={guideSections.findIndex(s => s.id === activeSection) === guideSections.length - 1}
-              className={cn(
-                "flex items-center justify-center gap-2 h-full transition-all duration-300",
-                guideSections.findIndex(s => s.id === activeSection) === guideSections.length - 1
-                  ? "opacity-30 cursor-not-allowed"
-                  : "active:bg-gray-50"
-              )}
-            >
-              <span className="text-sm font-medium hidden sm:inline">Próximo</span>
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            {/* Sidebar - Desktop Only */}
+            <aside className="hidden lg:block lg:col-span-4 space-y-6">
+              {/* Quick Stats Card */}
+              <div className={minimalStyles.card}>
+                <h3 className="font-medium mb-4">Estatísticas Rápidas</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Praias visitáveis</span>
+                    <span className="font-medium">21</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Temperatura média</span>
+                    <span className="font-medium">{travelData.weather.temperature}°C</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Ocupação da ilha</span>
+                    <Badge variant={travelData.crowds === 'low' ? 'secondary' : travelData.crowds === 'medium' ? 'default' : 'destructive'}>
+                      {travelData.crowds === 'low' ? 'Baixa' : travelData.crowds === 'medium' ? 'Média' : 'Alta'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Share Options */}
+              <div className={minimalStyles.card}>
+                <h3 className="font-medium mb-4">Compartilhar</h3>
+                <div className="space-y-2">
+                  <Button className="w-full justify-start gap-2" variant="outline">
+                    <Calendar className="w-4 h-4" />
+                    Adicionar ao Calendário
+                  </Button>
+                  <Button className="w-full justify-start gap-2" variant="outline">
+                    <Share2 className="w-4 h-4" />
+                    Compartilhar Roteiro
+                  </Button>
+                </div>
+              </div>
+
+              {/* Related Sections */}
+              <div className={minimalStyles.card}>
+                <h3 className="font-medium mb-4">Seções Relacionadas</h3>
+                <div className="space-y-2">
+                  {guideSections
+                    .filter(s => s.id !== activeSection)
+                    .slice(0, 3)
+                    .map((section) => (
+                      <button
+                        key={section.id}
+                        onClick={() => scrollToSection(section.id)}
+                        className="w-full p-3 text-left hover:bg-gray-50 rounded-lg transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <section.icon className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{section.title}</p>
+                            <p className="text-xs text-gray-500">{section.quickInfo}</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </main>
+
+      {/* Floating Action Buttons - Mobile Redesenhado */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="lg:hidden fixed bottom-24 right-4 sm:right-6 space-y-3"
+          >
+            <MagneticButton
+              size="icon"
+              onClick={scrollToTop}
+              className={cn(
+                glassStyles.button,
+                "h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white border-0"
+              )}
+            >
+              <ArrowUp className="h-5 w-5" />
+            </MagneticButton>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Floating Command Button - Desktop */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="hidden lg:block fixed bottom-8 right-8 z-50"
+      >
+        <MagneticButton
+          size="lg"
+          onClick={() => setCommandOpen(true)}
+          className={cn(
+            glassStyles.base,
+            "rounded-full shadow-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0 hover:from-indigo-600 hover:to-purple-700"
+          )}
+        >
+          <Command className="h-5 w-5 mr-2" />
+          <span className="text-sm font-medium">Buscar</span>
+          <kbd className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded">⌘K</kbd>
+        </MagneticButton>
+      </motion.div>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30">
+        <div className="grid grid-cols-3 items-center h-16">
+          <button
+            onClick={() => {
+              const currentIndex = guideSections.findIndex(s => s.id === activeSection);
+              if (currentIndex > 0) {
+                setActiveSection(guideSections[currentIndex - 1].id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            disabled={guideSections.findIndex(s => s.id === activeSection) === 0}
+            className={cn(
+              "flex items-center justify-center gap-2 h-full transition-all duration-300",
+              guideSections.findIndex(s => s.id === activeSection) === 0
+                ? "opacity-30 cursor-not-allowed"
+                : "active:bg-gray-50"
+            )}
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span className="text-sm font-medium hidden sm:inline">Anterior</span>
+          </button>
+
+          <div className="flex items-center justify-center">
+            <span className="text-xs text-gray-500">
+              {guideSections.findIndex(s => s.id === activeSection) + 1} / {guideSections.length}
+            </span>
+          </div>
+
+          <button
+            onClick={() => {
+              const currentIndex = guideSections.findIndex(s => s.id === activeSection);
+              if (currentIndex < guideSections.length - 1) {
+                setActiveSection(guideSections[currentIndex + 1].id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            disabled={guideSections.findIndex(s => s.id === activeSection) === guideSections.length - 1}
+            className={cn(
+              "flex items-center justify-center gap-2 h-full transition-all duration-300",
+              guideSections.findIndex(s => s.id === activeSection) === guideSections.length - 1
+                ? "opacity-30 cursor-not-allowed"
+                : "active:bg-gray-50"
+            )}
+          >
+            <span className="text-sm font-medium hidden sm:inline">Próximo</span>
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+export default function GuiaPage() {
+  return (
+    <SubscriptionGuard>
+      <GuiaPageContent />
+    </SubscriptionGuard>
   );
 } 

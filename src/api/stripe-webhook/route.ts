@@ -47,7 +47,26 @@ export async function POST(request: NextRequest) {
     // Process the event
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('Checkout session completed:', {
+          id: session.id,
+          mode: session.mode,
+          metadata: session.metadata,
+          subscription: session.subscription,
+        });
+        
+        // For subscription mode, delegate to Convex webhook handler
+        if (session.mode === 'subscription' && session.metadata?.type === 'guide_subscription') {
+          console.log('Processing guide subscription checkout via Convex webhook');
+          await convex.action(internal.domains.stripe.actions.processWebhookEvent, {
+            eventId: event.id,
+            eventType: event.type,
+            livemode: event.livemode,
+            data: session,
+          });
+        } else {
+          await handleCheckoutSessionCompleted(session);
+        }
         break;
         
       case 'payment_intent.succeeded':
@@ -56,6 +75,22 @@ export async function POST(request: NextRequest) {
         
       case 'payment_intent.payment_failed':
         await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
+        
+      // Subscription events
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+      case 'invoice.paid':
+      case 'invoice.payment_succeeded':
+      case 'invoice.payment_failed':
+        console.log(`Processing subscription/invoice event: ${event.type}`);
+        await convex.action(internal.domains.stripe.actions.processWebhookEvent, {
+          eventId: event.id,
+          eventType: event.type,
+          livemode: event.livemode,
+          data: event.data.object,
+        });
         break;
         
       default:

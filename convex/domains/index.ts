@@ -39,4 +39,7 @@ export * as recommendations from "./recommendations";
 export * as email from "./email";
 
 // Export system settings domain for global configuration management
-export * as systemSettings from "./systemSettings"; 
+export * as systemSettings from "./systemSettings";
+
+// Export subscriptions domain for guide subscription management
+export * as subscriptions from "./subscriptions"; 
