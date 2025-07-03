@@ -16,7 +16,8 @@ export type EmailType =
   | "support_message"
   | "payment_confirmation"
   | "payment_failed"
-  | "review_request";
+  | "review_request"
+  | "voucher_ready";
 
 // Interface base para dados de email
 export interface BaseEmailData {
@@ -49,6 +50,19 @@ export interface BookingCancelledEmailData extends BaseEmailData {
   confirmationCode: string;
   reason?: string;
   refundAmount?: number;
+}
+
+export interface VoucherEmailData extends BaseEmailData {
+  type: "voucher_ready";
+  customerName: string;
+  assetName: string;
+  bookingType: "activity" | "event" | "restaurant" | "vehicle" | "package";
+  confirmationCode: string;
+  voucherNumber: string;
+  bookingDate?: string;
+  totalPrice?: number;
+  partnerName?: string;
+  bookingDetails: any;
 }
 
 export interface PackageRequestReceivedEmailData extends BaseEmailData {
@@ -124,6 +138,7 @@ export interface SupportMessageEmailData extends BaseEmailData {
 export type EmailData = 
   | BookingConfirmationEmailData
   | BookingCancelledEmailData
+  | VoucherEmailData
   | PackageRequestReceivedEmailData
   | PackageRequestStatusUpdateEmailData
   | PartnerNewBookingEmailData

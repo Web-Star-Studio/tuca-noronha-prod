@@ -1077,6 +1077,57 @@ export default defineSchema({
     .index("by_confirmation_code", ["confirmationCode"])
     .index("by_package_dates", ["packageId", "startDate", "endDate"]),
 
+  // Vouchers System
+  vouchers: defineTable({
+    bookingId: v.string(), // ID genérico para qualquer tipo de reserva
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package")
+    ),
+    voucherNumber: v.string(), // Número único do voucher
+    issueDate: v.number(),
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      document: v.optional(v.string()), // CPF ou outro documento
+    }),
+    assetInfo: v.object({
+      name: v.string(),
+      address: v.string(),
+      phone: v.optional(v.string()),
+      email: v.optional(v.string()),
+      description: v.optional(v.string()),
+    }),
+    bookingDetails: v.any(), // Específico por tipo de asset
+    partnerId: v.id("users"),
+    status: v.union(
+      v.literal("active"),
+      v.literal("used"),
+      v.literal("cancelled"),
+      v.literal("expired")
+    ),
+    qrCode: v.optional(v.string()), // URL ou dados do QR Code
+    validFrom: v.optional(v.number()),
+    validUntil: v.optional(v.number()),
+    usedAt: v.optional(v.number()),
+    cancelledAt: v.optional(v.number()),
+    cancelReason: v.optional(v.string()),
+    createdBy: v.id("users"), // Usuário que criou o voucher
+    confirmationCode: v.string(), // Código de confirmação da reserva
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_booking", ["bookingId", "bookingType"])
+    .index("by_voucher_number", ["voucherNumber"])
+    .index("by_partner", ["partnerId"])
+    .index("by_status", ["status"])
+    .index("by_user", ["customerInfo.email"])
+    .index("by_confirmation_code", ["confirmationCode"]),
+
   // Wishlist/Favorites System
   wishlistItems: defineTable({
     userId: v.id("users"),

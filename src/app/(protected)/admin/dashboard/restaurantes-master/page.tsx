@@ -61,10 +61,10 @@ export default function RestaurantesMasterPage() {
   const [selectedCity, setSelectedCity] = useState<string>("all")
 
   // Buscar estatísticas do sistema
-  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics)
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics)
   
   // Buscar todos os restaurantes
-  const restaurantsResult = useQuery(api["domains/restaurants/queries"].getAll, {})
+  const restaurantsResult = useQuery(api.domains.restaurants.queries.getAll)
 
   const allRestaurants = restaurantsResult || []
   

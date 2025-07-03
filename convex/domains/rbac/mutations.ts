@@ -229,6 +229,7 @@ export const createEmployeeDirectly = mutationWithRole(["partner", "master"])({
     email: v.string(),
     password: v.string(),
     image: v.optional(v.string()),
+    partnerId: v.optional(v.id("users")), // Opcional - apenas masters podem especificar
     organizationId: v.optional(v.id("partnerOrganizations")),
   },
   returns: v.object({
@@ -241,6 +242,24 @@ export const createEmployeeDirectly = mutationWithRole(["partner", "master"])({
     const currentUserId = await getCurrentUserConvexId(ctx);
     const currentUserRole = await getCurrentUserRole(ctx);
     if (!currentUserId) throw new Error("Usuário não autenticado");
+
+    // Determina o partnerId a ser usado
+    let targetPartnerId = currentUserId;
+    
+    // Apenas masters podem especificar um partnerId diferente
+    if (args.partnerId) {
+      if (currentUserRole !== "master") {
+        throw new Error("Apenas masters podem criar employees para outros partners");
+      }
+      
+      // Verifica se o partner especificado existe
+      const targetPartner = await ctx.db.get(args.partnerId);
+      if (!targetPartner || targetPartner.role !== "partner") {
+        throw new Error("Partner especificado não encontrado ou não é um partner válido");
+      }
+      
+      targetPartnerId = args.partnerId;
+    }
 
     // Validações básicas
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -266,8 +285,13 @@ export const createEmployeeDirectly = mutationWithRole(["partner", "master"])({
     // Valida organização se fornecida
     if (args.organizationId) {
       const organization = await ctx.db.get(args.organizationId);
-      if (!organization || organization.partnerId !== currentUserId) {
-        throw new Error("Organização não encontrada ou não pertence ao partner");
+      if (!organization) {
+        throw new Error("Organização não encontrada");
+      }
+      
+      // Masters podem associar a qualquer organização, partners apenas às suas
+      if (currentUserRole === "partner" && organization.partnerId !== currentUserId) {
+        throw new Error("Organização não pertence ao partner");
       }
     }
 
@@ -278,7 +302,7 @@ export const createEmployeeDirectly = mutationWithRole(["partner", "master"])({
       email: args.email,
       image: args.image,
       role: "employee",
-      partnerId: currentUserId,
+      partnerId: targetPartnerId,
       organizationId: args.organizationId,
       isAnonymous: false,
       emailVerificationTime: Date.now(), // Consideramos como verificado
@@ -355,13 +379,33 @@ export const createEmployee = mutationWithRole(["partner", "master"])({
     name: v.string(),
     email: v.string(),
     image: v.optional(v.string()),
+    partnerId: v.optional(v.id("users")), // Opcional - apenas masters podem especificar
   },
   returns: v.id("users"),
   handler: async (ctx, args) => {
     console.log(`=== INÍCIO: createEmployee para email=${args.email}, name=${args.name} ===`);
     
     const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
     if (!currentUserId) throw new Error("Usuário não autenticado");
+
+    // Determina o partnerId a ser usado
+    let targetPartnerId = currentUserId;
+    
+    // Apenas masters podem especificar um partnerId diferente
+    if (args.partnerId) {
+      if (currentUserRole !== "master") {
+        throw new Error("Apenas masters podem criar employees para outros partners");
+      }
+      
+      // Verifica se o partner especificado existe
+      const targetPartner = await ctx.db.get(args.partnerId);
+      if (!targetPartner || targetPartner.role !== "partner") {
+        throw new Error("Partner especificado não encontrado ou não é um partner válido");
+      }
+      
+      targetPartnerId = args.partnerId;
+    }
 
     // Verifica se já existe usuário com esse e-mail
     console.log(`Verificando se já existe usuário com email ${args.email}...`);
@@ -376,7 +420,7 @@ export const createEmployee = mutationWithRole(["partner", "master"])({
       const user = existing[0];
       await ctx.db.patch(user._id, {
         role: "employee",
-        partnerId: currentUserId,
+        partnerId: targetPartnerId,
       });
       console.log(`Usuário atualizado com ID: ${user._id}`);
       
@@ -398,7 +442,7 @@ export const createEmployee = mutationWithRole(["partner", "master"])({
       email: args.email,
       image: args.image,
       role: "employee",
-      partnerId: currentUserId,
+      partnerId: targetPartnerId,
     });
     console.log(`Novo employee criado com ID: ${newEmployeeId}`);
 
@@ -607,6 +651,7 @@ export const createOrganization = mutationWithRole(["partner", "master"])({
     description: v.optional(v.string()),
     type: v.string(), // "restaurant", "accommodation", "rental_service", "activity_service", "event_service"
     image: v.optional(v.string()),
+    partnerId: v.optional(v.id("users")), // Opcional - apenas masters podem especificar
     settings: v.optional(v.object({
       theme: v.optional(v.string()),
       contactInfo: v.optional(v.object({
@@ -626,9 +671,27 @@ export const createOrganization = mutationWithRole(["partner", "master"])({
     }
 
     // Valida o tipo de organização
-    const validTypes = ["restaurant", "rental_service", "activity_service", "event_service"];
+    const validTypes = ["restaurant", "accommodation", "rental_service", "activity_service", "event_service"];
     if (!validTypes.includes(args.type)) {
       throw new Error("Tipo de organização inválido");
+    }
+
+    // Determina o partnerId a ser usado
+    let targetPartnerId = currentUserId;
+    
+    // Apenas masters podem especificar um partnerId diferente
+    if (args.partnerId) {
+      if (currentUserRole !== "master") {
+        throw new Error("Apenas masters podem criar organizações para outros partners");
+      }
+      
+      // Verifica se o partner especificado existe
+      const targetPartner = await ctx.db.get(args.partnerId);
+      if (!targetPartner || targetPartner.role !== "partner") {
+        throw new Error("Partner especificado não encontrado ou não é um partner válido");
+      }
+      
+      targetPartnerId = args.partnerId;
     }
 
     const now = Date.now();
@@ -638,7 +701,7 @@ export const createOrganization = mutationWithRole(["partner", "master"])({
       description: args.description,
       type: args.type,
       image: args.image,
-      partnerId: currentUserId,
+      partnerId: targetPartnerId,
       isActive: true,
       settings: args.settings,
       createdAt: now,

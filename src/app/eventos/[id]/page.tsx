@@ -6,10 +6,20 @@ import { usePublicEvent } from "@/lib/services/eventService";
 import { ChatButton } from "@/components/chat/ChatButton";
 import EventDetails from "@/components/cards/EventDetails";
 
+// Review components
+import { ReviewStats, ReviewsList } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
+
 export default function EventPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   // Usar diretamente o hook usePublicEvent (mesmo padrão das atividades)
   const { event, isLoading } = usePublicEvent(params.id);
+
+  // Get review stats for this event
+  const { data: reviewStats } = useReviewStats({
+    assetId: params.id,
+    assetType: 'events'
+  });
 
   // Lidar com caso 404
   if (!isLoading && !event) {
@@ -34,7 +44,10 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <EventDetails event={event} />
+      <EventDetails 
+        event={event} 
+        reviewStats={reviewStats}
+      />
       
       {/* Botão de Chat Flutuante */}
       <ChatButton

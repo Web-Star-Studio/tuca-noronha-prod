@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, Clock, MapPin, Users, Plus, Filter } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Users, Plus, Filter, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { ReservationsSectionProps } from '../types/dashboard';
 import { getReservationIconType } from '../utils/reservations';
+import { VoucherDownloadButton } from '@/components/vouchers';
 
 const ReservationIcon = ({ type }: { type: string }) => {
   const IconComponent = getReservationIconType(type);
@@ -113,7 +114,10 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
           {/* Main Content - Lista de Reservas */}
           <div className="lg:col-span-3">
             <div className="grid gap-4">
-              {reservations.map((reservation) => (
+              {reservations.map((reservation) => {
+                const reservationDate = reservation.date ? new Date(reservation.date) : null;
+
+                return (
                 <motion.div 
                   key={reservation.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -149,17 +153,17 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                               <CalendarDays className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
                               {reservation.type === 'accommodation' ? (
                                 <span>
-                                  {reservation.checkIn && format(reservation.checkIn, "dd MMM", { locale: ptBR })} - {reservation.checkOut && format(reservation.checkOut, "dd MMM", { locale: ptBR })}
+                                  {reservation.checkIn && format(new Date(reservation.checkIn), "dd MMM", { locale: ptBR })} - {reservation.checkOut && format(new Date(reservation.checkOut), "dd MMM", { locale: ptBR })}
                                 </span>
                               ) : (
-                                <span>{reservation.date && format(reservation.date, "dd MMM, yyyy", { locale: ptBR })}</span>
+                                <span>{reservationDate && isValid(reservationDate) ? format(reservationDate, "dd MMM, yyyy", { locale: ptBR }) : "Data não disponível"}</span>
                               )}
                             </div>
 
-                            {reservation.type === 'restaurant' && reservation.date && (
+                            {reservation.type === 'restaurant' && reservationDate && isValid(reservationDate) && (
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
-                                <span>{format(reservation.date, "HH:mm", { locale: ptBR })}</span>
+                                <span>{format(reservationDate, "HH:mm", { locale: ptBR })}</span>
                               </div>
                             )}
 
@@ -183,6 +187,20 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                         >
                           Detalhes
                         </Button>
+                        
+                        {/* Voucher button - show only for confirmed bookings with confirmation code */}
+                        {(reservation.status === 'confirmed' || reservation.status === 'completed') && reservation.confirmationCode && (
+                          <VoucherDownloadButton
+                            bookingId={reservation.id}
+                            bookingType={reservation.type as any}
+                            variant="ghost"
+                            size="sm"
+                            showIcon={true}
+                            showLabel={true}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          />
+                        )}
+                        
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -198,7 +216,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                     </CardFooter>
                   </Card>
                 </motion.div>
-              ))}
+              )})}
             </div>
           </div>
         </div>

@@ -94,7 +94,7 @@ const FloatingSupportButton: React.FC = () => {
     isUrgent: false,
   });
 
-  const createSupportMessage = useMutation(api["domains/support/mutations"].createSupportMessage);
+  const createSupportMessage = useMutation(api.domains.support.mutations.createSupportMessage);
 
   const resetForm = () => {
     setFormData({

@@ -10,7 +10,8 @@ import type {
   PackageRequestReceivedEmailData,
   PartnerNewBookingEmailData,
   WelcomeNewUserEmailData,
-  SupportMessageEmailData
+  SupportMessageEmailData,
+  VoucherEmailData
 } from "./types";
 
 /**
@@ -464,6 +465,77 @@ export const sendSupportNotificationEmail = internalAction({
       };
     } catch (error) {
       console.error("Failed to send support notification email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Enviar email com voucher pronto
+ */
+export const sendVoucherEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    assetName: v.string(),
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package")
+    ),
+    confirmationCode: v.string(),
+    voucherNumber: v.string(),
+    bookingDate: v.optional(v.string()),
+    totalPrice: v.optional(v.number()),
+    partnerName: v.optional(v.string()),
+    bookingDetails: v.any(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const emailData: VoucherEmailData = {
+        type: "voucher_ready",
+        to: args.customerEmail,
+        subject: `Seu Voucher Está Pronto - ${args.voucherNumber}`,
+        customerName: args.customerName,
+        assetName: args.assetName,
+        bookingType: args.bookingType,
+        confirmationCode: args.confirmationCode,
+        voucherNumber: args.voucherNumber,
+        bookingDate: args.bookingDate,
+        totalPrice: args.totalPrice,
+        partnerName: args.partnerName,
+        bookingDetails: args.bookingDetails,
+      };
+
+      const result = await sendQuickEmail(emailData);
+      
+      // Salvar log no banco de dados
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: result.type,
+          to: result.to,
+          subject: result.subject,
+          status: result.status,
+          error: result.error,
+          sentAt: result.sentAt,
+        });
+      }
+
+      return {
+        success: result.status === "sent",
+        error: result.error,
+      };
+    } catch (error) {
+      console.error("Failed to send voucher email:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),

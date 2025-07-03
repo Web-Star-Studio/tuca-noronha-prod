@@ -2,99 +2,195 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Development Commands
 
-- Build: `npm run build`
-- Development: `npm run dev`
-- Start: `npm run start`
-- Lint: `npm run lint`
-- TypeCheck: `npx tsc --noEmit`
-- Convex Development: `npx convex dev`
+```bash
+# Development
+npm run dev              # Start Next.js development server with Turbo
+npx convex dev          # Start Convex backend in development mode
+
+# Build and Production
+npm run build           # Build Next.js for production
+npm start              # Start Next.js production server
+
+# Code Quality
+npm run lint           # Run ESLint
+npx tsc --noEmit      # TypeScript type checking
+
+# Testing
+npm run test:openai            # Test OpenAI integration
+npm run test:integration       # Test Convex integration
+npm run test:email            # Test email functionality
+npm run test:webhook          # Test subscription webhooks
+npm run test:webhook-endpoint # Test webhook endpoints
+
+# Special Scripts
+npm run setup:subscription    # Setup guide subscription system
+npm run browser-tools-server # Start browser tools server
+```
 
 ## Architecture Overview
 
-This is a travel platform (Tuca Noronha) built with Next.js 15, React 19, Convex database, and Clerk authentication. The platform serves multiple user types in a tourism/travel booking context:
+This is a **Tuca Noronha Tourism Platform** built with:
+- **Frontend**: Next.js 15 with App Router + React 19
+- **Backend**: Convex (database + serverless functions)  
+- **Authentication**: Clerk with custom role-based access control (RBAC)
+- **Payments**: Stripe integration
+- **Styling**: TailwindCSS + Shadcn/ui components
 
-- **Travelers**: Book accommodations, activities, events, vehicles, and restaurants
-- **Partners**: Manage their assets (hotels, restaurants, events, activities, vehicles) and bookings
-- **Employees**: Limited access to specific partner assets based on permissions
-- **Masters**: Full administrative access
+### Key Directories
 
-### Key Features
+- `src/app/` - Next.js App Router with route protection via middleware
+- `src/components/` - React components organized by domain (cards, dashboard, filters, ui)
+- `src/lib/` - Utilities, hooks, and services
+- `convex/` - Backend functions organized by business domains
+- `convex/domains/` - Domain-driven organization of backend logic
+- `convex/schema.ts` - Database schema definition
 
-- Multi-tenant RBAC system with asset-level permissions
-- Event management with Sympla integration
-- Restaurant reservations with detailed profiles
-- Vehicle booking system
-- Media management for assets
-- Real-time booking management
+### Domain Architecture
 
-### Domain Structure
+The backend is organized by business domains in `convex/domains/`:
 
-The `/convex/domains/` directory organizes business logic by feature:
-- `activities/`: Activity booking and management
-- `bookings/`: Comprehensive booking system for all services
-- `events/`: Event management with external integrations
-- `media/`: File storage and media handling
-- `rbac/`: Role-based access control system
-- `restaurants/`: Restaurant profiles and reservations
-- `users/`: User management and authentication
-- `vehicles/`: Vehicle rental management
+- **activities/** - Activity booking system with tickets support
+- **events/** - Event management with Sympla integration  
+- **restaurants/** - Restaurant reservations with table management
+- **accommodations/** - Accommodation bookings
+- **vehicles/** - Vehicle rental system
+- **packages/** - Travel packages combining multiple services
+- **bookings/** - Unified booking system across all asset types
+- **chat/** - Real-time messaging between travelers and partners
+- **rbac/** - Role-based access control system
+- **users/** - User management and authentication
+- **stripe/** - Payment processing and webhooks
+- **media/** - File upload and management
+- **notifications/** - System notifications
+- **email/** - Email templates and sending
+- **reviews/** - Review and rating system
+- **vouchers/** - Digital voucher generation
+- **audit/** - System audit logging
+- **subscriptions/** - Guide subscription system
 
-## Code Style
+## RBAC System
 
-- TypeScript with strict type checking
-- React functional components with hooks
-- Next.js App Router conventions
-- File-based routing in `src/app` directory
-- Import React components using absolute imports with `@/*` alias
-- Use TailwindCSS for styling with ui-config.ts constants
-- Convex functions follow new function syntax from convex_rules.md
-- ESLint with Next.js core web vitals and TypeScript rules
-- Explicit type annotations for props using React.ReactNode
-- Non-nullable assertion (!) only when value is guaranteed
-- Client components marked with "use client" directive
-- Follow Clerk authentication patterns for user management
-- Use UI components from ui-config.ts for consistent styling
-- Self-closing tags for empty HTML elements
+The platform implements a sophisticated role-based access control system:
 
-## RBAC Implementation
+### User Roles
+1. **Traveler** - End users who book services
+2. **Partner** - Business owners who provide services  
+3. **Employee** - Partner staff with delegated permissions
+4. **Master** - Platform administrators
 
-- Users have roles: 'traveler', 'partner', 'employee', 'master'
-- Asset-level permissions stored in `assetPermissions` table
-- Partners can assign employees to specific assets with granular permissions
-- All Convex functions check user permissions before executing operations
-- Front-end conditionally renders based on user role and permissions
+### Key RBAC Features
+- Partners can create employees and assign granular permissions
+- Employees can only access specific assets assigned by their partner
+- Asset permissions are stored in `assetPermissions` table
+- Organization-based grouping through `partnerOrganizations`
+- Comprehensive audit logging of all permission changes
 
-## Booking System
+## Convex Best Practices
 
-The platform features a comprehensive booking system inspired by industry leaders like OpenTable, Booking.com, and Movida:
+### Function Organization
+- Use the new function syntax with explicit args/returns validators
+- Public functions: `query`, `mutation`, `action` for API endpoints
+- Internal functions: `internalQuery`, `internalMutation`, `internalAction` for backend-only logic
+- File-based routing: functions in `convex/domains/users/queries.ts` become `api.domains.users.queries.functionName`
 
-### Booking Types
-- **Activities**: Date/time-based bookings with participant limits and optional multiple ticket types
-- **Events**: Ticket-based bookings with quantity limits and event-specific details
-- **Restaurants**: Table reservations with party size limits and restaurant hours validation
-- **Vehicles**: Date-range rentals with availability checking and additional options
+### Schema Design
+- All tables defined in `convex/schema.ts`
+- Comprehensive indexing for performance
+- Normalized relationships with proper foreign keys
+- Soft deletes where appropriate using `isActive` flags
 
-### Key Features
-- Unified booking schemas with common fields (customer info, status, payment tracking)
-- Real-time availability checking and conflict detection
-- Automatic confirmation code generation
-- Comprehensive booking management dashboard for users
-- Partner dashboard for managing incoming bookings
-- Email validation and phone number formatting
-- Booking cancellation with business rules
-- Status tracking (pending, confirmed, canceled, completed, refunded)
+### Security
+- All functions validate user authentication and authorization
+- RBAC checks in every mutation that modifies assets
+- Asset permissions verified before any CRUD operations
+- Audit logging for sensitive operations
 
-### Components
-- Individual booking forms for each service type (`/src/components/bookings/`)
-- Management dashboard with search, filtering, and status updates
-- Booking confirmation pages with shareable links
-- Partner booking management interfaces
+## Asset Management
 
-### Database Schema
-- `activityBookings`: Activity-specific reservations
-- `eventBookings`: Event ticket purchases  
-- `restaurantReservations`: Restaurant table bookings
-- `vehicleBookings`: Vehicle rental bookings
-- All tables include customer info, status tracking, and audit fields
+All business assets (activities, events, restaurants, vehicles, accommodations, packages) follow similar patterns:
+
+### Common Fields
+- `partnerId` - Owner of the asset
+- `isActive` - Soft delete flag
+- `isFeatured` - Promotional flag
+- Stripe integration fields for payments
+- Media galleries and descriptions
+
+### Booking System
+- Unified booking tables for each asset type
+- Status tracking: pending → confirmed → completed/cancelled
+- Payment integration with Stripe
+- Confirmation codes and customer info storage
+
+## Authentication & Authorization
+
+### Clerk Integration
+- User roles stored in Clerk metadata
+- Organization support for partner teams
+- Middleware protection for routes in `src/middleware.ts`
+
+### Route Protection
+- `(protected)/` routes require authentication
+- Role-based access control in components
+- Server-side verification in Convex functions
+
+## File Upload & Media
+
+### Convex Storage
+- Files uploaded through `media` domain
+- Metadata tracking in `media` table
+- Public/private access control
+- Partner-scoped file management
+
+## Development Guidelines
+
+### Code Organization
+- Domain-driven design in backend
+- Component-based frontend architecture
+- Absolute imports using `@/` alias
+- TypeScript strict mode enabled
+
+### Convex Patterns
+- Always include validators for args and returns
+- Use proper indexes for query performance
+- Implement optimistic updates where appropriate
+- Handle errors gracefully with user feedback
+
+### UI/UX
+- Consistent component patterns using Shadcn/ui
+- Responsive design with Tailwind utilities
+- Loading states and error boundaries
+- Accessibility considerations
+
+## Key Integrations
+
+### Stripe
+- Product/price creation for bookings
+- Webhook handling for payment events
+- Customer management
+- Refund processing
+
+### Email System  
+- Template-based emails using React Email
+- Transactional emails via Resend
+- Email logging and status tracking
+- Automated booking confirmations
+
+### File Management
+- Convex storage for all uploads
+- Image optimization and resizing
+- Gallery management for assets
+- Partner-scoped access control
+
+## Testing Strategy
+
+- Integration tests for Convex functions
+- Email template testing
+- Webhook endpoint testing  
+- OpenAI integration testing
+
+## Environment Configuration
+
+Required environment variables are defined in the codebase. The platform supports both development and production deployments with Convex and Vercel.

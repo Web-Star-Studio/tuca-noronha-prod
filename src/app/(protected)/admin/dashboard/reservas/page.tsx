@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvex } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,7 @@ import {
   Mail,
   Phone,
   Eye,
+  FileText,
 } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -52,6 +53,7 @@ import { AssetSelector } from "@/components/dashboard/AssetSelector";
 import { motion } from "framer-motion";
 import { DashboardPageHeader } from "../components";
 import { BookingDetailsModal } from "@/components/dashboard/bookings/BookingManagement";
+import { VoucherDownloadButton } from "@/components/vouchers";
 
 // Helper function to safely format dates
 const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string => {
@@ -115,6 +117,9 @@ export default function AdminBookingsPage() {
   const [partnerNotes, setPartnerNotes] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  // Get convex client for imperative calls
+  const convex = useConvex();
 
   // Asset context
   const { selectedAsset } = useAsset();
@@ -213,31 +218,53 @@ export default function AdminBookingsPage() {
   // Handle booking confirmation
   const handleConfirmBooking = async (booking: any) => {
     if (!selectedAsset) return;
-    
+
     try {
+      // Fetch asset details to pass to the mutation
+      const assetDetails = await convex.query(api.domains.shared.queries.getAssetDetails, {
+        assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId,
+        assetType: selectedAsset.assetType,
+      });
+
+      if (!assetDetails) {
+        throw new Error("Não foi possível encontrar os detalhes do ativo da reserva.");
+      }
+      
+      const assetInfo = {
+        name: assetDetails.name,
+        address: assetDetails.address,
+        phone: assetDetails.phone,
+        email: assetDetails.email,
+        description: assetDetails.description,
+      };
+
       switch (selectedAsset.assetType) {
         case "activities":
           await confirmActivityBooking({
             bookingId: booking._id,
             partnerNotes: partnerNotes || undefined,
+            assetInfo,
           });
           break;
         case "events":
           await confirmEventBooking({
             bookingId: booking._id,
             partnerNotes: partnerNotes || undefined,
+            assetInfo,
           });
           break;
         case "restaurants":
           await confirmRestaurantReservation({
             reservationId: booking._id,
             partnerNotes: partnerNotes || undefined,
+            assetInfo,
           });
           break;
         case "vehicles":
           await confirmVehicleBooking({
             bookingId: booking._id,
             partnerNotes: partnerNotes || undefined,
+            assetInfo,
           });
           break;
       }
@@ -349,6 +376,23 @@ export default function AdminBookingsPage() {
     
     const Icon = icons[assetType as keyof typeof icons] || Building2;
     return <Icon className="h-4 w-4" />;
+  };
+
+  const getBookingTypeForVoucher = (assetType: string) => {
+    switch (assetType) {
+      case "restaurants":
+        return "restaurant";
+      case "events":
+        return "event";
+      case "activities":
+        return "activity";
+      case "vehicles":
+        return "vehicle";
+      case "accommodations":
+        return "accommodation";
+      default:
+        return "package";
+    }
   };
 
   // Helper function to format booking date display
@@ -578,6 +622,19 @@ export default function AdminBookingsPage() {
                               }
                             />
                             
+                            {/* Voucher button - show only for confirmed bookings */}
+                            {(booking.status === "confirmed" || booking.status === "completed") && booking.confirmationCode && (
+                              <VoucherDownloadButton
+                                bookingId={booking._id}
+                                bookingType={getBookingTypeForVoucher(selectedAsset.assetType)}
+                                variant="outline"
+                                size="sm"
+                                showIcon={true}
+                                showLabel={false}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              />
+                            )}
+                            
                             {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
                               <>
                                 <Button
@@ -604,21 +661,6 @@ export default function AdminBookingsPage() {
                                   Cancelar
                                 </Button>
                               </>
-                            )}
-                            
-                            {booking.status === "confirmed" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedBooking(booking);
-                                  setShowCancelDialog(true);
-                                }}
-                                className="text-red-600 border-red-200 hover:bg-red-50 gap-1"
-                              >
-                                <X className="w-4 h-4" />
-                                Cancelar
-                              </Button>
                             )}
                           </div>
                         </div>

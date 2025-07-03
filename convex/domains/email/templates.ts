@@ -1,6 +1,7 @@
 "use node";
 
 import type { EmailData } from "./types";
+import { voucherEmailTemplate } from "./templates/voucher";
 
 // Função auxiliar para formatar moeda
 const formatCurrency = (value: number): string => {
@@ -633,6 +634,8 @@ export const getEmailTemplate = (data: EmailData): string => {
       return getPartnerNewBookingTemplate(data);
     case 'welcome_new_user':
       return getWelcomeNewUserTemplate(data);
+    case 'voucher_ready':
+      return voucherEmailTemplate(data);
     default:
       // Template genérico para tipos não implementados
       return getBaseTemplate(`

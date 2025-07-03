@@ -32,45 +32,33 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { WishlistButton } from "@/components/ui/wishlist-button";
 
+// Review components
+import { ReviewStats, ReviewsList } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
+import type { Id } from "@/../convex/_generated/dataModel";
+
 export default function ActivityPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+
   const { activity, isLoading } = usePublicActivity(params.id);
-  const [quantity, setQuantity] = useState(1);
+  
+  // Get review stats for this activity
+  const { data: reviewStats } = useReviewStats({
+    assetId: params.id,
+    assetType: 'activities'
+  });
 
-  const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-
-  // Initialize ticket quantities when activity is loaded
-  useEffect(() => {
-    if (activity?.tickets && activity.tickets.length > 0) {
-      const initialQuantities: Record<string, number> = {};
-      activity.tickets.forEach(ticket => {
-        initialQuantities[ticket.id] = 1;
-      });
-      setTicketQuantities(initialQuantities);
-    } else {
-      // Default ticket (single ticket case)
-      setTicketQuantities({ "default": 1 });
-    }
-  }, [activity?.tickets]);
-
-  const updateTicketQuantity = (ticketId: string, amount: number) => {
-    setTicketQuantities(prev => ({
-      ...prev,
-      [ticketId]: Math.max(1, (prev[ticketId] || 1) + amount)
-    }));
-  };
-
-  // Lidar com caso 404
+  // Handle 404 case
   if (!isLoading && !activity) {
     notFound();
   }
 
   if (isLoading || !activity) {
     return (
-      <div className="container mx-auto px-4 py-8 mt-20">
+      <div className="container mx-auto py-12 flex flex-col items-center justify-center">
         <div className="animate-pulse space-y-8">
-          {/* Loading skeleton */}
           <div className="h-10 w-40 bg-gray-200 rounded" />
           <div className="h-96 w-full bg-gray-200 rounded-xl" />
           <div className="space-y-4">
@@ -83,31 +71,39 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
     );
   }
 
-  // Calcular preço total
-  const totalPrice = activity.price * quantity;
+  const shareUrl = `${window.location.origin}/atividades/${params.id}`;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: activity.title,
+          text: activity.shortDescription,
+          url: shareUrl,
+        });
+      } catch (error) {
+        console.log("Erro ao compartilhar:", error);
+      }
+    } else {
+      // Fallback: copiar URL para clipboard
+      navigator.clipboard.writeText(shareUrl);
+      alert("Link copiado para a área de transferência!");
+    }
+  };
 
   return (
-    <>
-      <main className="pb-20">
-        {/* Hero Image Section */}
-        <div className="relative w-full h-[70vh] overflow-hidden">
-          {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
-            <Image
-              src={activity.imageUrl}
-              alt={activity.title}
-              fill
-              className="object-cover brightness-[0.85]"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-              <div className="text-gray-500 text-center">
-                <Compass className="h-24 w-24 mx-auto mb-4" />
-                <p className="text-xl">Imagem não disponível</p>
-              </div>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="relative">
+        {/* Hero Image */}
+        <div className="relative h-[70vh] overflow-hidden">
+          <Image
+            src={activity.imageUrl || "/images/bg-pattern.png"}
+            alt={activity.title}
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/30" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
             <div className="max-w-3xl">
@@ -139,11 +135,18 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-shadow-sm">
                 {activity.title}
               </h1>
+              
+              {/* Review Stats in Hero */}
               <div className="flex items-center gap-1 text-yellow-400 mb-4">
                 <Star className="h-5 w-5 fill-yellow-400" />
-                <span className="font-medium">{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
-                <span className="text-white/80 text-sm">(124 avaliações)</span>
+                <span className="font-medium">
+                  {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}
+                </span>
+                <span className="text-white/80 text-sm">
+                  ({reviewStats?.totalReviews || 0} avaliações)
+                </span>
               </div>
+              
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
@@ -188,6 +191,12 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                       Ingressos
                     </TabsTrigger>
                   )}
+                  <TabsTrigger
+                    value="reviews"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                  >
+                    Avaliações
+                  </TabsTrigger>
                   <TabsTrigger
                     value="policies"
                     className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
@@ -276,84 +285,52 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                   </div>
 
                   {/* Gallery */}
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Galeria</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {activity.galleryImages.map((image, index) => (
-                        <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                          key={index}
-                          className="relative aspect-video rounded-lg overflow-hidden"
-                        >
-                          {image && image.trim() !== '' ? (
+                  {activity.galleryImages && activity.galleryImages.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4">Galeria de fotos</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {activity.galleryImages.map((image, index) => (
+                          <div
+                          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                            key={index}
+                            className="relative aspect-square rounded-lg overflow-hidden"
+                          >
                             <Image
                               src={image}
                               alt={`${activity.title} - Imagem ${index + 1}`}
                               fill
                               className="object-cover hover:scale-105 transition-transform duration-300"
                             />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <div className="text-gray-400 text-sm text-center">
-                                <div className="h-8 w-8 bg-gray-300 rounded mx-auto mb-2"></div>
-                                Imagem não disponível
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* Itinerary tab */}
-                <TabsContent value="itinerary" className="space-y-8 mt-2">
-                  <div>
-                    <h2 className="text-2xl font-serif font-semibold mb-6 text-gray-800 flex items-center">
-                      <span className="bg-gradient-to-r from-blue-600 to-blue-400 h-8 w-1.5 rounded-full mr-3" />
-                      Itinerário
-                    </h2>
-                    <div className="relative py-2">
-                      {/* Linha de fundo decorativa */}
-                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-100 via-blue-200 to-blue-100 rounded-full" />
-                      
-                      <div className="space-y-8">
-                        {activity.itineraries.map((step, index) => (
-                          <div 
-                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                            key={index} 
-                            className="relative pl-16 group transition-all duration-300 hover:translate-x-1"
-                          >
-                            {/* Círculo com número */}
-                            <div className="absolute left-0 top-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-200 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
-                              <span className="text-white font-bold">{index + 1}</span>
-                            </div>
-                            
-                            {/* Conteúdo */}
-                            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
-                              <div className="flex items-center mb-2">
-                                <div className="h-1.5 w-10 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full mr-2" />
-                                <h3 className="font-medium text-blue-700">Etapa {index + 1}</h3>
-                              </div>
-                              <p className="text-gray-700 leading-relaxed">{step}</p>
-                            </div>
-                            
-                            {/* Linha conectora decorativa */}
-                            {index < activity.itineraries.length - 1 && (
-                              <div className="absolute left-6 top-12 h-8 w-0.5 bg-gradient-to-b from-blue-400 to-blue-200" />
-                            )}
                           </div>
                         ))}
                       </div>
                     </div>
-                    
-                    {/* Informação adicional */}
-                    <div className="mt-8 bg-blue-50 rounded-xl p-5 border border-blue-100">
-                      <div className="flex items-center text-blue-800 mb-2">
-                        <Info className="h-5 w-5 mr-2" />
-                        <h3 className="font-medium">Informação importante</h3>
-                      </div>
-                      <p className="text-blue-700 text-sm">O itinerário pode sofrer alterações dependendo das condições climáticas e da maré. Nosso guia sempre priorizará sua segurança e conforto.</p>
+                  )}
+                </TabsContent>
+
+                {/* Itinerary tab */}
+                <TabsContent value="itinerary" className="space-y-6 mt-2">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-4">Itinerário</h2>
+                    <div className="space-y-4">
+                      {activity.itinerary && activity.itinerary.length > 0 ? (
+                        activity.itinerary.map((item, index) => (
+                          <div
+                          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                            key={index}
+                            className="border-l-4 border-blue-500 pl-4 py-2"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Clock className="h-4 w-4 text-blue-600" />
+                              <span className="font-medium text-blue-600">{item.time}</span>
+                            </div>
+                            <h4 className="font-medium mb-1">{item.title}</h4>
+                            <p className="text-gray-600 text-sm">{item.description}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-600">Itinerário detalhado será fornecido no momento da reserva.</p>
+                      )}
                     </div>
                   </div>
                 </TabsContent>
@@ -361,171 +338,177 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                 {/* Tickets tab */}
                 {activity.hasMultipleTickets && (
                   <TabsContent value="tickets" className="space-y-6 mt-2">
-                    <h2 className="text-2xl font-semibold mb-4">
-                      Ingressos Disponíveis
-                    </h2>
-                    
-                    <div className="space-y-4">
-                      {/* Multiple tickets case */}
-                      {activity.tickets && activity.tickets.length > 0 ? (
-                        activity.tickets.map((ticket) => (
-                          <Card
-                            key={ticket.id}
-                            className={`transition-all border-gray-200 hover:border-blue-300 ${
-                              selectedTicketId === ticket.id
-                                ? "ring-2 ring-blue-500 border-blue-300 shadow-md"
-                                : "shadow-sm"
-                            }`}
-                            onClick={() => setSelectedTicketId(ticket.id)}
-                          >
-                            <CardContent className="p-6">
-                              <div className="flex flex-col md:flex-row md:items-center justify-between">
-                                <div className="mb-4 md:mb-0">
-                                  <div className="flex items-center">
-                                    <h3 className="text-lg font-semibold">
-                                      {ticket.name}
-                                    </h3>
-                                    {ticket.type === "vip" && (
-                                      <Badge className="ml-2 bg-amber-500">
-                                        VIP
-                                      </Badge>
-                                    )}
-                                    {ticket.type === "discount" && (
-                                      <Badge className="ml-2 bg-green-500">
-                                        Promocional
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-gray-600 text-sm mt-1">
-                                    {ticket.description}
-                                  </p>
-
-                                  {ticket.benefits && ticket.benefits.length > 0 && (
-                                    <div className="mt-3">
-                                      <h4 className="text-sm font-medium text-gray-800">
-                                        Inclui:
-                                      </h4>
-                                      <ul className="text-sm text-gray-600 mt-1 space-y-1">
-                                        {ticket.benefits.map((item, idx) => (
-                                          <li
-                                            key={idx}
-                                            className="flex items-start"
-                                          >
-                                            <span className="text-blue-500 mr-1.5">
-                                              ✓
-                                            </span>{" "}
-                                            {item}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
+                    <div>
+                      <h2 className="text-2xl font-semibold mb-4">Tipos de ingresso</h2>
+                      <div className="space-y-4">
+                        {activity.ticketTypes && activity.ticketTypes.length > 0 ? (
+                          activity.ticketTypes.map((ticket, index) => (
+                            <Card
+                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                              key={index}
+                              className="border-gray-200"
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h4 className="font-medium">{ticket.name}</h4>
+                                  <span className="font-semibold text-blue-600">
+                                    {formatCurrency(ticket.price)}
+                                  </span>
                                 </div>
-
-                                <div className="flex flex-col items-end">
-                                  <div className="text-xl font-bold text-gray-900 mb-2">
-                                    {ticket.price > 0 ? formatCurrency(ticket.price) : 'Gratuito'}
-                                  </div>
-                                  <div className="text-sm text-gray-500 mb-3">
-                                    {ticket.availableQuantity > 0 ? `${ticket.availableQuantity} vagas disponíveis` : 'Vagas ilimitadas'}
-                                  </div>
-
-                                  <div className="flex items-center">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateTicketQuantity(ticket.id, -1);
-                                      }}
-                                      className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-l-md bg-gray-50 hover:bg-gray-100"
-                                      disabled={(ticketQuantities[ticket.id] || 1) <= 1}
-                                    >
-                                      -
-                                    </button>
-                                    <div className="w-10 h-8 flex items-center justify-center border-t border-b border-gray-300 bg-white">
-                                      {ticketQuantities[ticket.id] || 1}
-                                    </div>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateTicketQuantity(ticket.id, 1);
-                                      }}
-                                      className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-r-md bg-gray-50 hover:bg-gray-100"
-                                      disabled={ticket.availableQuantity > 0 && (ticketQuantities[ticket.id] || 1) >= Math.min(ticket.availableQuantity, ticket.maxPerOrder)}
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-
-                                  <Button
-                                    className="mt-4 w-full md:w-auto"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedTicketId(ticket.id);
-                                    }}
-                                  >
-                                    Selecionar
-                                  </Button>
+                                <p className="text-gray-600 text-sm mb-2">{ticket.description}</p>
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  <span>Disponível: {ticket.available}</span>
+                                  <span>Máximo: {ticket.maxPerPerson} por pessoa</span>
                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      ) : (
-                        <p className="text-gray-600">Nenhum ingresso disponível no momento.</p>
-                      )}
+                              </CardContent>
+                            </Card>
+                          ))
+                        ) : (
+                          <p className="text-gray-600">Informações sobre ingressos serão fornecidas no momento da reserva.</p>
+                        )}
+                      </div>
                     </div>
                   </TabsContent>
                 )}
 
-                {/* Policies tab */}
-                <TabsContent value="policies" className="space-y-8 mt-2">
+                {/* Reviews tab */}
+                <TabsContent value="reviews" className="space-y-6 mt-2">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-6">Política de cancelamento</h2>
-                    <Alert className="bg-amber-50 border-amber-200">
-                      <AlertTriangle className="h-5 w-5 text-amber-600" />
-                      <AlertTitle className="text-amber-800 font-medium">Importante</AlertTitle>
-                      <AlertDescription className="text-amber-700">
-                        Leia atentamente nossa política de cancelamento antes de reservar.
-                      </AlertDescription>
-                    </Alert>
+                    <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
                     
-                    <div className="mt-6 space-y-4">
-                      {activity.cancelationPolicy.map((policy, index) => (
-                        <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                          key={index}
-                          className="flex items-start gap-3"
-                        >
-                          <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                          <p className="text-gray-700">{policy}</p>
+                    {/* Review Stats */}
+                    <div className="mb-8">
+                      <ReviewStats
+                        totalReviews={reviewStats?.totalReviews || 0}
+                        averageRating={reviewStats?.averageRating || 0}
+                        ratingDistribution={reviewStats?.ratingDistribution || {}}
+                        recommendationPercentage={reviewStats?.recommendationPercentage || 0}
+                        detailedAverages={reviewStats?.detailedAverages}
+                        className="bg-white border border-gray-200 rounded-lg p-6"
+                      />
+                    </div>
+
+                    {/* Reviews List */}
+                    <ReviewsList
+                      itemType="activities"
+                      itemId={params.id}
+                      className="space-y-4"
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Policies tab */}
+                <TabsContent value="policies" className="space-y-6 mt-2">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-4">Políticas</h2>
+                    
+                    {/* Cancellation Policy */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-3">Política de cancelamento</h3>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm text-yellow-800">
+                              {activity.cancelationPolicy?.join(' ') || 
+                                "Cancelamento gratuito até 24 horas antes da atividade. Após esse período, será cobrada taxa de 50% do valor total."
+                              }
+                            </p>
+                          </div>
                         </div>
-                      ))}
+                      </div>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-3">Requisitos</h3>
+                      <div className="space-y-2">
+                        {activity.requirements && activity.requirements.length > 0 ? (
+                          activity.requirements.map((req, index) => (
+                            <div
+                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                              key={index}
+                              className="flex items-start gap-2"
+                            >
+                              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm">{req}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-600 text-sm">
+                            Não há requisitos específicos para esta atividade.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Safety Guidelines */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Diretrizes de segurança</h3>
+                      <div className="space-y-2">
+                        {activity.safetyGuidelines && activity.safetyGuidelines.length > 0 ? (
+                          activity.safetyGuidelines.map((guideline, index) => (
+                            <div
+                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                              key={index}
+                              className="flex items-start gap-2"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm">{guideline}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-600 text-sm">
+                            Diretrizes de segurança serão fornecidas no momento da atividade.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
               </Tabs>
             </div>
 
-            {/* Sticky Sidebar */}
+            {/* Sticky sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24 space-y-6">
-                {/* Activity Booking Form */}
-                <ActivityBookingForm
-                  activityId={params.id as any}
-                  activity={{
-                    title: activity.title,
-                    price: activity.price,
-                    minParticipants: activity.minParticipants,
-                    maxParticipants: activity.maxParticipants,
-                    hasMultipleTickets: activity.hasMultipleTickets,
-                  }}
-                  onBookingSuccess={(booking) => {
-                    // Redirect to user dashboard reservations page
-                    window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
-                  }}
-                />
+              <div className="sticky top-8 space-y-6">
+                {/* Pricing card */}
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <span className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(activity.price)}
+                        </span>
+                        <span className="text-gray-500 text-sm ml-1">por pessoa</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <WishlistButton
+                          itemId={params.id}
+                          itemType="activities"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleShare}
+                          className="h-10 w-10 p-0"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
 
-                {/* Quick Info Card */}
+                    <Button
+                      onClick={() => setShowBookingForm(true)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3"
+                    >
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Reservar agora
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Quick info */}
                 <Card className="border-gray-200 shadow-sm">
                   <CardContent className="p-6">
                     <h4 className="font-medium mb-4">Informações rápidas</h4>
@@ -548,21 +531,8 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                       </div>
                       <div className="flex items-center gap-2">
                         <Star className="h-4 w-4 text-yellow-500" />
-                        <span>Avaliação: {activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}/5</span>
+                        <span>Avaliação: {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}/5</span>
                       </div>
-                    </div>
-
-                    <div className="flex gap-2 mt-4">
-                      <WishlistButton
-                        itemType="activity"
-                        itemId={activity.id}
-                        variant="outline"
-                        className="flex-1"
-                      />
-                      <Button variant="outline" className="flex-1">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Compartilhar
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -570,7 +540,32 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
             </div>
           </div>
         </div>
-      </main>
-    </>
+      </div>
+
+      {/* Booking Form Modal */}
+      {showBookingForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">Reservar atividade</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowBookingForm(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  ×
+                </Button>
+              </div>
+              <ActivityBookingForm
+                activityId={params.id as Id<"activities">}
+                activity={activity}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
-import { Notification } from '../types/dashboard';
+import { Notification, Reservation } from '../types/dashboard';
 
 export function useDashboard() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
 
   // Use real reservation data from Convex
-  const reservationsResult = useQuery(api.domains.bookings.queries.getUserReservations, {});
+  const activityBookings = useQuery(api.domains.bookings.queries.getUserActivityBookings, { paginationOpts: { numItems: 100, cursor: null } });
+  const eventBookings = useQuery(api.domains.bookings.queries.getUserEventBookings, { paginationOpts: { numItems: 100, cursor: null } });
+  const restaurantReservations = useQuery(api.domains.bookings.queries.getUserRestaurantReservations, { paginationOpts: { numItems: 100, cursor: null } });
+  const vehicleBookings = useQuery(api.domains.bookings.queries.getUserVehicleBookings, { paginationOpts: { numItems: 100, cursor: null } });
   
   // Use real notifications from Convex
   const notificationsResult = useQuery(api.domains.notifications.queries.getUserNotifications, {
@@ -39,10 +42,77 @@ export function useDashboard() {
     router.push(`/reservas/${reservationId}`);
   };
 
+  // Transform and combine all reservations
+  const reservations = useMemo(() => {
+    const allReservations: Reservation[] = [];
+
+    activityBookings?.page.forEach(b => allReservations.push({
+      id: b._id,
+      type: 'activity',
+      name: b.activityTitle,
+      date: new Date(b.date),
+      guests: b.participants,
+      status: b.status,
+      location: 'Local a ser definido', // Placeholder
+      imageUrl: b.activityImageUrl,
+      confirmationCode: b.confirmationCode,
+    }));
+
+    eventBookings?.page.forEach(b => allReservations.push({
+      id: b._id,
+      type: 'event',
+      name: b.eventTitle,
+      date: new Date(b.eventDate),
+      guests: b.quantity,
+      status: b.status,
+      location: b.eventLocation,
+      imageUrl: b.eventImageUrl,
+      confirmationCode: b.confirmationCode,
+    }));
+
+    restaurantReservations?.page.forEach(r => allReservations.push({
+      id: r._id,
+      type: 'restaurant',
+      name: r.restaurantName,
+      date: new Date(`${r.date}T${r.time}`),
+      guests: r.partySize,
+      status: r.status,
+      location: r.restaurantAddress,
+      imageUrl: r.restaurantImageUrl,
+      confirmationCode: r.confirmationCode,
+    }));
+
+    vehicleBookings?.page.forEach(b => allReservations.push({
+      id: b._id,
+      type: 'vehicle',
+      name: `${b.vehicleBrand} ${b.vehicleModel}`,
+      checkIn: new Date(b.startDate),
+      checkOut: new Date(b.endDate),
+      guests: 1, // Placeholder
+      status: b.status,
+      location: b.pickupLocation,
+      imageUrl: b.vehicleImageUrl,
+      confirmationCode: b.confirmationCode,
+    }));
+
+    return allReservations.sort((a, b) => {
+      const dateA = a.date || a.checkIn || 0;
+      const dateB = b.date || b.checkIn || 0;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  }, [activityBookings, eventBookings, restaurantReservations, vehicleBookings]);
+
+  // Handle loading state
+  const isLoadingReservations = 
+    activityBookings === undefined ||
+    eventBookings === undefined ||
+    restaurantReservations === undefined ||
+    vehicleBookings === undefined;
+
   const handleCancelReservation = async (reservationId: string) => {
     try {
       // Find the reservation to get its type
-      const reservation = transformedReservations.find(r => r.id === reservationId);
+      const reservation = reservations.find(r => r.id === reservationId);
       
       if (!reservation) {
         toast.error("Reserva não encontrada");
@@ -69,7 +139,7 @@ export function useDashboard() {
       
     } catch (error) {
       console.error('Erro ao cancelar reserva:', error);
-      toast.error(`Erro ao cancelar reserva: ${error}`);
+      toast.error(`Erro ao cancelar reserva: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -80,20 +150,6 @@ export function useDashboard() {
       console.error('Erro ao marcar notificação como lida:', error);
     }
   };
-
-  // Transform Convex data to match the expected format
-  const transformedReservations = reservationsResult?.map(reservation => ({
-    id: reservation.id,
-    type: reservation.type,
-    name: reservation.name,
-    date: reservation.date ? new Date(reservation.date) : undefined,
-    checkIn: reservation.checkIn ? new Date(reservation.checkIn) : undefined,
-    checkOut: reservation.checkOut ? new Date(reservation.checkOut) : undefined,
-    guests: reservation.guests,
-    status: reservation.status,
-    location: reservation.location,
-    imageUrl: reservation.imageUrl,
-  })) || [];
 
   return {
     activeSection,
@@ -113,18 +169,18 @@ export function useDashboard() {
     })) || [],
     isLoadingNotifications: notificationsResult === undefined,
     unreadNotificationsCount: unreadCount || 0,
-    markNotificationAsRead,
+    onMarkAsRead: markNotificationAsRead,
     handleNewReservation,
     handleViewReservationDetails,
     handleCancelReservation,
-    reservations: transformedReservations,
-    isLoadingReservations: reservationsResult === undefined,
+    reservations,
+    isLoadingReservations,
     stats: userStats ? {
       totalReservations: userStats.totalReservations,
-      activeReservations: userStats.activeReservations,
-      totalSpent: userStats.totalSpent,
-      favoriteLocations: userStats.favoriteLocations,
-      completedTrips: userStats.completedTrips,
+      activeReservations: 0,
+      totalSpent: 0,
+      favoriteLocations: [],
+      completedTrips: 0,
     } : {
       totalReservations: 0,
       activeReservations: 0,

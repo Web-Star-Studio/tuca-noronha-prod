@@ -2,6 +2,8 @@ import type { Restaurant as RestaurantService } from "@/lib/services/restaurantS
 import type { Restaurant as RestaurantStore } from "@/lib/store/restaurantsStore";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { QuickStats } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
 import Image from "next/image";
 import Link from "next/link";
 import React, { forwardRef } from "react";
@@ -17,6 +19,19 @@ interface RestaurantCardProps {
 
 const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
   ({ restaurant }, ref) => {
+    const getRestaurantId = (r: RestaurantType): string => {
+      if ('_id' in r && r._id) {
+        return r._id;
+      }
+      return r.id || "";
+    }
+    
+    // Get real review stats
+    const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
+      assetType: "restaurant",
+      assetId: getRestaurantId(restaurant),
+    });
+    
     // Get open/closed status
     const getCurrentStatus = () => {
       // Check if restaurant is open now
@@ -112,12 +127,12 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
                 </div>
               </div>
               
-              <div className="flex items-center space-x-1">
-                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                <span className="font-medium">{restaurant.rating.overall.toFixed(1)}</span>
-                <span className="text-sm text-gray-500">({restaurant.rating.totalReviews})</span>
-                
-                <span className="mx-2 text-gray-300">•</span>
+              <div className="flex items-center justify-between">
+                <QuickStats
+                  averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : restaurant.rating.overall}
+                  totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : Number(restaurant.rating.totalReviews)}
+                  size="sm"
+                />
                 
                 <div className="flex items-center">
                   <Utensils className="h-3 w-3 mr-1 text-gray-400" />

@@ -23,11 +23,15 @@ import {
   Star,
   Ticket,
   Music,
-  Utensils
+  Utensils,
+  ToggleLeft,
+  ToggleRight,
+  ExternalLink,
+  Loader2
 } from "lucide-react"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/../convex/_generated/api"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Select,
   SelectContent,
@@ -36,14 +40,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Table,
   TableBody,
   TableCell,
@@ -51,9 +47,55 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { DashboardPageHeader } from "../components"
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import type { Id } from "@/../convex/_generated/dataModel"
+
+type EventData = {
+  _id: Id<"events">;
+  title: string;
+  description?: string;
+  shortDescription: string;
+  date: string;
+  time: string;
+  location: string;
+  address: string;
+  price: number;
+  category: string;
+  maxParticipants: number | bigint;
+  imageUrl: string;
+  galleryImages?: string[];
+  highlights?: string[];
+  includes?: string[];
+  additionalInfo?: string[];
+  speaker?: string;
+  speakerBio?: string;
+  isFeatured: boolean;
+  isActive: boolean;
+  partnerId: Id<"users">;
+  symplaUrl?: string;
+  whatsappContact?: string;
+  _creationTime: number;
+  creator?: {
+    name?: string;
+    email?: string;
+  };
+};
 
 const eventTypeColors = {
   "music": "bg-purple-100 text-purple-800",
@@ -63,6 +105,14 @@ const eventTypeColors = {
   "nature": "bg-emerald-100 text-emerald-800"
 }
 
+const categoryLabels: Record<string, string> = {
+  "music": "Música",
+  "gastronomy": "Gastronomia",
+  "culture": "Cultura",
+  "sport": "Esporte",
+  "nature": "Natureza",
+};
+
 const eventStatusColors = {
   "upcoming": "bg-blue-100 text-blue-800",
   "ongoing": "bg-green-100 text-green-800", 
@@ -71,16 +121,111 @@ const eventStatusColors = {
 }
 
 export default function EventosMasterPage() {
+  const { user } = useCurrentUser();
+  const router = useRouter();
+
+  // Estados para filtros e busca
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
   const [selectedCity, setSelectedCity] = useState<string>("all")
 
-  // Buscar estatísticas do sistema
-  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics)
-  
-  // Buscar todos os eventos
-  const eventsResult = useQuery(api["domains/events/queries"].getAll, {})
+  // Estados para operações CRUD
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Mutations
+  const createEvent = useMutation(api.domains.events.mutations.create);
+  const updateEvent = useMutation(api.domains.events.mutations.update);
+  const deleteEvent = useMutation(api.domains.events.mutations.remove);
+  const toggleFeatured = useMutation(api.domains.events.mutations.toggleFeatured);
+  const toggleActive = useMutation(api.domains.events.mutations.toggleActive);
+
+  // Verificar permissões
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (user?.role !== "master") {
+    router.push("/admin/dashboard");
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Acesso Negado</h2>
+          <p className="text-gray-600">Apenas administradores master podem acessar esta página.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Buscar dados
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics)
+  const eventsResult = useQuery(api.domains.events.queries.getEventsWithCreators)
+  const partners = useQuery(api.domains.users.queries.getUsersByRole, { role: "partner" })
+
+  // Handlers para operações CRUD
+  const handleCreateEvent = async (formData: any) => {
+    try {
+      await createEvent(formData);
+      toast.success("Evento criado com sucesso!");
+      setAddDialogOpen(false);
+    } catch (error) {
+      toast.error("Erro ao criar evento");
+      console.error("Erro ao criar evento:", error);
+    }
+  };
+
+  const handleUpdateEvent = async (formData: any) => {
+    try {
+      if (!editingEvent) return;
+      await updateEvent({
+        id: editingEvent._id,
+        ...formData,
+      });
+      toast.success("Evento atualizado com sucesso!");
+      setEditingEvent(null);
+    } catch (error) {
+      toast.error("Erro ao atualizar evento");
+      console.error("Erro ao atualizar evento:", error);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string) => {
+    try {
+      await deleteEvent({ id: id as Id<"events"> });
+      toast.success("Evento removido com sucesso!");
+      setConfirmDeleteId(null);
+    } catch (error) {
+      toast.error("Erro ao remover evento");
+      console.error("Erro ao remover evento:", error);
+    }
+  };
+
+  const handleToggleFeatured = async (id: string, isFeatured: boolean) => {
+    try {
+      await toggleFeatured({ id: id as Id<"events">, isFeatured: !isFeatured });
+      toast.success(`Evento ${!isFeatured ? "destacado" : "removido dos destaques"} com sucesso!`);
+    } catch (error) {
+      toast.error("Erro ao alterar destaque");
+      console.error("Erro ao alterar destaque:", error);
+    }
+  };
+
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    try {
+      await toggleActive({ id: id as Id<"events">, isActive: !isActive });
+      toast.success(`Evento ${!isActive ? "ativado" : "desativado"} com sucesso!`);
+    } catch (error) {
+      toast.error("Erro ao alterar status");
+      console.error("Erro ao alterar status:", error);
+    }
+  };
 
   const allEvents = eventsResult || []
   
@@ -184,11 +329,21 @@ export default function EventosMasterPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <DashboardPageHeader
-        title="Gestão de Eventos"
-        description="Visualizar e gerenciar todos os eventos do sistema"
-        icon={Calendar}
-      />
+      <div className="flex items-center justify-between">
+        <DashboardPageHeader
+          title="Gestão de Eventos"
+          description="Visualizar e gerenciar todos os eventos do sistema"
+          icon={Calendar}
+        />
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Evento
+            </Button>
+          </DialogTrigger>
+        </Dialog>
+      </div>
 
       {/* Estatísticas dos Eventos */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -397,33 +552,51 @@ export default function EventosMasterPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Visualizar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Ticket className="mr-2 h-4 w-4" />
-                          Participantes
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Cancelar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingEvent(event)}
+                        title="Editar evento"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleFeatured(event._id, event.isFeatured)}
+                        title={event.isFeatured ? "Remover destaque" : "Destacar evento"}
+                        className={event.isFeatured ? "text-yellow-600 border-yellow-300" : ""}
+                      >
+                        <Star className={`h-4 w-4 ${event.isFeatured ? "fill-current" : ""}`} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleActive(event._id, event.isActive)}
+                        title={event.isActive ? "Desativar evento" : "Ativar evento"}
+                        className={event.isActive ? "text-green-600 border-green-300" : "text-gray-600"}
+                      >
+                        {event.isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/eventos/${event._id}`, "_blank")}
+                        title="Visualizar página pública"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setConfirmDeleteId(event._id)}
+                        title="Excluir evento"
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -469,6 +642,395 @@ export default function EventosMasterPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Event Form Dialog */}
+      <EventFormDialog 
+        open={addDialogOpen || !!editingEvent}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddDialogOpen(false);
+            setEditingEvent(null);
+          }
+        }}
+        event={editingEvent}
+        onSave={editingEvent ? handleUpdateEvent : handleCreateEvent}
+        title={editingEvent ? "Editar Evento" : "Novo Evento"}
+        description={editingEvent ? "Atualize as informações do evento." : "Preencha os dados para criar um novo evento."}
+        partners={partners}
+      />
+
+      {/* Confirm Delete Dialog */}
+      {confirmDeleteId && (
+        <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar Exclusão</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={() => handleDeleteEvent(confirmDeleteId)}>
+                Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
+}
+
+// Event Form Dialog Component
+interface EventFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  event?: EventData | null;
+  onSave: (data: any) => void;
+  title: string;
+  description: string;
+  partners?: any[];
+}
+
+function EventFormDialog({ open, onOpenChange, event, onSave, title, description, partners }: EventFormDialogProps) {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    shortDescription: "",
+    date: "",
+    time: "",
+    location: "",
+    address: "",
+    price: 0,
+    category: "",
+    maxParticipants: 1,
+    imageUrl: "",
+    galleryImages: [] as string[],
+    highlights: [] as string[],
+    includes: [] as string[],
+    additionalInfo: [] as string[],
+    speaker: "",
+    speakerBio: "",
+    isFeatured: false,
+    isActive: true,
+    partnerId: "",
+    symplaUrl: "",
+    whatsappContact: "",
+  });
+
+  // Reset form when event changes
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        title: event.title || "",
+        description: event.description || "",
+        shortDescription: event.shortDescription || "",
+        date: event.date || "",
+        time: event.time || "",
+        location: event.location || "",
+        address: event.address || "",
+        price: Number(event.price) || 0,
+        category: event.category || "",
+        maxParticipants: Number(event.maxParticipants) || 1,
+        imageUrl: event.imageUrl || "",
+        galleryImages: event.galleryImages || [],
+        highlights: event.highlights || [],
+        includes: event.includes || [],
+        additionalInfo: event.additionalInfo || [],
+        speaker: event.speaker || "",
+        speakerBio: event.speakerBio || "",
+        isFeatured: event.isFeatured || false,
+        isActive: event.isActive || true,
+        partnerId: event.partnerId || "",
+        symplaUrl: event.symplaUrl || "",
+        whatsappContact: event.whatsappContact || "",
+      });
+    } else {
+      setFormData({
+        title: "",
+        description: "",
+        shortDescription: "",
+        date: "",
+        time: "",
+        location: "",
+        address: "",
+        price: 0,
+        category: "",
+        maxParticipants: 1,
+        imageUrl: "",
+        galleryImages: [],
+        highlights: [],
+        includes: [],
+        additionalInfo: [],
+        speaker: "",
+        speakerBio: "",
+        isFeatured: false,
+        isActive: true,
+        partnerId: "",
+        symplaUrl: "",
+        whatsappContact: "",
+      });
+    }
+  }, [event]);
+
+  const handleSubmit = () => {
+    if (!formData.title || !formData.shortDescription || !formData.date || !formData.time || !formData.location || !formData.partnerId) {
+      toast.error("Por favor, preencha todos os campos obrigatórios");
+      return;
+    }
+
+    onSave(formData);
+  };
+
+  const handleArrayChange = (field: string, value: string) => {
+    if (value.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...prev[field as keyof typeof prev] as string[], value.trim()]
+      }));
+    }
+  };
+
+  const removeArrayItem = (field: string, index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index)
+    }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Informações Básicas */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Título *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Nome do evento"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="shortDescription">Descrição Curta *</Label>
+              <Textarea
+                id="shortDescription"
+                value={formData.shortDescription}
+                onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                placeholder="Breve descrição do evento"
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="description">Descrição Completa</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descrição detalhada do evento"
+                rows={5}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="date">Data *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="time">Horário *</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Localização e Detalhes */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="location">Local *</Label>
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Local do evento"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="address">Endereço Completo</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Endereço completo"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price">Preço (R$)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxParticipants">Máx. Participantes</Label>
+                <Input
+                  id="maxParticipants"
+                  type="number"
+                  min="1"
+                  value={formData.maxParticipants}
+                  onChange={(e) => setFormData({ ...formData, maxParticipants: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="category">Categoria</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="music">Música</SelectItem>
+                  <SelectItem value="gastronomy">Gastronomia</SelectItem>
+                  <SelectItem value="culture">Cultura</SelectItem>
+                  <SelectItem value="sport">Esporte</SelectItem>
+                  <SelectItem value="nature">Natureza</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="partnerId">Parceiro/Organizador *</Label>
+              <Select value={formData.partnerId} onValueChange={(value) => setFormData({ ...formData, partnerId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o parceiro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partners?.map((partner) => (
+                    <SelectItem key={partner._id} value={partner._id}>
+                      {partner.name} ({partner.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Mídia e Extras */}
+        <div className="space-y-4 border-t pt-4">
+          <div>
+            <Label htmlFor="imageUrl">URL da Imagem Principal</Label>
+            <Input
+              id="imageUrl"
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://exemplo.com/imagem.jpg"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="speaker">Palestrante/Artista</Label>
+              <Input
+                id="speaker"
+                value={formData.speaker}
+                onChange={(e) => setFormData({ ...formData, speaker: e.target.value })}
+                placeholder="Nome do palestrante ou artista"
+              />
+            </div>
+            <div>
+              <Label htmlFor="whatsappContact">WhatsApp de Contato</Label>
+              <Input
+                id="whatsappContact"
+                value={formData.whatsappContact}
+                onChange={(e) => setFormData({ ...formData, whatsappContact: e.target.value })}
+                placeholder="(85) 99999-9999"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="speakerBio">Biografia do Palestrante/Artista</Label>
+            <Textarea
+              id="speakerBio"
+              value={formData.speakerBio}
+              onChange={(e) => setFormData({ ...formData, speakerBio: e.target.value })}
+              placeholder="Biografia ou descrição do palestrante/artista"
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="symplaUrl">URL do Sympla</Label>
+            <Input
+              id="symplaUrl"
+              value={formData.symplaUrl}
+              onChange={(e) => setFormData({ ...formData, symplaUrl: e.target.value })}
+              placeholder="https://sympla.com.br/evento"
+            />
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isFeatured"
+                checked={formData.isFeatured}
+                onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+              />
+              <Label htmlFor="isFeatured">Evento em Destaque</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              />
+              <Label htmlFor="isActive">Evento Ativo</Label>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit}>
+            {event ? "Atualizar" : "Criar"} Evento
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 } 

@@ -1,11 +1,20 @@
 import { v } from "convex/values";
-import { mutation } from "../../_generated/server";
-import type { MutationCtx } from "../../_generated/server";
-import type { Id } from "../../_generated/dataModel";
+import { mutation, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { Id } from "../../_generated/dataModel";
+import type { MutationCtx } from "../../_generated/server";
+import { BOOKING_STATUS, PAYMENT_STATUS } from "./types";
 import { 
-  BOOKING_STATUS, 
-  PAYMENT_STATUS,
+  generateConfirmationCode,
+  calculateActivityBookingPrice,
+  calculateEventBookingPrice,
+  calculateVehicleBookingPrice,
+  hasDateConflict,
+  isValidEmail,
+  isValidPhone
+} from "./utils";
+import { checkRateLimit, recordRateLimitAttempt } from "../../shared/rateLimiting";
+import {
   createActivityBookingValidator,
   createEventBookingValidator,
   createRestaurantReservationValidator,
@@ -13,18 +22,16 @@ import {
   updateActivityBookingValidator,
   updateEventBookingValidator,
   updateRestaurantReservationValidator,
-  updateVehicleBookingValidator,
+  updateVehicleBookingValidator
 } from "./types";
-import { 
-  generateConfirmationCode, 
-  calculateActivityBookingPrice,
-  calculateEventBookingPrice,
-  calculateVehicleBookingPrice,
-  hasDateConflict,
-  isValidEmail,
-  isValidPhone,
-} from "./utils";
-import { checkRateLimit, recordRateLimitAttempt } from "../../shared/rateLimiting";
+
+const assetInfoValidator = v.object({
+  name: v.string(),
+  address: v.string(),
+  phone: v.optional(v.string()),
+  email: v.optional(v.string()),
+  description: v.optional(v.string()),
+});
 
 /**
  * Create activity booking
@@ -110,7 +117,7 @@ export const createActivityBooking = mutation({
     }
 
     const finalPrice = calculateActivityBookingPrice(totalPrice, args.participants);
-    const confirmationCode = generateConfirmationCode();
+    const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
 
     // Determine initial booking status based on payment requirement
     let initialStatus: string = BOOKING_STATUS.DRAFT;
@@ -269,7 +276,7 @@ export const createEventBooking = mutation({
     }
 
     const finalPrice = calculateEventBookingPrice(totalPrice, args.quantity);
-    const confirmationCode = generateConfirmationCode();
+    const confirmationCode = generateConfirmationCode(event.date, customerInfo.name);
 
     // Determine initial booking status based on payment requirement
     let initialStatus: string = BOOKING_STATUS.DRAFT;
@@ -421,7 +428,7 @@ export const createRestaurantReservation = mutation({
       throw new Error(`Máximo de ${restaurant.maximumPartySize} pessoas por reserva`);
     }
 
-    const confirmationCode = generateConfirmationCode();
+    const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
 
     // Create reservation
     const reservationId = await ctx.db.insert("restaurantReservations", {
@@ -493,6 +500,7 @@ export const createVehicleBooking = mutation({
   returns: v.object({
     bookingId: v.id("vehicleBookings"),
     totalPrice: v.number(),
+    confirmationCode: v.string(),
   }),
   handler: async (ctx, args) => {
     // Get current user
@@ -560,6 +568,9 @@ export const createVehicleBooking = mutation({
       args.additionalDrivers
     );
 
+    // Generate confirmation code
+    const confirmationCode = generateConfirmationCode(args.startDate.toString(), customerInfo.name);
+
     // Determine initial booking status based on payment requirement
     let initialStatus: string = BOOKING_STATUS.DRAFT;
     let initialPaymentStatus: string = PAYMENT_STATUS.PENDING;
@@ -589,6 +600,8 @@ export const createVehicleBooking = mutation({
       totalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
+      confirmationCode,
+      customerInfo,
       pickupLocation: args.pickupLocation,
       returnLocation: args.returnLocation,
       additionalDrivers: args.additionalDrivers,
@@ -600,6 +613,7 @@ export const createVehicleBooking = mutation({
 
     return {
       bookingId,
+      confirmationCode,
       totalPrice,
     };
   },
@@ -837,9 +851,10 @@ export const cancelVehicleBooking = mutation({
  * Confirm activity booking (Partner only)
  */
 export const confirmActivityBooking = mutation({
-  args: { 
+  args: {
     bookingId: v.id("activityBookings"),
     partnerNotes: v.optional(v.string()),
+    assetInfo: assetInfoValidator, // Adicionado
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -862,19 +877,17 @@ export const confirmActivityBooking = mutation({
       throw new Error("Reserva não encontrada");
     }
 
-    // Get activity to verify ownership
     const activity = await ctx.db.get(booking.activityId);
     if (!activity) {
       throw new Error("Atividade não encontrada");
     }
 
-    // Check if user has permission to confirm this booking
-    const canConfirm = user.role === "master" || 
-      (user.role === "partner" && activity.partnerId === user._id) ||
-      (user.role === "employee" && await hasEmployeePermission(ctx, user._id, activity._id, "canManageBookings"));
+    // Authorization check
+    const isMaster = user.role === "master";
+    const isPartner = user._id === activity.partnerId;
 
-    if (!canConfirm) {
-      throw new Error("Sem permissão para confirmar esta reserva");
+    if (!isMaster && !isPartner) {
+      throw new Error("Não autorizado a confirmar esta reserva");
     }
 
     if (booking.status === BOOKING_STATUS.CONFIRMED) {
@@ -885,13 +898,14 @@ export const confirmActivityBooking = mutation({
       throw new Error("Não é possível confirmar uma reserva cancelada");
     }
 
+    // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
 
-    // Schedule notification sending action
+    // Schedule notification for the user
     await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
       userId: booking.userId,
       bookingId: booking._id,
@@ -900,7 +914,22 @@ export const confirmActivityBooking = mutation({
       confirmationCode: booking.confirmationCode,
       customerEmail: booking.customerInfo.email,
       customerName: booking.customerInfo.name,
-      partnerName: user.name,
+      partnerName: user.name ?? "Equipe de Reservas",
+    });
+
+    // Schedule voucher email
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+      bookingId: booking._id,
+      bookingType: "activity",
+      customerInfo: booking.customerInfo,
+      partnerId: activity.partnerId,
+      assetInfo: args.assetInfo, // Passando para a ação
+      bookingDetails: {
+        date: booking.date,
+        time: booking.time,
+        participants: booking.participants,
+      },
+      confirmationCode: booking.confirmationCode,
     });
 
     return null;
@@ -911,9 +940,10 @@ export const confirmActivityBooking = mutation({
  * Confirm event booking (Partner only)
  */
 export const confirmEventBooking = mutation({
-  args: { 
+  args: {
     bookingId: v.id("eventBookings"),
     partnerNotes: v.optional(v.string()),
+    assetInfo: assetInfoValidator,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -942,13 +972,12 @@ export const confirmEventBooking = mutation({
       throw new Error("Evento não encontrado");
     }
 
-    // Check if user has permission to confirm this booking
-    const canConfirm = user.role === "master" || 
-      (user.role === "partner" && event.partnerId === user._id) ||
-      (user.role === "employee" && await hasEmployeePermission(ctx, user._id, event._id, "canManageBookings"));
+    // Authorization check
+    const isMaster = user.role === "master";
+    const isPartner = user._id === event.partnerId;
 
-    if (!canConfirm) {
-      throw new Error("Sem permissão para confirmar esta reserva");
+    if (!isMaster && !isPartner) {
+      throw new Error("Não autorizado a confirmar esta reserva");
     }
 
     if (booking.status === BOOKING_STATUS.CONFIRMED) {
@@ -959,10 +988,22 @@ export const confirmEventBooking = mutation({
       throw new Error("Não é possível confirmar uma reserva cancelada");
     }
 
+    // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
+    });
+
+    // Create voucher for confirmed booking
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+      bookingId: booking._id,
+      bookingType: "event",
+      userId: booking.userId,
+      partnerId: user._id,
+      assetId: event._id,
+      customerInfo: booking.customerInfo,
+      expiresAt: event.date,
     });
 
     // Schedule notification sending action
@@ -972,10 +1013,33 @@ export const confirmEventBooking = mutation({
       bookingType: "event",
       assetName: event.title,
       confirmationCode: booking.confirmationCode,
-      customerEmail: booking.customerInfo.email,
-      customerName: booking.customerInfo.name,
+      customerEmail: booking.customerInfo?.email || "",
+      customerName: booking.customerInfo?.name || "",
       partnerName: user.name,
     });
+
+    // Get voucher details for email
+    const voucher: any = await ctx.db.get(voucherId);
+    if (voucher) {
+      // Send voucher email
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        customerEmail: booking.customerInfo.email,
+        customerName: booking.customerInfo.name,
+        assetName: event.title,
+        bookingType: "event",
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+        bookingDate: event.date,
+        totalPrice: booking.totalPrice,
+        partnerName: user.name,
+        bookingDetails: {
+          quantity: booking.quantity,
+          time: event.time,
+          location: event.location,
+          // duration: event.duration, // Property doesn't exist in schema
+        },
+      });
+    }
 
     return null;
   },
@@ -985,9 +1049,10 @@ export const confirmEventBooking = mutation({
  * Confirm restaurant reservation (Partner only)
  */
 export const confirmRestaurantReservation = mutation({
-  args: { 
-    reservationId: v.id("restaurantReservations"),
+  args: {
+    bookingId: v.id("restaurantReservations"),
     partnerNotes: v.optional(v.string()),
+    assetInfo: assetInfoValidator,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -1005,50 +1070,87 @@ export const confirmRestaurantReservation = mutation({
       throw new Error("Usuário não encontrado");
     }
 
-    const reservation = await ctx.db.get(args.reservationId);
-    if (!reservation) {
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
       throw new Error("Reserva não encontrada");
     }
 
     // Get restaurant to verify ownership
-    const restaurant = await ctx.db.get(reservation.restaurantId);
+    const restaurant = await ctx.db.get(booking.restaurantId);
     if (!restaurant) {
       throw new Error("Restaurante não encontrado");
     }
 
-    // Check if user has permission to confirm this reservation
-    const canConfirm = user.role === "master" || 
-      (user.role === "partner" && restaurant.partnerId === user._id) ||
-      (user.role === "employee" && await hasEmployeePermission(ctx, user._id, restaurant._id, "canManageBookings"));
+    // Authorization check
+    const isMaster = user.role === "master";
+    const isPartner = user._id === restaurant.partnerId;
 
-    if (!canConfirm) {
-      throw new Error("Sem permissão para confirmar esta reserva");
+    if (!isMaster && !isPartner) {
+      throw new Error("Não autorizado a confirmar esta reserva");
     }
 
-    if (reservation.status === BOOKING_STATUS.CONFIRMED) {
+    if (booking.status === BOOKING_STATUS.CONFIRMED) {
       throw new Error("Reserva já está confirmada");
     }
 
-    if (reservation.status === BOOKING_STATUS.CANCELED) {
+    if (booking.status === BOOKING_STATUS.CANCELED) {
       throw new Error("Não é possível confirmar uma reserva cancelada");
     }
 
-    await ctx.db.patch(args.reservationId, {
+    // Update booking status
+    await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
+      updatedAt: Date.now(),
+    });
+
+    // Create voucher for confirmed booking
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+      bookingId: booking._id,
+      bookingType: "restaurant",
+      userId: booking.userId,
+      partnerId: user._id,
+      assetId: restaurant._id,
+      customerInfo: {
+        name: booking.name,
+        email: booking.email,
+        phone: booking.phone,
+      },
+      expiresAt: booking.date,
     });
 
     // Schedule notification sending action
     await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-      userId: reservation.userId,
-      bookingId: reservation._id,
+      userId: booking.userId,
+      bookingId: booking._id,
       bookingType: "restaurant",
       assetName: restaurant.name,
-      confirmationCode: reservation.confirmationCode,
-      customerEmail: reservation.email,
-      customerName: reservation.name,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.email,
+      customerName: booking.name,
       partnerName: user.name,
     });
+
+    // Get voucher details for email
+    const voucher: any = await ctx.db.get(voucherId);
+    if (voucher) {
+      // Send voucher email
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        customerEmail: booking.email,
+        customerName: booking.name,
+        assetName: restaurant.name,
+        bookingType: "restaurant",
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+        bookingDate: `${booking.date} ${booking.time}`,
+        partnerName: user.name,
+        bookingDetails: {
+          partySize: booking.partySize,
+          time: booking.time,
+          date: booking.date,
+        },
+      });
+    }
 
     return null;
   },
@@ -1058,9 +1160,10 @@ export const confirmRestaurantReservation = mutation({
  * Confirm vehicle booking (Partner only)
  */
 export const confirmVehicleBooking = mutation({
-  args: { 
+  args: {
     bookingId: v.id("vehicleBookings"),
     partnerNotes: v.optional(v.string()),
+    assetInfo: assetInfoValidator,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -1089,13 +1192,12 @@ export const confirmVehicleBooking = mutation({
       throw new Error("Veículo não encontrado");
     }
 
-    // Check if user has permission to confirm this booking
-    const canConfirm = user.role === "master" || 
-      (user.role === "partner" && vehicle.ownerId === user._id) ||
-      (user.role === "employee" && await hasEmployeePermission(ctx, user._id, vehicle._id, "canManageBookings"));
+    // Authorization check
+    const isMaster = user.role === "master";
+    const isPartner = user._id === vehicle.ownerId;
 
-    if (!canConfirm) {
-      throw new Error("Sem permissão para confirmar esta reserva");
+    if (!isMaster && !isPartner) {
+      throw new Error("Não autorizado a confirmar esta reserva");
     }
 
     if (booking.status === BOOKING_STATUS.CONFIRMED) {
@@ -1106,26 +1208,60 @@ export const confirmVehicleBooking = mutation({
       throw new Error("Não é possível confirmar uma reserva cancelada");
     }
 
+    // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
 
-    // Create basic notification for vehicle bookings since they don't have confirmation codes or customer info fields
-    await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
+    // Create voucher for confirmed booking
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+      bookingId: booking._id,
+      bookingType: "vehicle",
       userId: booking.userId,
-      type: "booking_confirmed",
-      title: "Reserva de Veículo Confirmada! 🎉",
-      message: `Sua reserva para "${vehicle.name}" foi confirmada!`,
-      relatedId: booking._id,
-      relatedType: "vehicle_booking",
-      data: {
-        bookingType: "vehicle",
-        assetName: vehicle.name,
-        partnerName: user.name,
-      },
+      partnerId: user._id,
+      assetId: vehicle._id,
+      customerInfo: booking.customerInfo,
+      expiresAt: booking.endDate,
     });
+
+    // Schedule notification sending action
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "vehicle",
+      assetName: vehicle.name,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo?.email || "",
+      customerName: booking.customerInfo?.name || "",
+      partnerName: user.name,
+    });
+
+    // Get voucher details for email
+    const voucher: any = await ctx.db.get(voucherId);
+    if (voucher) {
+      // Send voucher email
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        customerEmail: booking.customerInfo?.email || "",
+        customerName: booking.customerInfo?.name || "",
+        assetName: vehicle.name,
+        bookingType: "vehicle",
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+        bookingDate: booking.startDate,
+        totalPrice: booking.totalPrice,
+        partnerName: user.name,
+        bookingDetails: {
+          vehicleModel: vehicle.model,
+          pickupLocation: booking.pickupLocation,
+          returnLocation: booking.returnLocation,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          additionalDrivers: booking.additionalDrivers,
+        },
+      });
+    }
 
     return null;
   },
@@ -1669,6 +1805,7 @@ export const cancelRestaurantReservationInternal = mutation({
 
     await ctx.db.patch(args.reservationId, {
       status: BOOKING_STATUS.CANCELED,
+      updatedAt: Date.now(),
     });
 
     // Schedule cancellation notification

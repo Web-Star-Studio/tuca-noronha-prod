@@ -20,6 +20,7 @@ export interface Reservation {
   status: string;
   location: string;
   imageUrl: string;
+  confirmationCode?: string;
 }
 
 export interface RecommendationItem {

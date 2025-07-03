@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 // Create a review
 export const createReview = mutation({
@@ -26,6 +27,7 @@ export const createReview = mutation({
     photos: v.optional(v.array(v.string())),
     isVerified: v.optional(v.boolean()),
   },
+  returns: v.id("reviews"),
   handler: async (ctx, args) => {
     // Check if user already reviewed this item
     const existingReview = await ctx.db
@@ -48,7 +50,21 @@ export const createReview = mutation({
       throw new Error("Avaliação deve ser entre 1 e 5");
     }
 
-    return await ctx.db.insert("reviews", {
+    // Validate detailed ratings if provided
+    if (args.detailedRatings) {
+      const detailedRatings = args.detailedRatings;
+      const ratingKeys = Object.keys(detailedRatings) as Array<keyof typeof detailedRatings>;
+      
+      for (const key of ratingKeys) {
+        const rating = detailedRatings[key];
+        if (rating !== undefined && (rating < 1 || rating > 5)) {
+          throw new Error(`Avaliação detalhada de ${key} deve ser entre 1 e 5`);
+        }
+      }
+    }
+
+    // Create the review
+    const reviewId = await ctx.db.insert("reviews", {
       userId: args.userId,
       itemType: args.itemType,
       itemId: args.itemId,
@@ -67,6 +83,14 @@ export const createReview = mutation({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    // Schedule asset rating update
+    await ctx.scheduler.runAfter(0, internal.domains.reviews.mutations.updateAssetRating, {
+      itemType: args.itemType,
+      itemId: args.itemId,
+    });
+
+    return reviewId;
   },
 });
 

@@ -143,7 +143,7 @@ export default function AssetsManagementPage() {
 
   // Use optimized asset type counts for system statistics
   const assetTypeCounts = useAssetTypeCounts();
-  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics);
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics);
 
   if (user?.role !== "master") {
     return (

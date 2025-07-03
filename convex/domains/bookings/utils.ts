@@ -4,12 +4,28 @@
 
 /**
  * Generate a unique confirmation code
+ * Format: DDMM-SOBRENOME NOME-XXXX
+ * Example: 2512-SILVA JOÃO-1234
  */
-export function generateConfirmationCode(): string {
-  const prefix = "TN"; // Tuca Noronha prefix
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `${prefix}${timestamp}${random}`;
+export function generateConfirmationCode(bookingDate: string, customerName: string): string {
+  // Extrair dia e mês da data
+  const date = new Date(bookingDate);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  
+  // Normalizar e extrair partes do nome
+  const normalizedName = customerName.trim().toUpperCase();
+  const nameParts = normalizedName.split(/\s+/); // Split por múltiplos espaços
+  
+  // Extrair primeiro nome e sobrenome
+  const firstName = nameParts[0] || 'CLIENTE';
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+  
+  // Gerar número aleatório de 4 dígitos
+  const random = Math.floor(1000 + Math.random() * 9000);
+  
+  // Montar código no formato DDMM-SOBRENOME NOME-XXXX
+  return `${day}${month}-${lastName} ${firstName}-${random}`;
 }
 
 /**

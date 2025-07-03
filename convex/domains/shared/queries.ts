@@ -1,0 +1,111 @@
+"use strict";
+
+import { query } from "../../_generated/server";
+import { v } from "convex/values";
+import { Id } from "../../_generated/dataModel";
+
+/**
+ * Get details for a generic asset by its ID and type.
+ * This is useful for fetching information for vouchers, notifications, etc.
+ * where the asset could be one of many types.
+ */
+export const getAssetDetails = query({
+  args: {
+    assetId: v.string(),
+    assetType: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("activities"),
+      name: v.string(),
+      address: v.string(),
+      phone: v.optional(v.string()),
+      email: v.optional(v.string()),
+      description: v.optional(v.string()),
+    }),
+    v.object({
+      _id: v.id("events"),
+      name: v.string(),
+      address: v.string(),
+      phone: v.optional(v.string()),
+      email: v.optional(v.string()),
+      description: v.optional(v.string()),
+    }),
+    v.object({
+      _id: v.id("restaurants"),
+      name: v.string(),
+      address: v.string(),
+      phone: v.optional(v.string()),
+      email: v.optional(v.string()),
+      description: v.optional(v.string()),
+    }),
+    v.object({
+      _id: v.id("vehicles"),
+      name: v.string(),
+      address: v.string(),
+      phone: v.optional(v.string()),
+      email: v.optional(v.string()),
+      description: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    let details: any = null;
+
+    switch (args.assetType) {
+      case "activities":
+        details = await ctx.db.get(args.assetId as Id<"activities">);
+        if (details) {
+          return {
+            _id: details._id,
+            name: details.title,
+            address: details.meetingPoint || "Não especificado",
+            phone: details.phone, // Assumindo que pode existir
+            email: details.email, // Assumindo que pode existir
+            description: details.shortDescription,
+          };
+        }
+        break;
+      case "events":
+        details = await ctx.db.get(args.assetId as Id<"events">);
+        if (details) {
+          return {
+            _id: details._id,
+            name: details.title,
+            address: details.location,
+            phone: details.phone,
+            email: details.email,
+            description: details.shortDescription,
+          };
+        }
+        break;
+      case "restaurants":
+        details = await ctx.db.get(args.assetId as Id<"restaurants">);
+        if (details) {
+          return {
+            _id: details._id,
+            name: details.name,
+            address: `${details.address.street}, ${details.address.city}`,
+            phone: details.phone,
+            email: details.email,
+            description: details.description,
+          };
+        }
+        break;
+      case "vehicles":
+        details = await ctx.db.get(args.assetId as Id<"vehicles">);
+        if (details) {
+          return {
+            _id: details._id,
+            name: `${details.make} ${details.model}`,
+            address: details.pickupLocation || "Não especificado",
+            phone: details.phone,
+            email: details.email,
+            description: details.description,
+          };
+        }
+        break;
+    }
+    return null;
+  },
+}); 

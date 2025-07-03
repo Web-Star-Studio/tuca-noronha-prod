@@ -81,6 +81,8 @@ export const getUserActivityBookings = query({
         const activity = await ctx.db.get(booking.activityId);
         return {
           ...booking,
+          createdAt: booking.createdAt ?? booking._creationTime,
+          updatedAt: booking.updatedAt ?? booking._creationTime,
           activityTitle: activity?.title || "Atividade não encontrada",
           activityImageUrl: activity?.imageUrl || "",
         };
@@ -129,6 +131,9 @@ export const getUserEventBookings = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      createdAt: v.optional(v.number()),
+      updatedAt: v.optional(v.number()),
+      userId: v.id("users"),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -166,6 +171,8 @@ export const getUserEventBookings = query({
         const event = await ctx.db.get(booking.eventId);
         return {
           ...booking,
+          createdAt: booking.createdAt ?? booking._creationTime,
+          updatedAt: booking.updatedAt ?? booking._creationTime,
           eventTitle: event?.title || "Evento não encontrado",
           eventImageUrl: event?.imageUrl || "",
           eventDate: event?.date || "",
@@ -213,6 +220,9 @@ export const getUserRestaurantReservations = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      createdAt: v.optional(v.number()),
+      updatedAt: v.optional(v.number()),
+      userId: v.id("users"),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -250,6 +260,8 @@ export const getUserRestaurantReservations = query({
         const restaurant = await ctx.db.get(reservation.restaurantId);
         return {
           ...reservation,
+          createdAt: reservation.createdAt ?? reservation._creationTime,
+          updatedAt: reservation.updatedAt ?? reservation._creationTime,
           restaurantName: restaurant?.name || "Restaurante não encontrado",
           restaurantImageUrl: restaurant?.mainImage || "",
           restaurantAddress: restaurant?.address ? 
@@ -296,6 +308,8 @@ export const getUserVehicleBookings = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      createdAt: v.optional(v.number()),
+      updatedAt: v.optional(v.number()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -333,6 +347,8 @@ export const getUserVehicleBookings = query({
         const vehicle = await ctx.db.get(booking.vehicleId);
         return {
           ...booking,
+          createdAt: booking.createdAt ?? booking._creationTime,
+          updatedAt: booking.updatedAt ?? booking._creationTime,
           vehicleName: vehicle?.name || "Veículo não encontrado",
           vehicleBrand: vehicle?.brand || "",
           vehicleModel: vehicle?.model || "",
@@ -1099,6 +1115,8 @@ export const getActivityBookings = query({
           bookings.map(async (booking) => {
             return {
               ...booking,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               activityTitle: activity?.title || "Atividade não encontrada",
             };
           })
@@ -1132,6 +1150,8 @@ export const getActivityBookings = query({
               bookings.map(async (booking) => {
                 return {
                   ...booking,
+                  createdAt: booking.createdAt ?? booking._creationTime,
+                  updatedAt: booking.updatedAt ?? booking._creationTime,
                   activityTitle: activity.title || "Atividade não encontrada",
                 };
               })
@@ -1165,6 +1185,8 @@ export const getActivityBookings = query({
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             activityTitle: activity?.title || "Atividade não encontrada",
           };
         })
@@ -1199,6 +1221,8 @@ export const getActivityBookings = query({
           bookings.map(async (booking) => {
             return {
               ...booking,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               activityTitle: activity.title,
             };
           })
@@ -1277,6 +1301,8 @@ export const getActivityBookings = query({
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             activityTitle: activity?.title || "Atividade não encontrada",
           };
         })
@@ -1331,6 +1357,8 @@ export const getActivityBookings = query({
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             activityTitle: activity?.title || "Atividade não encontrada",
           };
         })
@@ -1359,6 +1387,8 @@ export const getActivityBookings = query({
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             activityTitle: activity?.title || "Atividade não encontrada",
           };
         })
@@ -1447,6 +1477,8 @@ export const getEventBookings = query({
           bookings.map(async (booking) => {
             return {
               ...booking,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               eventTitle: event?.title || "Evento não encontrado",
             };
           })
@@ -1480,6 +1512,8 @@ export const getEventBookings = query({
               bookings.map(async (booking) => {
                 return {
                   ...booking,
+                  createdAt: booking.createdAt ?? booking._creationTime,
+                  updatedAt: booking.updatedAt ?? booking._creationTime,
                   eventTitle: event.title || "Evento não encontrado",
                 };
               })
@@ -1513,6 +1547,8 @@ export const getEventBookings = query({
           const event = await ctx.db.get(booking.eventId);
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             eventTitle: event?.title || "Evento não encontrado",
           };
         })
@@ -1547,6 +1583,8 @@ export const getEventBookings = query({
           bookings.map(async (booking) => {
             return {
               ...booking,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               eventTitle: event.title,
             };
           })
@@ -1625,6 +1663,8 @@ export const getEventBookings = query({
           const event = await ctx.db.get(booking.eventId) as any;
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             eventTitle: event?.title || "Evento não encontrado",
           };
         })
@@ -1679,6 +1719,8 @@ export const getEventBookings = query({
           const event = await ctx.db.get(booking.eventId) as any;
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             eventTitle: event?.title || "Evento não encontrado",
           };
         })
@@ -1707,6 +1749,8 @@ export const getEventBookings = query({
           const event = await ctx.db.get(booking.eventId);
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             eventTitle: event?.title || "Evento não encontrado",
           };
         })
@@ -1792,6 +1836,8 @@ export const getRestaurantReservations = query({
           reservations.map(async (reservation) => {
             return {
               ...reservation,
+              createdAt: reservation.createdAt ?? reservation._creationTime,
+              updatedAt: reservation.updatedAt ?? reservation._creationTime,
               restaurantName: restaurant?.name || "Restaurante não encontrado",
             };
           })
@@ -1825,6 +1871,8 @@ export const getRestaurantReservations = query({
               reservations.map(async (reservation) => {
                 return {
                   ...reservation,
+                  createdAt: reservation.createdAt ?? reservation._creationTime,
+                  updatedAt: reservation.updatedAt ?? reservation._creationTime,
                   restaurantName: restaurant.name || "Restaurante não encontrado",
                 };
               })
@@ -1858,6 +1906,8 @@ export const getRestaurantReservations = query({
           const restaurant = await ctx.db.get(reservation.restaurantId);
           return {
             ...reservation,
+            createdAt: reservation.createdAt ?? reservation._creationTime,
+            updatedAt: reservation.updatedAt ?? reservation._creationTime,
             restaurantName: restaurant?.name || "Restaurante não encontrado",
           };
         })
@@ -1892,6 +1942,8 @@ export const getRestaurantReservations = query({
           reservations.map(async (reservation) => {
             return {
               ...reservation,
+              createdAt: reservation.createdAt ?? reservation._creationTime,
+              updatedAt: reservation.updatedAt ?? reservation._creationTime,
               restaurantName: restaurant.name,
             };
           })
@@ -1967,6 +2019,8 @@ export const getRestaurantReservations = query({
           const restaurant = await ctx.db.get(reservation.restaurantId) as any;
           return {
             ...reservation,
+            createdAt: reservation.createdAt ?? reservation._creationTime,
+            updatedAt: reservation.updatedAt ?? reservation._creationTime,
             restaurantName: restaurant?.name || "Restaurante não encontrado",
           };
         })
@@ -2034,6 +2088,8 @@ export const getRestaurantReservations = query({
           const restaurant = await ctx.db.get(reservation.restaurantId) as any;
           return {
             ...reservation,
+            createdAt: reservation.createdAt ?? reservation._creationTime,
+            updatedAt: reservation.updatedAt ?? reservation._creationTime,
             restaurantName: restaurant?.name || "Restaurante não encontrado",
           };
         })
@@ -2062,6 +2118,8 @@ export const getRestaurantReservations = query({
           const restaurant = await ctx.db.get(reservation.restaurantId) as any;
           return {
             ...reservation,
+            createdAt: reservation.createdAt ?? reservation._creationTime,
+            updatedAt: reservation.updatedAt ?? reservation._creationTime,
             restaurantName: restaurant?.name || "Restaurante não encontrado",
           };
         })
@@ -2156,6 +2214,8 @@ export const getVehicleBookings = query({
           bookings.map(async (booking) => {
             return {
               ...booking,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               vehicleName: vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado",
             };
           })
@@ -2189,6 +2249,8 @@ export const getVehicleBookings = query({
               bookings.map(async (booking) => {
                 return {
                   ...booking,
+                  createdAt: booking.createdAt ?? booking._creationTime,
+                  updatedAt: booking.updatedAt ?? booking._creationTime,
                   vehicleName: `${vehicle.brand} ${vehicle.model}` || "Veículo não encontrado",
                 };
               })
@@ -2222,6 +2284,8 @@ export const getVehicleBookings = query({
           const vehicle = await ctx.db.get(booking.vehicleId);
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             vehicleName: vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado",
           };
         })
@@ -2257,6 +2321,8 @@ export const getVehicleBookings = query({
             const user = await ctx.db.get(booking.userId);
             return {
               ...booking,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               vehicleName: vehicle.name,
               vehicleBrand: vehicle.brand,
               vehicleModel: vehicle.model,
@@ -2343,6 +2409,8 @@ export const getVehicleBookings = query({
             .unique();
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
@@ -2444,6 +2512,8 @@ export const getVehicleBookings = query({
             .unique();
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
@@ -2522,6 +2592,8 @@ export const getVehicleBookings = query({
             .unique();
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
@@ -2561,6 +2633,8 @@ export const getVehicleBookings = query({
             .unique();
           return {
             ...booking,
+            createdAt: booking.createdAt ?? booking._creationTime,
+            updatedAt: booking.updatedAt ?? booking._creationTime,
             vehicleName: vehicle?.name || "Veículo não encontrado",
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
@@ -2624,7 +2698,14 @@ export const getActivityBookingById = query({
   ),
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
-    return booking || null;
+    if (!booking) {
+      return null;
+    }
+    return {
+      ...booking,
+      createdAt: booking.createdAt ?? booking._creationTime,
+      updatedAt: booking.updatedAt ?? booking._creationTime,
+    };
   },
 });
 
@@ -2665,7 +2746,14 @@ export const getEventBookingById = query({
   ),
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
-    return booking || null;
+    if (!booking) {
+      return null;
+    }
+    return {
+      ...booking,
+      createdAt: booking.createdAt ?? booking._creationTime,
+      updatedAt: booking.updatedAt ?? booking._creationTime,
+    };
   },
 });
 
@@ -2698,12 +2786,21 @@ export const getRestaurantReservationById = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
     }),
     v.null()
   ),
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.reservationId);
-    return reservation || null;
+    if (!reservation) {
+      return null;
+    }
+    return {
+      ...reservation,
+      createdAt: reservation.createdAt ?? reservation._creationTime,
+      updatedAt: reservation.updatedAt ?? reservation._creationTime,
+    };
   },
 });
 
@@ -2743,7 +2840,14 @@ export const getVehicleBookingById = query({
   ),
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.bookingId);
-    return booking || null;
+    if (!booking) {
+      return null;
+    }
+    return {
+      ...booking,
+      createdAt: booking.createdAt ?? booking._creationTime,
+      updatedAt: booking.updatedAt ?? booking._creationTime,
+    };
   },
 });
 
@@ -2853,8 +2957,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking.confirmationCode,
               date: booking.date,
               time: booking.time,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: false,
             });
           }
@@ -2886,8 +2990,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking.confirmationCode,
               date: booking.date,
               time: booking.time,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
             });
           }
@@ -2910,8 +3014,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking.confirmationCode,
               date: booking.date,
               time: booking.time,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
             });
           }
@@ -2944,8 +3048,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking.confirmationCode,
               date: event.date,
               time: event.time,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: false,
             });
           }
@@ -2977,8 +3081,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking.confirmationCode,
               date: event.date,
               time: event.time,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
             });
           }
@@ -3001,8 +3105,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking.confirmationCode,
               date: event.date,
               time: event.time,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
             });
           }
@@ -3035,8 +3139,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: reservation.confirmationCode,
               date: reservation.date,
               time: reservation.time,
-              createdAt: reservation._creationTime,
-              updatedAt: reservation._creationTime,
+              createdAt: reservation.createdAt ?? reservation._creationTime,
+              updatedAt: reservation.updatedAt ?? reservation._creationTime,
               canManage: false,
             });
           }
@@ -3068,8 +3172,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: reservation.confirmationCode,
               date: reservation.date,
               time: reservation.time,
-              createdAt: reservation._creationTime,
-              updatedAt: reservation._creationTime,
+              createdAt: reservation.createdAt ?? reservation._creationTime,
+              updatedAt: reservation.updatedAt ?? reservation._creationTime,
               canManage: true,
             });
           }
@@ -3092,8 +3196,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: reservation.confirmationCode,
               date: reservation.date,
               time: reservation.time,
-              createdAt: reservation._creationTime,
-              updatedAt: reservation._creationTime,
+              createdAt: reservation.createdAt ?? reservation._creationTime,
+              updatedAt: reservation.updatedAt ?? reservation._creationTime,
               canManage: true,
             });
           }
@@ -3119,16 +3223,16 @@ export const getBookingsWithRBAC = query({
               type: "vehicle",
               assetId: booking.vehicleId,
               assetName: vehicle.name,
-              customerName: "Cliente", // Vehicle bookings may not have customer info
-              customerEmail: "cliente@email.com", // Placeholder
+              customerName: user.name ?? "N/A",
+              customerEmail: user.email ?? "N/A",
               totalPrice: booking.totalPrice,
               status: booking.status,
-              confirmationCode: booking._id.toString(), // Use booking ID as confirmation
-              date: new Date(booking.startDate).toISOString().split('T')[0],
-              time: undefined,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
-              canManage: false,
+              confirmationCode: "N/A", // Vehicle bookings might not have this
+              date: new Date(booking.startDate).toLocaleDateString(),
+              time: "",
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
+              canManage: true,
             });
           }
         }
@@ -3159,8 +3263,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking._id.toString(), // Use booking ID as confirmation
               date: new Date(booking.startDate).toISOString().split('T')[0],
               time: undefined,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
             });
           }
@@ -3183,8 +3287,8 @@ export const getBookingsWithRBAC = query({
               confirmationCode: booking._id.toString(), // Use booking ID as confirmation
               date: new Date(booking.startDate).toISOString().split('T')[0],
               time: undefined,
-              createdAt: booking.createdAt,
-              updatedAt: booking.updatedAt,
+              createdAt: booking.createdAt ?? booking._creationTime,
+              updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
             });
           }

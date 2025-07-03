@@ -1,4 +1,4 @@
-import { api } from "@/../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useState, useEffect, useMemo } from "react";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -351,7 +351,7 @@ export const usePublicEventsQuery = () => {
 };
 
 export const useCreateEvent = () => {
-  const createEventMutation = useMutation(api["domains/events/mutations"].create);
+  const createEventMutation = useMutation(api.domains.events.mutations.create);
   const getCurrentUser = useCurrentUser();
   
   return async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -387,7 +387,7 @@ export const useCreateEvent = () => {
 };
 
 export const useUpdateEvent = () => {
-  const updateEventMutation = useMutation(api["domains/events/mutations"].update);
+  const updateEventMutation = useMutation(api.domains.events.mutations.update);
   const getCurrentUser = useCurrentUser();
   
   return async (eventData: Event) => {
@@ -433,7 +433,7 @@ export const useUpdateEvent = () => {
 };
 
 export const useDeleteEvent = () => {
-  const deleteEventMutation = useMutation(api["domains/events/mutations"].remove);
+  const deleteEventMutation = useMutation(api.domains.events.mutations.remove);
   
   return async (id: string) => {
     return await deleteEventMutation({ id: id as Id<"events"> });
@@ -441,7 +441,7 @@ export const useDeleteEvent = () => {
 };
 
 export const useToggleFeatured = () => {
-  const toggleFeaturedMutation = useMutation(api["domains/events/mutations"].toggleFeatured);
+  const toggleFeaturedMutation = useMutation(api.domains.events.mutations.toggleFeatured);
   
   return async (id: string, isFeatured: boolean) => {
     return await toggleFeaturedMutation({ id: id as Id<"events">, isFeatured });
@@ -449,7 +449,7 @@ export const useToggleFeatured = () => {
 };
 
 export const useToggleActive = () => {
-  const toggleActiveMutation = useMutation(api["domains/events/mutations"].toggleActive);
+  const toggleActiveMutation = useMutation(api.domains.events.mutations.toggleActive);
   
   return async (id: string, isActive: boolean) => {
     return await toggleActiveMutation({ id: id as Id<"events">, isActive });
@@ -472,7 +472,7 @@ export const useUserEvents = () => {
         const convexUserId = user._id as Id<"users">;
         
         // Query events for this user
-        const userEventsQuery = api["domains/events/queries"].getEventsForAdmin;
+        const userEventsQuery = api.domains.events.queries.getEventsForAdmin;
         const userEvents = await userEventsQuery({});
         
         // Map to frontend events
@@ -552,7 +552,7 @@ export const useActiveEventTicketsQuery = (eventId: string | null) => {
 };
 
 export const useCreateEventTicket = () => {
-  const createTicketMutation = useMutation(api["domains/events/mutations"].createEventTicket);
+  const createTicketMutation = useMutation(api.domains.events.mutations.createEventTicket);
   
   return async (ticketData: Omit<EventTicket, 'id' | 'createdAt'>) => {
     // Convert number fields to bigint for Convex
@@ -573,7 +573,7 @@ export const useCreateEventTicket = () => {
 };
 
 export const useUpdateEventTicket = () => {
-  const updateTicketMutation = useMutation(api["domains/events/mutations"].updateEventTicket);
+  const updateTicketMutation = useMutation(api.domains.events.mutations.updateEventTicket);
   
   return async (ticketData: EventTicket) => {
     const { id, createdAt, ...updateData } = ticketData;
@@ -586,7 +586,7 @@ export const useUpdateEventTicket = () => {
 };
 
 export const useDeleteEventTicket = () => {
-  const deleteTicketMutation = useMutation(api["domains/events/mutations"].removeEventTicket);
+  const deleteTicketMutation = useMutation(api.domains.events.mutations.removeEventTicket);
   
   return async (id: string) => {
     return await deleteTicketMutation({ id: id as Id<"eventTickets"> });

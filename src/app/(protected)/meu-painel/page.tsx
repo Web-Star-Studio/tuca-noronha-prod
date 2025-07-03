@@ -44,7 +44,7 @@ export default function Dashboard() {
     activeSection,
     setActiveSection,
     notifications,
-    markNotificationAsRead,
+    onMarkAsRead,
     handleNewReservation,
     handleViewReservationDetails,
     handleCancelReservation,
@@ -73,7 +73,7 @@ export default function Dashboard() {
           <OverviewSection 
             reservations={reservations}
             notifications={notifications}
-            onMarkAsRead={markNotificationAsRead}
+            onMarkAsRead={onMarkAsRead}
             onSectionChange={setActiveSection}
             stats={stats}
           />
@@ -103,7 +103,7 @@ export default function Dashboard() {
           <OverviewSection 
             reservations={reservations}
             notifications={notifications}
-            onMarkAsRead={markNotificationAsRead}
+            onMarkAsRead={onMarkAsRead}
             onSectionChange={setActiveSection}
             stats={stats}
           />

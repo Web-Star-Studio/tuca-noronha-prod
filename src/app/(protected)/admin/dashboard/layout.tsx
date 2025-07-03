@@ -237,10 +237,10 @@ function MasterSidebar() {
 
   const masterAssetLinks = [
     { href: "/admin/dashboard/assets", icon: Database, label: "Todos os Assets" },
-    { href: "/admin/dashboard/restaurantes-master", icon: Utensils, label: "Restaurantes" },
-    { href: "/admin/dashboard/eventos-master", icon: Calendar, label: "Eventos" },
-    { href: "/admin/dashboard/atividades-master", icon: Activity, label: "Atividades" },
-    { href: "/admin/dashboard/veiculos-master", icon: Car, label: "Veículos" },
+    { href: "/admin/dashboard/restaurantes", icon: Utensils, label: "Restaurantes" },
+    { href: "/admin/dashboard/eventos", icon: Calendar, label: "Eventos" },
+    { href: "/admin/dashboard/atividades", icon: Activity, label: "Atividades" },
+    { href: "/admin/dashboard/veiculos", icon: Car, label: "Veículos" },
   ]
 
   const masterReportLinks = [

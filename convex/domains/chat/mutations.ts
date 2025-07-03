@@ -217,7 +217,8 @@ export const sendMessage = mutation({
       throw new Error("Sala de chat não encontrada");
     }
 
-    if (chatRoom.travelerId.toString() !== currentUserId.toString() && 
+    if (currentUserRole !== "master" &&
+        chatRoom.travelerId.toString() !== currentUserId.toString() && 
         chatRoom.partnerId.toString() !== currentUserId.toString()) {
       throw new Error("Acesso negado a esta sala de chat");
     }
@@ -356,7 +357,10 @@ export const markMessagesAsRead = mutation({
       throw new Error("Sala de chat não encontrada");
     }
 
-    if (chatRoom.travelerId.toString() !== currentUserId.toString() && 
+    const currentUserRole = await getCurrentUserRole(ctx);
+    
+    if (currentUserRole !== "master" &&
+        chatRoom.travelerId.toString() !== currentUserId.toString() && 
         chatRoom.partnerId.toString() !== currentUserId.toString()) {
       throw new Error("Acesso negado a esta sala de chat");
     }
@@ -438,7 +442,8 @@ export const updateChatRoomStatus = mutation({
       throw new Error("Sala de chat não encontrada");
     }
 
-    if (chatRoom.travelerId.toString() !== currentUserId.toString() && 
+    if (currentUserRole !== "master" &&
+        chatRoom.travelerId.toString() !== currentUserId.toString() && 
         chatRoom.partnerId.toString() !== currentUserId.toString()) {
       throw new Error("Acesso negado a esta sala de chat");
     }

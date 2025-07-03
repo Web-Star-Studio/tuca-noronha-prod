@@ -27,11 +27,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Review components
+import { ReviewStats, ReviewsList } from "@/components/reviews";
+
 interface EventDetailsProps {
   event: Event;
+  reviewStats?: {
+    averageRating: number;
+    totalReviews: number;
+    ratingDistribution: Record<number, number>;
+    recommendationPercentage: number;
+    detailedAverages?: any;
+  } | null;
 }
 
-export default function EventDetails({ event }: EventDetailsProps) {
+export default function EventDetails({ event, reviewStats }: EventDetailsProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -96,11 +106,18 @@ export default function EventDetails({ event }: EventDetailsProps) {
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-shadow-sm">
               {event.title}
             </h1>
+            
+            {/* Review Stats in Hero */}
             <div className="flex items-center gap-1 text-yellow-400 mb-4">
               <Star className="h-5 w-5 fill-yellow-400" />
-              <span className="font-medium">4.8</span>
-              <span className="text-white/80 text-sm">(124 avaliações)</span>
+              <span className="font-medium">
+                {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : '4.8'}
+              </span>
+              <span className="text-white/80 text-sm">
+                ({reviewStats?.totalReviews || 0} avaliações)
+              </span>
             </div>
+            
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
@@ -145,6 +162,12 @@ export default function EventDetails({ event }: EventDetailsProps) {
                     Ingressos
                   </TabsTrigger>
                 )}
+                <TabsTrigger
+                  value="reviews"
+                  className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                >
+                  Avaliações
+                </TabsTrigger>
                 <TabsTrigger
                   value="policies"
                   className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
@@ -335,6 +358,34 @@ export default function EventDetails({ event }: EventDetailsProps) {
                 )}
               </TabsContent>
 
+              {/* Reviews tab */}
+              <TabsContent value="reviews" className="space-y-6 mt-2">
+                <div>
+                  <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
+                  
+                  {/* Review Stats */}
+                  <div className="mb-8">
+                    {reviewStats && (
+                      <ReviewStats
+                        totalReviews={reviewStats.totalReviews}
+                        averageRating={reviewStats.averageRating}
+                        ratingDistribution={reviewStats.ratingDistribution}
+                        recommendationPercentage={reviewStats.recommendationPercentage}
+                        detailedAverages={reviewStats.detailedAverages}
+                        className="bg-white border border-gray-200 rounded-lg p-6"
+                      />
+                    )}
+                  </div>
+
+                  {/* Reviews List */}
+                  <ReviewsList
+                    itemId={event.id}
+                    itemType="events"
+                    className="space-y-4"
+                  />
+                </div>
+              </TabsContent>
+
               {/* Policies tab */}
               <TabsContent value="policies" className="space-y-6 mt-2">
                 <h2 className="text-2xl font-semibold mb-4">Políticas do Evento</h2>
@@ -499,7 +550,7 @@ export default function EventDetails({ event }: EventDetailsProps) {
                         src={image}
                         alt={`Imagem ${idx + 1} do evento`}
                         fill
-                        className="object-cover hover:scale-110 transition-transform duration-300"
+                        className="object-cover hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   ))}

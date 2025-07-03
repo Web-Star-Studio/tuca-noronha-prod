@@ -65,6 +65,11 @@ export async function verifyPartnerAccess(
   const currentUserId = await getCurrentUserConvexId(ctx);
   if (!currentUserId) return false;
   
+  const role = await getCurrentUserRole(ctx);
+  
+  // Masters têm acesso total a todos os recursos
+  if (role === "master") return true;
+  
   const resource = await ctx.db.get(resourceId);
   if (!resource) return false;
   

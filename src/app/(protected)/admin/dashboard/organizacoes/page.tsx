@@ -73,10 +73,10 @@ export default function OrganizationsManagementPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
 
   // Buscar estatísticas do sistema
-  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics)
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics)
   
   // Buscar todas as organizações
-  const organizationsResult = useQuery(api["domains/rbac/queries"].listPartnerOrganizations, {})
+  const organizationsResult = useQuery(api.domains.rbac.queries.listPartnerOrganizations)
 
   const allOrganizations = organizationsResult || []
   

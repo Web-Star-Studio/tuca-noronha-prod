@@ -99,15 +99,15 @@ export default function SupportPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Queries
-  const supportMessages = useQuery(api["domains/support/queries"].listSupportMessages, {
+  const supportMessages = useQuery(api.domains.support.queries.listSupportMessages, {
     status: selectedStatus === "all" ? undefined : selectedStatus as any,
     limit: 100,
   });
 
-  const supportStats = useQuery(api["domains/support/queries"].getSupportStatistics);
+  const supportStats = useQuery(api.domains.support.queries.getSupportStatistics);
 
   // Mutations
-  const updateStatus = useMutation(api["domains/support/mutations"].updateSupportMessageStatus);
+  const updateStatus = useMutation(api.domains.support.mutations.updateSupportMessageStatus);
 
   if (user?.role !== "master") {
     return (

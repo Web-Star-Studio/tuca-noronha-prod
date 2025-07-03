@@ -3,6 +3,7 @@ import { mutation, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import type { PackageCreateInput, PackageUpdateInput } from "./types";
+import { generateConfirmationCode } from "../bookings/utils";
 
 // Create a new package
 export const createPackage = mutation({
@@ -351,7 +352,7 @@ export const createPackageBooking = mutation({
     }
 
     // Generate confirmation code
-    const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const confirmationCode = generateConfirmationCode(args.startDate, args.customerInfo.name);
 
     const now = Date.now();
     
@@ -437,6 +438,116 @@ export const updatePackageBookingPayment = mutation({
     }
 
     await ctx.db.patch(args.id, updateData);
+    return null;
+  },
+});
+
+/**
+ * Confirm package booking (Partner/Employee/Master only)
+ */
+export const confirmPackageBooking = mutation({
+  args: { 
+    bookingId: v.id("packageBookings"),
+    partnerNotes: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Get package to verify ownership
+    const packageData = await ctx.db.get(booking.packageId);
+    if (!packageData) {
+      throw new Error("Pacote não encontrado");
+    }
+
+    // Check if user has permission to confirm this booking
+    const canConfirm = user.role === "master" || 
+      (user.role === "partner" && packageData.partnerId === user._id) ||
+      (user.role === "employee");
+
+    if (!canConfirm) {
+      throw new Error("Sem permissão para confirmar esta reserva");
+    }
+
+    if (booking.status === "confirmed") {
+      throw new Error("Reserva já está confirmada");
+    }
+
+    if (booking.status === "cancelled") {
+      throw new Error("Não é possível confirmar uma reserva cancelada");
+    }
+
+    await ctx.db.patch(args.bookingId, {
+      status: "confirmed",
+      ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
+      updatedAt: Date.now(),
+    });
+
+    // Create voucher for confirmed booking
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+      bookingId: booking._id,
+      bookingType: "package",
+      userId: booking.userId,
+      partnerId: user._id,
+      assetId: packageData._id,
+      customerInfo: booking.customerInfo,
+      expiresAt: booking.endDate,
+    });
+
+    // Schedule notification sending action
+    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+      userId: booking.userId,
+      bookingId: booking._id,
+      bookingType: "package",
+      assetName: packageData.name,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      partnerName: user.name,
+    });
+
+    // Get voucher details for email
+    const voucher: any = await ctx.db.get(voucherId);
+    if (voucher) {
+      // Send voucher email
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        customerEmail: booking.customerInfo.email,
+        customerName: booking.customerInfo.name,
+        assetName: packageData.name,
+        bookingType: "package",
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+        bookingDate: booking.startDate,
+        totalPrice: booking.totalPrice,
+        partnerName: user.name,
+        bookingDetails: {
+          guests: booking.guests,
+          duration: packageData.duration,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          includes: packageData.includes,
+          highlights: packageData.highlights,
+        },
+      });
+    }
+
     return null;
   },
 });
@@ -575,11 +686,27 @@ export const duplicatePackage = mutation({
   },
 });
 
-// Generate unique request number
-function generateRequestNumber(): string {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `PKG-${timestamp}-${random}`;
+// Generate unique request number for package requests
+// Format: DDMM-SOBRENOME NOME-PKG-XXXX
+function generateRequestNumber(customerName: string, tripStartDate?: string): string {
+  // Para solicitações com datas flexíveis, usar data atual
+  const date = tripStartDate ? new Date(tripStartDate) : new Date();
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  
+  // Normalizar e extrair partes do nome
+  const normalizedName = customerName.trim().toUpperCase();
+  const nameParts = normalizedName.split(/\s+/);
+  
+  // Extrair primeiro nome e sobrenome
+  const firstName = nameParts[0] || 'CLIENTE';
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+  
+  // Gerar número aleatório de 4 dígitos
+  const random = Math.floor(1000 + Math.random() * 9000);
+  
+  // Montar código no formato DDMM-SOBRENOME NOME-PKG-XXXX
+  return `${day}${month}-${lastName} ${firstName}-PKG-${random}`;
 }
 
 // Customer info validator
@@ -692,7 +819,7 @@ export const createPackageRequest = mutation({
       throw new Error("Group size must be a positive number");
     }
 
-    const requestNumber = generateRequestNumber();
+    const requestNumber = generateRequestNumber(args.customerInfo.name, args.tripDetails.startDate);
     
     const packageRequestId = await ctx.db.insert("packageRequests", {
       requestNumber,

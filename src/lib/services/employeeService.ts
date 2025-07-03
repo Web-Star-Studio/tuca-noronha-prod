@@ -2,9 +2,9 @@
   Employee service hooks for partners to manage their employees and permissions.
 */
 
-import { api } from "@/../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import type { Id } from "@/../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 export type Employee = {
   _id: Id<"users">;

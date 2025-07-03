@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Activity, 
   Users, 
@@ -41,19 +51,27 @@ import {
   Award,
   Building2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardPageHeader } from "../components";
+import { MediaSelector } from "@/components/dashboard/media";
 
 type ActivityData = {
   _id: Id<"activities">;
   title: string;
+  description?: string;
   category: string;
   price: number | bigint;
   maxParticipants: number | bigint;
+  minParticipants?: number | bigint;
   difficulty: string;
   rating: number | bigint;
   isFeatured: boolean;
@@ -62,6 +80,14 @@ type ActivityData = {
   _creationTime: number;
   duration: string;
   shortDescription: string;
+  imageUrl?: string;
+  galleryImages?: string[];
+  highlights?: string[];
+  includes?: string[];
+  itineraries?: string[];
+  excludes?: string[];
+  additionalInfo?: string[];
+  cancelationPolicy?: string[];
   creator?: {
     name?: string;
     email?: string;
@@ -93,6 +119,18 @@ export default function ActivitiesMasterPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+
+  // Estados para operações CRUD
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<ActivityData | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Mutations
+  const createActivity = useMutation(api.domains.activities.mutations.create);
+  const updateActivity = useMutation(api.domains.activities.mutations.update);
+  const deleteActivity = useMutation(api.domains.activities.mutations.remove);
+  const toggleFeatured = useMutation(api.domains.activities.mutations.toggleFeatured);
+  const toggleActive = useMutation(api.domains.activities.mutations.toggleActive);
 
   // Verificar permissões
   if (!user) {
@@ -162,16 +200,86 @@ export default function ActivitiesMasterPage() {
     avgRating: activities.length > 0 ? activities.reduce((sum, a) => sum + Number(a.rating || 0), 0) / activities.length : 0,
   } : null;
 
+  // Handlers para operações CRUD
+  const handleCreateActivity = async (formData: any) => {
+    try {
+      await createActivity({
+        ...formData,
+        partnerId: formData.partnerId as Id<"users">,
+      });
+      toast.success("Atividade criada com sucesso");
+      setAddDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      toast.error("Erro ao criar atividade");
+    }
+  };
+
+  const handleUpdateActivity = async (formData: any) => {
+    try {
+      await updateActivity({
+        id: editingActivity?._id as Id<"activities">,
+        ...formData,
+        partnerId: formData.partnerId as Id<"users">,
+      });
+      toast.success("Atividade atualizada com sucesso");
+      setEditingActivity(null);
+    } catch (error) {
+      console.error("Error updating activity:", error);
+      toast.error("Erro ao atualizar atividade");
+    }
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    try {
+      await deleteActivity({ id: id as Id<"activities"> });
+      toast.success("Atividade excluída com sucesso");
+      setConfirmDeleteId(null);
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      toast.error("Erro ao excluir atividade");
+    }
+  };
+
+  const handleToggleFeatured = async (id: string, featured: boolean) => {
+    try {
+      await toggleFeatured({ id: id as Id<"activities">, isFeatured: featured });
+      toast.success(`Atividade ${featured ? "destacada" : "removida dos destaques"} com sucesso`);
+    } catch (error) {
+      console.error("Error toggling featured:", error);
+      toast.error("Erro ao alterar status de destaque");
+    }
+  };
+
+  const handleToggleActive = async (id: string, active: boolean) => {
+    try {
+      await toggleActive({ id: id as Id<"activities">, isActive: active });
+      toast.success(`Atividade ${active ? "ativada" : "desativada"} com sucesso`);
+    } catch (error) {
+      console.error("Error toggling active:", error);
+      toast.error("Erro ao alterar status ativo");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <DashboardPageHeader
-        title="Gestão de Atividades"
-        description="Visão completa de todas as atividades da plataforma"
-        icon={Activity}
-        iconBgClassName="bg-purple-100"
-        iconColorClassName="text-purple-600"
-      />
+      <div className="flex items-center justify-between">
+        <DashboardPageHeader
+          title="Gestão de Atividades"
+          description="Visão completa de todas as atividades da plataforma"
+          icon={Activity}
+          iconBgClassName="bg-purple-100"
+          iconColorClassName="text-purple-600"
+        />
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-200 border-none text-white">
+              <Plus className="mr-2 h-4 w-4" /> Nova Atividade
+            </Button>
+          </DialogTrigger>
+        </Dialog>
+      </div>
 
       {/* Estatísticas */}
       {stats && (
@@ -433,9 +541,45 @@ export default function ActivitiesMasterPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => setEditingActivity(activity)}
+                            title="Editar atividade"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleFeatured(activity._id, !activity.isFeatured)}
+                            title={activity.isFeatured ? "Remover destaque" : "Destacar"}
+                            className={activity.isFeatured ? "text-yellow-600 hover:text-yellow-700" : ""}
+                          >
+                            <Star className={`h-4 w-4 ${activity.isFeatured ? "fill-yellow-500" : ""}`} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleActive(activity._id, !activity.isActive)}
+                            title={activity.isActive ? "Desativar" : "Ativar"}
+                            className={activity.isActive ? "text-green-600 hover:text-green-700" : "text-gray-600 hover:text-gray-700"}
+                          >
+                            {activity.isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => window.open(`/atividades/${activity._id}`, "_blank")}
+                            title="Visualizar página"
                           >
                             <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setConfirmDeleteId(activity._id)}
+                            title="Excluir atividade"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -447,6 +591,333 @@ export default function ActivitiesMasterPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Form Dialog */}
+      <ActivityFormDialog 
+        open={addDialogOpen || !!editingActivity}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddDialogOpen(false);
+            setEditingActivity(null);
+          }
+        }}
+        activity={editingActivity}
+        onSave={editingActivity ? handleUpdateActivity : handleCreateActivity}
+        title={editingActivity ? "Editar Atividade" : "Nova Atividade"}
+        description={editingActivity ? "Atualize as informações da atividade." : "Preencha os dados para criar uma nova atividade."}
+      />
+
+      {/* Confirm Delete Dialog */}
+      {confirmDeleteId && (
+        <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" /> Confirmar Exclusão
+              </DialogTitle>
+              <DialogDescription>
+                Esta ação não pode ser desfeita. Tem certeza que deseja excluir esta atividade?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200 text-red-700 text-sm">
+              Ao excluir esta atividade, todos os dados associados também serão removidos.
+            </div>
+            
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => handleDeleteActivity(confirmDeleteId)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+  );
+}
+
+// Componente do formulário de atividade
+function ActivityFormDialog({ 
+  open, 
+  onOpenChange, 
+  activity, 
+  onSave, 
+  title, 
+  description 
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  activity?: ActivityData | null;
+  onSave: (data: any) => void;
+  title: string;
+  description: string;
+}) {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    shortDescription: "",
+    price: 0,
+    category: "",
+    duration: "",
+    maxParticipants: 1,
+    minParticipants: 1,
+    difficulty: "Fácil",
+    rating: 0,
+    imageUrl: "",
+    galleryImages: [] as string[],
+    highlights: [] as string[],
+    includes: [] as string[],
+    itineraries: [] as string[],
+    excludes: [] as string[],
+    additionalInfo: [] as string[],
+    cancelationPolicy: [] as string[],
+    isFeatured: false,
+    isActive: true,
+    partnerId: "",
+  });
+
+  const [partners] = useState<any[]>([]);
+  const allUsers = useQuery(api.domains.users.queries.getAllUsers);
+
+  const partnerUsers = allUsers?.filter(user => user.role === "partner") || [];
+
+  // Reset form when activity changes
+  useEffect(() => {
+    if (activity) {
+      setFormData({
+        title: activity.title || "",
+        description: activity.description || "",
+        shortDescription: activity.shortDescription || "",
+        price: Number(activity.price) || 0,
+        category: activity.category || "",
+        duration: activity.duration || "",
+        maxParticipants: Number(activity.maxParticipants) || 1,
+        minParticipants: Number(activity.minParticipants) || 1,
+        difficulty: activity.difficulty || "Fácil",
+        rating: Number(activity.rating) || 0,
+        imageUrl: activity.imageUrl || "",
+        galleryImages: activity.galleryImages || [],
+        highlights: activity.highlights || [],
+        includes: activity.includes || [],
+        itineraries: activity.itineraries || [],
+        excludes: activity.excludes || [],
+        additionalInfo: activity.additionalInfo || [],
+        cancelationPolicy: activity.cancelationPolicy || [],
+        isFeatured: activity.isFeatured || false,
+        isActive: activity.isActive !== undefined ? activity.isActive : true,
+        partnerId: activity.partnerId || "",
+      });
+    } else {
+      setFormData({
+        title: "",
+        description: "",
+        shortDescription: "",
+        price: 0,
+        category: "",
+        duration: "",
+        maxParticipants: 1,
+        minParticipants: 1,
+        difficulty: "Fácil",
+        rating: 0,
+        imageUrl: "",
+        galleryImages: [],
+        highlights: [],
+        includes: [],
+        itineraries: [],
+        excludes: [],
+        additionalInfo: [],
+        cancelationPolicy: [],
+        isFeatured: false,
+        isActive: true,
+        partnerId: "",
+      });
+    }
+  }, [activity]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria *</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(categoryLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Preço (R$) *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duração *</Label>
+              <Input
+                id="duration"
+                value={formData.duration}
+                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                placeholder="Ex: 2 horas"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="maxParticipants">Máx. Participantes *</Label>
+              <Input
+                id="maxParticipants"
+                type="number"
+                min="1"
+                value={formData.maxParticipants}
+                onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 1 })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="difficulty">Dificuldade *</Label>
+              <Select 
+                value={formData.difficulty} 
+                onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Fácil">Fácil</SelectItem>
+                  <SelectItem value="Moderado">Moderado</SelectItem>
+                  <SelectItem value="Difícil">Difícil</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="partnerId">Parceiro *</Label>
+              <Select 
+                value={formData.partnerId} 
+                onValueChange={(value) => setFormData({ ...formData, partnerId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um parceiro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partnerUsers.map((partner) => (
+                    <SelectItem key={partner._id} value={partner._id}>
+                      {partner.name || partner.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="shortDescription">Descrição Curta *</Label>
+            <Textarea
+              id="shortDescription"
+              value={formData.shortDescription}
+              onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição Completa *</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="imageUrl">URL da Imagem</Label>
+            <Input
+              id="imageUrl"
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://..."
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              checked={formData.isFeatured}
+              onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+            />
+            <Label htmlFor="isFeatured">Destacar atividade</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            />
+            <Label htmlFor="isActive">Atividade ativa</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {activity ? "Atualizar" : "Criar"} Atividade
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 } 

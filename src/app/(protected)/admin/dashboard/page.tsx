@@ -35,8 +35,8 @@ import { EmailTestDialog } from "@/components/dashboard/EmailTestDialog"
 
 // Master Dashboard Component for system-wide view
 function MasterDashboard() {
-  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics);
-  const supportStats = useQuery(api["domains/support/queries"].getSupportStatistics);
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics);
+  const supportStats = useQuery(api.domains.support.queries.getSupportStatistics);
 
   if (!systemStats || !supportStats) {
     return (

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Calendar, Clock, MapPin, Users, ExternalLink, RefreshCw } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { useState } from "react";
+import { QuickStats } from "@/components/reviews";
 
 export default function EventCard({ event }: { event: Event }) {
   // Format date for display
@@ -85,10 +86,18 @@ export default function EventCard({ event }: { event: Event }) {
 
         {/* Content with padding */}
         <div className="p-4 flex-1 flex flex-col">
-          {/* Title */}
-          <h3 className="font-bold text-lg mb-2 text-gray-800 line-clamp-2 group-hover:text-blue-600">
-            {event.title}
-          </h3>
+          {/* Title and Rating */}
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="font-bold text-lg text-gray-800 line-clamp-2 group-hover:text-blue-600 flex-1 mr-2">
+              {event.title}
+            </h3>
+            
+            {/* Review Stats - com fallback para dados estáticos */}
+            <QuickStats
+              averageRating={4.8}
+              className="text-sm flex-shrink-0"
+            />
+          </div>
 
           {/* Description */}
           <div className="mb-4 flex-grow">

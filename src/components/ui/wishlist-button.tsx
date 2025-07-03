@@ -32,10 +32,11 @@ export function WishlistButton({
   // Check if item is in wishlist
   const isInWishlist = useQuery(
     api.wishlist.isInWishlist,
-    userId ? {
+    {
+      userId,
       itemType,
       itemId,
-    } : "skip"
+    }
   )
 
   // Mutations
@@ -58,12 +59,14 @@ export function WishlistButton({
     try {
       if (isInWishlist) {
         await removeFromWishlist({
+          userId,
           itemType,
           itemId,
         })
         toast.success("Item removido dos favoritos.")
       } else {
         await addToWishlist({
+          userId,
           itemType,
           itemId,
         })

@@ -76,8 +76,8 @@ export default function MetricasPage() {
   const [refreshing, setRefreshing] = useState(false)
 
   // Buscar estatísticas do sistema
-  const systemStats = useQuery(api["domains/users/queries"].getSystemStatistics)
-  const supportStats = useQuery(api["domains/support/queries"].getSupportStatistics)
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics)
+  const supportStats = useQuery(api.domains.support.queries.getSupportStatistics)
 
   // Métricas de crescimento serão calculadas automaticamente 
   // com base nos dados históricos do sistema quando implementadas

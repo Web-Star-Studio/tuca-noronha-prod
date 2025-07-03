@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "convex/react";
-import { api } from "@/../convex/_generated/api";
+import { api } from "../../convex/_generated/api";
 
 /**
  * Optimized asset management hook using selective query patterns
@@ -33,7 +33,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
   // Asset-specific queries with conditional execution
   const restaurantsQuery = useQuery(
     assetType === "all" || assetType === "restaurants" 
-      ? api["domains/users/queries"].listAllRestaurants 
+      ? api.domains.users.queries.listAllRestaurants 
       : undefined,
     {
       isActive: isActive,
@@ -44,7 +44,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
 
   const eventsQuery = useQuery(
     assetType === "all" || assetType === "events"
-      ? api["domains/users/queries"].listAllEvents
+      ? api.domains.users.queries.listAllEvents
       : undefined,
     {
       isActive: isActive,
@@ -55,7 +55,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
 
   const activitiesQuery = useQuery(
     assetType === "all" || assetType === "activities"
-      ? api["domains/users/queries"].listAllActivities
+      ? api.domains.users.queries.listAllActivities
       : undefined,
     {
       isActive: isActive,
@@ -66,7 +66,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
 
   const vehiclesQuery = useQuery(
     assetType === "all" || assetType === "vehicles"
-      ? api["domains/users/queries"].listAllVehicles
+      ? api.domains.users.queries.listAllVehicles
       : undefined,
     {
       isActive: isActive,
@@ -77,7 +77,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
 
   const accommodationsQuery = useQuery(
     assetType === "all" || assetType === "accommodations"
-      ? api["domains/users/queries"].listAllAccommodations
+      ? api.domains.users.queries.listAllAccommodations
       : undefined,
     {
       isActive: isActive,
@@ -189,27 +189,27 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
 export function useAssetTypeCounts() {
   // Individual queries for each asset type count
   const restaurantCount = useQuery(
-    api["domains/users/queries"].listAllRestaurants,
+    api.domains.users.queries.listAllRestaurants,
     { limit: 1000 }
   );
 
   const eventCount = useQuery(
-    api["domains/users/queries"].listAllEvents,
+    api.domains.users.queries.listAllEvents,
     { limit: 1000 }
   );
 
   const activityCount = useQuery(
-    api["domains/users/queries"].listAllActivities,
+    api.domains.users.queries.listAllActivities,
     { limit: 1000 }
   );
 
   const vehicleCount = useQuery(
-    api["domains/users/queries"].listAllVehicles,
+    api.domains.users.queries.listAllVehicles,
     { limit: 1000 }
   );
 
   const accommodationCount = useQuery(
-    api["domains/users/queries"].listAllAccommodations,
+    api.domains.users.queries.listAllAccommodations,
     { limit: 1000 }
   );
 

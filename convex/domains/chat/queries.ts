@@ -58,13 +58,18 @@ export const listChatRooms = query({
     // Busca as salas de chat do usuário
     let chatRooms;
     
-    if (currentUserRole === "traveler") {
+    if (currentUserRole === "master") {
+      // Masters podem ver TODAS as salas de chat
+      chatRooms = await ctx.db
+        .query("chatRooms")
+        .collect();
+    } else if (currentUserRole === "traveler") {
       chatRooms = await ctx.db
         .query("chatRooms")
         .withIndex("by_traveler", (q) => q.eq("travelerId", currentUserId))
         .collect();
     } else {
-      // Partner, employee, master
+      // Partner, employee
       chatRooms = await ctx.db
         .query("chatRooms")
         .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
@@ -202,7 +207,8 @@ export const getChatRoom = query({
     }
 
     // Verificar se o usuário tem acesso a esta sala
-    if (chatRoom.travelerId.toString() !== currentUserId.toString() && 
+    if (user.role !== "master" && 
+        chatRoom.travelerId.toString() !== currentUserId.toString() && 
         chatRoom.partnerId.toString() !== currentUserId.toString()) {
       throw new Error("Acesso negado a esta sala de chat");
     }
@@ -304,7 +310,8 @@ export const listChatMessages = query({
       throw new Error("Sala de chat não encontrada");
     }
 
-    if (chatRoom.travelerId.toString() !== currentUserId.toString() && 
+    if (user.role !== "master" &&
+        chatRoom.travelerId.toString() !== currentUserId.toString() && 
         chatRoom.partnerId.toString() !== currentUserId.toString()) {
       throw new Error("Acesso negado a esta sala de chat");
     }

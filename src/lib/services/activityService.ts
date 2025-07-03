@@ -1,4 +1,4 @@
-import { api } from "@/../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useState, useEffect, useMemo } from "react";
 import type { Activity } from "@/lib/store/activitiesStore";

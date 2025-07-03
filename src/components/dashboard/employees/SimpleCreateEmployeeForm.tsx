@@ -67,13 +67,13 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
   const [organizationNote, setOrganizationNote] = useState("");
 
     // Get user's organizations
-  const organizations = useQuery(api["domains/rbac/queries"].listPartnerOrganizations);
+  const organizations = useQuery(api.domains.rbac.queries.listPartnerOrganizations);
 
   // Create employee directly with password
-  const createEmployeeDirectly = useMutation(api["domains/rbac/mutations"].createEmployeeDirectly);
+  const createEmployeeDirectly = useMutation(api.domains.rbac.mutations.createEmployeeDirectly);
   
   // Grant organization permission mutation
-  const grantOrganizationPermission = useMutation(api["domains/rbac/mutations"].grantOrganizationPermission);
+  const grantOrganizationPermission = useMutation(api.domains.rbac.mutations.grantOrganizationPermission);
 
   const {
     register,

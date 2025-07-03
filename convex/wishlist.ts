@@ -5,20 +5,16 @@ import { Id } from "./_generated/dataModel";
 // Add item to wishlist
 export const addToWishlist = mutation({
   args: {
+    userId: v.string(), // Clerk User ID
     itemType: v.string(),
     itemId: v.string(),
   },
   returns: v.id("wishlistItems"),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Usuário não autenticado");
-    }
-
-    // Get or create user
+    // Find the internal user document from the Clerk ID.
     const user = await ctx.db
       .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("clerkId", (q) => q.eq("clerkId", args.userId))
       .first();
 
     if (!user) {
@@ -29,7 +25,7 @@ export const addToWishlist = mutation({
     const existing = await ctx.db
       .query("wishlistItems")
       .withIndex("by_user_item", (q) =>
-        q.eq("userId", user._id)
+        q.eq("userId", user._id) // Now using the correct internal ID type
          .eq("itemType", args.itemType)
          .eq("itemId", args.itemId)
       )
@@ -40,7 +36,7 @@ export const addToWishlist = mutation({
     }
 
     return await ctx.db.insert("wishlistItems", {
-      userId: user._id,
+      userId: user._id, // Storing the internal ID
       itemType: args.itemType,
       itemId: args.itemId,
       addedAt: Date.now(),
@@ -51,20 +47,16 @@ export const addToWishlist = mutation({
 // Remove item from wishlist
 export const removeFromWishlist = mutation({
   args: {
+    userId: v.string(), // Clerk User ID
     itemType: v.string(),
     itemId: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Usuário não autenticado");
-    }
-
-    // Get user
+    // Find the internal user document from the Clerk ID.
     const user = await ctx.db
       .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("clerkId", (q) => q.eq("clerkId", args.userId))
       .first();
 
     if (!user) {
@@ -74,7 +66,7 @@ export const removeFromWishlist = mutation({
     const existing = await ctx.db
       .query("wishlistItems")
       .withIndex("by_user_item", (q) =>
-        q.eq("userId", user._id)
+        q.eq("userId", user._id) // Using internal ID
          .eq("itemType", args.itemType)
          .eq("itemId", args.itemId)
       )
@@ -92,20 +84,21 @@ export const removeFromWishlist = mutation({
 // Check if item is in wishlist
 export const isInWishlist = query({
   args: {
+    userId: v.union(v.string(), v.null()), // Clerk User ID
     itemType: v.string(),
     itemId: v.string(),
   },
   returns: v.boolean(),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const clerkId = args.userId;
+    if (!clerkId) {
       return false;
     }
 
-    // Get user
+    // Find the internal user document from the Clerk ID.
     const user = await ctx.db
       .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("clerkId", (q) => q.eq("clerkId", clerkId))
       .first();
 
     if (!user) {
@@ -115,7 +108,7 @@ export const isInWishlist = query({
     const existing = await ctx.db
       .query("wishlistItems")
       .withIndex("by_user_item", (q) =>
-        q.eq("userId", user._id)
+        q.eq("userId", user._id) // Using internal ID
          .eq("itemType", args.itemType)
          .eq("itemId", args.itemId)
       )

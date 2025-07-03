@@ -2,6 +2,7 @@ import { Activity } from "@/lib/store/activitiesStore";
 import Link from "next/link";
 import Image from "next/image";
 import { Clock, Star, Users, ImageIcon } from "lucide-react";
+import { QuickStats } from "@/components/reviews";
 
 export default function ActivitiesCard({activity}: {activity: Activity}) {
     return (
@@ -37,10 +38,12 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                     {/* Título e avaliação */}
                     <div className="mb-2 flex justify-between items-start">
                         <h3 className="text-lg font-medium line-clamp-1">{activity.title || 'Título da Atividade'}</h3>
-                        <div className="flex items-center gap-1 text-amber-500 text-sm">
-                            <Star className="h-4 w-4 fill-current" />
-                            <span className="font-semibold">{activity.rating?.toFixed(1) || '0.0'}</span>
-                        </div>
+                        
+                        {/* Review Stats - com fallback para dados estáticos */}
+                        <QuickStats
+                            averageRating={activity.rating || 0}
+                            className="text-sm"
+                        />
                     </div>
                     
                     {/* Descrição curta */}

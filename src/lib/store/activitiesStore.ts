@@ -17,6 +17,7 @@ export interface ActivityTicket {
 
 export interface Activity {
   id: string;
+  _id?: string;
   title: string;
   description: string;
   shortDescription: string;
@@ -32,13 +33,17 @@ export interface Activity {
   highlights: string[];
   includes: string[];
   itineraries: string[];
+  itinerary?: any[];
   excludes: string[];
   additionalInfo: string[];
   cancelationPolicy: string[];
+  requirements?: string[];
+  safetyGuidelines?: string[];
   isFeatured: boolean;
   isActive: boolean;
   hasMultipleTickets?: boolean;
   tickets?: ActivityTicket[];
+  ticketTypes?: any[];
   createdAt: string | Date;
   updatedAt?: string | Date;
   partnerId?: string; // Reference to the user who created the activity

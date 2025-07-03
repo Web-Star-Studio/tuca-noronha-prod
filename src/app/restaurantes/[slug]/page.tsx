@@ -17,8 +17,8 @@ import {
   BookOpen,
   Info,
 } from "lucide-react";
-import { type Restaurant } from "@/lib/store/restaurantsStore";
-import { useRestaurantBySlug } from "@/lib/services/restaurantService";
+import { type Restaurant as RestaurantStoreType } from "@/lib/store/restaurantsStore";
+import { useRestaurantBySlug, type Restaurant as RestaurantServiceType } from "@/lib/services/restaurantService";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -32,12 +32,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RestaurantReservationForm as ImprovedRestaurantReservationForm } from "@/components/bookings/ImprovedRestaurantReservationForm";
+import { ReviewStats } from "@/components/reviews/ReviewStats";
+import { ReviewsList } from "@/components/reviews/ReviewsList";
+import { useReviewStats } from "@/lib/hooks/useReviews";
 
-export default function RestaurantPage(props: { params: Promise<{ slug: string }> }) {
+export default function RestaurantPage(props: { params: Promise<{ slug:string }> }) {
   const params = use(props.params);
   const { restaurant, isLoading } = useRestaurantBySlug(params.slug);
-
-
+  
   // Handle 404 case
   if (!isLoading && !restaurant) {
     notFound();
@@ -59,6 +61,18 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
       </div>
     );
   }
+
+  // O componente principal é renderizado aqui para garantir que `restaurant` não seja nulo
+  return <RestaurantDetails restaurant={restaurant} />;
+}
+
+// Componente extraído para usar hooks após a verificação de nulidade
+function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }) {
+  // Get real review stats
+  const { data: reviewStats } = useReviewStats({
+    assetType: "restaurant", 
+    assetId: restaurant._id!,
+  });
 
   // Format operation hours for display
   const getOperationHoursForToday = () => {
@@ -113,8 +127,12 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
               </h1>
               <div className="flex items-center gap-1 text-yellow-400 mb-4">
                 <Star className="h-5 w-5 fill-yellow-400" />
-                <span className="font-medium">{restaurant.rating.overall.toFixed(1)}</span>
-                <span className="text-white/80 text-sm">({restaurant.rating.totalReviews} avaliações)</span>
+                <span className="font-medium">
+                  {reviewStats?.averageRating && reviewStats.averageRating > 0 ? reviewStats.averageRating.toFixed(1) : restaurant.rating.overall.toFixed(1)}
+                </span>
+                <span className="text-white/80 text-sm">
+                  ({reviewStats?.totalReviews && reviewStats.totalReviews > 0 ? reviewStats.totalReviews : restaurant.rating.totalReviews} avaliações)
+                </span>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
@@ -157,6 +175,12 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
                   >
                     Fotos
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="reviews"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
+                  >
+                    Avaliações ({reviewStats?.totalReviews || 0})
                   </TabsTrigger>
                 </TabsList>
 
@@ -229,261 +253,98 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
                       ))}
                     </div>
                   </div>
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Localização</h3>
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="aspect-video relative rounded-lg overflow-hidden mb-4 bg-gray-100">
-                          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                            <span>Mapa indisponível</span>
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <p className="font-medium">{restaurant.name}</p>
-                          <p className="text-gray-600">{restaurant.address.street}</p>
-                          <p className="text-gray-600">{restaurant.address.neighborhood}, {restaurant.address.city} - {restaurant.address.state}</p>
-                          <p className="text-gray-600">{restaurant.address.zipCode}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
                 </TabsContent>
 
-                {/* Menu tab */}
-                <TabsContent value="menu" className="space-y-6 mt-2">
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <Info className="h-5 w-5 text-blue-600" />
-                    <AlertTitle className="text-blue-800 font-medium">
-                      Informação sobre o cardápio
-                    </AlertTitle>
-                    <AlertDescription className="text-blue-700">
-                      O cardápio apresentado é uma amostra e pode variar de acordo com a sazonalidade e disponibilidade dos ingredientes. Recomendamos verificar as opções atuais diretamente com o restaurante.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="space-y-8">
-                    {restaurant.menuImages && restaurant.menuImages.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {restaurant.menuImages.map((img, index) => (
-                          <div key={`${restaurant.id}-menu-${index}`} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-gray-200">
-                            <Image 
-                              src={img} 
-                              alt={`Menu do ${restaurant.name} - página ${index + 1}`} 
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-10">
-                        <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500">Cardápio digital não disponível</p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                {/* Photos tab */}
-                <TabsContent value="photos" className="space-y-8 mt-2">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Galeria de fotos</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {[restaurant.mainImage, ...restaurant.galleryImages].map((img, index) => (
-                        <div key={`${restaurant.id}-photo-${index}`} className="relative aspect-square rounded-lg overflow-hidden">
-                          <Image 
-                            src={img} 
-                            alt={`${restaurant.name} - foto ${index + 1}`} 
+                <TabsContent value="menu">
+                  <h2 className="text-2xl font-semibold mb-4">Cardápio</h2>
+                  {restaurant.menuImages && restaurant.menuImages.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {restaurant.menuImages.map((src, index) => (
+                        <div key={`${restaurant.id}-menu-${index}`} className="relative aspect-[3/4] rounded-lg overflow-hidden">
+                          <Image
+                            src={src}
+                            alt={`Menu ${index + 1}`}
                             fill
-                            className="object-cover hover:scale-105 transition-transform duration-300"
+                            className="object-cover"
                           />
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <p className="text-gray-500">
+                      O cardápio deste restaurante ainda não está disponível online.
+                    </p>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="photos">
+                  <h2 className="text-2xl font-semibold mb-4">Fotos do local</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {restaurant.galleryImages.map((src, index) => (
+                      <div key={`${restaurant.id}-gallery-${index}`} className="relative aspect-video rounded-lg overflow-hidden">
+                        <Image
+                          src={src}
+                          alt={`Galeria ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
+                </TabsContent>
+                
+                <TabsContent value="reviews" className="space-y-8">
+                  <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
+                  
+                  {reviewStats && (
+                    <ReviewStats
+                      totalReviews={reviewStats.totalReviews}
+                      averageRating={reviewStats.averageRating}
+                      ratingDistribution={reviewStats.ratingDistribution}
+                      recommendationPercentage={reviewStats.recommendationPercentage}
+                      detailedAverages={reviewStats.detailedAverages}
+                    />
+                  )}
+                  
+                  <ReviewsList
+                    itemType="restaurant"
+                    itemId={restaurant._id!}
+                    showCreateForm={true}
+                  />
                 </TabsContent>
               </Tabs>
             </div>
 
-            {/* Sidebar */}
-            <div className="lg:row-start-1">
-              <div className="lg:sticky lg:top-24 space-y-6">
-                {/* Reservation Card */}
-                <Card className="overflow-hidden border-gray-200">
-                  <CardContent className="p-0">
-                    <ImprovedRestaurantReservationForm 
-                      restaurantId={(restaurant._id || restaurant.id) as Id<"restaurants">}
+            {/* Sticky sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-8 space-y-6">
+                <Card className="shadow-lg">
+                  <CardContent className="p-6">
+                    <ImprovedRestaurantReservationForm
+                      restaurantId={restaurant._id as Id<"restaurants">}
                       restaurant={{
                         name: restaurant.name,
                         address: restaurant.address,
                         maximumPartySize: restaurant.maximumPartySize,
                         acceptsReservations: restaurant.acceptsReservations,
-                        hours: restaurant.hours
-                      }}
-                      onReservationSuccess={(reservation) => {
-                        console.log("Reservation submitted:", reservation);
-                        toast.success(`Reserva realizada com sucesso! Código: ${reservation.confirmationCode}`);
+                        hours: restaurant.hours,
                       }}
                     />
                   </CardContent>
                 </Card>
-
-                {/* Contact Card */}
-                <Card className="bg-white border-none outline-none">
-                  <CardContent className="p-6 space-y-4 bg-blue-50">
-                    <h3 className="font-semibold text-lg">Informações de contato</h3>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <Phone className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                          <h4 className="font-medium text-sm text-gray-500">Telefone</h4>
-                          <p className="text-gray-900">{restaurant.phone}</p>
-                        </div>
-                      </div>
-                      
-                      { restaurant.website && (
-                        <div className="flex items-start gap-3">
-                          <Globe className="h-5 w-5 text-blue-600 mt-0.5" />
-                          <div>
-                            <h4 className="font-medium text-sm text-gray-500">Website</h4>
-                            <a 
-                              href={restaurant.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
-                              {restaurant.website.replace(/^https?:\/\//, '')}
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                          <h4 className="font-medium text-sm text-gray-500">Endereço</h4>
-                          <p className="text-gray-900">{restaurant.address.street}</p>
-                          <p className="text-gray-900">{restaurant.address.neighborhood}, {restaurant.address.city} - {restaurant.address.state}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Action buttons */}
-                <div className="space-y-3">
-                  <div className="flex gap-2">
+                
+                <Card>
+                  <CardContent className="p-4 flex flex-col gap-3">
                     <WishlistButton
                       itemType="restaurant"
-                      itemId={(restaurant._id || restaurant.id) as string}
-                      variant="outline"
-                      className="flex-1 border-gray-200"
+                      itemId={restaurant._id!}
+                      className="w-full"
                     />
-                    <Button variant="outline" className="flex-1 border-gray-200">
-                      <Share2 className="h-5 w-5 mr-2 text-gray-600" />
+
+                    <Button variant="outline" className="w-full">
+                      <Share2 className="h-4 w-4 mr-2" />
                       Compartilhar
                     </Button>
-                  </div>
-
-                  {/* Chat Button */}
-                  <ChatButton
-                    assetId={(restaurant._id || restaurant.id) as string}
-                    assetType="restaurants"
-                    assetName={restaurant.name}
-                    partnerId={restaurant.partnerId as any}
-                    variant="default"
-                    size="md"
-                    className="w-full"
-                  />
-                </div>
-
-                {/* Rating Card */}
-                <Card className="overflow-hidden border-gray-200">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Avaliações</h3>
-                    <div className="flex items-center mb-4">
-                      <div className="text-3xl font-bold text-gray-900 mr-3">
-                        {restaurant.rating.overall.toFixed(1)}
-                      </div>
-                      <div>
-                        <div className="flex text-yellow-400 mb-0.5">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={cn(
-                                "h-4 w-4",
-                                star <= Math.round(restaurant.rating.overall)
-                                  ? "fill-yellow-400"
-                                  : "fill-gray-200"
-                              )}
-                            />
-                          ))}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {restaurant.rating.totalReviews} avaliações
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 w-20">Comida</span>
-                        <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="bg-blue-600 h-full rounded-full"
-                            style={{
-                              width: `${(restaurant.rating.food / 5) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{restaurant.rating.food.toFixed(1)}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 w-20">Serviço</span>
-                        <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="bg-blue-600 h-full rounded-full"
-                            style={{
-                              width: `${(restaurant.rating.service / 5) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{restaurant.rating.service.toFixed(1)}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 w-20">Ambiente</span>
-                        <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="bg-blue-600 h-full rounded-full"
-                            style={{
-                              width: `${(restaurant.rating.ambience / 5) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{restaurant.rating.ambience.toFixed(1)}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 w-20">Custo-benefício</span>
-                        <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="bg-blue-600 h-full rounded-full"
-                            style={{
-                              width: `${(restaurant.rating.value / 5) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{restaurant.rating.value.toFixed(1)}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-gray-100">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-600">Nível de ruído</span>
-                        <span className="text-sm font-medium">{restaurant.rating.noiseLevel}</span>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -491,6 +352,17 @@ export default function RestaurantPage(props: { params: Promise<{ slug: string }
           </div>
         </div>
       </main>
+      
+      <ChatButton
+        assetId={restaurant._id!}
+        assetType="restaurants"
+        assetName={restaurant.name}
+        partnerId={restaurant.partnerId as any}
+        variant="floating"
+        size="lg"
+        showLabel={true}
+        customLabel="Suporte"
+      />
     </>
   );
 }
