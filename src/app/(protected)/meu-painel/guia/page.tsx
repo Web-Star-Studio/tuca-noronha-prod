@@ -12,7 +12,7 @@ import {
   Shield, Phone, Mail, MessageCircle, Share2, Bookmark, Download, 
   ChevronLeft, CheckCircle, AlertCircle, Eye, Globe, Compass, ArrowLeft,
   Settings, BarChart3, TrendingDown, Wind, Sunrise, Sunset, Activity,
-  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers, Shirt, Wallet
+  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers, Shirt, Wallet, Play
 } from "lucide-react";
 import { cardStyles, decorativeBackgrounds, buttonStyles, ui } from "@/lib/ui-config";
 import { Button } from "@/components/ui/button";
@@ -387,6 +387,15 @@ function SectionContent({
   const content = {
     "boas-vindas": (
       <div className="space-y-8">
+        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Play className="w-5 h-5 text-blue-600" />
+            Assista ao Vídeo da Seção
+          </h3>
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">[Vídeo em breve]</p>
+          </div>
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -484,7 +493,7 @@ function SectionContent({
         <div className={cn(cardStyles.base, "p-6")}>
           <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Clock className="w-5 h-5 text-indigo-600" />
-            Checklist Essencial do Viajante Premium
+            Checklist Essencial do Viajante
           </h3>
           <div className="space-y-4">
             {[
@@ -580,6 +589,15 @@ function SectionContent({
 
     "accommodation": (
       <div className="space-y-8">
+        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Play className="w-5 h-5 text-purple-600" />
+            Assista ao Vídeo da Seção
+          </h3>
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">[Vídeo em breve]</p>
+          </div>
+        </div>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -592,28 +610,28 @@ function SectionContent({
                 name: "Pousada Maravilha",
                 description: "O epítome da exclusividade, frequentada por celebridades que buscam privacidade absoluta.",
                 pros: ["Exclusividade Absoluta", "Piscina de borda infinita", "Restaurante renomado"],
-                price: "$$$",
+                price: "$$",
                 color: "purple"
               },
               {
                 name: "NANNAI Noronha",
                 description: "Um conceito de luxo sofisticado e romântico, com bangalôs estrategicamente posicionados.",
                 pros: ["Romance Sofisticado", "Vistas deslumbrantes", "Ideal para casais"],
-                price: "$$$",
+                price: "$$",
                 color: "green"
               },
               {
                 name: "Pousada Zé Maria",
                 description: "Uma verdadeira instituição na ilha, a Zé Maria combina luxo com uma atmosfera vibrante e sociável.",
                 pros: ["Luxo Sociável", "Festival Gastronômico", "Piscina com vista para o Morro do Pico"],
-                price: "$$",
+                price: "$",
                 color: "blue"
               },
               {
                 name: "Teju-Açu Ecopousada",
                 description: "Perfeita para o viajante de luxo com consciência ecológica, com bangalôs suspensos entre as árvores.",
                 pros: ["Eco-Chic & Alta Gastronomia", "Horta orgânica própria", "Técnicas de vanguarda"],
-                price: "$$",
+                price: "$",
                 color: "orange"
               }
             ].map((region, index) => {
@@ -657,7 +675,7 @@ function SectionContent({
             {
               type: "Refúgios para Casais",
               icon: Home,
-              price: "$$",
+              price: "$",
               features: ["Ecocharme Pousada do Marcílio", "Pousada Morena", "Pousada Corveta"],
               recommended: preferences.travelStyle === 'romantic',
               color: "green"
@@ -665,7 +683,7 @@ function SectionContent({
             {
               type: "Aventura em Família",
               icon: Building,
-              price: "$ - $$",
+              price: "$ - $",
               features: ["Pousada da Villa", "Pousada Filó", "Pousada Vila Nakau"],
               recommended: preferences.travelStyle === 'family',
               color: "purple"
@@ -767,6 +785,15 @@ function SectionContent({
 
     "transportation": (
       <div className="space-y-8">
+        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Play className="w-5 h-5 text-green-600" />
+            Assista ao Vídeo da Seção
+          </h3>
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">[Vídeo em breve]</p>
+          </div>
+        </div>
         <div className={cn(cardStyles.base, "p-6")}>
           <h2 className="text-xl font-bold text-gray-900 mb-6">Navegando pela Ilha: Opções de Transporte</h2>
           <div className="overflow-x-auto -mx-6 px-6">
@@ -936,6 +963,15 @@ function SectionContent({
 
     "beaches": (
       <div className="space-y-8">
+        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Play className="w-5 h-5 text-cyan-600" />
+            Assista ao Vídeo da Seção
+          </h3>
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">[Vídeo em breve]</p>
+          </div>
+        </div>
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-6">As Joias do Atlântico: Um Roteiro Pelas Praias</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1130,33 +1166,42 @@ function SectionContent({
 
     "dining": (
       <div className="space-y-8">
+        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Play className="w-5 h-5 text-orange-600" />
+            Assista ao Vídeo da Seção
+          </h3>
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">[Vídeo em breve]</p>
+          </div>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               category: "Jantares Memoráveis",
               icon: Fish,
-              avgPrice: "$$ - $$",
+              avgPrice: "$ - $",
               mustTry: "Cacimba Bistrô & Xica da Silva",
               color: "blue"
             },
             {
               category: "Restaurantes de Pousadas",
               icon: Utensils,
-              avgPrice: "$$ - $$$",
+              avgPrice: "$ - $$",
               mustTry: "Maravilha, NANNAI, Teju-Açu",
               color: "orange"
             },
             {
               category: "O Ritual do Pôr do Sol",
               icon: Globe,
-              avgPrice: "$ - $$",
+              avgPrice: "$ - $",
               mustTry: "Mergulhão, Bar do Meio, Forte do Boldró",
               color: "purple"
             },
             {
               category: "Eventos Gastronômicos",
               icon: Heart,
-              avgPrice: "$$ - $$",
+              avgPrice: "$ - $",
               mustTry: "Festival Gastronômico do Zé Maria, Peixada do Solón",
               color: "green"
             }
@@ -1284,6 +1329,15 @@ function SectionContent({
 
     "monthly-guide": (
       <div className="space-y-8">
+        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Play className="w-5 h-5 text-yellow-600" />
+            Assista ao Vídeo da Seção
+          </h3>
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
+            <p className="text-gray-500">[Vídeo em breve]</p>
+          </div>
+        </div>
         <div className={cn(cardStyles.base, "p-6")}>
           <h2 className="text-xl font-bold text-gray-900 mb-6">O Calendário de Noronha: A Melhor Época para a Sua Viagem Perfeita</h2>
           
