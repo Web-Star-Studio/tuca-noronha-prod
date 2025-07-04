@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import {
   MapPin,
   Clock,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { type Restaurant as RestaurantStoreType } from "@/lib/store/restaurantsStore";
 import { useRestaurantBySlug, type Restaurant as RestaurantServiceType } from "@/lib/services/restaurantService";
+import { useConvexAuth } from "convex/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -68,6 +69,8 @@ export default function RestaurantPage(props: { params: Promise<{ slug:string }>
 
 // Componente extraído para usar hooks após a verificação de nulidade
 function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }) {
+  const { isAuthenticated } = useConvexAuth();
+  const router = useRouter();
   // Get real review stats
   const { data: reviewStats } = useReviewStats({
     assetType: "restaurant", 
@@ -320,16 +323,25 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
               <div className="sticky top-8 space-y-6">
                 <Card className="shadow-lg">
                   <CardContent className="p-6">
-                    <ImprovedRestaurantReservationForm
-                      restaurantId={restaurant._id as Id<"restaurants">}
-                      restaurant={{
-                        name: restaurant.name,
-                        address: restaurant.address,
-                        maximumPartySize: restaurant.maximumPartySize,
-                        acceptsReservations: restaurant.acceptsReservations,
-                        hours: restaurant.hours,
-                      }}
-                    />
+                    {isAuthenticated ? (
+                      <ImprovedRestaurantReservationForm
+                        restaurantId={restaurant._id as Id<"restaurants">}
+                        restaurant={{
+                          name: restaurant.name,
+                          address: restaurant.address,
+                          maximumPartySize: restaurant.maximumPartySize,
+                          acceptsReservations: restaurant.acceptsReservations,
+                          hours: restaurant.hours,
+                        }}
+                      />
+                    ) : (
+                      <Button
+                        onClick={() => router.push("/sign-in")}
+                        className="w-full"
+                      >
+                        Fazer login para reservar
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
                 

@@ -20,6 +20,8 @@ import { formatDate, cn, formatCurrency } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
 import { EventBookingForm } from "@/components/bookings";
 import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
+import { useConvexAuth } from "convex/react";
+import { useRouter } from "next/navigation";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -42,11 +44,11 @@ interface EventDetailsProps {
 }
 
 export default function EventDetails({ event, reviewStats }: EventDetailsProps) {
+  const { isAuthenticated } = useConvexAuth();
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  
-  // Get WhatsApp link generator
   const { generateWhatsAppLink } = useWhatsAppLink();
   
   // Format date for display
@@ -423,21 +425,34 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
           <div className="lg:sticky lg:top-24 h-fit space-y-6">
             {/* Event Booking Form - Only show if no Sympla URL */}
             {!event.symplaUrl && (
-              <EventBookingForm
-                eventId={event.id as any}
-                event={{
-                  title: event.title,
-                  date: event.date,
-                  time: event.time,
-                  location: event.location,
-                  price: event.price,
-                  hasMultipleTickets: event.hasMultipleTickets,
-                }}
-                onBookingSuccess={(booking) => {
-                  // Redirect to user dashboard reservations page
-                  window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
-                }}
-              />
+              <Card className="border-gray-200 shadow-sm">
+                <CardContent className="p-6">
+                  {isAuthenticated ? (
+                    <EventBookingForm
+                      eventId={event.id as any}
+                      event={{
+                        title: event.title,
+                        date: event.date,
+                        time: event.time,
+                        location: event.location,
+                        price: event.price,
+                        hasMultipleTickets: event.hasMultipleTickets,
+                      }}
+                      onBookingSuccess={(booking) => {
+                        // Redirect to user dashboard reservations page
+                        window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
+                      }}
+                    />
+                  ) : (
+                    <Button
+                      onClick={() => router.push("/sign-in")}
+                      className="w-full"
+                    >
+                      Fazer login para reservar
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             )}
 
             {/* Event Summary Card */}

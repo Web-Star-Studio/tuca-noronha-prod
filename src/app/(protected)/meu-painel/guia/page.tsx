@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { format, isSameMonth, isAfter, isBefore, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { SubscriptionGuard } from "@/components/auth/SubscriptionGuard";
+
 import { 
   ChevronRight, MapPin, Calendar, Utensils, Waves, Building, Info, Star, 
   Plane, Home, Car, UtensilsCrossed, Sun, Clock, Filter, Heart, DollarSign, 
@@ -3621,8 +3621,6 @@ function GuiaPageContent() {
 
 export default function GuiaPage() {
   return (
-    <SubscriptionGuard>
-      <GuiaPageContent />
-    </SubscriptionGuard>
+    <GuiaPageContent />
   );
 } 

@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import {
   Clock,
   Users,
@@ -20,6 +20,7 @@ import {
   Gauge,
 } from "lucide-react";
 import { usePublicActivity } from "@/lib/services/activityService";
+import { useConvexAuth } from "convex/react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ActivityBookingForm } from "@/components/bookings";
 
@@ -40,6 +41,8 @@ import type { Id } from "@/../convex/_generated/dataModel";
 export default function ActivityPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const { isAuthenticated } = useConvexAuth();
+  const router = useRouter();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   const { activity, isLoading } = usePublicActivity(params.id);
@@ -88,6 +91,14 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
       // Fallback: copiar URL para clipboard
       navigator.clipboard.writeText(shareUrl);
       alert("Link copiado para a área de transferência!");
+    }
+  };
+
+  const handleBookingClick = () => {
+    if (isAuthenticated) {
+      setShowBookingForm(true);
+    } else {
+      router.push("/sign-in");
     }
   };
 
@@ -499,7 +510,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     </div>
 
                     <Button
-                      onClick={() => setShowBookingForm(true)}
+                      onClick={handleBookingClick}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3"
                     >
                       <ShoppingBag className="h-4 w-4 mr-2" />

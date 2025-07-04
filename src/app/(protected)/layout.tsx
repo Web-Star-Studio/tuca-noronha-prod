@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { ShieldAlert } from "lucide-react";
@@ -18,9 +18,16 @@ export default function ProtectedLayout({
 }) {
   const { user, isLoading, isAuthenticated } = useCurrentUser();
   const router = useRouter();
+  const pathname = usePathname();
   const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
+    // Allow access to /meu-painel/guia regardless of authentication or role
+    if (pathname === "/meu-painel/guia") {
+      setAccessDenied(false);
+      return;
+    }
+
     // Skip check if still loading
     if (isLoading) return;
     
@@ -46,7 +53,7 @@ export default function ProtectedLayout({
     } else {
       setAccessDenied(false);
     }
-  }, [isLoading, isAuthenticated, user, router]);
+  }, [isLoading, isAuthenticated, user, router, pathname]);
 
   // Show nothing while checking permissions
   if (isLoading || !user) {

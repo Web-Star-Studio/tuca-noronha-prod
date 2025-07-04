@@ -3,8 +3,8 @@
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { useQuery } from "convex/react";
+import { notFound, useRouter } from "next/navigation";
+import { useQuery, useConvexAuth } from "convex/react";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
 import {
@@ -38,6 +38,8 @@ import { HelpSection } from "@/components/contact";
 export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const [isFavorite, setIsFavorite] = useState(false);
+  const { isAuthenticated } = useConvexAuth();
+  const router = useRouter();
   
   // Get WhatsApp link generator
   const { generateWhatsAppLink } = useWhatsAppLink();
@@ -310,7 +312,16 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                       <h3 className="font-semibold text-lg mb-4">Reserve este veículo</h3>
                       
                       {/* Booking form */}
-                      <VehicleBookingForm vehicleId={vehicle._id} pricePerDay={vehicle.pricePerDay} />
+                      {isAuthenticated ? (
+                        <VehicleBookingForm vehicleId={vehicle._id} pricePerDay={vehicle.pricePerDay} />
+                      ) : (
+                        <Button
+                          onClick={() => router.push("/sign-in")}
+                          className="w-full"
+                        >
+                          Fazer login para reservar
+                        </Button>
+                      )}
                       
                       <p className="text-xs text-gray-500 mt-4">
                         Você não será cobrado ainda. O pagamento será realizado na retirada do veículo.
