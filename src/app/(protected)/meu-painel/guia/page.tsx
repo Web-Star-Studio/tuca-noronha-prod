@@ -12,7 +12,7 @@ import {
   Shield, Phone, Mail, MessageCircle, Share2, Bookmark, Download, 
   ChevronLeft, CheckCircle, AlertCircle, Eye, Globe, Compass, ArrowLeft,
   Settings, BarChart3, TrendingDown, Wind, Sunrise, Sunset, Activity,
-  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers
+  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers, Shirt, Wallet
 } from "lucide-react";
 import { cardStyles, decorativeBackgrounds, buttonStyles, ui } from "@/lib/ui-config";
 import { Button } from "@/components/ui/button";
@@ -113,12 +113,12 @@ const minimalStyles = {
 
 const guideSections = [
   {
-    id: "getting-started",
-    title: "Como Chegar",
+    id: "boas-vindas",
+    title: "Boas-vindas",
     icon: Plane,
     color: "blue",
-    description: "Informações completas sobre voos, taxas obrigatórias e documentação necessária para sua viagem",
-    quickInfo: "3 voos diários • R$ 600 taxas",
+    description: "Preparativos para uma experiência inesquecível em Fernando de Noronha.",
+    quickInfo: "Taxas, Voos e Dicas",
     gradient: "from-blue-400 to-indigo-600",
     accentGradient: "from-blue-500/20 to-indigo-600/20"
   },
@@ -385,9 +385,8 @@ function SectionContent({
   onToggleFavorite: (item: string) => void;
 }) {
   const content = {
-    "getting-started": (
+    "boas-vindas": (
       <div className="space-y-8">
-        {/* Introdução com card destacado e glassmorphism */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -408,7 +407,7 @@ function SectionContent({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                Bem-vindo ao Paraíso!
+                Boas-vindas ao Paraíso: Preparativos para uma Experiência Inesquecível
               </motion.h2>
               <motion.p 
                 className="text-gray-600 leading-relaxed"
@@ -416,36 +415,34 @@ function SectionContent({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                Fernando de Noronha é um arquipélago brasileiro localizado a 545 km da costa de Pernambuco. 
-                Para visitar este santuário ecológico, você precisa seguir alguns passos importantes.
+                Fernando de Noronha não é apenas um destino de viagem; é um privilégio. Antes de mergulhar em suas águas azul-turquesa, é fundamental compreender a essência deste lugar. O arquipélago ostenta uma rara tríade de títulos de proteção ambiental que ditam o ritmo e a experiência de quem o visita: é um <strong>Parque Nacional Marinho</strong> desde 1988, um <strong>Patrimônio Natural Mundial da Humanidade pela UNESCO</strong> desde 2001 (juntamente com o Atol das Rocas) e um <strong>Sítio RAMSAR</strong>, designação que reconhece suas zonas húmidas como de importância internacional.
               </motion.p>
             </div>
           </div>
         </motion.div>
 
-        {/* Cards de informações principais */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              icon: Plane,
-              title: "Voos Diretos",
-              description: "Saindo de Recife (1h30) ou Natal (1h)",
-              details: "3 voos diários • R$ 800-2000",
-              color: "blue"
-            },
-            {
               icon: DollarSign,
-              title: "Taxa de Preservação",
-              description: "R$ 92,89 por dia de permanência",
-              details: "Pague online ou na chegada",
+              title: "Taxa de Preservação (TPA)",
+              description: "Obrigatória para todos os visitantes, com valor diário progressivo. Crianças menores de 5 anos são isentas.",
+              details: "A partir de R$ 101,33 por dia",
               color: "green"
             },
             {
               icon: Shield,
-              title: "Documentação",
-              description: "RG ou Passaporte + Comprovante de vacinação",
-              details: "Cartão de vacina COVID-19",
+              title: "Ingresso PARNAMAR",
+              description: "Acesso às principais praias e trilhas do Parque Nacional. Válido por 10 dias.",
+              details: "R$ 186,50 (Brasileiros) / R$ 373 (Estrangeiros)",
               color: "purple"
+            },
+            {
+              icon: Plane,
+              title: "Voos e Chegada",
+              description: "Voos partem principalmente de Recife e Natal. Contratar um transfer privativo pode otimizar seu tempo.",
+              details: "Evite transfers compartilhados",
+              color: "blue"
             }
           ].map((item, index) => {
             const itemColor = colorMap[item.color as keyof typeof colorMap];
@@ -474,7 +471,6 @@ function SectionContent({
                 <p className="text-sm text-gray-600 mb-2">{item.description}</p>
                 <p className={cn("text-xs font-medium", itemColor.text)}>{item.details}</p>
                 
-                {/* Animated indicator */}
                 <motion.div
                   className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full opacity-0 group-hover:opacity-100"
                   animate={{ scale: [1, 1.2, 1] }}
@@ -485,18 +481,17 @@ function SectionContent({
           })}
         </div>
 
-        {/* Timeline de preparação */}
         <div className={cn(cardStyles.base, "p-6")}>
           <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Clock className="w-5 h-5 text-indigo-600" />
-            Cronograma de Preparação
+            Checklist Essencial do Viajante Premium
           </h3>
           <div className="space-y-4">
             {[
-              { time: "60 dias antes", task: "Reserve voos e hospedagem", icon: Calendar },
-              { time: "30 dias antes", task: "Compre ingressos para atrações", icon: Star },
-              { time: "15 dias antes", task: "Pague a taxa de preservação online", icon: DollarSign },
-              { time: "7 dias antes", task: "Confirme reservas e check-in online", icon: CheckCircle }
+              { time: "Vestuário", task: "Tecidos leves, respiráveis, e peças com proteção UV. Saltos altos são impraticáveis.", icon: Shirt },
+              { time: "Equipamentos", task: "Kit de snorkel, garrafa de água reutilizável, e câmera subaquática.", icon: Camera },
+              { time: "Saúde e Bem-estar", task: "Kit de primeiros socorros, medicamentos de uso contínuo, protetor solar e repelente.", icon: Heart },
+              { time: "Documentos e Dinheiro", task: "Comprovantes de pagamento das taxas, documentos pessoais e dinheiro em espécie.", icon: Wallet }
             ].map((step, index) => (
               <motion.div
                 key={step.time}
@@ -517,7 +512,6 @@ function SectionContent({
           </div>
         </div>
 
-        {/* Interactive Flight Price Chart */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -526,105 +520,56 @@ function SectionContent({
         >
           <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-indigo-600" />
-            Variação de Preços de Passagens por Mês
+            Informações Práticas
           </h3>
-          
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={[
-                  { month: 'Jan', price: 1800, visitors: 85 },
-                  { month: 'Fev', price: 1600, visitors: 80 },
-                  { month: 'Mar', price: 1200, visitors: 60 },
-                  { month: 'Abr', price: 900, visitors: 40 },
-                  { month: 'Mai', price: 800, visitors: 30 },
-                  { month: 'Jun', price: 950, visitors: 35 },
-                  { month: 'Jul', price: 1400, visitors: 70 },
-                  { month: 'Ago', price: 1300, visitors: 65 },
-                  { month: 'Set', price: 1100, visitors: 55 },
-                  { month: 'Out', price: 1200, visitors: 60 },
-                  { month: 'Nov', price: 1300, visitors: 65 },
-                  { month: 'Dez', price: 2000, visitors: 90 }
-                ]}
-              >
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="month" stroke="#6B7280" />
-                <YAxis yAxisId="price" stroke="#6B7280" />
-                <YAxis yAxisId="visitors" orientation="right" stroke="#6B7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(229, 231, 235, 0.5)',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: any, name: string) => {
-                    if (name === 'price') return [`R$ ${value}`, 'Preço médio'];
-                    return [`${value}%`, 'Ocupação'];
-                  }}
-                />
-                <Area
-                  yAxisId="price"
-                  type="monotone"
-                  dataKey="price"
-                  stroke="#4F46E5"
-                  fillOpacity={1}
-                  fill="url(#colorPrice)"
-                  strokeWidth={2}
-                />
-                <Area
-                  yAxisId="visitors"
-                  type="monotone"
-                  dataKey="visitors"
-                  stroke="#10B981"
-                  fillOpacity={1}
-                  fill="url(#colorVisitors)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          
-          <div className="mt-4 flex items-center justify-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-indigo-600 rounded" />
-              <span className="text-gray-600">Preço médio passagens</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500 rounded" />
-              <span className="text-gray-600">Taxa de ocupação</span>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <p className="text-sm text-gray-600">Internet</p>
+                  <p className="text-lg font-bold text-green-700">
+                    Instável
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    Aproveite para um detox digital
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <p className="text-sm text-gray-600">Serviços Bancários</p>
+                  <p className="text-lg font-bold text-green-700">
+                    Limitados
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    Leve dinheiro em espécie
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border border-green-200">
+                  <p className="text-sm text-gray-600">Voltagem e Fuso Horário</p>
+                  <p className="text-lg font-bold text-green-700">
+                    220V e GMT-2
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    Uma hora a mais que Brasília
+                  </p>
+                </div>
           </div>
         </motion.div>
 
-        {/* Dicas importantes */}
         <div className={cn(glassStyles.card, "p-6 bg-yellow-50/50 border-2 border-yellow-200/50")}>
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Dicas Importantes</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">O Viajante Consciente: Etiqueta para Preservar o Paraíso</h3>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-600 mt-1">•</span>
-                  <span>A ilha tem limite diário de visitantes. Reserve com antecedência!</span>
+                  <span>Respeito à Vida Selvagem: É estritamente proibido tocar, alimentar ou perseguir qualquer animal.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-600 mt-1">•</span>
-                  <span>Leve dinheiro em espécie. Nem todos os lugares aceitam cartão.</span>
+                  <span>Redução de Resíduos: A ilha baniu a importação e o uso de plásticos descartáveis.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-600 mt-1">•</span>
-                  <span>Protetor solar reef-safe é obrigatório para preservar os corais.</span>
+                  <span>Economia de Recursos: Água e energia são bens preciosos em Noronha.</span>
                 </li>
               </ul>
             </div>
@@ -635,44 +580,39 @@ function SectionContent({
 
     "accommodation": (
       <div className="space-y-8">
-        {/* Mapa interativo das regiões */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className={cn(cardStyles.base, "p-6 overflow-hidden")}
         >
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Escolha sua Região Ideal</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">O Epicentro do Luxo: As Pousadas-Destino</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               {
-                name: "Vila dos Remédios",
-                description: "Centro histórico com comércio e restaurantes",
-                pros: ["Mais infraestrutura", "Próximo ao centro", "Vida noturna"],
-                distance: "0-2km do centro",
-                price: "$$",
+                name: "Pousada Maravilha",
+                description: "O epítome da exclusividade, frequentada por celebridades que buscam privacidade absoluta.",
+                pros: ["Exclusividade Absoluta", "Piscina de borda infinita", "Restaurante renomado"],
+                price: "$$$",
                 color: "purple"
               },
               {
-                name: "Floresta Nova",
-                description: "Área residencial tranquila e familiar",
-                pros: ["Mais econômico", "Tranquilo", "Mercados próximos"],
-                distance: "2-4km do centro",
-                price: "$",
+                name: "NANNAI Noronha",
+                description: "Um conceito de luxo sofisticado e romântico, com bangalôs estrategicamente posicionados.",
+                pros: ["Romance Sofisticado", "Vistas deslumbrantes", "Ideal para casais"],
+                price: "$$$",
                 color: "green"
               },
               {
-                name: "Praia do Sueste",
-                description: "Próximo às melhores praias para banho",
-                pros: ["Acesso às praias", "Vista para o mar", "Área nobre"],
-                distance: "4-6km do centro",
-                price: "$$$",
+                name: "Pousada Zé Maria",
+                description: "Uma verdadeira instituição na ilha, a Zé Maria combina luxo com uma atmosfera vibrante e sociável.",
+                pros: ["Luxo Sociável", "Festival Gastronômico", "Piscina com vista para o Morro do Pico"],
+                price: "$$",
                 color: "blue"
               },
               {
-                name: "Porto de Santo Antônio",
-                description: "Área portuária com vista privilegiada",
-                pros: ["Vista do pôr do sol", "Restaurantes", "Ponto de mergulho"],
-                distance: "3-5km do centro",
+                name: "Teju-Açu Ecopousada",
+                description: "Perfeita para o viajante de luxo com consciência ecológica, com bangalôs suspensos entre as árvores.",
+                pros: ["Eco-Chic & Alta Gastronomia", "Horta orgânica própria", "Técnicas de vanguarda"],
                 price: "$$",
                 color: "orange"
               }
@@ -698,10 +638,6 @@ function SectionContent({
                     <span className="text-lg font-bold text-gray-500">{region.price}</span>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{region.description}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                    <MapPin className="w-3 h-3" />
-                    <span>{region.distance}</span>
-                  </div>
                   <div className="space-y-1">
                     {region.pros.map((pro) => (
                       <div key={pro} className="flex items-center gap-2 text-xs">
@@ -716,31 +652,30 @@ function SectionContent({
           </div>
         </motion.div>
 
-        {/* Tipos de hospedagem */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              type: "Pousadas Familiares",
+              type: "Refúgios para Casais",
               icon: Home,
-              price: "R$ 250-500/dia",
-              features: ["Café da manhã incluso", "Ambiente acolhedor", "Dicas locais"],
-              recommended: preferences.budget[0] < 5000,
+              price: "$$",
+              features: ["Ecocharme Pousada do Marcílio", "Pousada Morena", "Pousada Corveta"],
+              recommended: preferences.travelStyle === 'romantic',
               color: "green"
             },
             {
-              type: "Hotéis & Resorts",
+              type: "Aventura em Família",
               icon: Building,
-              price: "R$ 800-2000/dia",
-              features: ["All inclusive", "Piscina", "Spa e restaurante"],
-              recommended: preferences.budget[1] > 8000,
+              price: "$ - $$",
+              features: ["Pousada da Villa", "Pousada Filó", "Pousada Vila Nakau"],
+              recommended: preferences.travelStyle === 'family',
               color: "purple"
             },
             {
-              type: "Casas & Apartamentos",
+              type: "Análise Geográfica Estratégica",
               icon: Key,
-              price: "R$ 400-1200/dia",
-              features: ["Cozinha completa", "Mais privacidade", "Ideal para grupos"],
-              recommended: preferences.duration > 7,
+              price: "",
+              features: ["Vila dos Remédios", "Floresta Nova / Vila do Trinta", "Boldró"],
+              recommended: true,
               color: "blue"
             }
           ].map((type, index) => {
@@ -783,7 +718,6 @@ function SectionContent({
           })}
         </div>
 
-        {/* Dica personalizada baseada nas preferências */}
         {preferences.travelDate && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -805,7 +739,6 @@ function SectionContent({
               }
             </p>
             
-            {/* Additional personalized insights */}
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-700">Condições do Mar</h4>
@@ -834,57 +767,59 @@ function SectionContent({
 
     "transportation": (
       <div className="space-y-8">
-        {/* Comparativo de transportes */}
         <div className={cn(cardStyles.base, "p-6")}>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Compare as Opções de Transporte</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Navegando pela Ilha: Opções de Transporte</h2>
           <div className="overflow-x-auto -mx-6 px-6">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">Tipo</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Preço/dia</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Capacidade</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Flexibilidade</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Ideal para</th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">Preço</th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">Ideal para</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Destaques</th>
                 </tr>
               </thead>
               <tbody>
                 {[
                   {
+                    type: "Transfer Privativo",
+                    icon: Car,
+                    price: "R$ 150-250",
+                    idealFor: "Chegada e partida",
+                    highlight: "Conforto, agilidade e evita paradas indesejadas.",
+                    color: "purple"
+                  },
+                  {
+                    type: "Ilha Tour Privativo",
+                    icon: Car,
+                    price: "R$ 800-1500/dia",
+                    idealFor: "Exploração completa",
+                    highlight: "Roteiro personalizado, flexibilidade de horários e guia local.",
+                    color: "blue"
+                  },
+                  {
                     type: "Buggy",
                     icon: Car,
-                    price: "R$ 250-350",
-                    capacity: "2-4 pessoas",
-                    flexibility: 5,
-                    idealFor: "Explorar toda a ilha",
+                    price: "R$ 200-600/dia",
+                    idealFor: "Aventura independente",
+                    highlight: "Liberdade para explorar cantos remotos da ilha.",
                     color: "green"
                   },
                   {
-                    type: "Taxi",
+                    type: "Táxi",
                     icon: Car,
-                    price: "R$ 30-50/trajeto",
-                    capacity: "4 pessoas",
-                    flexibility: 3,
+                    price: "R$ 30-80/trajeto",
                     idealFor: "Trajetos específicos",
-                    color: "blue"
+                    highlight: "Serviço eficiente e organizado pela cooperativa Nortax.",
+                    color: "orange"
                   },
                   {
                     type: "Ônibus",
                     icon: Navigation,
                     price: "R$ 5/trajeto",
-                    capacity: "Ilimitado",
-                    flexibility: 2,
-                    idealFor: "Economia máxima",
-                    color: "orange"
-                  },
-                  {
-                    type: "Transfer",
-                    icon: Users,
-                    price: "R$ 150-200/dia",
-                    capacity: "8-15 pessoas",
-                    flexibility: 1,
-                    idealFor: "Grupos e tours",
-                    color: "purple"
+                    idealFor: "Economia e autenticidade",
+                    highlight: "Linha única que percorre a BR-363 de ponta a ponta.",
+                    color: "yellow"
                   }
                 ].map((transport) => {
                   const transportColor = colorMap[transport.color as keyof typeof colorMap];
@@ -905,23 +840,8 @@ function SectionContent({
                       <td className="py-4 px-4 text-center">
                         <span className={cn("font-medium", transportColor.text)}>{transport.price}</span>
                       </td>
-                      <td className="py-4 px-4 text-center text-sm text-gray-600">{transport.capacity}</td>
-                      <td className="py-4 px-4">
-                        <div className="flex justify-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={cn(
-                                "w-2 h-2 rounded-full",
-                                i < transport.flexibility
-                                  ? transportColor.darkBg
-                                  : "bg-gray-200"
-                              )}
-                            />
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-sm text-gray-600">{transport.idealFor}</td>
+                      <td className="py-4 px-4 text-center text-sm text-gray-600">{transport.idealFor}</td>
+                      <td className="py-4 px-4 text-sm text-gray-600">{transport.highlight}</td>
                     </tr>
                   );
                 })}
@@ -930,7 +850,6 @@ function SectionContent({
           </div>
         </div>
 
-        {/* Calculadora de transporte */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -938,7 +857,7 @@ function SectionContent({
         >
           <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-green-600" />
-            Calculadora de Transporte
+            Dicas de Transporte
           </h3>
           <div className="space-y-4">
             <div>
@@ -949,10 +868,10 @@ function SectionContent({
                 <div className="p-4 bg-white rounded-lg border border-green-200">
                   <p className="text-sm text-gray-600">Opção Econômica</p>
                   <p className="text-lg font-bold text-green-700">
-                    Ônibus + Taxi ocasional
+                    Ônibus + Táxi ocasional
                   </p>
                   <p className="text-sm text-green-600 mt-1">
-                    ~R$ {(preferences.duration * 30).toLocaleString()} total
+                    ~R$ {(preferences.duration * 40).toLocaleString()} total
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-green-200">
@@ -961,7 +880,7 @@ function SectionContent({
                     Buggy alugado
                   </p>
                   <p className="text-sm text-green-600 mt-1">
-                    ~R$ {(preferences.duration * 300).toLocaleString()} total
+                    ~R$ {(preferences.duration * 400).toLocaleString()} total
                   </p>
                 </div>
               </div>
@@ -969,7 +888,6 @@ function SectionContent({
           </div>
         </motion.div>
 
-        {/* Dicas de deslocamento */}
         <div className="grid gap-4 sm:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -983,15 +901,11 @@ function SectionContent({
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2">
                 <span className="text-orange-600 mt-1">•</span>
-                <span>Almoço: 12h às 15h (menos concorrido)</span>
+                <span>Reserve buggy e passeios com antecedência, especialmente na alta temporada.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-orange-600 mt-1">•</span>
-                <span>Jantar: Reserve com antecedência no verão</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-orange-600 mt-1">•</span>
-                <span>Festival Gastronômico: Setembro (imperdível!)</span>
+                <span>O serviço de táxi funciona 24h, mas é recomendável agendar corridas noturnas.</span>
               </li>
             </ul>
           </motion.div>
@@ -1003,20 +917,16 @@ function SectionContent({
           >
             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-green-600" />
-              Economize nas Refeições
+              Dicas de Ouro
             </h4>
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-1">•</span>
-                <span>Almoce nos PFs: R$ 40-60 completo</span>
+                <span>A ausência de apps de transporte como Uber incentiva a interação com serviços locais.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-1">•</span>
-                <span>Compre água no mercado: 3x mais barato</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
-                <span>Happy hour: Descontos após 17h</span>
+                <span>Considere um Ilha Tour Privativo no primeiro dia para uma visão geral da ilha.</span>
               </li>
             </ul>
           </motion.div>
@@ -1026,70 +936,39 @@ function SectionContent({
 
     "beaches": (
       <div className="space-y-8">
-        {/* Top praias com cards visuais */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Praias Imperdíveis</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">As Joias do Atlântico: Um Roteiro Pelas Praias</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 name: "Baía do Sancho",
                 rating: 5,
                 difficulty: "Difícil",
-                features: ["Melhor praia do mundo", "Águas cristalinas", "Vida marinha abundante"],
+                features: ["Repetidamente eleita uma das praias mais bonitas do mundo", "Acesso por escada em fenda rochosa", "Ideal para visitar cedo"],
                 access: "Escada íngreme entre rochas",
                 bestTime: "Manhã cedo",
                 image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
                 color: "cyan"
               },
               {
-                name: "Praia do Leão",
-                rating: 5,
-                difficulty: "Fácil",
-                features: ["Desova de tartarugas", "Pôr do sol", "Águas calmas"],
-                access: "Trilha pavimentada",
-                bestTime: "Final da tarde",
-                image: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&h=300&fit=crop",
-                color: "green"
-              },
-              {
                 name: "Baía dos Porcos",
-                rating: 4,
+                rating: 5,
                 difficulty: "Moderado",
-                features: ["Piscinas naturais", "Dois Irmãos", "Snorkeling"],
-                access: "Trilha curta por pedras",
+                features: ["Famosa pelas piscinas naturais de águas esverdeadas", "Vista clássica do Morro Dois Irmãos", "Paraíso para snorkeling"],
+                access: "Trilha curta e rochosa",
                 bestTime: "Maré baixa",
                 image: "https://images.unsplash.com/photo-1527004760000-e4c3bf54b1b3?w=400&h=300&fit=crop",
                 color: "blue"
               },
               {
-                name: "Cacimba do Padre",
+                name: "Praia do Leão",
                 rating: 4,
                 difficulty: "Fácil",
-                features: ["Surf", "Faixa de areia extensa", "Morro Dois Irmãos"],
-                access: "Acesso por estrada",
-                bestTime: "O dia todo",
-                image: "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=400&h=300&fit=crop",
-                color: "orange"
-              },
-              {
-                name: "Praia do Sueste",
-                rating: 4,
-                difficulty: "Fácil",
-                features: ["Tartarugas marinhas", "Tubarões", "Arraias"],
-                access: "Estacionamento próximo",
-                bestTime: "Manhã",
-                image: "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?w=400&h=300&fit=crop",
-                color: "purple"
-              },
-              {
-                name: "Atalaia",
-                rating: 5,
-                difficulty: "Moderado",
-                features: ["Aquário natural", "Limite de visitantes", "Vida marinha"],
-                access: "Trilha controlada pelo ICMBio",
-                bestTime: "Maré baixa",
-                image: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400&h=300&fit=crop",
-                color: "yellow"
+                features: ["Principal santuário para a desova de tartarugas marinhas", "Acesso controlado e fecha mais cedo", "Mar forte, exige cautela"],
+                access: "Acesso controlado",
+                bestTime: "Final da tarde",
+                image: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&h=300&fit=crop",
+                color: "green"
               }
             ].map((beach, index) => {
               const beachColor = colorMap[beach.color as keyof typeof colorMap];
@@ -1173,53 +1052,28 @@ function SectionContent({
           </div>
         </div>
 
-        {/* Mapa de localização */}
         <div className={cn(cardStyles.base, "p-6")}>
           <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Map className="w-5 h-5 text-cyan-600" />
-            Organize seu Roteiro
+            A Dualidade das Águas: Mar de Dentro vs. Mar de Fora
           </h3>
           <div className="bg-cyan-50 rounded-xl p-6 border-2 border-cyan-200">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Mar de Dentro (Norte)</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Mar de Dentro</h4>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-cyan-600" />
-                    Praia do Cachorro - Centro
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Praia do Meio - 5 min caminhada
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Conceição - 10 min buggy
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Boldró - 15 min buggy
+                    Costa virada para o Brasil, ideal para natação e snorkeling de abril a setembro.
                   </li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Mar de Fora (Sul)</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Mar de Fora</h4>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-cyan-600" />
-                    Sueste - 20 min buggy
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Leão - 25 min buggy
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Sancho - 30 min + trilha
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Atalaia - Agendamento ICMBio
+                    Costa virada para a África, com mar mais calmo de dezembro a março.
                   </li>
                 </ul>
               </div>
@@ -1227,7 +1081,6 @@ function SectionContent({
           </div>
         </div>
 
-        {/* Equipamentos recomendados */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1235,16 +1088,16 @@ function SectionContent({
         >
           <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Camera className="w-5 h-5 text-blue-600" />
-            O que Levar para as Praias
+            Os Aquários Naturais: Atalaia e Sueste
           </h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { item: "Snorkel e máscara", essential: true },
-              { item: "Protetor solar reef-safe", essential: true },
-              { item: "Água e lanches", essential: true },
-              { item: "Câmera aquática", essential: false },
-              { item: "Sapato aquático", essential: false },
-              { item: "Guarda-sol portátil", essential: false }
+              { item: "Agendamento obrigatório no ICMBio", essential: true },
+              { item: "Uso de protetor solar proibido na Praia da Atalaia", essential: true },
+              { item: "Uso de colete salva-vidas obrigatório na Praia do Sueste", essential: true },
+              { item: "Flutuação limitada a 30 minutos na Praia da Atalaia", essential: false },
+              { item: "Nadar com tartarugas e raias no Sueste", essential: false },
+              { item: "Contratar um guia para a trilha da Atalaia", essential: false }
             ].map((gear) => (
               <div
                 key={gear.item}
@@ -1277,35 +1130,34 @@ function SectionContent({
 
     "dining": (
       <div className="space-y-8">
-        {/* Categorias gastronômicas */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              category: "Frutos do Mar",
+              category: "Jantares Memoráveis",
               icon: Fish,
-              avgPrice: "R$ 80-150",
-              mustTry: "Peixe na folha de bananeira",
+              avgPrice: "$$ - $$",
+              mustTry: "Cacimba Bistrô & Xica da Silva",
               color: "blue"
             },
             {
-              category: "Regional",
+              category: "Restaurantes de Pousadas",
               icon: Utensils,
-              avgPrice: "R$ 60-100",
-              mustTry: "Tubalhau (tubarão)",
+              avgPrice: "$$ - $$$",
+              mustTry: "Maravilha, NANNAI, Teju-Açu",
               color: "orange"
             },
             {
-              category: "Internacional",
+              category: "O Ritual do Pôr do Sol",
               icon: Globe,
-              avgPrice: "R$ 70-120",
-              mustTry: "Massas e risotos",
+              avgPrice: "$ - $$",
+              mustTry: "Mergulhão, Bar do Meio, Forte do Boldró",
               color: "purple"
             },
             {
-              category: "Petiscos",
+              category: "Eventos Gastronômicos",
               icon: Heart,
-              avgPrice: "R$ 40-80",
-              mustTry: "Bolinho de tubalhau",
+              avgPrice: "$$ - $$",
+              mustTry: "Festival Gastronômico do Zé Maria, Peixada do Solón",
               color: "green"
             }
           ].map((cat, index) => {
@@ -1336,47 +1188,38 @@ function SectionContent({
           })}
         </div>
 
-        {/* Top restaurantes */}
         <div className={cn(cardStyles.base, "p-6")}>
           <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
-            Restaurantes Premiados
+            A Tradição Local: Onde Comer o Peixe na Folha de Bananeira
           </h3>
           <div className="space-y-4">
             {[
               {
-                name: "Varanda",
-                cuisine: "Contemporânea",
-                location: "Pousada Maravilha",
-                price: "$$$",
-                highlight: "Vista panorâmica e menu degustação",
+                name: "Jantar Romântico",
+                cuisine: "NANNAI / Teju-Açu",
+                highlight: "Reserve com antecedência e peça uma mesa na varanda para uma experiência mais íntima.",
                 rating: 5,
                 color: "purple"
               },
               {
-                name: "Xica da Silva",
-                cuisine: "Regional",
-                location: "Vila dos Remédios",
-                price: "$$",
-                highlight: "Melhor peixe na folha da ilha",
+                name: "Pôr do Sol Espetacular",
+                cuisine: "Mergulhão / Bar do Meio",
+                highlight: "Chegue pelo menos uma hora antes do pôr do sol para garantir uma boa mesa e aproveitar a mudança de cores no céu.",
                 rating: 5,
                 color: "green"
               },
               {
-                name: "Mergulhão",
-                cuisine: "Frutos do Mar",
-                location: "Porto Santo Antônio",
-                price: "$$",
-                highlight: "Pôr do sol e lagosta grelhada",
+                name: "Experiência-Evento",
+                cuisine: "Festival Gastronômico do Zé Maria",
+                highlight: "Reserve online com, no mínimo, dois meses de antecedência. É uma das experiências mais concorridas da ilha.",
                 rating: 4,
                 color: "blue"
               },
               {
-                name: "Cacimba Bistrô",
-                cuisine: "Internacional",
-                location: "Praia da Cacimba",
-                price: "$$$",
-                highlight: "Ambiente romântico e carta de vinhos",
+                name: "Almoço com Vista",
+                cuisine: "Cacimba Bistrô / O Pico",
+                highlight: "Peça a sugestão do chef ou o peixe fresco do dia. A vista durante o dia é tão espetacular quanto à noite.",
                 rating: 4,
                 color: "orange"
               }
@@ -1404,10 +1247,9 @@ function SectionContent({
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-semibold text-gray-900">{restaurant.name}</h4>
-                        <p className="text-sm text-gray-600">{restaurant.cuisine} • {restaurant.location}</p>
+                        <p className="text-sm text-gray-600">{restaurant.cuisine}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-gray-700">{restaurant.price}</p>
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
@@ -1437,87 +1279,31 @@ function SectionContent({
             })}
           </div>
         </div>
-
-        {/* Dicas gastronômicas */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={cn(cardStyles.base, "p-5 bg-orange-50 border-2 border-orange-200")}
-          >
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-600" />
-              Horários e Reservas
-            </h4>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <span className="text-orange-600 mt-1">•</span>
-                <span>Almoço: 12h às 15h (menos concorrido)</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-orange-600 mt-1">•</span>
-                <span>Jantar: Reserve com antecedência no verão</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-orange-600 mt-1">•</span>
-                <span>Festival Gastronômico: Setembro (imperdível!)</span>
-              </li>
-            </ul>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={cn(cardStyles.base, "p-5 bg-green-50 border-2 border-green-200")}
-          >
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              Economize nas Refeições
-            </h4>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
-                <span>Almoce nos PFs: R$ 40-60 completo</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
-                <span>Compre água no mercado: 3x mais barato</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
-                <span>Happy hour: Descontos após 17h</span>
-              </li>
-            </ul>
-          </motion.div>
-        </div>
       </div>
     ),
 
     "monthly-guide": (
       <div className="space-y-8">
-        {/* Calendário climático */}
         <div className={cn(cardStyles.base, "p-6")}>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Melhor Época para Cada Atividade</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">O Calendário de Noronha: A Melhor Época para a Sua Viagem Perfeita</h2>
           
           <div className="grid gap-6 sm:grid-cols-2">
-            {/* Temporada Seca */}
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
                   <Sun className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Temporada Seca</h3>
-                  <p className="text-sm text-gray-600">Agosto a Fevereiro</p>
+                  <h3 className="font-semibold text-gray-900">Estação Seca (Agosto a Fevereiro)</h3>
+                  <p className="text-sm text-gray-600">Dias mais ensolarados e menor probabilidade de chuva.</p>
                 </div>
               </div>
               
               <div className="space-y-3">
                 {[
-                  { activity: "Mergulho", quality: "Excelente", icon: Activity },
-                  { activity: "Trilhas", quality: "Perfeito", icon: Navigation },
-                  { activity: "Fotografia", quality: "Ideal", icon: Camera },
-                  { activity: "Praias", quality: "Ótimo", icon: Waves }
+                  { activity: "Mergulhadores", quality: "Setembro e Outubro", icon: Activity },
+                  { activity: "Amantes de Praia e Famílias", quality: "Agosto e Setembro", icon: Users },
+                  { activity: "Surfistas", quality: "Janeiro e Fevereiro", icon: Waves }
                 ].map((item) => (
                   <div key={item.activity} className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
                     <item.icon className="w-5 h-5 text-yellow-600" />
@@ -1528,24 +1314,22 @@ function SectionContent({
               </div>
             </div>
 
-            {/* Temporada Chuvosa */}
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                   <CloudRain className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Temporada Chuvosa</h3>
-                  <p className="text-sm text-gray-600">Março a Julho</p>
+                  <h3 className="font-semibold text-gray-900">Estação Chuvosa (Março a Julho)</h3>
+                  <p className="text-sm text-gray-600">Preços mais baixos e ilha mais vazia.</p>
                 </div>
               </div>
               
               <div className="space-y-3">
                 {[
-                  { activity: "Surf", quality: "Excelente", icon: Waves },
-                  { activity: "Observação fauna", quality: "Melhor época", icon: Star },
-                  { activity: "Preços baixos", quality: "30-50% menos", icon: TrendingDown },
-                  { activity: "Menos turistas", quality: "Tranquilo", icon: Users }
+                  { activity: "Economizar e Fugir das Multidões", quality: "Abril a Junho", icon: TrendingDown },
+                  { activity: "Temporada de Swell", quality: "Dezembro a Março", icon: Waves },
+                  { activity: "Temporada Flat", quality: "Abril a Setembro", icon: Wind }
                 ].map((item) => (
                   <div key={item.activity} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                     <item.icon className="w-5 h-5 text-blue-600" />
@@ -1558,155 +1342,6 @@ function SectionContent({
           </div>
         </div>
 
-        {/* Calendário mês a mês */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              month: "Janeiro",
-              weather: "Sol com pancadas",
-              temp: "28°C",
-              highlight: "Surf perfeito",
-              crowd: "high",
-              color: "blue"
-            },
-            {
-              month: "Fevereiro",
-              weather: "Sol predominante",
-              temp: "28°C",
-              highlight: "Carnaval tranquilo",
-              crowd: "high",
-              color: "purple"
-            },
-            {
-              month: "Março",
-              weather: "Início das chuvas",
-              temp: "28°C",
-              highlight: "Desova tartarugas",
-              crowd: "medium",
-              color: "green"
-            },
-            {
-              month: "Abril",
-              weather: "Chuvas frequentes",
-              temp: "27°C",
-              highlight: "Ilha verde exuberante",
-              crowd: "low",
-              color: "cyan"
-            },
-            {
-              month: "Maio",
-              weather: "Chuvas intensas",
-              temp: "26°C",
-              highlight: "Melhor mês p/ economia",
-              crowd: "low",
-              color: "indigo"
-            },
-            {
-              month: "Junho",
-              weather: "Chuvas diminuindo",
-              temp: "25°C",
-              highlight: "São João local",
-              crowd: "low",
-              color: "orange"
-            },
-            {
-              month: "Julho",
-              weather: "Fim das chuvas",
-              temp: "25°C",
-              highlight: "Baleias jubarte",
-              crowd: "medium",
-              color: "yellow"
-            },
-            {
-              month: "Agosto",
-              weather: "Seco e ventoso",
-              temp: "25°C",
-              highlight: "Início alta temporada",
-              crowd: "medium",
-              color: "red"
-            },
-            {
-              month: "Setembro",
-              weather: "Sol constante",
-              temp: "26°C",
-              highlight: "Festival gastronômico",
-              crowd: "high",
-              color: "pink"
-            },
-            {
-              month: "Outubro",
-              weather: "Sol pleno",
-              temp: "27°C",
-              highlight: "Visibilidade 50m",
-              crowd: "high",
-              color: "purple"
-            },
-            {
-              month: "Novembro",
-              weather: "Sol forte",
-              temp: "28°C",
-              highlight: "Melhor mergulho",
-              crowd: "medium",
-              color: "blue"
-            },
-            {
-              month: "Dezembro",
-              weather: "Sol com chuvas",
-              temp: "28°C",
-              highlight: "Festas fim de ano",
-              crowd: "high",
-              color: "green"
-            }
-          ].map((month, index) => {
-            const monthColor = colorMap[month.color as keyof typeof colorMap] || colorMap.blue;
-            
-            return (
-              <motion.div
-                key={month.month}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                whileHover={{ y: -4 }}
-                className={cn(
-                  cardStyles.base,
-                  "p-5 cursor-pointer transition-all",
-                  preferences.travelDate && format(preferences.travelDate, "MMMM", { locale: ptBR }) === month.month.toLowerCase()
-                    ? `ring-2 ring-offset-2 ${monthColor.border} ${monthColor.bg}`
-                    : ""
-                )}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className={cn("font-semibold", monthColor.text)}>{month.month}</h3>
-                  <div className={cn(
-                    "px-2 py-1 rounded-full text-xs font-medium",
-                    month.crowd === "high" ? "bg-red-100 text-red-700" :
-                    month.crowd === "medium" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-green-100 text-green-700"
-                  )}>
-                    {month.crowd === "high" ? "Cheio" : month.crowd === "medium" ? "Médio" : "Vazio"}
-                  </div>
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Thermometer className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{month.temp}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Cloud className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700">{month.weather}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Sparkles className={cn("w-4 h-4", monthColor.icon)} />
-                    <span className={cn("font-medium", monthColor.text)}>{month.highlight}</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Eventos especiais */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1714,14 +1349,12 @@ function SectionContent({
         >
           <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-purple-600" />
-            Eventos Anuais Imperdíveis
+            O Calendário da Vida Selvagem e Eventos Culturais
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { event: "Festa de São Pedro", date: "29 de Junho", description: "Procissão marítima tradicional" },
-              { event: "Festival Gastronômico", date: "Setembro", description: "Chefs renomados e pratos exclusivos" },
-              { event: "Regata Refeno", date: "Outubro", description: "Competição de vela internacional" },
-              { event: "Réveillon", date: "31 de Dezembro", description: "Queima de fogos limitada e ecológica" }
+              { event: "Desova das Tartarugas Marinhas", date: "Dezembro a Julho", description: "Pico entre Fevereiro e Abril, principalmente na Praia do Leão." },
+              { event: "Festivais Anuais", date: "Agosto", description: "O Love Noronha, um festival de música e cultura LGBTQ+, acontece geralmente em Agosto." }
             ].map((event) => (
               <div key={event.event} className="p-4 bg-white rounded-lg border border-purple-200">
                 <h4 className="font-medium text-gray-900">{event.event}</h4>
@@ -1747,7 +1380,7 @@ function SectionContent({
 }
 
 function GuiaPageContent() {
-  const [activeSection, setActiveSection] = useState<string>("getting-started");
+  const [activeSection, setActiveSection] = useState<string>("boas-vindas");
   const [preferences, setPreferences] = useState<UserPreferences>({
     travelDate: undefined,
     duration: 7,
