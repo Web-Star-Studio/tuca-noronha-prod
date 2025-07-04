@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
+import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
 
 interface EventBookingFormProps {
   eventId: Id<"events">;
@@ -30,6 +30,8 @@ interface EventBookingFormProps {
     title: string;
     date: string;
     location: string;
+    price: number;
+    time?: string;
     hasMultipleTickets?: boolean;
   };
   onBookingSuccess?: (booking: { confirmationCode: string; totalPrice: number }) => void;

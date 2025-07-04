@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
+import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
 
 interface RestaurantReservationFormProps {
   restaurantId: Id<"restaurants">;
@@ -78,6 +78,17 @@ export function RestaurantReservationForm({
   const getAvailableTimes = () => {
     if (!date) return [];
     
+    // If no operating hours are provided, return default dinner hours
+    if (!restaurant.operatingHours) {
+      const times: string[] = [];
+      // Default hours: 18:00 to 22:00 (6 PM to 10 PM)
+      for (let hour = 18; hour < 22; hour++) {
+        times.push(`${hour.toString().padStart(2, "0")}:00`);
+        times.push(`${hour.toString().padStart(2, "0")}:30`);
+      }
+      return times;
+    }
+    
     const dayName = format(date, "EEEE", { locale: ptBR });
     const dayNameEn = {
       "segunda-feira": "Monday",
@@ -89,15 +100,15 @@ export function RestaurantReservationForm({
       "domingo": "Sunday",
     }[dayName] || "Monday";
 
-    const hours = restaurant.operatingHours?.[dayNameEn] || []; // Changed to use operatingHours
+    const hours = restaurant.operatingHours[dayNameEn];
     
-    if (hours.isClosed) { // Changed to check isClosed
+    if (!hours || hours.isClosed) {
       return [];
     }
 
     // Generate time slots based on restaurant hours
     const times: string[] = [];
-    const [start, end] = hours.open.split("-"); // Changed to use open
+    const [start, end] = hours.open.split("-");
     const startHour = parseInt(start.split(":")[0]);
     const endHour = parseInt(end.split(":")[0]);
     

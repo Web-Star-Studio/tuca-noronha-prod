@@ -331,7 +331,6 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                           address: restaurant.address,
                           maximumPartySize: restaurant.maximumPartySize,
                           acceptsReservations: restaurant.acceptsReservations,
-                          hours: restaurant.hours,
                         }}
                       />
                     ) : (
