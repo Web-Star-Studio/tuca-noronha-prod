@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin } from "luc
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -54,13 +55,11 @@ export function RestaurantReservationForm({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
   const [partySize, setPartySize] = useState(2);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use the custom hook to get customer information
+  const { customerInfo, setCustomerInfo } = useCustomerInfo();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
   

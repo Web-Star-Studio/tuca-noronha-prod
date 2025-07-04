@@ -8,6 +8,7 @@ import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
+import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -49,17 +50,15 @@ export function ActivityBookingForm({
   onBookingSuccess,
   className,
 }: ActivityBookingFormProps) {
-  const [date, setDate] = useState<Date>();
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
   const [participants, setParticipants] = useState(activity.minParticipants);
-  const [selectedTicketId, setSelectedTicketId] = useState<Id<"activityTickets"> | undefined>();
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [selectedTicketId, setSelectedTicketId] = useState<Id<"activityTickets"> | undefined>(undefined);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use the custom hook to get customer information
+  const { customerInfo, setCustomerInfo } = useCustomerInfo();
 
   // Get activity tickets if available
   const tickets = useQuery(api.domains.activities.queries.getActivityTickets, {

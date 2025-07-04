@@ -24,21 +24,23 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
+import type { Id } from "@/../convex/_generated/dataModel";
+import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 export type AccommodationBookingFormProps = {
-  accommodationId: string
-  accommodationName: string
-  pricePerNight: number
-  maxGuests: number
-  className?: string
-  onSubmit?: (booking: {
-    hotelId?: string
-    hotelName?: string
-    checkIn: Date
-    checkOut: Date
-    roomType: string
-    guests: number
-  }) => void
+  accommodationId: Id<"accommodations">;
+  accommodationName: string;
+  pricePerNight: number;
+  maxGuests: number;
+  className?: string;
+  onSubmit?: (data: {
+    hotelId: Id<"accommodations">;
+    hotelName: string;
+    checkIn: Date;
+    checkOut: Date;
+    roomType: string;
+    guests: number;
+  }) => void;
 }
 
 export function AccommodationBookingForm({
@@ -57,6 +59,9 @@ export function AccommodationBookingForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null)
+  
+  // Use the custom hook to get customer information
+  const { customerInfo } = useCustomerInfo();
 
   const createAccommodationBooking = useMutation(api.domains.bookings.mutations.createAccommodationBooking)
   
@@ -124,9 +129,9 @@ export function AccommodationBookingForm({
         guests,
         totalPrice,
         customerInfo: {
-          name: "Guest", // This should come from user profile or form
-          email: "guest@example.com", // This should come from user profile
-          phone: "+5511999999999", // This should come from user profile or form
+          name: customerInfo.name || "Guest",
+          email: customerInfo.email || "guest@example.com",
+          phone: customerInfo.phone || "+5511999999999",
         },
       })
 

@@ -73,7 +73,7 @@ export const createActivityBooking = mutation({
     const customerInfo = args.customerInfo ?? {
       name: user.name || identity.name || "",
       email: user.email || identity.email || "",
-      phone: user.phone || "",
+      phone: user.phoneNumber || "",
     };
 
     // Validar informações do cliente
@@ -241,7 +241,7 @@ export const createEventBooking = mutation({
     const customerInfo = args.customerInfo ?? {
       name: user.name || identity.name || "",
       email: user.email || identity.email || "",
-      phone: user.phone || "",
+      phone: user.phoneNumber || "",
     };
 
     // Validar informações do cliente
@@ -396,7 +396,7 @@ export const createRestaurantReservation = mutation({
     const customerInfo = args.customerInfo ?? {
       name: user.name || identity.name || "",
       email: user.email || identity.email || "",
-      phone: user.phone || "",
+      phone: user.phoneNumber || "",
     };
 
     // Validar informações do cliente
@@ -522,7 +522,7 @@ export const createVehicleBooking = mutation({
     const customerInfo = args.customerInfo ?? {
       name: user.name || identity.name || "",
       email: user.email || identity.email || "",
-      phone: user.phone || "",
+      phone: user.phoneNumber || "",
     };
 
     // Validar informações do cliente
@@ -1401,7 +1401,7 @@ export const seedTestReservations = mutation({
         customerInfo: {
           name: travelerUser.name || "Usuário",
           email: travelerUser.email || args.travelerEmail,
-          phone: travelerUser.phone || "+55 00 00000-0000",
+          phone: travelerUser.phoneNumber || "+55 00 00000-0000",
         },
         createdAt: now,
         updatedAt: now,
@@ -1464,7 +1464,7 @@ export const seedTestReservations = mutation({
         partySize: 2,
         name: travelerUser.name || "Usuário",
         email: travelerUser.email || args.travelerEmail,
-        phone: travelerUser.phone || "+55 00 00000-0000",
+        phone: travelerUser.phoneNumber || "+55 00 00000-0000",
         status: BOOKING_STATUS.AWAITING_CONFIRMATION,
         confirmationCode: "REST001",
       });
@@ -1536,7 +1536,7 @@ export const seedTestReservations = mutation({
         customerInfo: {
           name: travelerUser.name || "Usuário",
           email: travelerUser.email || args.travelerEmail,
-          phone: travelerUser.phone || "+55 00 00000-0000",
+          phone: travelerUser.phoneNumber || "+55 00 00000-0000",
         },
         createdAt: now,
         updatedAt: now,

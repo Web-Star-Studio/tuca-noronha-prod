@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Ticket, Users, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Users, Clock, Ticket, MapPin } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,17 +22,15 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
+import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
 
 interface EventBookingFormProps {
   eventId: Id<"events">;
   event: {
     title: string;
     date: string;
-    time: string;
     location: string;
-    price: number;
-    hasMultipleTickets: boolean;
+    hasMultipleTickets?: boolean;
   };
   onBookingSuccess?: (booking: { confirmationCode: string; totalPrice: number }) => void;
   className?: string;
@@ -44,15 +43,13 @@ export function EventBookingForm({
   className,
 }: EventBookingFormProps) {
   const [quantity, setQuantity] = useState(1);
-  const [selectedTicketId, setSelectedTicketId] = useState<Id<"eventTickets"> | undefined>();
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [selectedTicketId, setSelectedTicketId] = useState<Id<"eventTickets"> | undefined>(undefined);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
+  // Use the custom hook to get customer information
+  const { customerInfo, setCustomerInfo } = useCustomerInfo();
+  
   // Get event tickets if available
   const tickets = useQuery(api.domains.events.queries.getEventTickets, {
     eventId,

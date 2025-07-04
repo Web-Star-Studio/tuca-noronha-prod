@@ -3,17 +3,18 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin, Utensils, MessageCircle } from "lucide-react";
-import { useMutation } from "convex/react";
+import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin, ChefHat, Star, Check } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
-import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
+import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
+import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
 
 interface RestaurantReservationFormProps {
   restaurantId: Id<"restaurants">;
@@ -41,8 +42,12 @@ interface RestaurantReservationFormProps {
     };
     maximumPartySize: number;
     acceptsReservations: boolean;
-    hours: {
-      [key: string]: string[];
+    operatingHours?: {
+      [key: string]: {
+        open: string;
+        close: string;
+        isClosed: boolean;
+      };
     };
   };
   onReservationSuccess?: (reservation: { confirmationCode: string }) => void;
@@ -58,18 +63,16 @@ export function RestaurantReservationForm({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
   const [partySize, setPartySize] = useState(2);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use the custom hook to get customer information
+  const { customerInfo, setCustomerInfo } = useCustomerInfo();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
   
   // Get WhatsApp link generator
-  const { generateWhatsAppLink } = useWhatsAppLink();
+  // const { generateWhatsAppLink } = useWhatsAppLink(); // This line is removed as per the new_code
 
   // Get available times based on restaurant hours and selected date
   const getAvailableTimes = () => {
@@ -86,24 +89,22 @@ export function RestaurantReservationForm({
       "domingo": "Sunday",
     }[dayName] || "Monday";
 
-    const hours = restaurant.hours[dayNameEn] || [];
+    const hours = restaurant.operatingHours?.[dayNameEn] || []; // Changed to use operatingHours
     
-    if (hours.length === 0) {
+    if (hours.isClosed) { // Changed to check isClosed
       return [];
     }
 
     // Generate time slots based on restaurant hours
     const times: string[] = [];
-    hours.forEach(hourRange => {
-      const [start, end] = hourRange.split("-");
-      const startHour = parseInt(start.split(":")[0]);
-      const endHour = parseInt(end.split(":")[0]);
-      
-      for (let hour = startHour; hour < endHour; hour++) {
-        times.push(`${hour.toString().padStart(2, "0")}:00`);
-        times.push(`${hour.toString().padStart(2, "0")}:30`);
-      }
-    });
+    const [start, end] = hours.open.split("-"); // Changed to use open
+    const startHour = parseInt(start.split(":")[0]);
+    const endHour = parseInt(end.split(":")[0]);
+    
+    for (let hour = startHour; hour < endHour; hour++) {
+      times.push(`${hour.toString().padStart(2, "0")}:00`);
+      times.push(`${hour.toString().padStart(2, "0")}:30`);
+    }
 
     return times;
   };
@@ -188,7 +189,7 @@ export function RestaurantReservationForm({
         <div className="space-y-4">
           <div>
             <h3 className="text-xl font-bold text-gray-900 flex items-center">
-              <Utensils className="mr-2 h-5 w-5 text-blue-600" />
+              <ChefHat className="mr-2 h-5 w-5 text-blue-600" />
               Faça sua reserva
             </h3>
             <p className="text-sm text-gray-500 mt-1">{restaurant.name}</p>

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -7,6 +9,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -33,12 +37,8 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 3));
   const [isLoading, setIsLoading] = useState(false);
   
-  // Customer info state
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  // Use the custom hook to get customer information
+  const { customerInfo, setCustomerInfo } = useCustomerInfo();
   const [pickupLocation, setPickupLocation] = useState("");
   const [notes, setNotes] = useState("");
 
