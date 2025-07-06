@@ -12,7 +12,8 @@ import {
   Shield, Phone, Mail, MessageCircle, Share2, Bookmark, Download, 
   ChevronLeft, CheckCircle, AlertCircle, Eye, Globe, Compass, ArrowLeft,
   Settings, BarChart3, TrendingDown, Wind, Sunrise, Sunset, Activity,
-  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers, Shirt, Wallet, Play
+  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers, Shirt, Wallet, Play, Wifi, Trash2,
+      FileText, Lightbulb, CreditCard, TreePine, Mountain
 } from "lucide-react";
 import { cardStyles, decorativeBackgrounds, buttonStyles, ui } from "@/lib/ui-config";
 import { Button } from "@/components/ui/button";
@@ -385,72 +386,152 @@ function SectionContent({
 }) {
   const content = {
     "boas-vindas": (
-      <div className="space-y-8">
-        <div className="relative aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-blue-600" />
-            Assista ao Vídeo da Seção
-          </h3>
-          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">[Vídeo em breve]</p>
-          </div>
-        </div>
+      <div className="space-y-10">
+        {/* Video Section with Modern Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn(glassStyles.card, "p-6 border-2 border-blue-200/50")}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-xl" />
-          <div className="relative flex items-start gap-4">
-            <motion.div 
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg"
-            >
-              <Plane className="w-6 h-6 text-white" />
-            </motion.div>
-            <div>
-              <motion.h2 
-                className="text-xl font-bold text-gray-900 mb-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 z-10" />
+            <div className="p-8 relative z-20">
+              <motion.div 
+                className="flex items-center gap-3 mb-6"
+                whileHover={{ x: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                Boas-vindas ao Paraíso: Preparativos para uma Experiência Inesquecível
-              </motion.h2>
-              <motion.p 
-                className="text-gray-600 leading-relaxed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                Fernando de Noronha não é apenas um destino de viagem; é um privilégio. Antes de mergulhar em suas águas azul-turquesa, é fundamental compreender a essência deste lugar. O arquipélago ostenta uma rara tríade de títulos de proteção ambiental que ditam o ritmo e a experiência de quem o visita: é um <strong>Parque Nacional Marinho</strong> desde 1988, um <strong>Patrimônio Natural Mundial da Humanidade pela UNESCO</strong> desde 2001 (juntamente com o Atol das Rocas) e um <strong>Sítio RAMSAR</strong>, designação que reconhece suas zonas húmidas como de importância internacional.
-              </motion.p>
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 group-hover:rotate-6 transition-transform duration-300">
+                  <Play className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Assista ao Vídeo Introdutório</h3>
+                  <p className="text-sm text-gray-600">Conheça Fernando de Noronha em 5 minutos</p>
+                </div>
+              </motion.div>
+              <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center relative overflow-hidden group-hover:shadow-xl transition-shadow duration-300">
+                <div className="absolute inset-0 bg-black/5 backdrop-blur-[1px]" />
+                <motion.div
+                  className="relative z-10"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="w-20 h-20 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl cursor-pointer">
+                    <Play className="w-10 h-10 text-blue-600 ml-1" />
+                  </div>
+                </motion.div>
+                <p className="absolute bottom-4 left-4 text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full">
+                  Em breve
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Welcome Hero Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className={cn(ui.cards.base, "p-0 overflow-hidden")}
+        >
+          <div className="relative p-8 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-purple-50">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl" />
+            
+            <div className="relative">
+              <motion.div 
+                className="inline-flex items-center gap-2 mb-6"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <motion.div 
+                  className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl"
+                  animate={{ 
+                    rotate: [0, 5, -5, 0],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity,
+                    repeatType: "reverse"
+                  }}
+                >
+                  <Plane className="w-8 h-8 text-white" />
+                </motion.div>
+                <div className="h-16 w-0.5 bg-gradient-to-b from-blue-600 to-transparent" />
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                    Boas-vindas ao Paraíso
+                  </h2>
+                  <p className="text-sm text-gray-600">Preparativos para uma experiência inesquecível</p>
+                </div>
+              </motion.div>
+              
+              <motion.p 
+                className="text-gray-700 leading-relaxed mb-6 text-lg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                Fernando de Noronha não é apenas um destino de viagem; é um privilégio. Antes de mergulhar em suas águas azul-turquesa, é fundamental compreender a essência deste lugar único.
+              </motion.p>
+              
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { label: "Parque Nacional Marinho", year: "1988", icon: Shield },
+                  { label: "Patrimônio Mundial UNESCO", year: "2001", icon: Globe },
+                  { label: "Sítio RAMSAR", year: "Internacional", icon: Droplets }
+                ].map((badge, index) => (
+                  <motion.div
+                    key={badge.label}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-blue-100"
+                  >
+                    <badge.icon className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-800">{badge.label}</span>
+                    <span className="text-xs text-gray-500">{badge.year}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Essential Info Cards with Interactive Design */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               icon: DollarSign,
               title: "Taxa de Preservação (TPA)",
-              description: "Obrigatória para todos os visitantes, com valor diário progressivo. Crianças menores de 5 anos são isentas.",
+              description: "Obrigatória para todos os visitantes, com valor diário progressivo.",
               details: "A partir de R$ 101,33 por dia",
-              color: "green"
+              color: "green",
+              gradient: "from-green-600 to-emerald-600",
+              tips: ["Crianças < 5 anos: isentas", "Pague online antecipadamente", "Desconto para estadias longas"]
             },
             {
               icon: Shield,
               title: "Ingresso PARNAMAR",
-              description: "Acesso às principais praias e trilhas do Parque Nacional. Válido por 10 dias.",
-              details: "R$ 186,50 (Brasileiros) / R$ 373 (Estrangeiros)",
-              color: "purple"
+              description: "Acesso às principais praias e trilhas do Parque Nacional.",
+              details: "R$ 186,50 (Brasileiros)",
+              color: "purple",
+              gradient: "from-purple-600 to-pink-600",
+              tips: ["Válido por 10 dias", "Compre no ICMBio", "Estrangeiros: R$ 373"]
             },
             {
               icon: Plane,
               title: "Voos e Chegada",
-              description: "Voos partem principalmente de Recife e Natal. Contratar um transfer privativo pode otimizar seu tempo.",
-              details: "Evite transfers compartilhados",
-              color: "blue"
+              description: "Voos partem principalmente de Recife e Natal.",
+              details: "Transfer privativo recomendado",
+              color: "blue",
+              gradient: "from-blue-600 to-indigo-600",
+              tips: ["Evite transfers compartilhados", "Reserve com antecedência", "Voos diretos limitados"]
             }
           ].map((item, index) => {
             const itemColor = colorMap[item.color as keyof typeof colorMap];
@@ -458,210 +539,155 @@ function SectionContent({
             return (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={cn(glassStyles.card, "p-5 cursor-pointer group")}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                whileHover={{ y: -8 }}
+                className="group relative"
               >
-                <motion.div 
-                  className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
-                    `bg-gradient-to-br ${itemColor.gradient} shadow-lg`
-                  )}
-                  whileHover={{ rotate: 360, scale: 1.1 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <item.icon className="w-6 h-6 text-white" />
-                </motion.div>
-                <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                <p className={cn("text-xs font-medium", itemColor.text)}>{item.details}</p>
-                
-                <motion.div
-                  className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full opacity-0 group-hover:opacity-100"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
+                <div className={cn(
+                  ui.cards.base,
+                  "p-6 h-full border-2 transition-all duration-300",
+                  `hover:border-${item.color}-200 hover:shadow-xl`
+                )}>
+                  {/* Decorative gradient background */}
+                  <div className={cn(
+                    "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-xl",
+                    item.gradient
+                  )} />
+                  
+                  {/* Icon container with animation */}
+                  <motion.div 
+                    className={cn(
+                      "w-14 h-14 rounded-2xl flex items-center justify-center mb-4 relative overflow-hidden",
+                      `bg-gradient-to-br ${item.gradient}`
+                    )}
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 backdrop-blur-sm" />
+                    <item.icon className="w-7 h-7 text-white relative z-10" />
+                  </motion.div>
+                  
+                  {/* Content */}
+                  <h3 className="font-bold text-gray-900 mb-2 text-lg">{item.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{item.description}</p>
+                  
+                  {/* Price/Details badge */}
+                  <div className={cn(
+                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium mb-4",
+                    itemColor.lightBg,
+                    itemColor.text
+                  )}>
+                    <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                    {item.details}
+                  </div>
+                  
+                  {/* Tips section (appears on hover) */}
+                  <div className="space-y-2 overflow-hidden">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Dicas rápidas:</p>
+                    {item.tips.map((tip, tipIndex) => (
+                      <motion.div
+                        key={tip}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ delay: tipIndex * 0.1 }}
+                        className="flex items-center gap-2 text-xs text-gray-600"
+                      >
+                        <CheckCircle className={cn("w-3 h-3 flex-shrink-0", itemColor.icon)} />
+                        <span>{tip}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  {/* Interactive corner decoration */}
+                  <div className={cn(
+                    "absolute top-0 right-0 w-24 h-24 opacity-10 group-hover:opacity-20 transition-opacity duration-300",
+                    `bg-gradient-to-br ${item.gradient}`
+                  )} style={{
+                    clipPath: "polygon(100% 0, 0 0, 100% 100%)",
+                  }} />
+                </div>
               </motion.div>
             );
           })}
         </div>
 
-        <div className={cn(cardStyles.base, "p-6")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-indigo-600" />
-            Checklist Essencial do Viajante
-          </h3>
-          <div className="space-y-4">
-            {[
-              { time: "Vestuário", task: "Tecidos leves, respiráveis, e peças com proteção UV. Saltos altos são impraticáveis.", icon: Shirt },
-              { time: "Equipamentos", task: "Kit de snorkel, garrafa de água reutilizável, e câmera subaquática.", icon: Camera },
-              { time: "Saúde e Bem-estar", task: "Kit de primeiros socorros, medicamentos de uso contínuo, protetor solar e repelente.", icon: Heart },
-              { time: "Documentos e Dinheiro", task: "Comprovantes de pagamento das taxas, documentos pessoais e dinheiro em espécie.", icon: Wallet }
-            ].map((step, index) => (
-              <motion.div
-                key={step.time}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <div className="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center">
-                  <step.icon className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{step.task}</p>
-                  <p className="text-xs text-gray-500">{step.time}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+        {/* Interactive Checklist */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className={cn(glassStyles.card, "p-6")}
+          className={cn(ui.cards.base, "p-0 overflow-hidden")}
         >
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-indigo-600" />
-            Informações Práticas
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="p-4 bg-white rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600">Internet</p>
-                  <p className="text-lg font-bold text-green-700">
-                    Instável
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    Aproveite para um detox digital
-                  </p>
-                </div>
-                <div className="p-4 bg-white rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600">Serviços Bancários</p>
-                  <p className="text-lg font-bold text-green-700">
-                    Limitados
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    Leve dinheiro em espécie
-                  </p>
-                </div>
-                <div className="p-4 bg-white rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600">Voltagem e Fuso Horário</p>
-                  <p className="text-lg font-bold text-green-700">
-                    220V e GMT-2
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    Uma hora a mais que Brasília
-                  </p>
-                </div>
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              Checklist Essencial do Viajante
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">Marque os itens conforme você se prepara para a viagem</p>
           </div>
-        </motion.div>
-
-        <div className={cn(glassStyles.card, "p-6 bg-yellow-50/50 border-2 border-yellow-200/50")}>
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">O Viajante Consciente: Etiqueta para Preservar o Paraíso</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-600 mt-1">•</span>
-                  <span>Respeito à Vida Selvagem: É estritamente proibido tocar, alimentar ou perseguir qualquer animal.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-600 mt-1">•</span>
-                  <span>Redução de Resíduos: A ilha baniu a importação e o uso de plásticos descartáveis.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-600 mt-1">•</span>
-                  <span>Economia de Recursos: Água e energia são bens preciosos em Noronha.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-
-    "accommodation": (
-      <div className="space-y-8">
-        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-purple-600" />
-            Assista ao Vídeo da Seção
-          </h3>
-          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">[Vídeo em breve]</p>
-          </div>
-        </div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className={cn(cardStyles.base, "p-6 overflow-hidden")}
-        >
-          <h2 className="text-xl font-bold text-gray-900 mb-4">O Epicentro do Luxo: As Pousadas-Destino</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          
+          <div className="p-6 space-y-3">
             {[
-              {
-                name: "Pousada Maravilha",
-                description: "O epítome da exclusividade, frequentada por celebridades que buscam privacidade absoluta.",
-                pros: ["Exclusividade Absoluta", "Piscina de borda infinita", "Restaurante renomado"],
-                price: "$$$",
-                color: "purple"
-              },
-              {
-                name: "NANNAI Noronha",
-                description: "Um conceito de luxo sofisticado e romântico, com bangalôs estrategicamente posicionados.",
-                pros: ["Romance Sofisticado", "Vistas deslumbrantes", "Ideal para casais"],
-                price: "$$$",
-                color: "green"
-              },
-              {
-                name: "Pousada Zé Maria",
-                description: "Uma verdadeira instituição na ilha, a Zé Maria combina luxo com uma atmosfera vibrante e sociável.",
-                pros: ["Luxo Sociável", "Festival Gastronômico", "Piscina com vista para o Morro do Pico"],
-                price: "$$",
-                color: "blue"
-              },
-              {
-                name: "Teju-Açu Ecopousada",
-                description: "Perfeita para o viajante de luxo com consciência ecológica, com bangalôs suspensos entre as árvores.",
-                pros: ["Eco-Chic & Alta Gastronomia", "Horta orgânica própria", "Técnicas de vanguarda"],
-                price: "$$",
-                color: "orange"
-              }
-            ].map((region, index) => {
-              const regionColor = colorMap[region.color as keyof typeof colorMap];
+              { category: "Vestuário", task: "Tecidos leves, respiráveis, e peças com proteção UV", icon: Shirt, color: "blue" },
+              { category: "Equipamentos", task: "Kit de snorkel, garrafa reutilizável, câmera subaquática", icon: Camera, color: "green" },
+              { category: "Saúde", task: "Kit primeiros socorros, medicamentos, protetor solar", icon: Heart, color: "red" },
+              { category: "Documentos", task: "Comprovantes, documentos pessoais e dinheiro em espécie", icon: Wallet, color: "purple" }
+            ].map((step, index) => {
+              const [checked, setChecked] = useState(false);
               
               return (
                 <motion.div
-                  key={region.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  key={step.category}
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ x: 4 }}
                   className={cn(
-                    "p-5 rounded-xl border-2 transition-all cursor-pointer",
-                    regionColor.bg,
-                    regionColor.border,
-                    "hover:shadow-md"
+                    "flex items-center gap-4 p-4 rounded-xl transition-all duration-300 cursor-pointer",
+                    checked ? "bg-green-50 border-2 border-green-200" : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
                   )}
+                  onClick={() => setChecked(!checked)}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className={cn("font-semibold", regionColor.text)}>{region.name}</h3>
-                    <span className="text-lg font-bold text-gray-500">{region.price}</span>
+                  <motion.div
+                    animate={{ scale: checked ? [1, 1.2, 1] : 1 }}
+                    className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
+                      checked ? "bg-green-500" : "bg-white shadow-sm"
+                    )}
+                  >
+                    {checked ? (
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    ) : (
+                      <step.icon className={cn("w-6 h-6", `text-${step.color}-600`)} />
+                    )}
+                  </motion.div>
+                  <div className="flex-1">
+                    <p className={cn(
+                      "font-medium transition-all duration-300",
+                      checked ? "text-green-700 line-through" : "text-gray-900"
+                    )}>{step.category}</p>
+                    <p className={cn(
+                      "text-sm transition-all duration-300",
+                      checked ? "text-green-600" : "text-gray-600"
+                    )}>{step.task}</p>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">{region.description}</p>
-                  <div className="space-y-1">
-                    {region.pros.map((pro) => (
-                      <div key={pro} className="flex items-center gap-2 text-xs">
-                        <CheckCircle className={cn("w-3 h-3", regionColor.icon)} />
-                        <span className="text-gray-700">{pro}</span>
-                      </div>
-                    ))}
+                  <div className={cn(
+                    "w-6 h-6 rounded-full border-2 transition-all duration-300",
+                    checked ? "bg-green-500 border-green-500" : "border-gray-300"
+                  )}>
+                    {checked && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-full h-full flex items-center justify-center"
+                      >
+                        <CheckCircle className="w-4 h-4 text-white" />
+                      </motion.div>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -669,311 +695,937 @@ function SectionContent({
           </div>
         </motion.div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              type: "Refúgios para Casais",
-              icon: Home,
-              price: "$$",
-              features: ["Ecocharme Pousada do Marcílio", "Pousada Morena", "Pousada Corveta"],
-              recommended: preferences.travelStyle === 'romantic',
-              color: "green"
-            },
-            {
-              type: "Aventura em Família",
-              icon: Building,
-              price: "$ - $$",
-              features: ["Pousada da Villa", "Pousada Filó", "Pousada Vila Nakau"],
-              recommended: preferences.travelStyle === 'family',
-              color: "purple"
-            },
-            {
-              type: "Análise Geográfica Estratégica",
-              icon: Key,
-              price: "",
-              features: ["Vila dos Remédios", "Floresta Nova / Vila do Trinta", "Boldró"],
-              recommended: true,
-              color: "blue"
-            }
-          ].map((type, index) => {
-            const typeColor = colorMap[type.color as keyof typeof colorMap];
-            
-            return (
-              <motion.div
-                key={type.type}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className={cn(cardStyles.base, "p-5 relative overflow-hidden")}
-              >
-                {type.recommended && (
-                  <div className="absolute -top-1 -right-8 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs font-bold px-8 py-1 rotate-45 shadow-md">
-                    Recomendado
-                  </div>
-                )}
-                
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center mb-4",
-                  typeColor.lightBg
-                )}>
-                  <type.icon className={cn("w-6 h-6", typeColor.icon)} />
-                </div>
-                
-                <h3 className="font-semibold text-gray-900 mb-2">{type.type}</h3>
-                <p className={cn("text-sm font-medium mb-3", typeColor.text)}>{type.price}</p>
-                
-                <ul className="space-y-2">
-                  {type.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm text-gray-600">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {preferences.travelDate && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(minimalStyles.card, "bg-gradient-to-br from-indigo-50/50 to-purple-50/50")}
-          >
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-600" />
-              Recomendação Personalizada
-            </h3>
-            <p className={minimalStyles.text.body}>
-              Para sua viagem de <strong>{preferences.duration} dias</strong> em{" "}
-              <strong>{format(preferences.travelDate, "MMMM", { locale: ptBR })}</strong>, 
-              com orçamento de <strong>R$ {preferences.budget[0].toLocaleString()} a R$ {preferences.budget[1].toLocaleString()}</strong>, 
-              recomendamos hospedagem em <strong>{preferences.budget[1] > 8000 ? "Praia do Sueste" : "Vila dos Remédios"}</strong>. 
-              {travelData.weather.season === "Chuvosa" 
-                ? " Durante a temporada chuvosa, prefira locais com área coberta e atividades indoor."
-                : " Na temporada seca, aproveite pousadas com piscina e próximas às praias."
-              }
-            </p>
-            
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">Condições do Mar</h4>
-                <div className="flex items-center gap-2">
-                  <Waves className={cn(
-                    "w-4 h-4",
-                    travelData.weather.seaCondition === 'calm' ? "text-green-600" :
-                    travelData.weather.seaCondition === 'moderate' ? "text-yellow-600" :
-                    "text-red-600"
-                  )} />
-                  <span className="text-sm capitalize">{travelData.weather.seaCondition}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">Visibilidade</h4>
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">{travelData.weather.visibility}m</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </div>
-    ),
-
-    "transportation": (
-      <div className="space-y-8">
-        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-green-600" />
-            Assista ao Vídeo da Seção
-          </h3>
-          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">[Vídeo em breve]</p>
-          </div>
-        </div>
-        <div className={cn(cardStyles.base, "p-6")}>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Navegando pela Ilha: Opções de Transporte</h2>
-          <div className="overflow-x-auto -mx-6 px-6">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Tipo</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Preço</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Ideal para</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Destaques</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  {
-                    type: "Transfer Privativo",
-                    icon: Car,
-                    price: "R$ 150-250",
-                    idealFor: "Chegada e partida",
-                    highlight: "Conforto, agilidade e evita paradas indesejadas.",
-                    color: "purple"
-                  },
-                  {
-                    type: "Ilha Tour Privativo",
-                    icon: Car,
-                    price: "R$ 800-1500/dia",
-                    idealFor: "Exploração completa",
-                    highlight: "Roteiro personalizado, flexibilidade de horários e guia local.",
-                    color: "blue"
-                  },
-                  {
-                    type: "Buggy",
-                    icon: Car,
-                    price: "R$ 200-600/dia",
-                    idealFor: "Aventura independente",
-                    highlight: "Liberdade para explorar cantos remotos da ilha.",
-                    color: "green"
-                  },
-                  {
-                    type: "Táxi",
-                    icon: Car,
-                    price: "R$ 30-80/trajeto",
-                    idealFor: "Trajetos específicos",
-                    highlight: "Serviço eficiente e organizado pela cooperativa Nortax.",
-                    color: "orange"
-                  },
-                  {
-                    type: "Ônibus",
-                    icon: Navigation,
-                    price: "R$ 5/trajeto",
-                    idealFor: "Economia e autenticidade",
-                    highlight: "Linha única que percorre a BR-363 de ponta a ponta.",
-                    color: "yellow"
-                  }
-                ].map((transport) => {
-                  const transportColor = colorMap[transport.color as keyof typeof colorMap];
-                  
-                  return (
-                    <tr key={transport.type} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-10 h-10 rounded-lg flex items-center justify-center",
-                            transportColor.lightBg
-                          )}>
-                            <transport.icon className={cn("w-5 h-5", transportColor.icon)} />
-                          </div>
-                          <span className="font-medium text-gray-900">{transport.type}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className={cn("font-medium", transportColor.text)}>{transport.price}</span>
-                      </td>
-                      <td className="py-4 px-4 text-center text-sm text-gray-600">{transport.idealFor}</td>
-                      <td className="py-4 px-4 text-sm text-gray-600">{transport.highlight}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
+        {/* Practical Info with Modern Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn(cardStyles.base, "p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200")}
+          transition={{ delay: 0.5 }}
+          className="space-y-6"
         >
-          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-green-600" />
-            Dicas de Transporte
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-white" />
+            </div>
+            Informações Práticas
           </h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-700 mb-2">
-                Para {preferences.duration} dias com {preferences.interests.length > 3 ? "muitas" : "algumas"} atividades:
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="p-4 bg-white rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600">Opção Econômica</p>
-                  <p className="text-lg font-bold text-green-700">
-                    Ônibus + Táxi ocasional
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    ~R$ {(preferences.duration * 40).toLocaleString()} total
+          
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { 
+                title: "Internet", 
+                status: "Instável", 
+                tip: "Aproveite para um detox digital",
+                icon: Wifi,
+                color: "yellow",
+                details: "4G limitado, Wi-Fi em pousadas"
+              },
+              { 
+                title: "Serviços Bancários", 
+                status: "Limitados", 
+                tip: "Leve dinheiro em espécie",
+                icon: Building,
+                color: "orange",
+                details: "Poucos caixas eletrônicos"
+              },
+              { 
+                title: "Energia", 
+                status: "220V", 
+                tip: "GMT-2 (1h a mais que Brasília)",
+                icon: Zap,
+                color: "blue",
+                details: "Leve adaptadores universais"
+              }
+            ].map((info, index) => (
+              <motion.div
+                key={info.title}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                className={cn(ui.cards.base, "p-5 relative overflow-hidden group")}
+              >
+                <div className={cn(
+                  "absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 group-hover:opacity-20 transition-opacity duration-300",
+                  `bg-${info.color}-500`
+                )} style={{ transform: "translate(50%, -50%)" }} />
+                
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center",
+                      `bg-${info.color}-100`
+                    )}>
+                      <info.icon className={cn("w-5 h-5", `text-${info.color}-600`)} />
+                    </div>
+                    <Badge variant="secondary" className={cn(`bg-${info.color}-100 text-${info.color}-700 border-${info.color}-200`)}>
+                      {info.status}
+                    </Badge>
+                  </div>
+                  
+                  <h4 className="font-semibold text-gray-900 mb-1">{info.title}</h4>
+                  <p className="text-sm text-gray-600 mb-2">{info.details}</p>
+                  <p className={cn("text-xs font-medium", `text-${info.color}-600`)}>
+                    💡 {info.tip}
                   </p>
                 </div>
-                <div className="p-4 bg-white rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600">Opção Conforto</p>
-                  <p className="text-lg font-bold text-green-700">
-                    Buggy alugado
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    ~R$ {(preferences.duration * 400).toLocaleString()} total
-                  </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Environmental Alert with Interactive Design */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6 }}
+          whileHover={{ scale: 1.02 }}
+          className={cn(
+            ui.cards.base,
+            "p-0 overflow-hidden border-2 border-yellow-200 hover:border-yellow-300 transition-all duration-300"
+          )}
+        >
+          <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-6">
+            <div className="flex items-start gap-4">
+              <motion.div 
+                className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center flex-shrink-0"
+                animate={{ 
+                  rotate: [0, -10, 10, -10, 0],
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  repeatDelay: 3
+                }}
+              >
+                <AlertCircle className="w-6 h-6 text-white" />
+              </motion.div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 mb-3 text-lg">
+                  O Viajante Consciente: Etiqueta para Preservar o Paraíso
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    {
+                      rule: "Respeito à Vida Selvagem",
+                      description: "É estritamente proibido tocar, alimentar ou perseguir qualquer animal",
+                      icon: Fish
+                    },
+                    {
+                      rule: "Redução de Resíduos",
+                      description: "A ilha baniu a importação e o uso de plásticos descartáveis",
+                      icon: Trash2
+                    },
+                    {
+                      rule: "Economia de Recursos",
+                      description: "Água e energia são bens preciosos em Noronha",
+                      icon: Droplets
+                    }
+                  ].map((rule, index) => (
+                    <motion.div
+                      key={rule.rule}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.7 + index * 0.1 }}
+                      className="flex items-start gap-3 p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors duration-300"
+                    >
+                      <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <rule.icon className="w-4 h-4 text-yellow-700" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{rule.rule}</p>
+                        <p className="text-xs text-gray-600 mt-0.5">{rule.description}</p>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
+      </div>
+    ),
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={cn(cardStyles.base, "p-5 bg-orange-50 border-2 border-orange-200")}
-          >
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-600" />
-              Horários e Reservas
-            </h4>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <span className="text-orange-600 mt-1">•</span>
-                <span>Reserve buggy e passeios com antecedência, especialmente na alta temporada.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-orange-600 mt-1">•</span>
-                <span>O serviço de táxi funciona 24h, mas é recomendável agendar corridas noturnas.</span>
-              </li>
-            </ul>
-          </motion.div>
+    "accommodation": (
+      <div className="space-y-12">
+        {/* Introduction */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-4"
+        >
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+              <Home className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Hospedagem</h3>
+              <p className="text-gray-600">Encontre o lugar perfeito para sua estadia</p>
+            </div>
+          </div>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={cn(cardStyles.base, "p-5 bg-green-50 border-2 border-green-200")}
-          >
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              Dicas de Ouro
-            </h4>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
-                <span>A ausência de apps de transporte como Uber incentiva a interação com serviços locais.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 mt-1">•</span>
-                <span>Considere um Ilha Tour Privativo no primeiro dia para uma visão geral da ilha.</span>
-              </li>
-            </ul>
-          </motion.div>
+        {/* Accommodation Types Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            {
+              type: "Pousadas",
+              icon: Home,
+              color: "purple",
+              description: "Charme e hospitalidade local",
+              price: "R$ 150-400",
+              features: ["Café da manhã", "Atendimento pessoal", "Localização central", "Dicas locais"],
+              pros: ["Experiência autêntica", "Preço acessível", "Proximidade dos pontos turísticos"],
+              cons: ["Conforto básico", "Pode ter barulho"]
+            },
+            {
+              type: "Hotéis",
+              icon: Building,
+              color: "blue",
+              description: "Conforto e serviços completos",
+              price: "R$ 300-800",
+              features: ["Ar condicionado", "Piscina", "Restaurante", "Serviço de quarto"],
+              pros: ["Maior conforto", "Serviços inclusos", "Estrutura completa"],
+              cons: ["Preço elevado", "Experiência menos local"]
+            },
+            {
+              type: "Apartamentos",
+              icon: Key,
+              color: "green",
+              description: "Independência e privacidade",
+              price: "R$ 200-600",
+              features: ["Cozinha equipada", "Espaço amplo", "Privacidade", "Flexibilidade"],
+              pros: ["Liberdade total", "Economia com comida", "Ideal para grupos"],
+              cons: ["Sem serviços", "Pode ser isolado"]
+            }
+          ].map((accommodation, index) => (
+            <motion.div
+              key={accommodation.type}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className={cn(
+                ui.cards.base,
+                ui.cards.hover.lift,
+                "group relative overflow-hidden p-0"
+              )}
+            >
+              <div className={cn(
+                "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300",
+                {
+                  "from-purple-500 to-pink-500": accommodation.color === "purple",
+                  "from-blue-500 to-indigo-500": accommodation.color === "blue",
+                  "from-green-500 to-emerald-500": accommodation.color === "green",
+                }
+              )} />
+              
+              <div className="relative z-10 p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={cn(
+                    "p-3 rounded-xl flex items-center justify-center",
+                    {
+                      "bg-gradient-to-br from-purple-100 to-pink-100": accommodation.color === "purple",
+                      "bg-gradient-to-br from-blue-100 to-indigo-100": accommodation.color === "blue",
+                      "bg-gradient-to-br from-green-100 to-emerald-100": accommodation.color === "green",
+                    }
+                  )}>
+                    <accommodation.icon className={cn(
+                      "w-6 h-6",
+                      {
+                        "text-purple-600": accommodation.color === "purple",
+                        "text-blue-600": accommodation.color === "blue",
+                        "text-green-600": accommodation.color === "green",
+                      }
+                    )} />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold text-gray-900 mb-1">{accommodation.type}</h4>
+                    <p className="text-sm text-gray-600 mb-2">{accommodation.description}</p>
+                    <div className={cn(
+                      "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium",
+                      {
+                        "bg-purple-100 text-purple-700": accommodation.color === "purple",
+                        "bg-blue-100 text-blue-700": accommodation.color === "blue",
+                        "bg-green-100 text-green-700": accommodation.color === "green",
+                      }
+                    )}>
+                      {accommodation.price}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div className="space-y-3 mb-4">
+                  <h5 className="text-sm font-semibold text-gray-900">Características:</h5>
+                  <div className="space-y-2">
+                    {accommodation.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          {
+                            "bg-purple-500": accommodation.color === "purple",
+                            "bg-blue-500": accommodation.color === "blue",
+                            "bg-green-500": accommodation.color === "green",
+                          }
+                        )} />
+                        <span className="text-sm text-gray-600">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pros and Cons */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                                         <h6 className="font-semibold text-green-700 mb-1 flex items-center gap-1">
+                       <CheckCircle className="w-3 h-3" />
+                       Vantagens
+                     </h6>
+                    <ul className="space-y-1">
+                      {accommodation.pros.map((pro, idx) => (
+                        <li key={idx} className="text-gray-600 flex items-start gap-1">
+                          <span className="text-green-500 mt-0.5">•</span>
+                          {pro}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h6 className="font-semibold text-orange-700 mb-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Atenção
+                    </h6>
+                    <ul className="space-y-1">
+                      {accommodation.cons.map((con, idx) => (
+                        <li key={idx} className="text-gray-600 flex items-start gap-1">
+                          <span className="text-orange-500 mt-0.5">•</span>
+                          {con}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
+
+        {/* Location Guide */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+              <MapPin className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Melhores Regiões</h3>
+              <p className="text-gray-600">Escolha a localização ideal para sua estadia</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                name: "Vila dos Remédios",
+                description: "Centro histórico com vida noturna",
+                distance: "Centro",
+                features: ["Restaurantes", "Vida noturna", "Comércio", "Fácil acesso"],
+                best: "Primeira visita"
+              },
+              {
+                name: "Floresta Nova",
+                description: "Tranquilo e próximo às praias",
+                distance: "5 min das praias",
+                features: ["Mais reservado", "Natureza", "Praias próximas", "Silêncio"],
+                best: "Descanso"
+              },
+              {
+                name: "Boldró",
+                description: "Vista privilegiada do mar",
+                distance: "Vista para o mar",
+                features: ["Pôr do sol", "Vista oceânica", "Exclusividade", "Privacidade"],
+                best: "Lua de mel"
+              },
+              {
+                name: "Sueste",
+                description: "Próximo ao Projeto Tamar",
+                distance: "10 min do centro",
+                features: ["Tartarugas", "Mergulho", "Aventura", "Natureza"],
+                best: "Aventureiros"
+              }
+            ].map((location, idx) => (
+              <motion.div
+                key={location.name}
+                whileHover={{ scale: 1.02 }}
+                className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 hover:border-gray-200 transition-all duration-300"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{location.name}</h4>
+                    <p className="text-sm text-gray-600">{location.description}</p>
+                  </div>
+                  <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                    {location.distance}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                  {location.features.map((feature, featureIdx) => (
+                    <div key={featureIdx} className="flex items-center gap-1">
+                      <div className="w-1 h-1 bg-amber-500 rounded-full" />
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="text-xs">
+                  <span className="text-gray-500">Ideal para: </span>
+                  <span className="font-medium text-gray-900">{location.best}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Booking Tips */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className={cn(ui.cards.base, "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 p-8")}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Dicas para Reservar</h3>
+              <p className="text-gray-600">Como garantir a melhor hospedagem</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                icon: Calendar,
+                title: "Antecedência",
+                tip: "Reserve com 3-6 meses de antecedência para melhor preço e disponibilidade"
+              },
+              {
+                icon: DollarSign,
+                title: "Negociação",
+                tip: "Para estadias longas, negocie desconto diretamente com a hospedagem"
+              },
+              {
+                icon: Star,
+                title: "Avaliações",
+                tip: "Leia avaliações recentes e verifique fotos atuais dos quartos"
+              },
+              {
+                icon: Phone,
+                title: "Contato Direto",
+                tip: "Ligue para confirmar detalhes e esclarecer dúvidas antes da viagem"
+              }
+            ].map((tip, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 p-4 bg-white/50 rounded-xl backdrop-blur-sm"
+              >
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <tip.icon className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">{tip.title}</h4>
+                  <p className="text-sm text-gray-600">{tip.tip}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "transportation": (
+      <div className="space-y-12">
+        {/* Introduction */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-4"
+        >
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+              <Car className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Transporte</h3>
+              <p className="text-gray-600">Como se locomover pela ilha</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Transportation Options */}
+        <div className="grid gap-6">
+          {[
+            {
+              type: "Buggy",
+              icon: Car,
+              color: "green",
+              price: "R$ 150-250/dia",
+              description: "A opção mais popular e divertida",
+              features: [
+                "Liberdade total de horários",
+                "Acesso a trilhas e praias remotas",
+                "Experiência autêntica da ilha",
+                "Ideal para casais e famílias"
+              ],
+              pros: ["Flexibilidade máxima", "Aventura garantida", "Custo-benefício"],
+              cons: ["Requer habilitação", "Pode ser quente", "Combustível caro"],
+              tips: [
+                "Reserve com antecedência na alta temporada",
+                "Verifique o estado do veículo antes de sair",
+                "Leve protetor solar e água sempre"
+              ]
+            },
+            {
+              type: "Táxi",
+              icon: Phone,
+              color: "blue",
+              price: "R$ 30-80/corrida",
+              description: "Conforto e praticidade",
+              features: [
+                "Motoristas conhecem a ilha",
+                "Ar condicionado",
+                "Dicas dos locais",
+                "Disponível 24h"
+              ],
+              pros: ["Sem preocupações", "Dicas locais", "Confortável"],
+              cons: ["Custo elevado", "Dependência de horários", "Pouca autonomia"],
+              tips: [
+                "Negocie preços para tours",
+                "Peça o número do motorista",
+                "Combine horários de volta"
+              ]
+            },
+            {
+              type: "Ônibus",
+              icon: Users,
+              color: "purple",
+              price: "R$ 3-5/trecho",
+              description: "Opção econômica",
+              features: [
+                "Mais barato",
+                "Rotas principais",
+                "Sustentável",
+                "Conhece outros viajantes"
+              ],
+              pros: ["Muito barato", "Ecológico", "Social"],
+              cons: ["Horários limitados", "Não vai a todas as praias", "Pode lotar"],
+              tips: [
+                "Verifique os horários",
+                "Tenha um plano B",
+                "Chegue cedo nos pontos"
+              ]
+            },
+            {
+              type: "Bicicleta",
+              icon: Activity,
+              color: "orange",
+              price: "R$ 30-50/dia",
+              description: "Sustentável e saudável",
+              features: [
+                "Zero emissões",
+                "Exercício",
+                "Ritmo tranquilo",
+                "Economia"
+              ],
+              pros: ["Ecológico", "Saudável", "Barato"],
+              cons: ["Limitado por distância", "Depende do clima", "Esforço físico"],
+              tips: [
+                "Use protetor solar",
+                "Leve água sempre",
+                "Evite o sol do meio-dia"
+              ]
+            }
+          ].map((transport, index) => (
+            <motion.div
+              key={transport.type}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className={cn(
+                ui.cards.base,
+                ui.cards.hover.lift,
+                "group relative overflow-hidden p-0"
+              )}
+            >
+              <div className={cn(
+                "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300",
+                {
+                  "from-green-500 to-emerald-500": transport.color === "green",
+                  "from-blue-500 to-indigo-500": transport.color === "blue",
+                  "from-purple-500 to-pink-500": transport.color === "purple",
+                  "from-orange-500 to-amber-500": transport.color === "orange",
+                }
+              )} />
+              
+              <div className="relative z-10 p-8">
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {/* Header */}
+                  <div className="lg:col-span-1">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className={cn(
+                        "p-3 rounded-xl",
+                        {
+                          "bg-gradient-to-br from-green-100 to-emerald-100": transport.color === "green",
+                          "bg-gradient-to-br from-blue-100 to-indigo-100": transport.color === "blue",
+                          "bg-gradient-to-br from-purple-100 to-pink-100": transport.color === "purple",
+                          "bg-gradient-to-br from-orange-100 to-amber-100": transport.color === "orange",
+                        }
+                      )}>
+                        <transport.icon className={cn(
+                          "w-6 h-6",
+                          {
+                            "text-green-600": transport.color === "green",
+                            "text-blue-600": transport.color === "blue",
+                            "text-purple-600": transport.color === "purple",
+                            "text-orange-600": transport.color === "orange",
+                          }
+                        )} />
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-xl font-bold text-gray-900">{transport.type}</h4>
+                        <p className="text-sm text-gray-600">{transport.description}</p>
+                      </div>
+                    </div>
+                    
+                    <div className={cn(
+                      "inline-flex items-center px-4 py-2 rounded-full text-sm font-medium",
+                      {
+                        "bg-green-100 text-green-700": transport.color === "green",
+                        "bg-blue-100 text-blue-700": transport.color === "blue",
+                        "bg-purple-100 text-purple-700": transport.color === "purple",
+                        "bg-orange-100 text-orange-700": transport.color === "orange",
+                      }
+                    )}>
+                      {transport.price}
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div className="lg:col-span-2">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Features */}
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-semibold text-gray-900">Características:</h5>
+                        <div className="space-y-2">
+                          {transport.features.map((feature, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <div className={cn(
+                                "w-1.5 h-1.5 rounded-full",
+                                {
+                                  "bg-green-500": transport.color === "green",
+                                  "bg-blue-500": transport.color === "blue",
+                                  "bg-purple-500": transport.color === "purple",
+                                  "bg-orange-500": transport.color === "orange",
+                                }
+                              )} />
+                              <span className="text-sm text-gray-600">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Pros and Cons */}
+                      <div className="space-y-4">
+                        <div>
+                                                     <h6 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1">
+                             <CheckCircle className="w-3 h-3" />
+                             Vantagens
+                           </h6>
+                          <ul className="space-y-1">
+                            {transport.pros.map((pro, idx) => (
+                              <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                                <span className="text-green-500 mt-0.5">•</span>
+                                {pro}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <h6 className="text-sm font-semibold text-orange-700 mb-2 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Atenção
+                          </h6>
+                          <ul className="space-y-1">
+                            {transport.cons.map((con, idx) => (
+                              <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                                <span className="text-orange-500 mt-0.5">•</span>
+                                {con}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tips */}
+                    <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                      <h6 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1">
+                        <Lightbulb className="w-3 h-3 text-amber-500" />
+                        Dicas Importantes
+                      </h6>
+                      <ul className="space-y-1">
+                        {transport.tips.map((tip, idx) => (
+                          <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                            <span className="text-amber-500 mt-0.5">•</span>
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Combination Recommendations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className={cn(ui.cards.base, "bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200 p-8")}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl">
+              <Compass className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Combinações Inteligentes</h3>
+              <p className="text-gray-600">Otimize sua mobilidade na ilha</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                title: "Econômico",
+                combination: "Ônibus + Bicicleta",
+                description: "Para orçamentos apertados",
+                daily: "R$ 35-55/dia",
+                bestFor: "Mochileiros e jovens"
+              },
+              {
+                title: "Balanceado",
+                combination: "Buggy + Táxi",
+                description: "Flexibilidade quando precisar",
+                daily: "R$ 180-300/dia",
+                bestFor: "Casais e pequenos grupos"
+              },
+              {
+                title: "Confort",
+                combination: "Táxi + Transfer",
+                description: "Máximo conforto",
+                daily: "R$ 200-400/dia",
+                bestFor: "Famílias e viajantes maduros"
+              },
+              {
+                title: "Aventura",
+                combination: "Buggy + Bicicleta",
+                description: "Liberdade total",
+                daily: "R$ 180-280/dia",
+                bestFor: "Aventureiros e esportistas"
+              }
+            ].map((combo, idx) => (
+              <motion.div
+                key={combo.title}
+                whileHover={{ scale: 1.02 }}
+                className="p-6 bg-white/60 rounded-xl backdrop-blur-sm border border-white/20"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="font-bold text-gray-900">{combo.title}</h4>
+                    <p className="text-indigo-600 font-medium">{combo.combination}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-gray-900">{combo.daily}</div>
+                    <div className="text-xs text-gray-500">por dia</div>
+                  </div>
+                </div>
+                
+                <p className="text-sm text-gray-600 mb-3">{combo.description}</p>
+                
+                <div className="text-xs">
+                  <span className="text-gray-500">Ideal para: </span>
+                  <span className="font-medium text-gray-900">{combo.bestFor}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Practical Tips */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+              <Info className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Informações Práticas</h3>
+              <p className="text-gray-600">Tudo que você precisa saber</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">Documentos</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  CNH para alugar buggy
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Cartão de crédito para caução
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Comprovante de hospedagem
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">Combustível</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Gasolina: R$ 7-8/litro
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Poucos postos na ilha
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Abasteça sempre que possível
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">Segurança</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Respeite os limites de velocidade
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Cuidado com animais na pista
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  Use cinto de segurança sempre
+                </li>
+              </ul>
+            </div>
+          </div>
+        </motion.div>
       </div>
     ),
 
     "beaches": (
-      <div className="space-y-8">
-        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-cyan-600" />
-            Assista ao Vídeo da Seção
-          </h3>
-          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">[Vídeo em breve]</p>
+      <div className="space-y-12">
+        {/* Video Section with Modern Design */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 z-10" />
+            <div className="p-8 relative z-20">
+              <motion.div 
+                className="flex items-center gap-3 mb-6"
+                whileHover={{ x: 5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="p-3 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl">
+                  <Play className="w-6 h-6 text-cyan-600" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Praias Paradisíacas</h3>
+                  <p className="text-gray-600">Descubra as joias do Atlântico</p>
+                </div>
+              </motion.div>
+              
+              <div className="relative group">
+                <div className="aspect-video bg-gradient-to-r from-cyan-100 to-blue-100 rounded-xl flex items-center justify-center overflow-hidden">
+                  <motion.div
+                    className="text-center"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+                      <Play className="w-12 h-12 text-cyan-600" />
+                    </div>
+                    <p className="text-gray-700 font-medium">Vídeo das Praias em breve</p>
+                  </motion.div>
+                </div>
+                
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            </div>
           </div>
-        </div>
+        </motion.div>
+
+        {/* Introduction Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center space-y-6"
+        >
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl">
+              <Waves className="w-6 h-6 text-cyan-600" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">As Joias do Atlântico</h2>
+              <p className="text-gray-600">Um roteiro pelas praias mais belas do mundo</p>
+            </div>
+          </div>
+          
+          <div className="max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Fernando de Noronha abriga algumas das praias mais espetaculares do planeta, 
+              cada uma com sua personalidade única e beleza incomparável. Prepare-se para 
+              uma jornada pelos paraísos aquáticos do Atlântico Sul.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Beach Cards Section */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">As Joias do Atlântico: Um Roteiro Pelas Praias</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 name: "Baía do Sancho",
@@ -983,7 +1635,10 @@ function SectionContent({
                 access: "Escada íngreme entre rochas",
                 bestTime: "Manhã cedo",
                 image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
-                color: "cyan"
+                color: "cyan",
+                crowdLevel: "Alta",
+                waterTemp: "26°C",
+                bestMonths: "Abr-Set"
               },
               {
                 name: "Baía dos Porcos",
@@ -993,7 +1648,10 @@ function SectionContent({
                 access: "Trilha curta e rochosa",
                 bestTime: "Maré baixa",
                 image: "https://images.unsplash.com/photo-1527004760000-e4c3bf54b1b3?w=400&h=300&fit=crop",
-                color: "blue"
+                color: "blue",
+                crowdLevel: "Média",
+                waterTemp: "27°C",
+                bestMonths: "Abr-Set"
               },
               {
                 name: "Praia do Leão",
@@ -1003,7 +1661,10 @@ function SectionContent({
                 access: "Acesso controlado",
                 bestTime: "Final da tarde",
                 image: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&h=300&fit=crop",
-                color: "green"
+                color: "green",
+                crowdLevel: "Baixa",
+                waterTemp: "25°C",
+                bestMonths: "Dez-Mar"
               }
             ].map((beach, index) => {
               const beachColor = colorMap[beach.color as keyof typeof colorMap];
@@ -1013,73 +1674,97 @@ function SectionContent({
                   key={beach.name}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -4 }}
-                  className={cn(cardStyles.base, "overflow-hidden group cursor-pointer")}
+                  transition={{ delay: index * 0.1 + 0.3 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  className={cn(ui.cards.base, "overflow-hidden group cursor-pointer relative")}
                   onClick={() => onToggleFavorite(beach.name)}
                 >
-                  <div className="relative h-48 overflow-hidden">
+                  {/* Floating Badge */}
+                  <div className="absolute top-4 left-4 z-30">
+                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md rounded-full px-3 py-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={cn(
+                            "w-3 h-3",
+                            i < beach.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-400"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="relative h-64 overflow-hidden">
                     <img
                       src={beach.image}
                       alt={beach.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute top-4 right-4">
-                      <button className="p-2 bg-white/20 backdrop-blur-md rounded-full hover:bg-white/30 transition-colors">
-                        <Heart className={cn(
-                          "w-5 h-5",
-                          favorites.includes(beach.name)
-                            ? "text-red-500 fill-red-500"
-                            : "text-white"
-                        )} />
-                      </button>
-                    </div>
-                    <div className="absolute bottom-4 left-4">
-                      <h3 className="text-lg font-bold text-white mb-1">{beach.name}</h3>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={cn(
-                              "w-4 h-4",
-                              i < beach.rating
-                                ? "text-yellow-400 fill-yellow-400"
-                                : "text-gray-400"
-                            )}
-                          />
-                        ))}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Favorite Button */}
+                    <motion.button 
+                      className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-full hover:bg-white/30 transition-colors z-30"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Heart className={cn(
+                        "w-5 h-5",
+                        favorites.includes(beach.name)
+                          ? "text-red-500 fill-red-500"
+                          : "text-white"
+                      )} />
+                    </motion.button>
+                    
+                    {/* Beach Name and Info */}
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-xl font-bold text-white mb-2">{beach.name}</h3>
+                      <div className="flex items-center gap-4 text-sm text-white/80">
+                        <div className="flex items-center gap-1">
+                          <Thermometer className="w-4 h-4" />
+                          <span>{beach.waterTemp}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span>{beach.crowdLevel}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
                       <span className={cn(
-                        "text-xs font-medium px-2 py-1 rounded-full",
+                        "text-xs font-medium px-3 py-1 rounded-full",
                         beach.difficulty === "Fácil" ? "bg-green-100 text-green-700" :
                         beach.difficulty === "Moderado" ? "bg-yellow-100 text-yellow-700" :
                         "bg-red-100 text-red-700"
                       )}>
                         Acesso: {beach.difficulty}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 font-medium">
                         Melhor: {beach.bestTime}
                       </span>
                     </div>
                     
-                    <div className="space-y-2 mb-3">
-                      {beach.features.map((feature) => (
-                        <div key={feature} className="flex items-center gap-2 text-sm text-gray-600">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                    <div className="space-y-2 mb-4">
+                      {beach.features.slice(0, 2).map((feature) => (
+                        <div key={feature} className="flex items-start gap-2 text-sm text-gray-600">
+                          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
                         </div>
                       ))}
                     </div>
                     
-                    <p className="text-xs text-gray-500 italic">
-                      Acesso: {beach.access}
-                    </p>
+                    {/* Additional Info */}
+                    <div className="pt-4 border-t border-gray-100">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Melhor época: {beach.bestMonths}</span>
+                        <span>Acesso: {beach.access}</span>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -1087,34 +1772,145 @@ function SectionContent({
           </div>
         </div>
 
-        <div className={cn(cardStyles.base, "p-6")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Map className="w-5 h-5 text-cyan-600" />
-            A Dualidade das Águas: Mar de Dentro vs. Mar de Fora
-          </h3>
-          <div className="bg-cyan-50 rounded-xl p-6 border-2 border-cyan-200">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Mar de Dentro</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Costa virada para o Brasil, ideal para natação e snorkeling de abril a setembro.
-                  </li>
-                </ul>
+        {/* Mar de Dentro vs Mar de Fora Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          className={cn(ui.cards.base, "p-0 overflow-hidden")}
+        >
+          <div className="p-8">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-3 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl">
+                <Map className="w-6 h-6 text-cyan-600" />
               </div>
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Mar de Fora</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    Costa virada para a África, com mar mais calmo de dezembro a março.
-                  </li>
-                </ul>
+                <h3 className="text-2xl font-bold text-gray-900">A Dualidade das Águas</h3>
+                <p className="text-gray-600">Mar de Dentro vs. Mar de Fora</p>
               </div>
             </div>
+            
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Mar de Dentro */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="relative p-6 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border-2 border-cyan-200 overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-300/20 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
+                
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-cyan-500 rounded-xl flex items-center justify-center">
+                      <Compass className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="text-xl font-bold text-gray-900">Mar de Dentro</h4>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center mt-1">
+                        <Navigation className="w-4 h-4 text-cyan-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">Orientação</p>
+                        <p className="text-sm text-gray-600">Costa virada para o Brasil</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center mt-1">
+                        <Calendar className="w-4 h-4 text-cyan-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">Melhor Época</p>
+                        <p className="text-sm text-gray-600">Abril a Setembro</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center mt-1">
+                        <Activity className="w-4 h-4 text-cyan-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">Ideal Para</p>
+                        <p className="text-sm text-gray-600">Natação e snorkeling</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+              
+              {/* Mar de Fora */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="relative p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-300/20 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500" />
+                
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="text-xl font-bold text-gray-900">Mar de Fora</h4>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-1">
+                        <Navigation className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">Orientação</p>
+                        <p className="text-sm text-gray-600">Costa virada para a África</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-1">
+                        <Calendar className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">Melhor Época</p>
+                        <p className="text-sm text-gray-600">Dezembro a Março</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mt-1">
+                        <Waves className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">Características</p>
+                        <p className="text-sm text-gray-600">Mar mais calmo</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+            
+            {/* Pro Tip */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">Dica de Ouro</p>
+                  <p className="text-xs text-gray-600">
+                    Planeje sua viagem considerando esses períodos para aproveitar cada lado da ilha no seu melhor momento!
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1164,45 +1960,98 @@ function SectionContent({
     ),
 
     "dining": (
-      <div className="space-y-8">
-        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-orange-600" />
-            Assista ao Vídeo da Seção
-          </h3>
-          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">[Vídeo em breve]</p>
+      <div className="space-y-12">
+        {/* Video Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-amber-600/10 z-10" />
+            <div className="p-8 relative z-20">
+              <motion.div 
+                className="flex items-center gap-3 mb-6"
+                whileHover={{ x: 5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl">
+                  <UtensilsCrossed className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Sabores do Paraíso</h3>
+                  <p className="text-gray-600">Gastronomia e experiências únicas</p>
+                </div>
+              </motion.div>
+              
+              <div className="relative group">
+                <div className="aspect-video bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl flex items-center justify-center overflow-hidden">
+                  <motion.div
+                    className="text-center"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+                      <Play className="w-12 h-12 text-orange-600" />
+                    </div>
+                    <p className="text-gray-700 font-medium">Vídeo Gastronômico em breve</p>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        </motion.div>
+
+        {/* Introduction */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center space-y-6"
+        >
+          <div className="max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 leading-relaxed">
+              A gastronomia de Fernando de Noronha é uma experiência sensorial única, 
+              que combina sabores locais com técnicas refinadas, sempre acompanhada 
+              pelos cenários mais espetaculares do Brasil.
+            </p>
+          </div>
+        </motion.div>
+        {/* Dining Categories Grid */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               category: "Jantares Memoráveis",
               icon: Fish,
-              avgPrice: "$$ - $$",
+              avgPrice: "R$ 150-300",
               mustTry: "Cacimba Bistrô & Xica da Silva",
-              color: "blue"
+              color: "blue",
+              description: "Experiências gastronômicas únicas"
             },
             {
               category: "Restaurantes de Pousadas",
               icon: Utensils,
-              avgPrice: "$$ - $$$",
+              avgPrice: "R$ 200-400",
               mustTry: "Maravilha, NANNAI, Teju-Açu",
-              color: "orange"
+              color: "orange",
+              description: "Sofisticação e vista privilegiada"
             },
             {
               category: "O Ritual do Pôr do Sol",
-              icon: Globe,
-              avgPrice: "$ - $$",
+              icon: Sun,
+              avgPrice: "R$ 80-150",
               mustTry: "Mergulhão, Bar do Meio, Forte do Boldró",
-              color: "purple"
+              color: "purple",
+              description: "Drinks e petiscos com vista"
             },
             {
               category: "Eventos Gastronômicos",
-              icon: Heart,
-              avgPrice: "$$ - $$",
+              icon: Trophy,
+              avgPrice: "R$ 250-500",
               mustTry: "Festival Gastronômico do Zé Maria, Peixada do Solón",
-              color: "green"
+              color: "green",
+              description: "Experiências exclusivas"
             }
           ].map((cat, index) => {
             const catColor = colorMap[cat.color as keyof typeof colorMap];
@@ -1212,21 +2061,38 @@ function SectionContent({
                 key={cat.category}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                className={cn(cardStyles.base, "p-5 text-center")}
+                transition={{ delay: index * 0.1 + 0.4 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+                className={cn(ui.cards.base, "p-6 text-center group cursor-pointer relative overflow-hidden")}
               >
+                {/* Background decoration */}
                 <div className={cn(
-                  "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4",
-                  `bg-gradient-to-br ${catColor.gradient} shadow-lg`
-                )}>
-                  <cat.icon className="w-8 h-8 text-white" />
+                  "absolute top-0 right-0 w-20 h-20 rounded-full opacity-10 group-hover:opacity-20 transition-opacity duration-300",
+                  `bg-${cat.color}-500`
+                )} style={{ transform: "translate(50%, -50%)" }} />
+                
+                <div className="relative">
+                  <div className={cn(
+                    "w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-transform duration-300 group-hover:scale-110",
+                    `bg-gradient-to-br from-${cat.color}-400 to-${cat.color}-600 shadow-lg`
+                  )}>
+                    <cat.icon className="w-8 h-8 text-white" />
+                  </div>
+                  
+                  <h3 className="font-bold text-gray-900 mb-2 text-lg">{cat.category}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{cat.description}</p>
+                  
+                  <div className="mb-3">
+                    <span className={cn("text-sm font-bold", `text-${cat.color}-600`)}>
+                      {cat.avgPrice}
+                    </span>
+                  </div>
+                  
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Imperdível:</p>
+                    <p className="text-xs font-medium text-gray-700">{cat.mustTry}</p>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{cat.category}</h3>
-                <p className={cn("text-sm font-medium mb-2", catColor.text)}>{cat.avgPrice}</p>
-                <p className="text-xs text-gray-600">
-                  Imperdível: <span className="font-medium">{cat.mustTry}</span>
-                </p>
               </motion.div>
             );
           })}
@@ -1414,6 +2280,216 @@ function SectionContent({
                 <p className="text-sm text-purple-600 font-medium">{event.date}</p>
                 <p className="text-xs text-gray-600 mt-1">{event.description}</p>
               </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "primeiros-passos": (
+      <div className="space-y-12">
+        {/* Progress Steps */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="space-y-8"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+              <MapPin className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Primeiros Passos</h3>
+              <p className="text-gray-600">Seu guia completo para começar em Fernando de Noronha</p>
+            </div>
+          </div>
+
+          {/* Interactive Step Cards */}
+          <div className="grid gap-6">
+            {[
+              {
+                step: 1,
+                title: "Planeje sua Viagem",
+                description: "Escolha as melhores datas e defina sua estadia",
+                icon: Calendar,
+                color: "blue",
+                details: [
+                  "Melhor época: Maio a Setembro (seca)",
+                  "Duração recomendada: 5-7 dias",
+                  "Reserve com antecedência (alta demanda)",
+                  "Considere feriados e alta temporada"
+                ]
+              },
+              {
+                step: 2,
+                title: "Documentação",
+                description: "Prepare todos os documentos necessários",
+                icon: FileText,
+                color: "emerald",
+                details: [
+                  "CPF e RG ou CNH válidos",
+                  "Comprovante de hospedagem",
+                  "Cartão de vacina atualizado",
+                  "Seguro viagem (recomendado)"
+                ]
+              },
+              {
+                step: 3,
+                title: "Taxa de Preservação",
+                description: "Pague a taxa ambiental obrigatória",
+                icon: DollarSign,
+                color: "amber",
+                details: [
+                  "Taxa por pessoa por dia",
+                  "Pagamento online antecipado",
+                  "Desconto para permanência maior",
+                  "Válido por 10 dias"
+                ]
+              },
+              {
+                step: 4,
+                title: "Chegada na Ilha",
+                description: "Orientações para sua chegada",
+                icon: Plane,
+                color: "purple",
+                details: [
+                  "Voo obrigatório via Recife ou Natal",
+                  "Apresentar documentos na chegada",
+                  "Retirar material informativo",
+                  "Contratar transfers se necessário"
+                ]
+              }
+            ].map((step, index) => (
+              <motion.div
+                key={step.step}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className={cn(
+                  ui.cards.base,
+                  ui.cards.hover.lift,
+                  "group relative overflow-hidden p-0"
+                )}
+              >
+                <div className={cn(
+                  "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300",
+                  {
+                    "from-blue-500 to-blue-600": step.color === "blue",
+                    "from-emerald-500 to-emerald-600": step.color === "emerald",
+                    "from-amber-500 to-amber-600": step.color === "amber",
+                    "from-purple-500 to-purple-600": step.color === "purple",
+                  }
+                )} />
+                
+                <div className="relative z-10 p-8">
+                  <div className="flex items-start gap-6">
+                    <div className={cn(
+                      "flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg group-hover:scale-105 transition-transform duration-300",
+                      {
+                        "from-blue-500 to-blue-600": step.color === "blue",
+                        "from-emerald-500 to-emerald-600": step.color === "emerald",
+                        "from-amber-500 to-amber-600": step.color === "amber",
+                        "from-purple-500 to-purple-600": step.color === "purple",
+                      }
+                    )}>
+                      <div className="relative">
+                        <step.icon className="w-8 h-8 text-white" />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                          <span className="text-xs font-bold text-gray-800">{step.step}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        {step.title}
+                      </h4>
+                      <p className="text-gray-600 mb-4">{step.description}</p>
+                      
+                      <div className="space-y-2">
+                        {step.details.map((detail, idx) => (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: (index * 0.1) + (idx * 0.05) }}
+                            className="flex items-center gap-3"
+                          >
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              {
+                                "bg-blue-500": step.color === "blue",
+                                "bg-emerald-500": step.color === "emerald",
+                                "bg-amber-500": step.color === "amber",
+                                "bg-purple-500": step.color === "purple",
+                              }
+                            )} />
+                            <span className="text-sm text-gray-700">{detail}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Quick Tips Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className={cn(ui.cards.base, "bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 p-8")}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
+              <Lightbulb className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Dicas Importantes</h3>
+              <p className="text-gray-600">Informações essenciais para sua viagem</p>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                icon: Clock,
+                title: "Horários",
+                tip: "Restaurantes fecham cedo (21h). Planeje suas refeições."
+              },
+              {
+                icon: Phone,
+                title: "Conectividade",
+                tip: "Sinal limitado em algumas áreas. Download mapas offline."
+              },
+              {
+                icon: CreditCard,
+                title: "Pagamentos",
+                tip: "Leve dinheiro em espécie. Nem todos aceitam cartão."
+              },
+              {
+                icon: Sun,
+                title: "Proteção Solar",
+                tip: "Sol intenso o ano todo. Protetor solar é essencial."
+              }
+            ].map((tip, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 p-4 bg-white/50 rounded-xl backdrop-blur-sm"
+              >
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <tip.icon className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">{tip.title}</h4>
+                  <p className="text-sm text-gray-600">{tip.tip}</p>
+                </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
