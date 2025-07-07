@@ -208,10 +208,12 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
         bookingId: metadata.bookingId,
         paymentStatus: paymentStatus,
         stripePaymentIntentId: paymentIntent.id,
+        receiptUrl: paymentIntent.charges.data[0]?.receipt_url,
       });
       
       // Only update booking to confirmed if payment was actually captured
       if (isCapturing) {
+        console.log(`🚀 Confirming booking for ${assetType}: ${metadata.bookingId}`);
         await convex.mutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
           stripePaymentIntentId: paymentIntent.id,
           bookingId: metadata.bookingId,

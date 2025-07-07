@@ -289,7 +289,7 @@ export const createEventBooking = mutation({
     }
     // Se requer pagamento online
     else if (event.acceptsOnlinePayment && event.requiresUpfrontPayment) {
-      initialStatus = BOOKING_STATUS.DRAFT;
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
       initialPaymentStatus = PAYMENT_STATUS.PENDING;
     }
     // Se aceita pagamento no local
@@ -582,7 +582,7 @@ export const createVehicleBooking = mutation({
     }
     // Se requer pagamento online
     else if (vehicle.acceptsOnlinePayment && vehicle.requiresUpfrontPayment) {
-      initialStatus = BOOKING_STATUS.DRAFT;
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
       initialPaymentStatus = PAYMENT_STATUS.PENDING;
     }
     // Se aceita pagamento no local
@@ -2135,7 +2135,7 @@ export const updateBookingPaymentSuccess = mutation({
 
     // Update booking status
     await ctx.db.patch(booking._id, {
-      status: BOOKING_STATUS.AWAITING_CONFIRMATION,
+      status: BOOKING_STATUS.CONFIRMED,
       paymentStatus: PAYMENT_STATUS.PAID,
       stripePaymentIntentId: args.stripePaymentIntentId,
       updatedAt: Date.now(),
