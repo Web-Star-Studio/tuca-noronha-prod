@@ -150,9 +150,9 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
           
           <CardFooter separator={true}>
             <div className="flex flex-wrap gap-1">
-              {restaurant.tags.slice(0, 2).map((tag, index) => (
+              {restaurant.tags.slice(0, 2).map((tag) => (
                 <Badge 
-                  key={index} 
+                  key={tag} 
                   variant="outline" 
                   className="bg-blue-50 text-blue-700 text-xs"
                 >
@@ -161,6 +161,7 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
               ))}
               {restaurant.tags.length > 2 && (
                 <Badge 
+                  key="more-tags"
                   variant="outline" 
                   className="bg-gray-50 text-gray-600 text-xs"
                 >
