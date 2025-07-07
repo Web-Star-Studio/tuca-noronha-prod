@@ -4,6 +4,7 @@ import { v } from "convex/values";
 export const STRIPE_PAYMENT_STATUS = {
   PENDING: "pending",
   PROCESSING: "processing",
+  REQUIRES_CAPTURE: "requires_capture",
   SUCCEEDED: "succeeded",
   REQUIRES_ACTION: "requires_action",
   CANCELED: "canceled",
@@ -129,6 +130,7 @@ export const updateBookingPaymentStatusValidator = v.object({
   paymentStatus: v.union(
     v.literal("pending"),
     v.literal("processing"),
+    v.literal("requires_capture"),
     v.literal("succeeded"),
     v.literal("requires_action"),
     v.literal("canceled"),
@@ -168,6 +170,7 @@ export const updateBookingValidator = v.object({
   paymentStatus: v.optional(v.union(
     v.literal("pending"),
     v.literal("processing"),
+    v.literal("requires_capture"),
     v.literal("succeeded"),
     v.literal("requires_action"),
     v.literal("canceled"),

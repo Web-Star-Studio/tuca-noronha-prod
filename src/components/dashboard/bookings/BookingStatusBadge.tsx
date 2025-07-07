@@ -98,6 +98,10 @@ const paymentStatusConfig = {
     label: "Processando",
     color: "bg-blue-100 text-blue-700",
   },
+  requires_capture: {
+    label: "Aguardando Captura",
+    color: "bg-orange-100 text-orange-700",
+  },
   awaiting_payment_method: {
     label: "Aguardando PIX/Boleto",
     color: "bg-orange-100 text-orange-700",

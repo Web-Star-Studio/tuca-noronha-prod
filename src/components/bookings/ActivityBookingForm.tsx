@@ -137,7 +137,7 @@ export function ActivityBookingForm({
         if (checkoutSession.success && checkoutSession.sessionUrl) {
           // Show success message with payment info
           toast.success("Redirecionando para pagamento...", {
-            description: "Você será levado para o checkout seguro do Stripe",
+            description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
           });
 
           console.log("✅ Checkout session criado com sucesso, redirecionando para:", checkoutSession.sessionUrl);
@@ -366,6 +366,11 @@ export function ActivityBookingForm({
               <span>Total</span>
               <span>R$ {getPrice().toFixed(2)}</span>
             </div>
+          </div>
+
+          {/* Payment Info */}
+          <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+            💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
           </div>
 
           {/* Submit Button */}

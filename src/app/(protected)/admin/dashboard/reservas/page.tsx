@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useConvex } from "convex/react";
+import { useQuery, useMutation, useConvex, useAction } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +124,11 @@ export default function AdminBookingsPage() {
   // Asset context
   const { selectedAsset } = useAsset();
 
-  // Mutations for booking actions
+  // Actions for booking approval/rejection with payment capture
+  const approveBooking = useAction(api.domains.stripe.bookingActions.approveBookingAndCapturePayment);
+  const rejectBooking = useAction(api.domains.stripe.bookingActions.rejectBookingAndCancelPayment);
+  
+  // Legacy mutations for backward compatibility
   const confirmActivityBooking = useMutation(api.domains.bookings.mutations.confirmActivityBooking);
   const confirmEventBooking = useMutation(api.domains.bookings.mutations.confirmEventBooking);
   const confirmRestaurantReservation = useMutation(api.domains.bookings.mutations.confirmRestaurantReservation);
@@ -215,61 +219,98 @@ export default function AdminBookingsPage() {
     });
   }, [currentBookings, searchTerm]);
 
+  // Helper function to refresh bookings list  
+  const refreshBookings = () => {
+    // Convex queries are reactive and should update automatically
+    // Just a small delay to ensure UI updates properly
+    return new Promise(resolve => setTimeout(resolve, 200));
+  };
+
+  // Helper function to convert plural asset type to singular
+  const getAssetTypeForAction = (pluralAssetType: string) => {
+    const mapping: Record<string, string> = {
+      "activities": "activity",
+      "events": "event", 
+      "restaurants": "restaurant",
+      "accommodations": "accommodation",
+      "vehicles": "vehicle",
+      "packages": "package",
+    };
+    return mapping[pluralAssetType] || pluralAssetType;
+  };
+
   // Handle booking confirmation
   const handleConfirmBooking = async (booking: any) => {
     if (!selectedAsset) return;
 
     try {
-      // Fetch asset details to pass to the mutation
-      const assetDetails = await convex.query(api.domains.shared.queries.getAssetDetails, {
-        assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId,
-        assetType: selectedAsset.assetType,
-      });
+      // Check if booking has payment that requires capture
+      const hasPaymentToCapture = booking.paymentStatus === "requires_capture" || 
+                                 booking.status === "awaiting_confirmation";
+      
+      if (hasPaymentToCapture) {
+        // Use new manual capture flow
+        await approveBooking({
+          bookingId: booking._id,
+          assetType: getAssetTypeForAction(selectedAsset.assetType),
+          partnerNotes: partnerNotes || undefined,
+        });
+        
+        toast.success("Reserva aprovada e pagamento capturado com sucesso!");
+      } else {
+        // Use legacy flow for bookings without payment capture
+        const assetDetails = await convex.query(api.domains.shared.queries.getAssetDetails, {
+          assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId,
+          assetType: selectedAsset.assetType,
+        });
 
-      if (!assetDetails) {
-        throw new Error("Não foi possível encontrar os detalhes do ativo da reserva.");
+        if (!assetDetails) {
+          throw new Error("Não foi possível encontrar os detalhes do ativo da reserva.");
+        }
+        
+        const assetInfo = {
+          name: assetDetails.name,
+          address: assetDetails.address,
+          phone: assetDetails.phone,
+          email: assetDetails.email,
+          description: assetDetails.description,
+        };
+
+        switch (selectedAsset.assetType) {
+          case "activities":
+            await confirmActivityBooking({
+              bookingId: booking._id,
+              partnerNotes: partnerNotes || undefined,
+              assetInfo,
+            });
+            break;
+          case "events":
+            await confirmEventBooking({
+              bookingId: booking._id,
+              partnerNotes: partnerNotes || undefined,
+              assetInfo,
+            });
+            break;
+          case "restaurants":
+            await confirmRestaurantReservation({
+              reservationId: booking._id,
+              partnerNotes: partnerNotes || undefined,
+              assetInfo,
+            });
+            break;
+          case "vehicles":
+            await confirmVehicleBooking({
+              bookingId: booking._id,
+              partnerNotes: partnerNotes || undefined,
+              assetInfo,
+            });
+            break;
+        }
+        
+        toast.success("Reserva confirmada com sucesso!");
       }
       
-      const assetInfo = {
-        name: assetDetails.name,
-        address: assetDetails.address,
-        phone: assetDetails.phone,
-        email: assetDetails.email,
-        description: assetDetails.description,
-      };
-
-      switch (selectedAsset.assetType) {
-        case "activities":
-          await confirmActivityBooking({
-            bookingId: booking._id,
-            partnerNotes: partnerNotes || undefined,
-            assetInfo,
-          });
-          break;
-        case "events":
-          await confirmEventBooking({
-            bookingId: booking._id,
-            partnerNotes: partnerNotes || undefined,
-            assetInfo,
-          });
-          break;
-        case "restaurants":
-          await confirmRestaurantReservation({
-            reservationId: booking._id,
-            partnerNotes: partnerNotes || undefined,
-            assetInfo,
-          });
-          break;
-        case "vehicles":
-          await confirmVehicleBooking({
-            bookingId: booking._id,
-            partnerNotes: partnerNotes || undefined,
-            assetInfo,
-          });
-          break;
-      }
-      
-      toast.success("Reserva confirmada com sucesso!");
+      await refreshBookings();
       setShowConfirmDialog(false);
       setSelectedBooking(null);
       setPartnerNotes("");
@@ -284,34 +325,52 @@ export default function AdminBookingsPage() {
     if (!selectedAsset) return;
     
     try {
-      switch (selectedAsset.assetType) {
-        case "activities":
-          await cancelActivityBooking({
-            bookingId: booking._id,
-            reason: partnerNotes || "Cancelada pelo admin",
-          });
-          break;
-        case "events":
-          await cancelEventBooking({
-            bookingId: booking._id,
-            reason: partnerNotes || "Cancelada pelo admin",
-          });
-          break;
-        case "restaurants":
-          await cancelRestaurantReservation({
-            reservationId: booking._id,
-            reason: partnerNotes || "Cancelada pelo admin",
-          });
-          break;
-        case "vehicles":
-          await cancelVehicleBooking({
-            bookingId: booking._id,
-            reason: partnerNotes || "Cancelada pelo admin",
-          });
-          break;
+      // Check if booking has payment that requires cancellation
+      const hasPaymentToCancel = booking.paymentStatus === "requires_capture" || 
+                                booking.status === "awaiting_confirmation";
+      
+      if (hasPaymentToCancel) {
+        // Use new payment cancellation flow
+        await rejectBooking({
+          bookingId: booking._id,
+          assetType: getAssetTypeForAction(selectedAsset.assetType),
+          cancellationReason: partnerNotes || "Cancelada pelo admin",
+        });
+        
+        toast.success("Reserva cancelada e pagamento estornado com sucesso!");
+      } else {
+        // Use legacy flow for bookings without payment capture
+        switch (selectedAsset.assetType) {
+          case "activities":
+            await cancelActivityBooking({
+              bookingId: booking._id,
+              reason: partnerNotes || "Cancelada pelo admin",
+            });
+            break;
+          case "events":
+            await cancelEventBooking({
+              bookingId: booking._id,
+              reason: partnerNotes || "Cancelada pelo admin",
+            });
+            break;
+          case "restaurants":
+            await cancelRestaurantReservation({
+              reservationId: booking._id,
+              reason: partnerNotes || "Cancelada pelo admin",
+            });
+            break;
+          case "vehicles":
+            await cancelVehicleBooking({
+              bookingId: booking._id,
+              reason: partnerNotes || "Cancelada pelo admin",
+            });
+            break;
+        }
+        
+        toast.success("Reserva cancelada com sucesso!");
       }
       
-      toast.success("Reserva cancelada com sucesso!");
+      await refreshBookings();
       setShowCancelDialog(false);
       setSelectedBooking(null);
       setPartnerNotes("");
@@ -349,6 +408,7 @@ export default function AdminBookingsPage() {
       draft: { variant: "secondary" as const, label: "Rascunho", icon: AlertCircle, color: "text-gray-600" },
       payment_pending: { variant: "secondary" as const, label: "Aguardando Pagamento", icon: AlertCircle, color: "text-yellow-600" },
       awaiting_confirmation: { variant: "secondary" as const, label: "Aguardando Confirmação", icon: AlertCircle, color: "text-orange-600" },
+      requires_capture: { variant: "secondary" as const, label: "Aguardando Captura", icon: AlertCircle, color: "text-orange-600" },
       in_progress: { variant: "outline" as const, label: "Em Andamento", icon: CheckCircle, color: "text-blue-600" },
       no_show: { variant: "destructive" as const, label: "Não Compareceu", icon: XCircle, color: "text-red-600" },
       expired: { variant: "destructive" as const, label: "Expirada", icon: XCircle, color: "text-gray-600" },
@@ -524,6 +584,7 @@ export default function AdminBookingsPage() {
                     <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
                     <SelectItem value="awaiting_confirmation">Aguardando Confirmação</SelectItem>
+                    <SelectItem value="requires_capture">Aguardando Captura</SelectItem>
                     <SelectItem value="confirmed">Confirmado</SelectItem>
                     <SelectItem value="in_progress">Em Andamento</SelectItem>
                     <SelectItem value="completed">Concluído</SelectItem>
@@ -635,7 +696,7 @@ export default function AdminBookingsPage() {
                               />
                             )}
                             
-                            {(booking.status === "pending" || booking.status === "awaiting_confirmation") && (
+                            {(booking.status === "pending" || booking.status === "awaiting_confirmation" || booking.paymentStatus === "requires_capture") && (
                               <>
                                 <Button
                                   size="sm"

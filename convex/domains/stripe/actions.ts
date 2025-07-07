@@ -209,6 +209,7 @@ export const createCheckoutSession = action({
           convexOrigin: "true",
         },
         payment_intent_data: {
+          capture_method: 'manual',
           metadata: {
             bookingId: args.bookingId,
             assetType: args.assetType,
@@ -222,7 +223,7 @@ export const createCheckoutSession = action({
         assetType: args.assetType,
         stripeCheckoutSessionId: session.id,
         stripeCustomerId: customer.stripeCustomerId,
-        paymentStatus: "processing",
+        paymentStatus: "requires_capture",
       });
 
       return {
@@ -433,6 +434,9 @@ export const processWebhookEvent = internalAction({
         case "payment_intent.canceled":
           await handlePaymentIntentCanceled(ctx, args.data);
           break;
+        case "payment_intent.requires_action":
+          await handlePaymentIntentRequiresAction(ctx, args.data);
+          break;
         case "customer.subscription.created":
         case "customer.subscription.updated":
         case "customer.subscription.deleted":
@@ -529,18 +533,25 @@ async function handlePaymentIntentSucceeded(ctx: any, paymentIntentData: any) {
   const { metadata } = paymentIntentData;
   
   if (metadata?.bookingId) {
+    // Check if this is a captured payment or just authorized
+    const paymentStatus = paymentIntentData.status === 'succeeded' && paymentIntentData.amount_received > 0 
+      ? "succeeded" 
+      : "requires_capture";
+
     await ctx.runMutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
       bookingId: metadata.bookingId,
-      paymentStatus: "succeeded",
+      paymentStatus: paymentStatus,
       stripePaymentIntentId: paymentIntentData.id,
     });
 
-    // Update booking status to awaiting_confirmation after payment succeeded
-    await ctx.runMutation(internal.domains.bookings.updateBookingPaymentSuccess, {
-      stripePaymentIntentId: paymentIntentData.id,
-      bookingId: metadata.bookingId,
-      bookingType: metadata.assetType,
-    });
+    // Only update booking to confirmed if payment was actually captured
+    if (paymentStatus === "succeeded") {
+      await ctx.runMutation(internal["domains/bookings/mutations"].updateBookingPaymentSuccess, {
+        stripePaymentIntentId: paymentIntentData.id,
+        bookingId: metadata.bookingId,
+        bookingType: metadata.assetType,
+      });
+    }
   }
 }
 
@@ -568,6 +579,19 @@ async function handlePaymentIntentCanceled(ctx: any, paymentIntentData: any) {
   }
 }
 
+async function handlePaymentIntentRequiresAction(ctx: any, paymentIntentData: any) {
+  const { metadata } = paymentIntentData;
+  
+  if (metadata?.bookingId) {
+    // Payment is authorized but requires capture
+    await ctx.runMutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
+      bookingId: metadata.bookingId,
+      paymentStatus: "requires_capture",
+      stripePaymentIntentId: paymentIntentData.id,
+    });
+  }
+}
+
 async function handleSubscriptionEvent(ctx: any, eventType: string, subscriptionData: any) {
   // Process subscription events for guide subscription
   if (subscriptionData.metadata?.type === "guide_subscription") {
@@ -587,6 +611,86 @@ async function handleInvoiceEvent(ctx: any, eventType: string, invoiceData: any)
     });
   }
 }
+
+/**
+ * Capture a payment intent (manual capture)
+ * Called when admin approves a booking
+ */
+export const capturePaymentIntent = internalAction({
+  args: {
+    paymentIntentId: v.string(),
+    amountToCapture: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    paymentIntent: v.optional(v.any()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const captureParams: any = {};
+      
+      if (args.amountToCapture) {
+        captureParams.amount_to_capture = args.amountToCapture;
+      }
+
+      // Capture the payment intent
+      const paymentIntent = await stripe.paymentIntents.capture(
+        args.paymentIntentId,
+        captureParams
+      );
+
+      return {
+        success: true,
+        paymentIntent: paymentIntent,
+      };
+    } catch (error) {
+      console.error("Failed to capture payment intent:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+/**
+ * Cancel a payment intent (manual capture)
+ * Called when admin rejects a booking
+ */
+export const cancelPaymentIntent = internalAction({
+  args: {
+    paymentIntentId: v.string(),
+    cancellationReason: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    paymentIntent: v.optional(v.any()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      // Cancel the payment intent
+      const paymentIntent = await stripe.paymentIntents.cancel(
+        args.paymentIntentId,
+        {
+          cancellation_reason: (args.cancellationReason as "duplicate" | "fraudulent" | "requested_by_customer" | "abandoned") || 'requested_by_customer',
+        }
+      );
+
+      return {
+        success: true,
+        paymentIntent: paymentIntent,
+      };
+    } catch (error) {
+      console.error("Failed to cancel payment intent:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
 
 /**
  * Create a Payment Link for a specific booking
@@ -673,7 +777,7 @@ export const createPaymentLinkForBooking = action({
       if (args.assetType === "activity") {
         // Get the activity to find base price using a query
         console.log("🎯 Getting activity details for price calculation...");
-        const activity = await ctx.runQuery(internal.domains.activities.getById, {
+        const activity = await ctx.runQuery(internal["domains/activities/queries"].getById, {
           id: args.assetId,
         });
         
@@ -718,6 +822,7 @@ export const createPaymentLinkForBooking = action({
           convexOrigin: "true",
         },
         payment_intent_data: {
+          capture_method: 'manual',
           metadata: {
             bookingId: args.bookingId,
             assetType: args.assetType,
@@ -737,7 +842,7 @@ export const createPaymentLinkForBooking = action({
         bookingId: args.bookingId,
         assetType: args.assetType,
         stripeCustomerId: customer.stripeCustomerId,
-        paymentStatus: "pending",
+        paymentStatus: "requires_capture",
         stripePaymentLinkId: paymentLink.id,
       });
 

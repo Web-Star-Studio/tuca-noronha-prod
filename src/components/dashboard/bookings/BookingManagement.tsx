@@ -30,6 +30,7 @@ const statusConfig = {
   draft: { label: "Rascunho", color: "bg-gray-100 text-gray-800", icon: AlertCircle },
   payment_pending: { label: "Aguardando Pagamento", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
   awaiting_confirmation: { label: "Aguardando Confirmação", color: "bg-orange-100 text-orange-800", icon: AlertCircle },
+  requires_capture: { label: "Aguardando Captura", color: "bg-orange-100 text-orange-800", icon: AlertCircle },
   in_progress: { label: "Em Andamento", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
   no_show: { label: "Não Compareceu", color: "bg-red-100 text-red-800", icon: XCircle },
   expired: { label: "Expirada", color: "bg-gray-100 text-gray-800", icon: XCircle },
