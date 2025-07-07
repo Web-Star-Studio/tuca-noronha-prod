@@ -131,6 +131,9 @@ export const getUserEventBookings = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.optional(v.number()),
       updatedAt: v.optional(v.number()),
       userId: v.id("users"),
@@ -1436,6 +1439,9 @@ export const getEventBookings = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),

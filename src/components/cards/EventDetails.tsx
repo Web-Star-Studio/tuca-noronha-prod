@@ -437,10 +437,12 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                         location: event.location,
                         price: event.price,
                         hasMultipleTickets: event.hasMultipleTickets,
+                        acceptsOnlinePayment: event.acceptsOnlinePayment,
+                        requiresUpfrontPayment: event.requiresUpfrontPayment,
                       }}
                       onBookingSuccess={(booking) => {
-                        // Redirect to user dashboard reservations page
-                        window.location.href = `/meu-painel?tab=reservas&code=${booking.confirmationCode}`;
+                        // Redirect to booking details page using booking ID
+                        window.location.href = `/reservas/${booking.bookingId}`;
                       }}
                     />
                   ) : (

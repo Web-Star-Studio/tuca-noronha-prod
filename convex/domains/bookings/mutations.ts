@@ -1996,6 +1996,83 @@ export const updateBookingPaymentInitiated = mutation({
 });
 
 /**
+ * Update booking status (for payment processing)
+ * Called when payment is authorized but not captured yet
+ */
+export const updateBookingStatus = mutation({
+  args: v.object({
+    bookingId: v.string(),
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("accommodation"), v.literal("vehicle"), v.literal("restaurant")),
+    status: v.string(),
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    console.log(`🔍 Updating booking status for ${args.bookingType}:`, {
+      bookingId: args.bookingId,
+      bookingType: args.bookingType,
+      status: args.status,
+      stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+      stripePaymentIntentId: args.stripePaymentIntentId
+    });
+    
+    let booking;
+    
+    // Find booking by ID and type
+    switch (args.bookingType) {
+      case "activity":
+        booking = await ctx.db.get(args.bookingId as Id<"activityBookings">);
+        break;
+      case "event":
+        booking = await ctx.db.get(args.bookingId as Id<"eventBookings">);
+        break;
+      case "accommodation":
+        booking = await ctx.db.get(args.bookingId as Id<"accommodationBookings">);
+        break;
+      case "vehicle":
+        booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
+        break;
+      case "restaurant":
+        booking = await ctx.db.get(args.bookingId as Id<"restaurantReservations">);
+        break;
+    }
+
+    if (!booking) {
+      console.error(`❌ Booking not found for ${args.bookingType}:`, args.bookingId);
+      throw new Error("Reserva não encontrada");
+    }
+
+    console.log(`📝 Current booking status for ${args.bookingType}:`, {
+      currentStatus: booking.status,
+      currentPaymentStatus: booking.paymentStatus,
+      bookingId: booking._id
+    });
+
+    // Update booking status and stripe information
+    const updateData: any = {
+      status: args.status,
+      updatedAt: Date.now(),
+    };
+
+    if (args.stripeCheckoutSessionId) {
+      updateData.stripeCheckoutSessionId = args.stripeCheckoutSessionId;
+    }
+
+    if (args.stripePaymentIntentId) {
+      updateData.stripePaymentIntentId = args.stripePaymentIntentId;
+    }
+
+    await ctx.db.patch(booking._id, updateData);
+    
+    console.log(`✅ Successfully updated ${args.bookingType} booking status:`, {
+      bookingId: booking._id,
+      newStatus: args.status,
+      updateData
+    });
+  },
+});
+
+/**
  * Update booking after successful payment
  * Called by Stripe webhook or after checkout completion
  */

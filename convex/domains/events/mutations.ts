@@ -57,6 +57,8 @@ export const create = mutationWithRole(["partner", "master"])({
       ...args,
       maxParticipants,
       hasMultipleTickets: args.hasMultipleTickets || false, // valor padrão é false
+      acceptsOnlinePayment: args.price > 0, // automaticamente true quando price > 0
+      requiresUpfrontPayment: args.price > 0, // automaticamente true quando price > 0
     });
 
     // Log the event creation for audit
@@ -150,6 +152,8 @@ export const update = mutationWithRole(["partner", "master"])({
       partnerId?: Id<"users">;
       symplaUrl?: string;
       whatsappContact?: string;
+      acceptsOnlinePayment?: boolean;
+      requiresUpfrontPayment?: boolean;
     };
     
     // Create an object with all updated fields
@@ -160,6 +164,12 @@ export const update = mutationWithRole(["partner", "master"])({
     // Convert participant numbers to BigInt if provided
     if (maxParticipants !== undefined) {
       updates.maxParticipants = BigInt(maxParticipants);
+    }
+    
+    // Automatically set acceptsOnlinePayment and requiresUpfrontPayment when price is updated
+    if (args.price !== undefined) {
+      updates.acceptsOnlinePayment = args.price > 0;
+      updates.requiresUpfrontPayment = args.price > 0;
     }
     
     await ctx.db.patch(id, updates);

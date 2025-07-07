@@ -3,13 +3,10 @@
 import { useState } from "react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
-import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
@@ -29,10 +26,13 @@ import { toast } from "sonner";
 interface VehicleBookingFormProps {
   vehicleId: Id<"vehicles">;
   pricePerDay: number;
+  vehicle?: {
+    acceptsOnlinePayment?: boolean;
+    requiresUpfrontPayment?: boolean;
+  };
 }
 
-export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFormProps) {
-  const router = useRouter();
+export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleBookingFormProps) {
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 3));
   const [isLoading, setIsLoading] = useState(false);
@@ -44,9 +44,6 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
 
   // Get current user
   const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
-  
-  // Get WhatsApp link generator
-  const { generateWhatsAppLink } = useWhatsAppLink();
 
   // Calculate total days and price
   const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
@@ -54,6 +51,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
 
   // Create booking mutation - using the correct one from bookings domain
   const createBooking = useMutation(api.domains.bookings.mutations.createVehicleBooking);
+  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
 
   const handleBooking = async () => {
     if (!startDate || !endDate) {
@@ -90,7 +88,8 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
         return;
       }
       
-      await createBooking({
+      // 1. Create the booking first
+      const result = await createBooking({
         vehicleId,
         startDate: startDate.getTime(),
         endDate: endDate.getTime(),
@@ -99,9 +98,51 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
         notes: notes.trim() || undefined,
       });
 
-      toast.success("Reserva solicitada com sucesso!", {
-        description: "Em breve entraremos em contato para confirmar sua reserva.",
+      toast.success("Reserva criada com sucesso!", {
+        description: `Código de confirmação: ${result.confirmationCode}`,
       });
+
+      // 2. If vehicle requires payment, create checkout session
+      if (vehicle?.acceptsOnlinePayment && vehicle?.requiresUpfrontPayment && totalPrice > 0) {
+        try {
+          console.log("🔄 Criando checkout session para veículo:", {
+            bookingId: result.bookingId,
+            vehicleId,
+            totalPrice,
+          });
+
+          const checkoutSession = await createCheckoutSession({
+            bookingId: result.bookingId,
+            assetType: "vehicle",
+            successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/booking/cancel`,
+          });
+
+          if (checkoutSession.success && checkoutSession.sessionUrl) {
+            toast.success("Redirecionando para pagamento...", {
+              description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
+            });
+
+            // Small delay to show the toast, then redirect
+            setTimeout(() => {
+              window.location.href = checkoutSession.sessionUrl;
+            }, 1500);
+
+            return; // Don't proceed further if redirecting
+          } else {
+            throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
+          }
+        } catch (paymentError) {
+          console.error("💥 Erro ao criar payment link:", paymentError);
+          toast.error("Reserva criada, mas erro no pagamento", {
+            description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
+          });
+        }
+      } else {
+        toast.success("Reserva solicitada com sucesso!", {
+          description: "Em breve entraremos em contato para confirmar sua reserva.",
+        });
+      }
 
       // Redirect to confirmation page or user bookings
       // router.push("/reservas");
@@ -254,6 +295,13 @@ export function VehicleBookingForm({ vehicleId, pricePerDay }: VehicleBookingFor
             <span>Total</span>
             <span>R$ {totalPrice.toFixed(2)}</span>
           </div>
+        </div>
+      )}
+
+      {/* Payment Info - show if requires payment */}
+      {vehicle?.acceptsOnlinePayment && vehicle?.requiresUpfrontPayment && totalPrice > 0 && (
+        <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+          💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
         </div>
       )}
 

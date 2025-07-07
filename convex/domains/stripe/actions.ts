@@ -177,6 +177,15 @@ export const createCheckoutSession = action({
       });
 
       // Create checkout session
+      console.log(`🔍 Creating checkout session for ${args.assetType}:`, {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        totalPrice: booking.totalPrice,
+        assetName: booking.assetName,
+        userId: booking.userId,
+        assetId: booking.assetId
+      });
+      
       const session = await stripe.checkout.sessions.create({
         customer: customer.stripeCustomerId,
         payment_method_types: ["card"],
@@ -217,7 +226,21 @@ export const createCheckoutSession = action({
         },
       });
 
+      console.log(`✅ Checkout session created for ${args.assetType}:`, {
+        sessionId: session.id,
+        sessionUrl: session.url,
+        metadata: session.metadata
+      });
+
       // Update booking with checkout session ID
+      console.log(`🔍 Updating booking Stripe info for ${args.assetType}:`, {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        stripeCheckoutSessionId: session.id,
+        stripeCustomerId: customer.stripeCustomerId,
+        paymentStatus: "requires_capture"
+      });
+      
       await ctx.runMutation(internal.domains.stripe.mutations.updateBookingStripeInfo, {
         bookingId: args.bookingId,
         assetType: args.assetType,
@@ -225,6 +248,24 @@ export const createCheckoutSession = action({
         stripeCustomerId: customer.stripeCustomerId,
         paymentStatus: "requires_capture",
       });
+      
+      console.log(`✅ Successfully updated booking Stripe info for ${args.assetType}`);
+      
+      // For debugging: Let's also check the booking status after checkout session creation
+      try {
+        const updatedBooking = await ctx.runQuery(internal.domains.stripe.queries.getBookingForCheckout, {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+        });
+        
+        console.log(`📝 Booking status after checkout session creation:`, {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          paymentStatus: updatedBooking?.paymentStatus
+        });
+      } catch (debugError) {
+        console.error(`❌ Error getting booking for debug:`, debugError);
+      }
 
       return {
         sessionId: session.id,

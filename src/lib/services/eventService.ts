@@ -81,6 +81,8 @@ export type EventFromConvex = {
     secondary?: string;
   }; // Categorias do evento no Sympla
   whatsappContact?: string; // Contato de WhatsApp para reservas
+  acceptsOnlinePayment?: boolean;
+  requiresUpfrontPayment?: boolean;
 };
 
 // Our frontend Event type
@@ -128,6 +130,8 @@ export type Event = {
     secondary?: string;
   }; // Categorias do evento no Sympla
   whatsappContact?: string; // Contato de WhatsApp para reservas
+  acceptsOnlinePayment?: boolean;
+  requiresUpfrontPayment?: boolean;
 };
 
 // Convert from Convex event to our frontend Event type
@@ -169,6 +173,8 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     external_id: event.external_id,
     sympla_categories: event.sympla_categories,
     whatsappContact: event.whatsappContact,
+    acceptsOnlinePayment: event.acceptsOnlinePayment,
+    requiresUpfrontPayment: event.requiresUpfrontPayment,
   };
 };
 

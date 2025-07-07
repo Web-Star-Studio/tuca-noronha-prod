@@ -119,15 +119,47 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
   
   try {
-    // Update booking payment status to succeeded
-    await convex.mutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
-      stripeCheckoutSessionId: session.id,
-      stripePaymentIntentId: session.payment_intent as string,
-      bookingId: metadata.bookingId,
-      bookingType: metadata.assetType,
-    });
-    
-    console.log('✅ Booking payment status updated successfully');
+    // For activities and events, payment should be authorized but not captured until admin approval
+    // For other types (restaurants, vehicles, accommodations), proceed with immediate confirmation
+    if (metadata.assetType === 'activity' || metadata.assetType === 'event') {
+      console.log(`🔍 Processing ${metadata.assetType} booking:`, {
+        bookingId: metadata.bookingId,
+        assetType: metadata.assetType,
+        sessionId: session.id,
+        paymentIntentId: session.payment_intent
+      });
+      
+      // Only update payment status to 'paid' but keep booking awaiting confirmation
+      await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
+        bookingId: metadata.bookingId,
+        paymentStatus: 'paid',
+        stripePaymentIntentId: session.payment_intent as string,
+      });
+      
+      console.log(`✅ Updated ${metadata.assetType} payment status to 'paid'`);
+      
+      // Update booking to awaiting confirmation status (but don't auto-confirm)
+      await convex.mutation(internal.domains.bookings.mutations.updateBookingStatus, {
+        bookingId: metadata.bookingId,
+        bookingType: metadata.assetType,
+        status: 'awaiting_confirmation',
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent as string,
+      });
+      
+      console.log(`✅ Updated ${metadata.assetType} booking status to 'awaiting_confirmation'`);
+      console.log('✅ Activity/Event booking payment authorized - awaiting admin confirmation');
+    } else {
+      // For other asset types, proceed with full confirmation
+      await convex.mutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent as string,
+        bookingId: metadata.bookingId,
+        bookingType: metadata.assetType,
+      });
+      
+      console.log('✅ Booking payment status updated successfully');
+    }
     
     // Send confirmation notification if userId is available
     if (metadata.userId) {
@@ -164,14 +196,41 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
   
   try {
-    // Update booking with payment intent details
-    await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
-      bookingId: metadata.bookingId,
-      paymentStatus: 'succeeded',
-      stripePaymentIntentId: paymentIntent.id,
-    });
+    // Check if this is a captured payment or just authorized
+    const isCapturing = paymentIntent.status === 'succeeded' && paymentIntent.amount_received > 0;
+    const assetType = metadata.assetType;
     
-    console.log('✅ Booking updated with payment intent');
+    // For activities and events, only mark as 'paid' when authorized, 'succeeded' when captured
+    if (assetType === 'activity' || assetType === 'event') {
+      const paymentStatus = isCapturing ? 'succeeded' : 'paid';
+      
+      await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
+        bookingId: metadata.bookingId,
+        paymentStatus: paymentStatus,
+        stripePaymentIntentId: paymentIntent.id,
+      });
+      
+      // Only update booking to confirmed if payment was actually captured
+      if (isCapturing) {
+        await convex.mutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
+          stripePaymentIntentId: paymentIntent.id,
+          bookingId: metadata.bookingId,
+          bookingType: assetType,
+        });
+        console.log('✅ Activity/Event booking payment captured and confirmed');
+      } else {
+        console.log('✅ Activity/Event booking payment authorized - awaiting admin confirmation');
+      }
+    } else {
+      // For other asset types, proceed as before
+      await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
+        bookingId: metadata.bookingId,
+        paymentStatus: 'succeeded',
+        stripePaymentIntentId: paymentIntent.id,
+      });
+      console.log('✅ Booking updated with payment intent');
+    }
+    
   } catch (error) {
     console.error('Error updating booking with payment intent:', error);
     throw error;

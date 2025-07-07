@@ -4,7 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Users, Clock, Ticket, MapPin } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -33,8 +33,10 @@ interface EventBookingFormProps {
     price: number;
     time?: string;
     hasMultipleTickets?: boolean;
+    acceptsOnlinePayment?: boolean;
+    requiresUpfrontPayment?: boolean;
   };
-  onBookingSuccess?: (booking: { confirmationCode: string; totalPrice: number }) => void;
+  onBookingSuccess?: (booking: { bookingId: string; confirmationCode: string; totalPrice: number }) => void;
   className?: string;
 }
 
@@ -58,6 +60,7 @@ export function EventBookingForm({
   });
 
   const createBooking = useMutation(api.domains.bookings.mutations.createEventBooking);
+  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
 
   // Calculate price
   const getPrice = () => {
@@ -79,6 +82,7 @@ export function EventBookingForm({
     setIsSubmitting(true);
 
     try {
+      // 1. Create the booking first
       const result = await createBooking({
         eventId,
         ticketId: selectedTicketId,
@@ -91,11 +95,62 @@ export function EventBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
+      // 2. If event requires payment, create checkout session
+      if (event.acceptsOnlinePayment && event.requiresUpfrontPayment && result.totalPrice > 0) {
+        try {
+          console.log("🔄 Criando checkout session para evento:", {
+            bookingId: result.bookingId,
+            eventId,
+            totalPrice: result.totalPrice,
+          });
+
+          const checkoutSession = await createCheckoutSession({
+            bookingId: result.bookingId,
+            assetType: "event",
+            successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/booking/cancel`,
+          });
+
+          if (checkoutSession.success && checkoutSession.sessionUrl) {
+            toast.success("Redirecionando para pagamento...", {
+              description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
+            });
+
+            // Reset form before redirecting
+            setQuantity(1);
+            setSelectedTicketId(undefined);
+            setCustomerInfo({ name: "", email: "", phone: "" });
+            setSpecialRequests("");
+
+            // Small delay to show the toast, then redirect
+            setTimeout(() => {
+              window.location.href = checkoutSession.sessionUrl;
+            }, 1500);
+
+            return; // Don't call onBookingSuccess here, only redirect
+          } else {
+            throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
+          }
+        } catch (paymentError) {
+          console.error("💥 Erro ao criar payment link:", paymentError);
+          toast.error("Reserva criada, mas erro no pagamento", {
+            description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
+          });
+          
+          // For payment errors, still redirect to booking details with booking ID
+          if (onBookingSuccess) {
+            onBookingSuccess(result);
+          }
+          return;
+        }
+      }
+
+      // 3. If no payment required, handle success
       if (onBookingSuccess) {
         onBookingSuccess(result);
       }
 
-      // Reset form
+      // Reset form if not redirecting
       setQuantity(1);
       setSelectedTicketId(undefined);
       setCustomerInfo({ name: "", email: "", phone: "" });
@@ -270,6 +325,13 @@ export function EventBookingForm({
               *Taxas de processamento podem ser aplicadas
             </p>
           </div>
+
+          {/* Payment Info - show if requires payment */}
+          {event.acceptsOnlinePayment && event.requiresUpfrontPayment && getPrice() > 0 && (
+            <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+              💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo organizador.
+            </div>
+          )}
 
           {/* Submit Button */}
           <Button

@@ -145,6 +145,13 @@ export const updateBookingStripeInfo = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    console.log(`🔍 Updating booking Stripe info:`, {
+      bookingId: args.bookingId,
+      assetType: args.assetType,
+      stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+      paymentStatus: args.paymentStatus
+    });
+    
     // Update the appropriate booking table based on asset type
     const updateData: any = {
       updatedAt: Date.now(),
@@ -165,6 +172,8 @@ export const updateBookingStripeInfo = internalMutation({
 
     // Get the booking based on asset type
     let booking;
+    let bookingFound = false;
+    
     switch (args.assetType) {
       case "activity":
         booking = await ctx.db
@@ -172,7 +181,13 @@ export const updateBookingStripeInfo = internalMutation({
           .filter((q) => q.eq(q.field("_id"), args.bookingId))
           .unique();
         if (booking) {
+          console.log(`📝 Found activity booking:`, {
+            bookingId: booking._id,
+            currentStatus: booking.status,
+            currentPaymentStatus: booking.paymentStatus
+          });
           await ctx.db.patch(booking._id, updateData);
+          bookingFound = true;
         }
         break;
       case "event":
@@ -181,7 +196,13 @@ export const updateBookingStripeInfo = internalMutation({
           .filter((q) => q.eq(q.field("_id"), args.bookingId))
           .unique();
         if (booking) {
+          console.log(`📝 Found event booking:`, {
+            bookingId: booking._id,
+            currentStatus: booking.status,
+            currentPaymentStatus: booking.paymentStatus
+          });
           await ctx.db.patch(booking._id, updateData);
+          bookingFound = true;
         }
         break;
       case "restaurant":
@@ -191,6 +212,7 @@ export const updateBookingStripeInfo = internalMutation({
           .unique();
         if (booking) {
           await ctx.db.patch(booking._id, updateData);
+          bookingFound = true;
         }
         break;
       case "accommodation":
@@ -200,6 +222,7 @@ export const updateBookingStripeInfo = internalMutation({
           .unique();
         if (booking) {
           await ctx.db.patch(booking._id, updateData);
+          bookingFound = true;
         }
         break;
       case "vehicle":
@@ -209,6 +232,7 @@ export const updateBookingStripeInfo = internalMutation({
           .unique();
         if (booking) {
           await ctx.db.patch(booking._id, updateData);
+          bookingFound = true;
         }
         break;
       case "package":
@@ -218,9 +242,20 @@ export const updateBookingStripeInfo = internalMutation({
           .unique();
         if (booking) {
           await ctx.db.patch(booking._id, updateData);
+          bookingFound = true;
         }
         break;
     }
+    
+    if (bookingFound) {
+      console.log(`✅ Successfully updated ${args.assetType} booking Stripe info:`, {
+        bookingId: args.bookingId,
+        updateData
+      });
+    } else {
+      console.error(`❌ Booking not found for ${args.assetType}:`, args.bookingId);
+    }
+    
     return null;
   },
 });
@@ -237,6 +272,12 @@ export const updateBookingPaymentStatus = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    console.log(`🔍 Updating booking payment status:`, {
+      bookingId: args.bookingId,
+      paymentStatus: args.paymentStatus,
+      stripePaymentIntentId: args.stripePaymentIntentId
+    });
+    
     const updateData: any = {
       paymentStatus: args.paymentStatus,
       updatedAt: Date.now(),
@@ -263,6 +304,7 @@ export const updateBookingPaymentStatus = internalMutation({
       "packageBookings"
     ];
 
+    let bookingFound = false;
     for (const tableName of tables) {
       const booking = await ctx.db
         .query(tableName as any)
@@ -270,10 +312,28 @@ export const updateBookingPaymentStatus = internalMutation({
         .unique();
 
       if (booking) {
+        console.log(`📝 Found booking in ${tableName}:`, {
+          bookingId: booking._id,
+          currentStatus: booking.status,
+          currentPaymentStatus: booking.paymentStatus
+        });
+        
         await ctx.db.patch(booking._id, updateData);
+        bookingFound = true;
+        
+        console.log(`✅ Successfully updated payment status in ${tableName}:`, {
+          bookingId: booking._id,
+          newPaymentStatus: args.paymentStatus,
+          updateData
+        });
         break;
       }
     }
+    
+    if (!bookingFound) {
+      console.error(`❌ Booking not found in any table:`, args.bookingId);
+    }
+    
     return null;
   },
 });
