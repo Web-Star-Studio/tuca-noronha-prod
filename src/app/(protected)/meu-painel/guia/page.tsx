@@ -866,6 +866,48 @@ function SectionContent({
               <p className="text-gray-600">Encontre o lugar perfeito para sua estadia</p>
             </div>
           </div>
+
+          {/* Video Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className={cn(ui.cards.base, "p-0 overflow-hidden group mb-8")}
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-pink-600/10 z-10" />
+              <div className="p-6 relative z-20">
+                <motion.div 
+                  className="flex items-center gap-3 mb-4"
+                  whileHover={{ x: 5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 group-hover:rotate-6 transition-transform duration-300">
+                    <Play className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Dicas de Hospedagem</h3>
+                    <p className="text-sm text-gray-600">Saiba como escolher a melhor região para se hospedar</p>
+                  </div>
+                </motion.div>
+                <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center relative overflow-hidden group-hover:shadow-xl transition-shadow duration-300">
+                  <div className="absolute inset-0 bg-black/5 backdrop-blur-[1px]" />
+                  <motion.div
+                    className="relative z-10"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="w-16 h-16 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl cursor-pointer">
+                      <Play className="w-8 h-8 text-purple-600 ml-1" />
+                    </div>
+                  </motion.div>
+                  <p className="absolute bottom-3 left-3 text-xs text-gray-600 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                    Em breve
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Accommodation Types Grid */}

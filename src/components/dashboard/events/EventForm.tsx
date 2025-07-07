@@ -50,12 +50,13 @@ export function EventForm({
       additionalInfo: [],
       isFeatured: false,
       isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      hasMultipleTickets: false,
       partnerId: "",
       speaker: "",
       speakerBio: "",
-      whatsappContact: ""
+      whatsappContact: "",
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   );
 

@@ -204,11 +204,18 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     if (assetType === 'activity' || assetType === 'event') {
       const paymentStatus = isCapturing ? 'succeeded' : 'paid';
       
+      // Get the charge details to access the receipt URL
+      let receiptUrl: string | undefined;
+      if (paymentIntent.latest_charge) {
+        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge as string);
+        receiptUrl = charge.receipt_url || undefined;
+      }
+
       await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
         bookingId: metadata.bookingId,
         paymentStatus: paymentStatus,
         stripePaymentIntentId: paymentIntent.id,
-        receiptUrl: paymentIntent.charges.data[0]?.receipt_url,
+        receiptUrl: receiptUrl,
       });
       
       // Only update booking to confirmed if payment was actually captured
