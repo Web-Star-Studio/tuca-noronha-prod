@@ -1,4 +1,7 @@
 "use client";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useQuery } from "convex/react";
+import { api } from "../../../../../convex/_generated/api";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { format, isSameMonth, isAfter, isBefore, differenceInDays } from "date-fns";
@@ -2540,9 +2543,15 @@ function GuiaPageContent() {
   const [readProgress, setReadProgress] = useState(0);
   const [bookmarkedSections, setBookmarkedSections] = useState<string[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [commandOpen, setCommandOpen] = useState(false);
+  const [openCommand, setOpenCommand] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300); // 300ms delay
+
+  const searchResults = useQuery(
+    api.guide.search,
+    debouncedSearchTerm ? { query: debouncedSearchTerm } : "skip"
+  );
   const [sectionProgress, setSectionProgress] = useState<Record<string, number>>({});
-  const [searchResults, setSearchResults] = useState<SearchableContent[]>([]);
   const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
   const [filters, setFilters] = useState<AdvancedFilters>({
     priceRange: 'all',
@@ -2629,7 +2638,7 @@ function GuiaPageContent() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setCommandOpen(true);
+        setOpenCommand(true);
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         const currentIndex = guideSections.findIndex(s => s.id === activeSection);
@@ -2660,236 +2669,186 @@ function GuiaPageContent() {
   const currentSectionData = guideSections.find(s => s.id === activeSection);
   const currentColor = colorMap[currentSectionData?.color as keyof typeof colorMap] || colorMap.blue;
 
-  const searchableContent: SearchableContent[] = [
-    { id: 'sancho', type: 'beach', title: 'Baía do Sancho', description: 'Melhor praia do mundo com águas cristalinas', tags: ['praia', 'mergulho', 'snorkel'], section: 'beaches', keywords: ['sancho', 'melhor praia', 'escada'] },
-    { id: 'leao', type: 'beach', title: 'Praia do Leão', description: 'Desova de tartarugas e pôr do sol', tags: ['praia', 'tartarugas', 'por do sol'], section: 'beaches', keywords: ['leao', 'tartaruga', 'desova'] },
-    { id: 'porcos', type: 'beach', title: 'Baía dos Porcos', description: 'Piscinas naturais e vista dos Dois Irmãos', tags: ['praia', 'piscina natural'], section: 'beaches', keywords: ['porcos', 'piscina', 'dois irmaos'] },
-    { id: 'cacimba', type: 'beach', title: 'Cacimba do Padre', description: 'Praia de surf com faixa extensa de areia', tags: ['praia', 'surf'], section: 'beaches', keywords: ['cacimba', 'surf', 'areia'] },
-    { id: 'sueste', type: 'beach', title: 'Praia do Sueste', description: 'Tartarugas marinhas e tubarões', tags: ['praia', 'fauna'], section: 'beaches', keywords: ['sueste', 'tubarao', 'tartaruga'] },
-    { id: 'atalaia', type: 'beach', title: 'Atalaia', description: 'Aquário natural com limite de visitantes', tags: ['praia', 'aquario'], section: 'beaches', keywords: ['atalaia', 'aquario natural', 'piscina'] },
-  ];
-
-  const searchContent = (query: string): SearchableContent[] => {
-    const normalizedQuery = query.toLowerCase().trim();
-    if (!normalizedQuery) return [];
-    const queryTerms = normalizedQuery.split(' ').filter(term => term.length > 0);
-    return searchableContent
-      .map(content => {
-        const searchTargets = [content.title, content.description, ...content.tags, ...content.keywords].join(' ').toLowerCase();
-        let score = 0;
-        queryTerms.forEach(term => {
-          if (content.title.toLowerCase().includes(term)) score += 3;
-          if (content.description.toLowerCase().includes(term)) score += 2;
-          if (searchTargets.includes(term)) score += 1;
-        });
-        return { ...content, score };
-      })
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(({ score, ...content }) => content);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 opacity-70" />
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-tl from-cyan-100 via-indigo-100 to-purple-100 opacity-40"
-          animate={{ x: [0, 100, 0], y: [0, -100, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        />
-      </div>
+    <>
+      <div className={cn("min-h-screen bg-gray-50", decorativeBackgrounds.gradient.subtle)} style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* Hero Section */}
-      <motion.div
-        ref={heroRef}
-        style={{
-          y: heroParallax,
-          opacity: heroOpacity,
-          scale: heroScale,
-          backgroundImage: `url(${getHeroImage(activeSection)})`,
-        }}
-        className={cn(
-          "relative h-[40vh] md:h-[50vh] lg:h-[60vh] bg-cover bg-center flex items-center justify-center text-white shadow-lg",
-          "before:absolute before:inset-0 before:bg-black/40 before:z-10"
-        )}
-      >
-        <div className="relative z-20 text-center p-4">
-          <motion.h1
-            className="text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            {currentSectionData?.title}
-          </motion.h1>
-          <motion.p
-            className="mt-2 text-lg md:text-xl opacity-90 max-w-2xl mx-auto drop-shadow-md"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            {currentSectionData?.description}
-          </motion.p>
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 opacity-70" />
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-tl from-cyan-100 via-indigo-100 to-purple-100 opacity-40"
+            animate={{ x: [0, 100, 0], y: [0, -100, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          />
         </div>
-      </motion.div>
 
-      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <CommandInput
-          placeholder="Buscar em todo o guia..."
-          onValueChange={(value) => setSearchResults(searchContent(value))}
-        />
-        <CommandList>
-          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
-          {searchResults.length > 0 && (
-            <CommandGroup heading="Resultados">
-              {searchResults.map((result) => (
-                <CommandItem key={result.id} onSelect={() => {
-                  scrollToSection(result.section);
-                  setCommandOpen(false);
-                }}>
-                  <span>{result.title}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-        </CommandList>
-      </CommandDialog>
-
-      <div className="flex h-screen overflow-hidden">
-        {!isMobile && (
-          <aside className="w-80 h-full sticky top-0 overflow-y-auto p-6 space-y-6 bg-white/60 backdrop-blur-lg border-r border-gray-200/80">
-            <h2 className="text-2xl font-bold text-gray-800">Navegue pelo Guia</h2>
-            <ul className="space-y-2">
-              {guideSections.map(section => {
-                const color = colorMap[section.color as keyof typeof colorMap];
-                const isActive = activeSection === section.id;
-                return (
-                  <li key={section.id}>
-                    <motion.button
-                      onClick={() => scrollToSection(section.id)}
-                      className={cn(
-                        "w-full flex items-center gap-4 p-3 rounded-lg text-left transition-all duration-200",
-                        isActive ? `shadow-lg ${color.bg}` : "hover:bg-gray-100/80"
-                      )}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className={cn("w-10 h-10 rounded-md flex items-center justify-center", isActive ? color.lightBg : 'bg-gray-100', color.icon)}>
-                        <section.icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className={cn("font-semibold", isActive ? color.text : 'text-gray-800')}>{section.title}</p>
-                      </div>
-                      {isActive && <motion.div layoutId="active-indicator" className="w-1.5 h-6 bg-blue-600 rounded-full" />}
-                    </motion.button>
-                  </li>
-                );
-              })}
-            </ul>
-          </aside>
-        )}
-
-        <main {...bind()} className="flex-1 overflow-y-auto" ref={contentRef} id="main-content">
-          <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div id={activeSection} className="pt-4">
-                  <SectionContent
-                    sectionId={activeSection}
-                    preferences={preferences}
-                    travelData={travelData}
-                    favorites={favorites}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </main>
-      </div>
-
-      {isMobile && (
+        {/* Hero Section */}
         <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="fixed bottom-4 left-4 right-4 z-50"
+          ref={heroRef}
+          style={{
+            y: heroParallax,
+            opacity: heroOpacity,
+            scale: heroScale,
+            backgroundImage: `url(${getHeroImage(activeSection)})`,
+          }}
+          className={cn(
+            "relative h-[40vh] md:h-[50vh] lg:h-[60vh] bg-cover bg-center flex items-center justify-center text-white shadow-lg",
+            "before:absolute before:inset-0 before:bg-black/40 before:z-10"
+          )}
         >
-          <div className="bg-white/70 backdrop-blur-xl border border-gray-200/80 rounded-2xl shadow-2xl p-2 flex items-center justify-around">
-            <Button variant="ghost" size="icon" className="rounded-full w-14 h-14" onClick={() => window.history.back()}>
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-            <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <DrawerTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full w-14 h-14 bg-blue-600 text-white hover:bg-blue-700">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>Navegar pelo Guia</DrawerTitle>
-                  <DrawerDescription>Selecione uma seção para explorar.</DrawerDescription>
-                </DrawerHeader>
-                <div className="p-4">
-                  <ul className="space-y-2">
-                    {guideSections.map(section => {
-                      const color = colorMap[section.color as keyof typeof colorMap];
-                      return (
-                        <li key={section.id}>
-                          <button
-                            onClick={() => {
-                              scrollToSection(section.id);
-                              setMobileMenuOpen(false);
-                            }}
-                            className={cn(
-                              "w-full flex items-center gap-4 p-4 rounded-lg text-left transition-colors",
-                              activeSection === section.id ? `${color.bg} ${color.text}` : "hover:bg-gray-100"
-                            )}
-                          >
-                            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", color.lightBg, color.icon)}>
-                              <section.icon className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-semibold">{section.title}</p>
-                              <p className="text-sm opacity-70">{section.quickInfo}</p>
-                            </div>
-                            {activeSection === section.id && <CheckCircle className="w-5 h-5" />}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </DrawerContent>
-            </Drawer>
-            <Button variant="ghost" size="icon" className="rounded-full w-14 h-14" onClick={() => setCommandOpen(true)}>
-              <Search className="h-6 w-6" />
-            </Button>
+          <div className="relative z-20 text-center p-4">
+            <motion.h1
+              className="text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              {currentSectionData?.title}
+            </motion.h1>
+            <motion.p
+              className="mt-2 text-lg md:text-xl opacity-90 max-w-2xl mx-auto drop-shadow-md"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              {currentSectionData?.description}
+            </motion.p>
           </div>
         </motion.div>
-      )}
+        <div className="flex h-screen overflow-hidden">
+          {!isMobile && (
+            <aside className="w-80 h-full sticky top-0 overflow-y-auto p-6 space-y-6 bg-white/60 backdrop-blur-lg border-r border-gray-200/80">
+              <h2 className="text-2xl font-bold text-gray-800">Navegue pelo Guia</h2>
+              <ul className="space-y-2">
+                {guideSections.map(section => {
+                  const color = colorMap[section.color as keyof typeof colorMap];
+                  const isActive = activeSection === section.id;
+                  return (
+                    <li key={section.id}>
+                      <motion.button
+                        onClick={() => scrollToSection(section.id)}
+                        className={cn(
+                          "w-full flex items-center gap-4 p-3 rounded-lg text-left transition-all duration-200",
+                          isActive ? `shadow-lg ${color.bg}` : "hover:bg-gray-100/80"
+                        )}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className={cn("w-10 h-10 rounded-md flex items-center justify-center", isActive ? color.lightBg : 'bg-gray-100', color.icon)}>
+                          <section.icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className={cn("font-semibold", isActive ? color.text : 'text-gray-800')}>{section.title}</p>
+                        </div>
+                        {isActive && <motion.div layoutId="active-indicator" className="w-1.5 h-6 bg-blue-600 rounded-full" />}
+                      </motion.button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </aside>
+          )}
 
-      {showScrollTop && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.5 }}
-          onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-28 right-4 z-50 p-3 bg-white/80 backdrop-blur-md rounded-full shadow-lg"
-        >
-          <ArrowUp className="w-6 h-6" />
-        </motion.button>
-      )}
-    </div>
+          <main {...bind()} className="flex-1 overflow-y-auto" ref={contentRef} id="main-content">
+            <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -30 }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div id={activeSection} className="pt-4">
+                    <SectionContent
+                      sectionId={activeSection}
+                      preferences={preferences}
+                      travelData={travelData}
+                      favorites={favorites}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </main>
+        </div>
+
+        {isMobile && (
+          <motion.div
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            className="fixed bottom-4 left-4 right-4 z-50"
+          >
+            <div className="bg-white/70 backdrop-blur-xl border border-gray-200/80 rounded-2xl shadow-2xl p-2 flex items-center justify-around">
+              <Button variant="ghost" size="icon" className="rounded-full w-14 h-14" onClick={() => window.history.back()}>
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+              <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <DrawerTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full w-14 h-14 bg-blue-600 text-white hover:bg-blue-700">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>Navegar pelo Guia</DrawerTitle>
+                    <DrawerDescription>Selecione uma seção para explorar.</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="p-4">
+                    <ul className="space-y-2">
+                      {guideSections.map(section => {
+                        const color = colorMap[section.color as keyof typeof colorMap];
+                        return (
+                          <li key={section.id}>
+                            <button
+                              onClick={() => {
+                                scrollToSection(section.id);
+                                setMobileMenuOpen(false);
+                              }}
+                              className={cn(
+                                "w-full flex items-center gap-4 p-4 rounded-lg text-left transition-colors",
+                                activeSection === section.id ? `${color.bg} ${color.text}` : "hover:bg-gray-100"
+                              )}
+                            >
+                              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", color.lightBg, color.icon)}>
+                                <section.icon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold">{section.title}</p>
+                                <p className="text-sm opacity-70">{section.quickInfo}</p>
+                              </div>
+                              {activeSection === section.id && <CheckCircle className="w-5 h-5" />}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+              <Button variant="ghost" size="icon" className="rounded-full w-14 h-14" onClick={() => setOpenCommand(true)}>
+                <Search className="h-6 w-6" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-28 right-4 z-50 p-3 bg-white/80 backdrop-blur-md rounded-full shadow-lg"
+          >
+            <ArrowUp className="w-6 h-6" />
+          </motion.button>
+        )}
+      </div>
+    </>
   );
 }
 
 export default GuiaPageContent;
-  

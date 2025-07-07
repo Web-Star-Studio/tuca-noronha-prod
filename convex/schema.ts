@@ -1652,4 +1652,14 @@ export default defineSchema({
   // Tabelas para assinaturas do guia
   guideSubscriptions,
   subscriptionPayments,
+
+  // Tabela para o conteúdo do guia
+  guideContent: defineTable({
+    sectionTitle: v.string(),
+    content: v.string(),
+    tags: v.optional(v.array(v.string())),
+  }).searchIndex("by_content", {
+    searchField: "content",
+    filterFields: ["tags"],
+  }),
 });

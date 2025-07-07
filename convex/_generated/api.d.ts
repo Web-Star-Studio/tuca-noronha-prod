@@ -127,6 +127,7 @@ import type * as domains_vouchers_mutations from "../domains/vouchers/mutations.
 import type * as domains_vouchers_queries from "../domains/vouchers/queries.js";
 import type * as domains_vouchers_types from "../domains/vouchers/types.js";
 import type * as functions from "../functions.js";
+import type * as guide from "../guide.js";
 import type * as http from "../http.js";
 import type * as openaiActions from "../openaiActions.js";
 import type * as packageComparison from "../packageComparison.js";
@@ -265,6 +266,7 @@ declare const fullApi: ApiFromModules<{
   "domains/vouchers/queries": typeof domains_vouchers_queries;
   "domains/vouchers/types": typeof domains_vouchers_types;
   functions: typeof functions;
+  guide: typeof guide;
   http: typeof http;
   openaiActions: typeof openaiActions;
   packageComparison: typeof packageComparison;
