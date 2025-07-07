@@ -1156,6 +1156,50 @@ function SectionContent({
 
     "transportation": (
       <div className="space-y-12">
+        {/* Video Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 to-emerald-600/10 z-10" />
+            <div className="p-8 relative z-20">
+              <motion.div 
+                className="flex items-center gap-3 mb-6"
+                whileHover={{ x: 5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                  <Play className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Locomoção na Ilha</h3>
+                  <p className="text-gray-600">Veja como se mover em Noronha</p>
+                </div>
+              </motion.div>
+              
+              <div className="relative group">
+                <div className="aspect-video bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl flex items-center justify-center overflow-hidden">
+                  <motion.div
+                    className="text-center"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+                      <Play className="w-12 h-12 text-green-600" />
+                    </div>
+                    <p className="text-gray-700 font-medium">Vídeo de Transporte em breve</p>
+                  </motion.div>
+                </div>
+                
+                <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Introduction */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
