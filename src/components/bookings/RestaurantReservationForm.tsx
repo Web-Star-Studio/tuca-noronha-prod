@@ -29,6 +29,8 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
+import CouponValidator from "@/components/coupons/CouponValidator";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface RestaurantReservationFormProps {
   restaurantId: Id<"restaurants">;
@@ -60,9 +62,11 @@ export function RestaurantReservationForm({
   const [partySize, setPartySize] = useState(2);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
+  const { user } = useCurrentUser();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
@@ -72,6 +76,32 @@ export function RestaurantReservationForm({
     "18:00", "18:30", "19:00", "19:30", 
     "20:00", "20:30", "21:00", "21:30", "22:00"
   ]
+  
+  // Calculate price
+  const getPrice = () => {
+    return restaurant.price || 0;
+  };
+
+  // Calculate final price with coupon
+  const getFinalPrice = () => {
+    const basePrice = getPrice();
+    return appliedCoupon ? appliedCoupon.finalAmount : basePrice;
+  };
+
+  // Get discount amount
+  const getDiscountAmount = () => {
+    return appliedCoupon ? appliedCoupon.discountAmount : 0;
+  };
+
+  // Handle coupon application
+  const handleCouponApplied = (coupon: any) => {
+    setAppliedCoupon(coupon);
+  };
+
+  // Handle coupon removal
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(null);
+  };
   
   // // Formatar preço para moeda brasileira
   // const formatCurrency = (value: number) => {
@@ -110,6 +140,9 @@ export function RestaurantReservationForm({
         partySize,
         customerInfo,
         specialRequests: specialRequests || undefined,
+        couponCode: appliedCoupon?.code,
+        discountAmount: getDiscountAmount(),
+        finalAmount: getFinalPrice(),
       });
 
       toast.success("Reserva criada com sucesso!", {
@@ -130,6 +163,10 @@ export function RestaurantReservationForm({
             assetType: "restaurant",
             successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}/booking/cancel`,
+            couponCode: appliedCoupon?.code,
+            discountAmount: getDiscountAmount(),
+            originalAmount: getPrice(),
+            finalAmount: getFinalPrice(),
           });
 
           if (checkoutSession.success && checkoutSession.sessionUrl) {
@@ -304,6 +341,22 @@ export function RestaurantReservationForm({
           </div>
         </div>
 
+        {/* Coupon Validation - show if restaurant has pricing */}
+        {restaurant.price && restaurant.price > 0 && (
+          <div className="pt-4 border-t">
+            <CouponValidator
+              userId={user?._id}
+              assetType="restaurants"
+              assetId={restaurantId}
+              orderValue={getPrice()}
+              onCouponApplied={handleCouponApplied}
+              onCouponRemoved={handleCouponRemoved}
+              showOrderSummary={false}
+              placeholder="Digite o código do cupom"
+            />
+          </div>
+        )}
+
         {/* Price Summary - show if restaurant has pricing */}
         {restaurant.price && restaurant.price > 0 && (
           <div className="bg-gray-50 p-4 rounded-md space-y-2">
@@ -311,12 +364,28 @@ export function RestaurantReservationForm({
               <span>
                 Mesa para {partySize} {partySize === 1 ? "pessoa" : "pessoas"}
               </span>
-              <span>R$ {restaurant.price.toFixed(2)}</span>
+              <span>R$ {getPrice().toFixed(2)}</span>
             </div>
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Total</span>
-              <span>R$ {restaurant.price.toFixed(2)}</span>
+            
+            {appliedCoupon && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Desconto ({appliedCoupon.code}):</span>
+                <span>- R$ {getDiscountAmount().toFixed(2)}</span>
+              </div>
+            )}
+            
+            <div className="border-t pt-2">
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span>R$ {getFinalPrice().toFixed(2)}</span>
+              </div>
             </div>
+            
+            {appliedCoupon && getDiscountAmount() > 0 && (
+              <div className="text-center text-sm text-green-600 font-medium">
+                Você está economizando R$ {getDiscountAmount().toFixed(2)}!
+              </div>
+            )}
           </div>
         )}
 

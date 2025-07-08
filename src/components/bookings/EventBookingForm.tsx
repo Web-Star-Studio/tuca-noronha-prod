@@ -23,6 +23,8 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
+import CouponValidator from "@/components/coupons/CouponValidator";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface EventBookingFormProps {
   eventId: Id<"events">;
@@ -48,6 +50,9 @@ export function EventBookingForm({
 }: EventBookingFormProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"eventTickets"> | undefined>(undefined);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  
+  const { user } = useCurrentUser();
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -71,6 +76,27 @@ export function EventBookingForm({
     return event.price * quantity;
   };
 
+  // Calculate final price with coupon
+  const getFinalPrice = () => {
+    const basePrice = getPrice();
+    return appliedCoupon ? appliedCoupon.finalAmount : basePrice;
+  };
+
+  // Get discount amount
+  const getDiscountAmount = () => {
+    return appliedCoupon ? appliedCoupon.discountAmount : 0;
+  };
+
+  // Handle coupon application
+  const handleCouponApplied = (coupon: any) => {
+    setAppliedCoupon(coupon);
+  };
+
+  // Handle coupon removal
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -89,6 +115,9 @@ export function EventBookingForm({
         quantity,
         customerInfo,
         specialRequests: specialRequests || undefined,
+        couponCode: appliedCoupon?.code,
+        discountAmount: getDiscountAmount(),
+        finalAmount: getFinalPrice(),
       });
 
       toast.success("Ingresso(s) reservado(s) com sucesso!", {
@@ -109,6 +138,10 @@ export function EventBookingForm({
             assetType: "event",
             successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}/booking/cancel`,
+            couponCode: appliedCoupon?.code,
+            discountAmount: getDiscountAmount(),
+            originalAmount: getPrice(),
+            finalAmount: getFinalPrice(),
           });
 
           if (checkoutSession.success && checkoutSession.sessionUrl) {
@@ -309,6 +342,20 @@ export function EventBookingForm({
             />
           </div>
 
+          {/* Coupon Validation */}
+          <div className="pt-4 border-t">
+            <CouponValidator
+              userId={user?._id}
+              assetType="events"
+              assetId={eventId}
+              orderValue={getPrice()}
+              onCouponApplied={handleCouponApplied}
+              onCouponRemoved={handleCouponRemoved}
+              showOrderSummary={false}
+              placeholder="Digite o código do cupom"
+            />
+          </div>
+
           {/* Price Summary */}
           <div className="bg-gray-50 p-4 rounded-md space-y-2">
             <div className="flex justify-between text-sm">
@@ -317,10 +364,27 @@ export function EventBookingForm({
               </span>
               <span>R$ {getPrice().toFixed(2)}</span>
             </div>
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Total</span>
-              <span>R$ {getPrice().toFixed(2)}</span>
+            
+            {appliedCoupon && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Desconto ({appliedCoupon.code}):</span>
+                <span>- R$ {getDiscountAmount().toFixed(2)}</span>
+              </div>
+            )}
+            
+            <div className="border-t pt-2">
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span>R$ {getFinalPrice().toFixed(2)}</span>
+              </div>
             </div>
+            
+            {appliedCoupon && getDiscountAmount() > 0 && (
+              <div className="text-center text-sm text-green-600 font-medium">
+                Você está economizando R$ {getDiscountAmount().toFixed(2)}!
+              </div>
+            )}
+            
             <p className="text-xs text-gray-500">
               *Taxas de processamento podem ser aplicadas
             </p>

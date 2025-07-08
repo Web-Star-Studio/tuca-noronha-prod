@@ -18,6 +18,8 @@ import type { DateRange } from "react-day-picker"
 import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import PaymentLinkCheckout from "@/components/payments/PaymentLinkCheckout"
+import CouponValidator from "@/components/coupons/CouponValidator"
+import { useCurrentUser } from "@/hooks/useCurrentUser"
 import {
   Dialog,
   DialogContent,
@@ -59,9 +61,11 @@ export function AccommodationBookingForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
   
   // Use the custom hook to get customer information
   const { customerInfo } = useCustomerInfo();
+  const { user } = useCurrentUser();
 
   const createAccommodationBooking = useMutation(api.domains.bookings.mutations.createAccommodationBooking)
   
@@ -83,6 +87,26 @@ export function AccommodationBookingForm({
   
   const nights = calculateNights()
   const totalPrice = pricePerNight * nights
+  
+  // Calculate final price with coupon
+  const getFinalPrice = () => {
+    return appliedCoupon ? appliedCoupon.finalAmount : totalPrice;
+  };
+
+  // Get discount amount
+  const getDiscountAmount = () => {
+    return appliedCoupon ? appliedCoupon.discountAmount : 0;
+  };
+
+  // Handle coupon application
+  const handleCouponApplied = (coupon: any) => {
+    setAppliedCoupon(coupon);
+  };
+
+  // Handle coupon removal
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(null);
+  };
   
   const handlePaymentSuccess = () => {
     if (onSubmit) {
@@ -124,15 +148,17 @@ export function AccommodationBookingForm({
       // Create booking first (status: pending, paymentStatus: pending)
       const bookingId = await createAccommodationBooking({
         accommodationId,
-        checkIn: dateRange.from.toISOString(),
-        checkOut: dateRange.to.toISOString(),
-        guests,
-        totalPrice,
+        checkInDate: format(dateRange.from, "yyyy-MM-dd"),
+        checkOutDate: format(dateRange.to, "yyyy-MM-dd"),
+        guestCount: guests,
         customerInfo: {
           name: customerInfo.name || "Guest",
           email: customerInfo.email || "guest@example.com",
           phone: customerInfo.phone || "+5511999999999",
         },
+        couponCode: appliedCoupon?.code,
+        discountAmount: getDiscountAmount(),
+        finalAmount: getFinalPrice(),
       })
 
       setCurrentBookingId(bookingId)
@@ -244,6 +270,22 @@ export function AccommodationBookingForm({
           </div>
         </div>
         
+        {/* Coupon Validation */}
+        {nights > 0 && totalPrice > 0 && (
+          <div className="pt-4 border-t">
+            <CouponValidator
+              userId={user?._id}
+              assetType="accommodations"
+              assetId={accommodationId}
+              orderValue={totalPrice}
+              onCouponApplied={handleCouponApplied}
+              onCouponRemoved={handleCouponRemoved}
+              showOrderSummary={false}
+              placeholder="Digite o código do cupom"
+            />
+          </div>
+        )}
+        
         {/* Price summary */}
         {nights > 0 && (
           <div className="bg-gray-50 rounded-lg p-4">
@@ -252,12 +294,26 @@ export function AccommodationBookingForm({
                 <span>{formatCurrency(pricePerNight)} x {nights} {nights === 1 ? "noite" : "noites"}</span>
                 <span>{formatCurrency(totalPrice)}</span>
               </div>
+              
+              {appliedCoupon && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Desconto ({appliedCoupon.code}):</span>
+                  <span>- {formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              
               <div className="border-t pt-2">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>{formatCurrency(totalPrice)}</span>
+                  <span>{formatCurrency(getFinalPrice())}</span>
                 </div>
               </div>
+              
+              {appliedCoupon && getDiscountAmount() > 0 && (
+                <div className="text-center text-sm text-green-600 font-medium">
+                  Você está economizando {formatCurrency(getDiscountAmount())}!
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -302,7 +358,10 @@ export function AccommodationBookingForm({
               bookingId={currentBookingId as any}
               assetType="accommodation"
               assetId={accommodationId}
-              totalAmount={totalPrice}
+              totalAmount={getFinalPrice()}
+              originalAmount={totalPrice}
+              discountAmount={getDiscountAmount()}
+              couponCode={appliedCoupon?.code}
               onSuccess={handlePaymentSuccess}
               onCancel={() => setPaymentOpen(false)}
             />

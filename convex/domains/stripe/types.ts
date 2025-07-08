@@ -89,11 +89,17 @@ export const createCheckoutSessionValidator = v.object({
   cancelUrl: v.string(),
   customerEmail: v.optional(v.string()),
   allowPromotionCodes: v.optional(v.boolean()),
+  couponCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  originalAmount: v.optional(v.number()),
+  finalAmount: v.optional(v.number()),
   metadata: v.optional(v.object({
     bookingId: v.string(),
     userId: v.string(),
     assetType: v.string(),
     assetId: v.string(),
+    couponCode: v.optional(v.string()),
+    discountAmount: v.optional(v.number()),
   })),
 });
 

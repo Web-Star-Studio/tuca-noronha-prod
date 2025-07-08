@@ -1662,4 +1662,227 @@ export default defineSchema({
     searchField: "content",
     filterFields: ["tags"],
   }),
+
+  // Sistema de Cupons
+  coupons: defineTable({
+    // Identificação básica
+    code: v.string(),                           // Código único do cupom (ex: "DESCONTO20")
+    name: v.string(),                           // Nome descritivo do cupom
+    description: v.string(),                    // Descrição detalhada
+    
+    // Configuração do desconto
+    discountType: v.union(
+      v.literal("percentage"),                  // Desconto percentual
+      v.literal("fixed_amount")                 // Valor fixo
+    ),
+    discountValue: v.number(),                  // Valor do desconto (% ou valor fixo)
+    maxDiscountAmount: v.optional(v.number()),  // Valor máximo de desconto (para percentual)
+    
+    // Regras de aplicação
+    minimumOrderValue: v.optional(v.number()),  // Valor mínimo do pedido
+    maximumOrderValue: v.optional(v.number()),  // Valor máximo do pedido
+    
+    // Controle de uso
+    usageLimit: v.optional(v.number()),         // Limite total de usos (null = ilimitado)
+    usageCount: v.number(),                     // Quantidade já utilizada
+    userUsageLimit: v.optional(v.number()),     // Limite de uso por usuário
+    
+    // Validade
+    validFrom: v.number(),                      // Data/hora de início (timestamp)
+    validUntil: v.number(),                     // Data/hora de fim (timestamp)
+    
+    // Tipo de cupom
+    type: v.union(
+      v.literal("public"),                      // Cupom público (qualquer um pode usar)
+      v.literal("private"),                     // Cupom privado (apenas usuários específicos)
+      v.literal("first_purchase"),              // Apenas primeira compra
+      v.literal("returning_customer")           // Apenas clientes que já compraram
+    ),
+    
+    // Associações com assets
+    applicableAssets: v.array(v.object({
+      assetType: v.union(
+        v.literal("activities"),
+        v.literal("events"),
+        v.literal("restaurants"),
+        v.literal("vehicles"),
+        v.literal("accommodations"),
+        v.literal("packages")
+      ),
+      assetId: v.string(),                      // ID do asset
+      isActive: v.boolean(),                    // Se está ativo para este asset
+    })),
+    
+    // Aplicação global (se vazio, aplicável apenas aos assets especificados)
+    globalApplication: v.object({
+      isGlobal: v.boolean(),                    // Se aplica globalmente
+      assetTypes: v.array(v.string()),          // Tipos de asset aplicáveis (se global)
+    }),
+    
+    // Usuários específicos (para cupons privados)
+    allowedUsers: v.array(v.id("users")),      // Usuários que podem usar (apenas para private)
+    
+    // Status e controle
+    isActive: v.boolean(),                      // Status ativo/inativo
+    isPubliclyVisible: v.boolean(),             // Se aparece em listagens públicas
+    
+    // Metadados
+    createdBy: v.id("users"),                   // Usuário que criou
+    partnerId: v.optional(v.id("users")),       // Partner dono (se específico de partner)
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organização específica
+    
+    // Configurações avançadas
+    stackable: v.boolean(),                     // Se pode ser usado com outros cupons
+    autoApply: v.boolean(),                     // Se aplica automaticamente quando elegível
+    
+    // Notificações
+    notifyOnExpiration: v.boolean(),            // Notificar quando próximo do vencimento
+    notificationSentAt: v.optional(v.number()), // Quando a notificação foi enviada
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    
+    // Soft delete
+    deletedAt: v.optional(v.number()),
+    deletedBy: v.optional(v.id("users")),
+  })
+    .index("by_code", ["code"])
+    .index("by_partner", ["partnerId"])
+    .index("by_organization", ["organizationId"])
+    .index("by_created_by", ["createdBy"])
+    .index("by_status", ["isActive"])
+    .index("by_valid_period", ["validFrom", "validUntil"])
+    .index("by_type", ["type"])
+    .index("by_partner_active", ["partnerId", "isActive"])
+    .index("by_organization_active", ["organizationId", "isActive"])
+    .index("by_expiration", ["validUntil"])
+    .index("by_public_visible", ["isPubliclyVisible", "isActive"])
+    .index("by_global_application", ["globalApplication.isGlobal", "isActive"])
+    .index("by_type_active", ["type", "isActive"])
+    .index("by_partner_type", ["partnerId", "type"])
+    .index("by_organization_type", ["organizationId", "type"]),
+
+  // Histórico de uso de cupons
+  couponUsages: defineTable({
+    couponId: v.id("coupons"),                  // Referência ao cupom
+    userId: v.id("users"),                      // Usuário que usou
+    
+    // Contexto do uso
+    bookingId: v.string(),                      // ID da reserva/compra
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("accommodation"),
+      v.literal("package")
+    ),
+    
+    // Valores
+    originalAmount: v.number(),                 // Valor original sem desconto
+    discountAmount: v.number(),                 // Valor do desconto aplicado
+    finalAmount: v.number(),                    // Valor final após desconto
+    
+    // Detalhes da aplicação
+    appliedAt: v.number(),                      // Timestamp da aplicação
+    appliedBy: v.id("users"),                   // Quem aplicou (pode ser diferente do usuário)
+    
+    // Status
+    status: v.union(
+      v.literal("applied"),                     // Aplicado com sucesso
+      v.literal("refunded"),                    // Estornado
+      v.literal("cancelled")                    // Cancelado
+    ),
+    
+    // Metadados
+    metadata: v.optional(v.object({
+      paymentIntentId: v.optional(v.string()),  // ID do payment intent do Stripe
+      refundId: v.optional(v.string()),         // ID do refund se aplicável
+      partnerNotes: v.optional(v.string()),     // Notas do partner
+      systemNotes: v.optional(v.string()),      // Notas do sistema
+    })),
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_coupon", ["couponId"])
+    .index("by_user", ["userId"])
+    .index("by_booking", ["bookingId", "bookingType"])
+    .index("by_coupon_user", ["couponId", "userId"])
+    .index("by_status", ["status"])
+    .index("by_user_status", ["userId", "status"])
+    .index("by_applied_at", ["appliedAt"])
+    .index("by_coupon_status", ["couponId", "status"]),
+
+  // Validações de cupons (para controle de uso por usuário)
+  couponValidations: defineTable({
+    couponId: v.id("coupons"),                  // Referência ao cupom
+    userId: v.id("users"),                      // Usuário
+    
+    // Controle de uso
+    usageCount: v.number(),                     // Quantas vezes este usuário usou
+    lastUsedAt: v.optional(v.number()),         // Última vez que usou
+    
+    // Elegibilidade
+    isEligible: v.boolean(),                    // Se o usuário é elegível
+    eligibilityCheckedAt: v.number(),           // Última verificação de elegibilidade
+    
+    // Restrições específicas
+    restrictionReasons: v.array(v.string()),    // Motivos de restrição
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_coupon_user", ["couponId", "userId"])
+    .index("by_user", ["userId"])
+    .index("by_coupon", ["couponId"])
+    .index("by_eligibility", ["isEligible"])
+    .index("by_last_used", ["lastUsedAt"]),
+
+  // Logs de auditoria específicos para cupons
+  couponAuditLogs: defineTable({
+    couponId: v.id("coupons"),                  // Referência ao cupom
+    actionType: v.union(
+      v.literal("created"),
+      v.literal("updated"),
+      v.literal("activated"),
+      v.literal("deactivated"),
+      v.literal("deleted"),
+      v.literal("applied"),
+      v.literal("refunded"),
+      v.literal("expired"),
+      v.literal("usage_limit_reached")
+    ),
+    
+    // Contexto da ação
+    performedBy: v.id("users"),                 // Quem executou a ação
+    performedAt: v.number(),                    // Timestamp da ação
+    
+    // Dados da ação
+    actionData: v.optional(v.object({
+      oldValues: v.optional(v.any()),           // Valores anteriores
+      newValues: v.optional(v.any()),           // Novos valores
+      affectedBookingId: v.optional(v.string()), // ID da reserva afetada
+      affectedUserId: v.optional(v.id("users")), // Usuário afetado
+      reason: v.optional(v.string()),           // Motivo da ação
+      metadata: v.optional(v.any()),            // Metadados adicionais
+    })),
+    
+    // Contexto do sistema
+    ipAddress: v.optional(v.string()),          // IP de onde veio a ação
+    userAgent: v.optional(v.string()),          // User agent
+    sessionId: v.optional(v.string()),          // ID da sessão
+    
+    // Timestamps
+    createdAt: v.number(),
+  })
+    .index("by_coupon", ["couponId"])
+    .index("by_action_type", ["actionType"])
+    .index("by_performed_by", ["performedBy"])
+    .index("by_performed_at", ["performedAt"])
+    .index("by_coupon_action", ["couponId", "actionType"])
+    .index("by_coupon_performed_at", ["couponId", "performedAt"]),
 });

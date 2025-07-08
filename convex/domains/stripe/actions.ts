@@ -176,36 +176,66 @@ export const createCheckoutSession = action({
         name: booking.customerInfo.name,
       });
 
+      // Determine final pricing with coupon consideration
+      const originalAmount = args.originalAmount || booking.totalPrice;
+      const finalAmount = args.finalAmount || booking.totalPrice;
+      const discountAmount = args.discountAmount || 0;
+      const hasCoupon = args.couponCode && discountAmount > 0;
+
       // Create checkout session
       console.log(`🔍 Creating checkout session for ${args.assetType}:`, {
         bookingId: args.bookingId,
         assetType: args.assetType,
-        totalPrice: booking.totalPrice,
+        originalAmount,
+        finalAmount,
+        discountAmount,
+        couponCode: args.couponCode,
         assetName: booking.assetName,
         userId: booking.userId,
         assetId: booking.assetId
       });
       
+      // Prepare line items
+      const lineItems: Array<{
+        price_data: {
+          currency: string;
+          product_data: {
+            name: string;
+            description: string;
+            metadata: {
+              assetId: string;
+              assetType: string;
+            };
+          };
+          unit_amount: number;
+        };
+        quantity: number;
+      }> = [];
+      
+      // Main item with original or discounted price
+      lineItems.push({
+        price_data: {
+          currency: "brl",
+          product_data: {
+            name: booking.assetName,
+            description: booking.assetDescription,
+            metadata: {
+              assetId: booking.assetId,
+              assetType: args.assetType,
+            },
+          },
+          unit_amount: Math.round(finalAmount * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+
+      // If there's a coupon, add it to metadata but don't create separate line item
+      // Stripe will handle the discount through the adjusted unit_amount above
+      
       const session = await stripe.checkout.sessions.create({
         customer: customer.stripeCustomerId,
         payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "brl",
-              product_data: {
-                name: booking.assetName,
-                description: booking.assetDescription,
-                metadata: {
-                  assetId: booking.assetId,
-                  assetType: args.assetType,
-                },
-              },
-              unit_amount: Math.round(booking.totalPrice * 100), // Convert to cents
-            },
-            quantity: 1,
-          },
-        ],
+        line_items: lineItems,
         mode: "payment",
         success_url: args.successUrl,
         cancel_url: args.cancelUrl,
@@ -216,12 +246,22 @@ export const createCheckoutSession = action({
           assetType: args.assetType,
           assetId: booking.assetId,
           convexOrigin: "true",
+          ...(hasCoupon && {
+            couponCode: args.couponCode,
+            originalAmount: originalAmount.toString(),
+            discountAmount: discountAmount.toString(),
+            finalAmount: finalAmount.toString(),
+          }),
         },
         payment_intent_data: {
           capture_method: 'manual',
           metadata: {
             bookingId: args.bookingId,
             assetType: args.assetType,
+            ...(hasCoupon && {
+              couponCode: args.couponCode,
+              discountAmount: discountAmount.toString(),
+            }),
           },
         },
       });

@@ -56,6 +56,9 @@ export const createActivityBookingValidator = v.object({
   participants: v.number(),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
+  couponCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  finalAmount: v.optional(v.number()),
 });
 
 export const updateActivityBookingValidator = v.object({
@@ -73,6 +76,9 @@ export const createEventBookingValidator = v.object({
   quantity: v.number(),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
+  couponCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  finalAmount: v.optional(v.number()),
 });
 
 export const updateEventBookingValidator = v.object({
@@ -91,6 +97,9 @@ export const createRestaurantReservationValidator = v.object({
   partySize: v.number(),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
+  couponCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  finalAmount: v.optional(v.number()),
 });
 
 export const updateRestaurantReservationValidator = v.object({
@@ -110,6 +119,30 @@ export const createVehicleBookingValidator = v.object({
   additionalDrivers: v.optional(v.number()),
   additionalOptions: v.optional(v.array(v.string())),
   notes: v.optional(v.string()),
+  couponCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  finalAmount: v.optional(v.number()),
+});
+
+// Accommodation booking validators
+export const createAccommodationBookingValidator = v.object({
+  accommodationId: v.id("accommodations"),
+  checkInDate: v.string(),
+  checkOutDate: v.string(),
+  guestCount: v.number(),
+  customerInfo: v.optional(customerInfoValidator),
+  specialRequests: v.optional(v.string()),
+  couponCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  finalAmount: v.optional(v.number()),
+});
+
+export const updateAccommodationBookingValidator = v.object({
+  bookingId: v.id("accommodationBookings"),
+  status: v.optional(v.string()),
+  paymentStatus: v.optional(v.string()),
+  paymentMethod: v.optional(v.string()),
+  specialRequests: v.optional(v.string()),
 });
 
 export const updateVehicleBookingValidator = v.object({

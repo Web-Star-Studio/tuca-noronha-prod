@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import CouponValidator from "@/components/coupons/CouponValidator";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface VehicleBookingFormProps {
   vehicleId: Id<"vehicles">;
@@ -36,11 +38,14 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 3));
   const [isLoading, setIsLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
   const [pickupLocation, setPickupLocation] = useState("");
   const [notes, setNotes] = useState("");
+  
+  const { user } = useCurrentUser();
 
   // Get current user
   const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
@@ -48,6 +53,26 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
   // Calculate total days and price
   const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
   const totalPrice = totalDays * pricePerDay;
+
+  // Calculate final price with coupon
+  const getFinalPrice = () => {
+    return appliedCoupon ? appliedCoupon.finalAmount : totalPrice;
+  };
+
+  // Get discount amount
+  const getDiscountAmount = () => {
+    return appliedCoupon ? appliedCoupon.discountAmount : 0;
+  };
+
+  // Handle coupon application
+  const handleCouponApplied = (coupon: any) => {
+    setAppliedCoupon(coupon);
+  };
+
+  // Handle coupon removal
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(null);
+  };
 
   // Create booking mutation - using the correct one from bookings domain
   const createBooking = useMutation(api.domains.bookings.mutations.createVehicleBooking);
@@ -96,6 +121,9 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
         customerInfo,
         pickupLocation: pickupLocation.trim() || undefined,
         notes: notes.trim() || undefined,
+        couponCode: appliedCoupon?.code,
+        discountAmount: getDiscountAmount(),
+        finalAmount: getFinalPrice(),
       });
 
       toast.success("Reserva criada com sucesso!", {
@@ -116,6 +144,10 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
             assetType: "vehicle",
             successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}/booking/cancel`,
+            couponCode: appliedCoupon?.code,
+            discountAmount: getDiscountAmount(),
+            originalAmount: totalPrice,
+            finalAmount: getFinalPrice(),
           });
 
           if (checkoutSession.success && checkoutSession.sessionUrl) {
@@ -285,16 +317,48 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
         </div>
       </div>
 
+      {/* Coupon Validation */}
+      {startDate && endDate && totalPrice > 0 && (
+        <div className="pt-4 border-t">
+          <CouponValidator
+            userId={user?._id}
+            assetType="vehicles"
+            assetId={vehicleId}
+            orderValue={totalPrice}
+            onCouponApplied={handleCouponApplied}
+            onCouponRemoved={handleCouponRemoved}
+            showOrderSummary={false}
+            placeholder="Digite o código do cupom"
+          />
+        </div>
+      )}
+
       {startDate && endDate && (
         <div className="bg-gray-50 p-3 rounded-md mt-4">
           <div className="flex justify-between text-sm mb-2">
             <span>R$ {pricePerDay.toFixed(2)} x {totalDays} {totalDays === 1 ? "dia" : "dias"}</span>
             <span>R$ {totalPrice.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between font-semibold">
-            <span>Total</span>
-            <span>R$ {totalPrice.toFixed(2)}</span>
+          
+          {appliedCoupon && (
+            <div className="flex justify-between text-sm text-green-600 mb-2">
+              <span>Desconto ({appliedCoupon.code}):</span>
+              <span>- R$ {getDiscountAmount().toFixed(2)}</span>
+            </div>
+          )}
+          
+          <div className="border-t pt-2">
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span>R$ {getFinalPrice().toFixed(2)}</span>
+            </div>
           </div>
+          
+          {appliedCoupon && getDiscountAmount() > 0 && (
+            <div className="text-center text-sm text-green-600 font-medium mt-2">
+              Você está economizando R$ {getDiscountAmount().toFixed(2)}!
+            </div>
+          )}
         </div>
       )}
 
