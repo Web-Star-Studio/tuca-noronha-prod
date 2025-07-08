@@ -7,8 +7,9 @@ import { api } from '../../../../convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, MapPin, Users, Download, ArrowLeft, Loader2 } from 'lucide-react';
+import { CheckCircle, Calendar, MapPin, Users, Download, ArrowLeft, Loader2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { VoucherDownloadButton } from '@/components/vouchers/VoucherDownloadButton';
 
 export default function BookingSuccessPage() {
   const searchParams = useSearchParams();
@@ -284,6 +285,19 @@ export default function BookingSuccessPage() {
 
         {/* Action Buttons */}
         <div className="space-y-3">
+          {/* Voucher Download Button */}
+          {bookingData.paymentStatus === 'succeeded' && bookingData.bookingId && (
+            <VoucherDownloadButton
+              bookingId={bookingData.bookingId}
+              bookingType={bookingData.assetType}
+              variant="default"
+              size="default"
+              className="w-full"
+              showIcon={true}
+              showLabel={true}
+            />
+          )}
+          
           {bookingData.paymentDetails?.receiptUrl && (
             <Button 
               onClick={handleDownloadReceipt}
@@ -297,7 +311,7 @@ export default function BookingSuccessPage() {
           
           <Button 
             onClick={handleBackToHome} 
-            variant="default" 
+            variant="outline" 
             className="w-full"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -310,7 +324,10 @@ export default function BookingSuccessPage() {
           <CardContent className="pt-6">
             <h3 className="font-medium text-gray-900 mb-3">Próximos Passos</h3>
             <div className="space-y-2 text-sm text-gray-600">
-              <p>• Você receberá um email de confirmação em breve</p>
+              <p>• Você receberá um email de confirmação com o voucher em breve</p>
+              {bookingData.paymentStatus === 'succeeded' && (
+                <p>• <strong>Seu voucher está disponível acima</strong> - apresente no local do serviço</p>
+              )}
               <p>• O parceiro pode entrar em contato para confirmar detalhes</p>
               <p>• Você pode acompanhar o status na seção "Minhas Reservas"</p>
               <p>• Em caso de dúvidas, entre em contato conosco</p>

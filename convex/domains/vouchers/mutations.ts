@@ -1,261 +1,740 @@
+import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
-import { mutation, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
-import { createVoucherValidator, VOUCHER_STATUS } from "./types";
-import type { Id } from "../../_generated/dataModel";
+import {
+  createVoucherValidator,
+  updateVoucherValidator,
+  useVoucherValidator,
+  cancelVoucherValidator,
+  createUsageLogValidator,
+  VOUCHER_STATUS,
+  VOUCHER_ACTIONS,
+  USER_TYPES,
+} from "./types";
+import {
+  generateVoucherNumber,
+  generateVerificationToken,
+  generateQRCodeData,
+  qrCodeDataToString,
+  calculateVoucherExpiration,
+} from "./utils";
 
 /**
- * Generate a unique voucher number
- * Format: VCH-YYYYMMDD-XXXX
+ * Generate a new voucher for a booking
  */
-function generateVoucherNumber(): string {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const random = Math.floor(1000 + Math.random() * 9000);
-  
-  return `VCH-${year}${month}${day}-${random}`;
-}
-
-/**
- * Create a voucher for a confirmed booking
- */
-export const createVoucher = internalMutation({
+export const generateVoucher = mutation({
   args: createVoucherValidator,
-  returns: v.id("vouchers"),
-  handler: async (ctx, args) => {
+  handler: async (ctx, { bookingId, bookingType, partnerId, customerId, expiresAt }) => {
+    // Get current user for audit logging
+    const identity = await ctx.auth.getUserIdentity();
+    const currentUser = identity
+      ? await ctx.db
+          .query("users")
+          .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+          .first()
+      : null;
+
     // Check if voucher already exists for this booking
     const existingVoucher = await ctx.db
       .query("vouchers")
       .withIndex("by_booking", (q) => 
-        q.eq("bookingId", args.bookingId).eq("bookingType", args.bookingType)
+        q.eq("bookingId", bookingId).eq("bookingType", bookingType)
       )
-      .filter((q) => q.neq(q.field("status"), VOUCHER_STATUS.CANCELLED))
+      .filter((q) => q.eq(q.field("isActive"), true))
       .first();
 
     if (existingVoucher) {
       throw new Error("Voucher já existe para esta reserva");
     }
 
-    const voucherNumber = generateVoucherNumber();
-    const now = Date.now();
+    // Generate unique voucher number
+    let voucherNumber: string;
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    // Calculate validity period based on booking type
-    let validFrom = now;
-    let validUntil = now + (365 * 24 * 60 * 60 * 1000); // Default: 1 year
+    do {
+      voucherNumber = generateVoucherNumber();
+      const exists = await ctx.db
+        .query("vouchers")
+        .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+        .first();
 
-    // For specific booking types, set validity based on booking date
-    if (args.bookingType === "activity" || args.bookingType === "event") {
-      const bookingDate = new Date(args.bookingDetails.date);
-      validFrom = bookingDate.getTime();
-      validUntil = bookingDate.getTime() + (24 * 60 * 60 * 1000); // Valid for the day
-    } else if (args.bookingType === "restaurant") {
-      const bookingDate = new Date(args.bookingDetails.date);
-      validFrom = bookingDate.getTime();
-      validUntil = bookingDate.getTime() + (4 * 60 * 60 * 1000); // Valid for 4 hours
-    } else if (args.bookingType === "vehicle") {
-      validFrom = new Date(args.bookingDetails.startDate).getTime();
-      validUntil = new Date(args.bookingDetails.endDate).getTime();
-    } else if (args.bookingType === "package") {
-      validFrom = new Date(args.bookingDetails.startDate).getTime();
-      validUntil = new Date(args.bookingDetails.endDate).getTime();
+      if (!exists) break;
+      attempts++;
+    } while (attempts < maxAttempts);
+
+    if (attempts >= maxAttempts) {
+      throw new Error("Erro ao gerar número único do voucher");
     }
 
-    // Generate QR Code data
-    const qrCodeData = JSON.stringify({
-      voucherNumber,
-      bookingId: args.bookingId,
-      bookingType: args.bookingType,
-      confirmationCode: args.confirmationCode,
-    });
+    // Calculate expiration if not provided
+    const calculatedExpiration = expiresAt || calculateVoucherExpiration(bookingType);
 
+    // Generate verification token and QR code
+    const verificationToken = generateVerificationToken(voucherNumber, calculatedExpiration);
+    const qrCodeData = generateQRCodeData(voucherNumber, verificationToken, calculatedExpiration);
+    const qrCodeString = qrCodeDataToString(qrCodeData);
+
+    // Create voucher record
+    const now = Date.now();
     const voucherId = await ctx.db.insert("vouchers", {
-      bookingId: args.bookingId,
-      bookingType: args.bookingType,
       voucherNumber,
-      issueDate: now,
-      customerInfo: args.customerInfo,
-      assetInfo: args.assetInfo,
-      bookingDetails: args.bookingDetails,
-      partnerId: args.partnerId,
+      qrCode: qrCodeString,
+      bookingId,
+      bookingType,
       status: VOUCHER_STATUS.ACTIVE,
-      qrCode: qrCodeData,
-      validFrom,
-      validUntil,
-      createdBy: args.partnerId, // For now, created by partner
-      confirmationCode: args.confirmationCode,
+      generatedAt: now,
+      expiresAt: calculatedExpiration,
+      emailSent: false,
+      downloadCount: 0,
+      verificationToken,
+      scanCount: 0,
+      partnerId,
+      customerId,
+      isActive: true,
       createdAt: now,
       updatedAt: now,
     });
 
-    return voucherId;
+    // Log voucher generation
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.GENERATED,
+      timestamp: now,
+      userId: currentUser?._id,
+      userType: currentUser?.role || USER_TYPES.ADMIN,
+      metadata: JSON.stringify({
+        bookingId,
+        bookingType,
+        generatedBy: currentUser?.name || "System",
+      }),
+      createdAt: now,
+    });
+
+    return {
+      voucherId,
+      voucherNumber,
+      qrCode: qrCodeString,
+      expiresAt: calculatedExpiration,
+    };
   },
 });
 
 /**
- * Mark voucher as used
+ * Update voucher information
  */
-export const useVoucher = mutation({
-  args: {
-    voucherNumber: v.string(),
-  },
-  returns: v.null(),
+export const updateVoucher = mutation({
+  args: updateVoucherValidator,
   handler: async (ctx, args) => {
+    const { voucherId, ...updates } = args;
+
+    // Get current user for RBAC
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Usuário não autenticado");
     }
 
-    const user = await ctx.db
+    const currentUser = await ctx.db
       .query("users")
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || (user.role !== "partner" && user.role !== "employee" && user.role !== "master")) {
-      throw new Error("Sem permissão para usar vouchers");
-    }
-
-    const voucher = await ctx.db
-      .query("vouchers")
-      .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", args.voucherNumber))
       .first();
 
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Get voucher to check permissions
+    const voucher = await ctx.db.get(voucherId);
     if (!voucher) {
       throw new Error("Voucher não encontrado");
     }
 
-    if (voucher.status === VOUCHER_STATUS.USED) {
-      throw new Error("Voucher já foi utilizado");
+    // RBAC check - only partner, employees, or masters can update vouchers
+    const canUpdate = currentUser.role === "master" || 
+                     voucher.partnerId === currentUser._id ||
+                     (currentUser.role === "employee" && currentUser.partnerId === voucher.partnerId);
+
+    if (!canUpdate) {
+      throw new Error("Acesso negado");
     }
 
-    if (voucher.status === VOUCHER_STATUS.CANCELLED) {
-      throw new Error("Voucher foi cancelado");
-    }
-
-    if (voucher.status === VOUCHER_STATUS.EXPIRED) {
-      throw new Error("Voucher expirado");
-    }
-
+    // Update voucher
     const now = Date.now();
+    await ctx.db.patch(voucherId, {
+      ...updates,
+      updatedAt: now,
+    });
 
-    // Check validity period
-    if (voucher.validFrom && now < voucher.validFrom) {
-      throw new Error("Voucher ainda não está válido");
+    // Log update action
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: "updated" as any, // Add to VOUCHER_ACTIONS if needed
+      timestamp: now,
+      userId: currentUser._id,
+      userType: currentUser.role,
+      metadata: JSON.stringify({
+        updatedFields: Object.keys(updates),
+        updatedBy: currentUser.name,
+      }),
+      createdAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Mark voucher as used (partner check-in)
+ */
+export const useVoucher = mutation({
+  args: useVoucherValidator,
+  handler: async (ctx, { voucherId, partnerId, usageNotes, location }) => {
+    // Get current user for RBAC
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
     }
 
-    if (voucher.validUntil && now > voucher.validUntil) {
-      // Mark as expired
-      await ctx.db.patch(voucher._id, {
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Get voucher
+    const voucher = await ctx.db.get(voucherId);
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    // RBAC check - only the partner or their employees can mark voucher as used
+    const canUse = voucher.partnerId === partnerId ||
+                  (currentUser.role === "employee" && currentUser.partnerId === voucher.partnerId);
+
+    if (!canUse) {
+      throw new Error("Acesso negado - voucher não pertence a este parceiro");
+    }
+
+    // Check voucher status
+    if (voucher.status !== VOUCHER_STATUS.ACTIVE) {
+      throw new Error(
+        `Voucher não pode ser utilizado - status: ${
+          voucher.status === "used" ? "já utilizado" :
+          voucher.status === "cancelled" ? "cancelado" :
+          voucher.status === "expired" ? "expirado" : "inválido"
+        }`
+      );
+    }
+
+    // Check expiration
+    if (voucher.expiresAt && Date.now() > voucher.expiresAt) {
+      // Auto-update to expired
+      await ctx.db.patch(voucherId, {
         status: VOUCHER_STATUS.EXPIRED,
-        updatedAt: now,
+        updatedAt: Date.now(),
       });
       throw new Error("Voucher expirado");
     }
 
-    // Check if user has permission for this partner's vouchers
-    if (user.role === "partner" && voucher.partnerId !== user._id) {
-      throw new Error("Sem permissão para usar vouchers de outro parceiro");
-    }
-
-    // Mark as used
-    await ctx.db.patch(voucher._id, {
+    // Mark voucher as used
+    const now = Date.now();
+    await ctx.db.patch(voucherId, {
       status: VOUCHER_STATUS.USED,
       usedAt: now,
       updatedAt: now,
     });
 
-    return null;
+    // Log usage
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.USED,
+      timestamp: now,
+      userId: currentUser._id,
+      userType: currentUser.role,
+      location,
+      metadata: JSON.stringify({
+        usedBy: currentUser.name,
+        partnerId,
+        usageNotes,
+        location,
+      }),
+      createdAt: now,
+    });
+
+    // Update booking status if needed
+    try {
+      switch (voucher.bookingType) {
+        case "activity":
+          const activityBooking = await ctx.db
+            .query("activityBookings")
+            .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
+            .first();
+          if (activityBooking && activityBooking.status !== "completed") {
+            await ctx.db.patch(activityBooking._id, {
+              status: "in_progress",
+              updatedAt: now,
+            });
+          }
+          break;
+        case "event":
+          const eventBooking = await ctx.db
+            .query("eventBookings")
+            .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
+            .first();
+          if (eventBooking && eventBooking.status !== "completed") {
+            await ctx.db.patch(eventBooking._id, {
+              status: "in_progress",
+              updatedAt: now,
+            });
+          }
+          break;
+        // Add other booking types as needed
+      }
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      // Don't fail the voucher usage if booking update fails
+    }
+
+    return {
+      success: true,
+      usedAt: now,
+      message: "Voucher utilizado com sucesso",
+    };
   },
 });
 
 /**
- * Cancel a voucher
+ * Cancel voucher
  */
 export const cancelVoucher = mutation({
-  args: {
-    voucherId: v.id("vouchers"),
-    reason: v.string(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
+  args: cancelVoucherValidator,
+  handler: async (ctx, { voucherId, reason, userId }) => {
+    // Get current user for RBAC
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Usuário não autenticado");
     }
 
-    const user = await ctx.db
+    const currentUser = await ctx.db
       .query("users")
       .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-      .unique();
+      .first();
 
-    if (!user) {
+    if (!currentUser) {
       throw new Error("Usuário não encontrado");
     }
 
-    const voucher = await ctx.db.get(args.voucherId);
+    // Get voucher
+    const voucher = await ctx.db.get(voucherId);
     if (!voucher) {
       throw new Error("Voucher não encontrado");
     }
 
-    // Check permissions
-    const canCancel = user.role === "master" || 
-      (user.role === "partner" && voucher.partnerId === user._id) ||
-      (user.role === "traveler" && voucher.customerInfo.email === user.email);
+    // RBAC check - customer, partner, employees, or masters can cancel
+    const canCancel = currentUser.role === "master" ||
+                     voucher.partnerId === currentUser._id ||
+                     voucher.customerId === currentUser._id ||
+                     (currentUser.role === "employee" && currentUser.partnerId === voucher.partnerId);
 
     if (!canCancel) {
-      throw new Error("Sem permissão para cancelar este voucher");
+      throw new Error("Acesso negado");
+    }
+
+    // Check if voucher can be cancelled
+    if (voucher.status === VOUCHER_STATUS.USED) {
+      throw new Error("Voucher já foi utilizado e não pode ser cancelado");
     }
 
     if (voucher.status === VOUCHER_STATUS.CANCELLED) {
-      throw new Error("Voucher já foi cancelado");
+      throw new Error("Voucher já está cancelado");
     }
 
-    if (voucher.status === VOUCHER_STATUS.USED) {
-      throw new Error("Não é possível cancelar um voucher já utilizado");
-    }
-
+    // Cancel voucher
     const now = Date.now();
-
-    await ctx.db.patch(args.voucherId, {
+    await ctx.db.patch(voucherId, {
       status: VOUCHER_STATUS.CANCELLED,
-      cancelledAt: now,
-      cancelReason: args.reason,
       updatedAt: now,
     });
 
-    return null;
+    // Log cancellation
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.CANCELLED,
+      timestamp: now,
+      userId: currentUser._id,
+      userType: currentUser.role,
+      metadata: JSON.stringify({
+        cancelledBy: currentUser.name,
+        reason,
+        cancelledByUserId: userId,
+      }),
+      createdAt: now,
+    });
+
+    return {
+      success: true,
+      cancelledAt: now,
+      message: "Voucher cancelado com sucesso",
+    };
   },
 });
 
 /**
- * Check and update expired vouchers
+ * Record voucher scan (for analytics)
  */
-export const checkExpiredVouchers = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const now = Date.now();
-    
-    // Find active vouchers that have passed their validity period
-    const expiredVouchers = await ctx.db
-      .query("vouchers")
-      .withIndex("by_status", (q) => q.eq("status", VOUCHER_STATUS.ACTIVE))
-      .filter((q) => 
-        q.and(
-          q.neq(q.field("validUntil"), undefined),
-          q.lt(q.field("validUntil"), now)
-        )
-      )
-      .collect();
-
-    // Update each expired voucher
-    for (const voucher of expiredVouchers) {
-      await ctx.db.patch(voucher._id, {
-        status: VOUCHER_STATUS.EXPIRED,
-        updatedAt: now,
-      });
+export const recordVoucherScan = mutation({
+  args: {
+    voucherId: v.id("vouchers"),
+    userId: v.optional(v.id("users")),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    location: v.optional(v.string()),
+  },
+  handler: async (ctx, { voucherId, userId, ipAddress, userAgent, location }) => {
+    // Get voucher
+    const voucher = await ctx.db.get(voucherId);
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
     }
 
-    return expiredVouchers.length;
+    const now = Date.now();
+
+    // Update scan count and last scanned time
+    await ctx.db.patch(voucherId, {
+      scanCount: voucher.scanCount + 1,
+      lastScannedAt: now,
+      updatedAt: now,
+    });
+
+    // Log scan
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.SCANNED,
+      timestamp: now,
+      userId,
+      userType: userId ? undefined : "anonymous",
+      ipAddress,
+      userAgent,
+      location,
+      metadata: JSON.stringify({
+        scanCount: voucher.scanCount + 1,
+      }),
+      createdAt: now,
+    });
+
+    return { success: true };
   },
-}); 
+});
+
+/**
+ * Record voucher download (for analytics)
+ */
+export const recordVoucherDownload = mutation({
+  args: {
+    voucherId: v.id("vouchers"),
+    userId: v.optional(v.id("users")),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+  },
+  handler: async (ctx, { voucherId, userId, ipAddress, userAgent }) => {
+    // Get voucher
+    const voucher = await ctx.db.get(voucherId);
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    const now = Date.now();
+
+    // Update download count
+    await ctx.db.patch(voucherId, {
+      downloadCount: voucher.downloadCount + 1,
+      updatedAt: now,
+    });
+
+    // Log download
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.DOWNLOADED,
+      timestamp: now,
+      userId,
+      userType: userId ? undefined : "anonymous",
+      ipAddress,
+      userAgent,
+      metadata: JSON.stringify({
+        downloadCount: voucher.downloadCount + 1,
+      }),
+      createdAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Record voucher email sent
+ */
+export const recordVoucherEmailSent = mutation({
+  args: {
+    voucherId: v.id("vouchers"),
+    emailAddress: v.string(),
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, { voucherId, emailAddress, userId }) => {
+    // Get voucher
+    const voucher = await ctx.db.get(voucherId);
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    const now = Date.now();
+
+    // Update email sent status
+    await ctx.db.patch(voucherId, {
+      emailSent: true,
+      emailSentAt: now,
+      updatedAt: now,
+    });
+
+    // Log email sent
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.EMAILED,
+      timestamp: now,
+      userId,
+      userType: "system",
+      metadata: JSON.stringify({
+        emailAddress,
+        sentAt: now,
+      }),
+      createdAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Regenerate voucher (create new voucher for same booking)
+ */
+export const regenerateVoucher = mutation({
+  args: {
+    voucherId: v.id("vouchers"),
+    reason: v.string(),
+  },
+  handler: async (ctx, { voucherId, reason }) => {
+    // Get current user for RBAC
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Get original voucher
+    const originalVoucher = await ctx.db.get(voucherId);
+    if (!originalVoucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    // RBAC check
+    const canRegenerate = currentUser.role === "master" ||
+                         originalVoucher.partnerId === currentUser._id ||
+                         (currentUser.role === "employee" && currentUser.partnerId === originalVoucher.partnerId);
+
+    if (!canRegenerate) {
+      throw new Error("Acesso negado");
+    }
+
+    // Cancel original voucher
+    const now = Date.now();
+    await ctx.db.patch(voucherId, {
+      status: VOUCHER_STATUS.CANCELLED,
+      updatedAt: now,
+    });
+
+    // Log cancellation of original
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.CANCELLED,
+      timestamp: now,
+      userId: currentUser._id,
+      userType: currentUser.role,
+      metadata: JSON.stringify({
+        cancelledBy: currentUser.name,
+        reason: `Voucher regenerated: ${reason}`,
+        regenerated: true,
+      }),
+      createdAt: now,
+    });
+
+    // Generate new voucher by creating it directly
+    const voucherNumber = generateVoucherNumber();
+    const verificationToken = generateVerificationToken(voucherNumber, originalVoucher.expiresAt);
+    const qrCodeData = generateQRCodeData(voucherNumber, verificationToken, originalVoucher.expiresAt);
+    const qrCodeString = qrCodeDataToString(qrCodeData);
+
+    const newVoucherId = await ctx.db.insert("vouchers", {
+      voucherNumber,
+      qrCode: qrCodeString,
+      bookingId: originalVoucher.bookingId,
+      bookingType: originalVoucher.bookingType,
+      status: VOUCHER_STATUS.ACTIVE,
+      generatedAt: now,
+      expiresAt: originalVoucher.expiresAt,
+      emailSent: false,
+      downloadCount: 0,
+      verificationToken,
+      scanCount: 0,
+      partnerId: originalVoucher.partnerId,
+      customerId: originalVoucher.customerId,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Log new voucher generation
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId: newVoucherId,
+      action: VOUCHER_ACTIONS.GENERATED,
+      timestamp: now,
+      userId: currentUser._id,
+      userType: currentUser.role,
+      metadata: JSON.stringify({
+        regenerated: true,
+        originalVoucherId: voucherId,
+        reason,
+        generatedBy: currentUser.name,
+      }),
+      createdAt: now,
+    });
+
+    const newVoucher = {
+      voucherId: newVoucherId,
+      voucherNumber,
+      qrCode: qrCodeString,
+      expiresAt: originalVoucher.expiresAt,
+    };
+
+    return {
+      success: true,
+      originalVoucherId: voucherId,
+      newVoucher,
+      message: "Voucher regenerado com sucesso",
+    };
+  },
+});
+
+/**
+ * Bulk update voucher expiration dates
+ */
+export const bulkUpdateVoucherExpiration = mutation({
+  args: {
+    partnerId: v.id("users"),
+    bookingType: v.optional(v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("accommodation")
+    )),
+    newExpirationDate: v.number(),
+    reason: v.string(),
+  },
+  handler: async (ctx, { partnerId, bookingType, newExpirationDate, reason }) => {
+    // Get current user for RBAC
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // RBAC check - only masters or the partner themselves
+    if (currentUser.role !== "master" && currentUser._id !== partnerId) {
+      throw new Error("Acesso negado");
+    }
+
+    // Build query for vouchers to update
+    let query = ctx.db
+      .query("vouchers")
+      .withIndex("by_partner", (q) => q.eq("partnerId", partnerId))
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("isActive"), true),
+          q.eq(q.field("status"), "active")
+        )
+      );
+
+    if (bookingType) {
+      query = query.filter((q) => q.eq(q.field("bookingType"), bookingType));
+    }
+
+    const vouchers = await query.collect();
+
+    if (vouchers.length === 0) {
+      return {
+        success: true,
+        updatedCount: 0,
+        message: "Nenhum voucher encontrado para atualizar",
+      };
+    }
+
+    // Update vouchers in batches
+    const now = Date.now();
+    let updatedCount = 0;
+
+    for (const voucher of vouchers) {
+      try {
+        await ctx.db.patch(voucher._id, {
+          expiresAt: newExpirationDate,
+          updatedAt: now,
+        });
+
+        // Log the update
+        await ctx.db.insert("voucherUsageLogs", {
+          voucherId: voucher._id,
+          action: "updated" as any,
+          timestamp: now,
+          userId: currentUser._id,
+          userType: currentUser.role,
+          metadata: JSON.stringify({
+            bulkUpdate: true,
+            reason,
+            oldExpiration: voucher.expiresAt,
+            newExpiration: newExpirationDate,
+            updatedBy: currentUser.name,
+          }),
+          createdAt: now,
+        });
+
+        updatedCount++;
+      } catch (error) {
+        console.error(`Error updating voucher ${voucher._id}:`, error);
+        // Continue with other vouchers
+      }
+    }
+
+    return {
+      success: true,
+      updatedCount,
+      totalVouchers: vouchers.length,
+      message: `${updatedCount} vouchers atualizados com sucesso`,
+    };
+  },
+});

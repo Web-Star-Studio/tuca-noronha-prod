@@ -1,149 +1,277 @@
 import { v } from "convex/values";
 
-// Voucher status enum
+// Voucher status values
 export const VOUCHER_STATUS = {
   ACTIVE: "active",
-  USED: "used",
+  USED: "used", 
   CANCELLED: "cancelled",
   EXPIRED: "expired",
 } as const;
 
-// Voucher booking types
-export const VOUCHER_BOOKING_TYPES = {
+// Voucher action types for logging
+export const VOUCHER_ACTIONS = {
+  GENERATED: "generated",
+  EMAILED: "emailed",
+  DOWNLOADED: "downloaded",
+  SCANNED: "scanned",
+  USED: "used",
+  CANCELLED: "cancelled",
+} as const;
+
+// Booking types supported by vouchers
+export const BOOKING_TYPES = {
   ACTIVITY: "activity",
   EVENT: "event",
   RESTAURANT: "restaurant",
   VEHICLE: "vehicle",
-  PACKAGE: "package",
+  ACCOMMODATION: "accommodation",
 } as const;
 
-export type VoucherStatus = typeof VOUCHER_STATUS[keyof typeof VOUCHER_STATUS];
-export type VoucherBookingType = typeof VOUCHER_BOOKING_TYPES[keyof typeof VOUCHER_BOOKING_TYPES];
+// User types for logging
+export const USER_TYPES = {
+  CUSTOMER: "customer",
+  PARTNER: "partner",
+  EMPLOYEE: "employee",
+  ADMIN: "admin",
+} as const;
 
-// Voucher validator for mutations
-export const createVoucherValidator = {
+// Create voucher validator
+export const createVoucherValidator = v.object({
   bookingId: v.string(),
   bookingType: v.union(
     v.literal("activity"),
     v.literal("event"),
     v.literal("restaurant"),
     v.literal("vehicle"),
-    v.literal("package")
+    v.literal("accommodation")
   ),
-  customerInfo: v.object({
-    name: v.string(),
-    email: v.string(),
-    phone: v.string(),
-    document: v.optional(v.string()),
-  }),
-  assetInfo: v.object({
-    name: v.string(),
-    address: v.string(),
-    phone: v.optional(v.string()),
-    email: v.optional(v.string()),
-    description: v.optional(v.string()),
-  }),
-  bookingDetails: v.any(),
   partnerId: v.id("users"),
-  confirmationCode: v.string(),
-};
-
-// Activity booking details for voucher
-export const activityVoucherDetailsValidator = v.object({
-  date: v.string(),
-  time: v.string(),
-  participants: v.number(),
-  ticketType: v.optional(v.string()),
-  totalPrice: v.number(),
-  meetingPoint: v.optional(v.string()),
-  duration: v.optional(v.string()),
-  includes: v.optional(v.array(v.string())),
-  specialRequests: v.optional(v.string()),
+  customerId: v.id("users"),
+  expiresAt: v.optional(v.number()),
 });
 
-// Event booking details for voucher
-export const eventVoucherDetailsValidator = v.object({
-  date: v.string(),
-  time: v.string(),
-  quantity: v.number(),
-  ticketType: v.optional(v.string()),
-  totalPrice: v.number(),
-  location: v.string(),
-  sector: v.optional(v.string()),
-  seats: v.optional(v.string()),
-  specialRequests: v.optional(v.string()),
+// Update voucher validator
+export const updateVoucherValidator = v.object({
+  voucherId: v.id("vouchers"),
+  status: v.optional(v.union(
+    v.literal("active"),
+    v.literal("used"),
+    v.literal("cancelled"),
+    v.literal("expired")
+  )),
+  pdfUrl: v.optional(v.string()),
+  emailSent: v.optional(v.boolean()),
+  emailSentAt: v.optional(v.number()),
+  downloadCount: v.optional(v.number()),
+  scanCount: v.optional(v.number()),
+  lastScannedAt: v.optional(v.number()),
+  usedAt: v.optional(v.number()),
 });
 
-// Restaurant reservation details for voucher
-export const restaurantVoucherDetailsValidator = v.object({
-  date: v.string(),
-  time: v.string(),
-  partySize: v.number(),
-  table: v.optional(v.string()),
-  specialRequests: v.optional(v.string()),
-  menuType: v.optional(v.string()),
+// Voucher verification validator
+export const verifyVoucherValidator = v.object({
+  verificationToken: v.string(),
+  partnerId: v.optional(v.id("users")),
 });
 
-// Vehicle booking details for voucher
-export const vehicleVoucherDetailsValidator = v.object({
-  startDate: v.string(),
-  endDate: v.string(),
-  pickupLocation: v.string(),
-  returnLocation: v.string(),
-  vehicleModel: v.string(),
-  vehicleCategory: v.string(),
-  totalPrice: v.number(),
-  additionalDrivers: v.optional(v.number()),
-  insurance: v.optional(v.string()),
-  additionalOptions: v.optional(v.array(v.string())),
-  specialRequests: v.optional(v.string()),
+// Usage log validator
+export const createUsageLogValidator = v.object({
+  voucherId: v.id("vouchers"),
+  action: v.union(
+    v.literal("generated"),
+    v.literal("emailed"),
+    v.literal("downloaded"),
+    v.literal("scanned"),
+    v.literal("used"),
+    v.literal("cancelled")
+  ),
+  userId: v.optional(v.id("users")),
+  userType: v.optional(v.string()),
+  ipAddress: v.optional(v.string()),
+  userAgent: v.optional(v.string()),
+  location: v.optional(v.string()),
+  metadata: v.optional(v.string()),
 });
 
-// Package booking details for voucher
-export const packageVoucherDetailsValidator = v.object({
-  startDate: v.string(),
-  endDate: v.string(),
-  guests: v.number(),
-  totalPrice: v.number(),
-  includedItems: v.object({
-    accommodation: v.optional(v.string()),
-    vehicle: v.optional(v.string()),
-    activities: v.array(v.string()),
-    restaurants: v.array(v.string()),
-    events: v.array(v.string()),
-  }),
-  itinerary: v.optional(v.array(v.object({
-    day: v.number(),
-    title: v.string(),
-    description: v.string(),
-  }))),
-  specialRequests: v.optional(v.string()),
+// Partner voucher query validator
+export const getPartnerVouchersValidator = v.object({
+  partnerId: v.id("users"),
+  status: v.optional(v.union(
+    v.literal("active"),
+    v.literal("used"),
+    v.literal("cancelled"),
+    v.literal("expired")
+  )),
+  bookingType: v.optional(v.union(
+    v.literal("activity"),
+    v.literal("event"),
+    v.literal("restaurant"),
+    v.literal("vehicle"),
+    v.literal("accommodation")
+  )),
+  dateRange: v.optional(v.object({
+    from: v.number(),
+    to: v.number()
+  })),
+  limit: v.optional(v.number()),
+  offset: v.optional(v.number()),
 });
 
-// Voucher template data type
-export interface VoucherTemplateData {
-  voucherNumber: string;
-  issueDate: Date;
-  confirmationCode: string;
-  customerInfo: {
+// Customer voucher query validator
+export const getCustomerVouchersValidator = v.object({
+  customerId: v.id("users"),
+  status: v.optional(v.union(
+    v.literal("active"),
+    v.literal("used"),
+    v.literal("cancelled"),
+    v.literal("expired")
+  )),
+  limit: v.optional(v.number()),
+  offset: v.optional(v.number()),
+});
+
+// Voucher template validator
+export const createVoucherTemplateValidator = v.object({
+  name: v.string(),
+  assetType: v.string(),
+  version: v.string(),
+  htmlTemplate: v.string(),
+  cssStyles: v.string(),
+  isDefault: v.optional(v.boolean()),
+  partnerId: v.optional(v.id("users")),
+  organizationId: v.optional(v.id("partnerOrganizations")),
+  metadata: v.optional(v.string()),
+});
+
+// Mark voucher as used validator
+export const useVoucherValidator = v.object({
+  voucherId: v.id("vouchers"),
+  partnerId: v.id("users"),
+  usageNotes: v.optional(v.string()),
+  location: v.optional(v.string()),
+});
+
+// Cancel voucher validator
+export const cancelVoucherValidator = v.object({
+  voucherId: v.id("vouchers"),
+  reason: v.string(),
+  userId: v.id("users"),
+});
+
+// QR Code data structure
+export interface QRCodeData {
+  v: string;         // Version
+  t: string;         // Type ("voucher")
+  n: string;         // Voucher number
+  tk: string;        // Verification token
+  exp: number;       // Expiration timestamp
+  sig: string;       // Security signature
+}
+
+// Voucher display data interface
+export interface VoucherDisplayData {
+  voucher: {
+    voucherNumber: string;
+    status: string;
+    qrCode: string;
+    generatedAt: number;
+    expiresAt?: number;
+    usedAt?: number;
+    downloadCount: number;
+    scanCount: number;
+  };
+  booking: {
+    id: string;
+    type: string;
+    confirmationCode: string;
+    status: string;
+    date: string;
+    time?: string;
+    participants?: number;
+    totalAmount?: number;
+  };
+  customer: {
     name: string;
     email: string;
     phone: string;
-    document?: string;
   };
-  assetInfo: {
+  asset: {
     name: string;
-    address: string;
-    phone?: string;
-    email?: string;
+    location?: string;
     description?: string;
+    type: string;
   };
-  bookingType: VoucherBookingType;
-  bookingDetails: any;
-  qrCode?: string;
-  validFrom?: Date;
-  validUntil?: Date;
-  partnerName?: string;
-  partnerLogo?: string;
-  termsAndConditions?: string[];
-} 
+  partner: {
+    name: string;
+    contactInfo?: string;
+  };
+}
+
+// Voucher template data interface
+export interface VoucherTemplateData extends VoucherDisplayData {
+  brandInfo: {
+    logoUrl?: string;
+    companyName: string;
+    website?: string;
+    supportEmail: string;
+    supportPhone: string;
+  };
+  instructions: {
+    checkIn: string[];
+    preparation: string[];
+    cancellation: string;
+  };
+  termsAndConditions: string;
+}
+
+// Asset-specific data interfaces
+export interface ActivityVoucherData extends VoucherTemplateData {
+  activity: {
+    meetingPoint: string;
+    equipmentProvided: string[];
+    difficultyLevel: string;
+    ageRestrictions: string;
+    duration: string;
+  };
+}
+
+export interface EventVoucherData extends VoucherTemplateData {
+  event: {
+    venue: string;
+    dressCode?: string;
+    schedule: string;
+    ticketType: string;
+  };
+}
+
+export interface RestaurantVoucherData extends VoucherTemplateData {
+  restaurant: {
+    reservationTime: string;
+    partySize: number;
+    specialRequests?: string;
+    dietaryRequirements?: string;
+  };
+}
+
+export interface VehicleVoucherData extends VoucherTemplateData {
+  vehicle: {
+    pickupLocation: string;
+    returnLocation: string;
+    vehicleDetails: string;
+    driverRequirements: string;
+    rentalPeriod: string;
+  };
+}
+
+export interface AccommodationVoucherData extends VoucherTemplateData {
+  accommodation: {
+    checkInTime: string;
+    checkOutTime: string;
+    roomType: string;
+    guestCount: number;
+    amenities: string[];
+  };
+}
+
+// Booking type for vouchers
+export type VoucherBookingType = "activity" | "event" | "restaurant" | "vehicle" | "accommodation" | "package";

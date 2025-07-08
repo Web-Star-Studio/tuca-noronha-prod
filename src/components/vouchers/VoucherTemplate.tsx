@@ -54,11 +54,11 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Voucher de {getAssetTypeLabel()}</h1>
-            <p className="text-gray-600 mt-1">Número: {voucherData.voucherNumber}</p>
+            <p className="text-gray-600 mt-1">Número: {voucherData.voucher.voucherNumber}</p>
           </div>
           <div className="text-right">
-            {voucherData.partnerLogo ? (
-              <img src={voucherData.partnerLogo} alt="Logo" className="h-16 mb-2" />
+            {voucherData.brandInfo.logoUrl ? (
+              <img src={voucherData.brandInfo.logoUrl} alt="Logo" className="h-16 mb-2" />
             ) : (
               <div className="flex items-center gap-2 mb-2">
                 {getAssetIcon()}
@@ -66,7 +66,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
               </div>
             )}
             <p className="text-sm text-gray-600">
-              Emitido em: {format(voucherData.issueDate, "dd/MM/yyyy", { locale: ptBR })}
+              Emitido em: {format(voucherData.voucher.generatedAt, "dd/MM/yyyy", { locale: ptBR })}
             </p>
           </div>
         </div>
@@ -78,43 +78,28 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         <div className="md:col-span-2">
           <h2 className="text-xl font-semibold mb-4">Informações do Cliente</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="font-medium text-lg mb-2">{voucherData.customerInfo.name}</p>
+            <p className="font-medium text-lg mb-2">{voucherData.customer.name}</p>
             <div className="space-y-1 text-gray-600">
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                {voucherData.customerInfo.email}
+                {voucherData.customer.email}
               </p>
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                {voucherData.customerInfo.phone}
+                {voucherData.customer.phone}
               </p>
-              {voucherData.customerInfo.document && (
-                <p>CPF: {voucherData.customerInfo.document}</p>
-              )}
             </div>
           </div>
 
           {/* Asset Info */}
           <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Serviço</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="font-medium text-lg mb-2">{voucherData.assetInfo.name}</p>
+            <p className="font-medium text-lg mb-2">{voucherData.asset.name}</p>
             <div className="space-y-1 text-gray-600">
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                {voucherData.assetInfo.address}
+                {voucherData.asset.location}
               </p>
-              {voucherData.assetInfo.phone && (
-                <p className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  {voucherData.assetInfo.phone}
-                </p>
-              )}
-              {voucherData.assetInfo.email && (
-                <p className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  {voucherData.assetInfo.email}
-                </p>
-              )}
             </div>
           </div>
         </div>
@@ -122,14 +107,14 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         {/* QR Code */}
         <div className="flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-4">QR Code</h2>
-          {voucherData.qrCode && (
+          {voucherData.voucher.qrCode && (
             <div className="bg-white p-4 border-2 border-gray-200 rounded-lg">
-              <QRCodeSVG value={voucherData.qrCode} size={160} />
+              <QRCodeSVG value={voucherData.voucher.qrCode} size={160} />
             </div>
           )}
           <p className="text-sm text-gray-600 mt-2 text-center">
             Código de Confirmação:<br />
-            <span className="font-mono font-semibold">{voucherData.confirmationCode}</span>
+            <span className="font-mono font-semibold">{voucherData.booking.confirmationCode}</span>
           </p>
         </div>
       </div>
@@ -138,7 +123,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       <div className="border-t-2 border-gray-200 pt-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Detalhes da Reserva</h2>
         <div className="bg-gray-50 p-4 rounded-lg">
-          {renderBookingDetails(assetType, voucherData.bookingDetails)}
+          {renderBookingDetails(assetType, voucherData.booking)}
         </div>
       </div>
 
@@ -146,11 +131,9 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       {voucherData.termsAndConditions && voucherData.termsAndConditions.length > 0 && (
         <div className="border-t-2 border-gray-200 pt-6">
           <h2 className="text-xl font-semibold mb-4">Termos e Condições</h2>
-          <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-            {voucherData.termsAndConditions.map((term, index) => (
-              <li key={index}>{term}</li>
-            ))}
-          </ul>
+          <div className="text-sm text-gray-600">
+            {voucherData.termsAndConditions}
+          </div>
         </div>
       )}
 

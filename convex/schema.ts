@@ -1077,56 +1077,6 @@ export default defineSchema({
     .index("by_confirmation_code", ["confirmationCode"])
     .index("by_package_dates", ["packageId", "startDate", "endDate"]),
 
-  // Vouchers System
-  vouchers: defineTable({
-    bookingId: v.string(), // ID genérico para qualquer tipo de reserva
-    bookingType: v.union(
-      v.literal("activity"),
-      v.literal("event"),
-      v.literal("restaurant"),
-      v.literal("vehicle"),
-      v.literal("package")
-    ),
-    voucherNumber: v.string(), // Número único do voucher
-    issueDate: v.number(),
-    customerInfo: v.object({
-      name: v.string(),
-      email: v.string(),
-      phone: v.string(),
-      document: v.optional(v.string()), // CPF ou outro documento
-    }),
-    assetInfo: v.object({
-      name: v.string(),
-      address: v.string(),
-      phone: v.optional(v.string()),
-      email: v.optional(v.string()),
-      description: v.optional(v.string()),
-    }),
-    bookingDetails: v.any(), // Específico por tipo de asset
-    partnerId: v.id("users"),
-    status: v.union(
-      v.literal("active"),
-      v.literal("used"),
-      v.literal("cancelled"),
-      v.literal("expired")
-    ),
-    qrCode: v.optional(v.string()), // URL ou dados do QR Code
-    validFrom: v.optional(v.number()),
-    validUntil: v.optional(v.number()),
-    usedAt: v.optional(v.number()),
-    cancelledAt: v.optional(v.number()),
-    cancelReason: v.optional(v.string()),
-    createdBy: v.id("users"), // Usuário que criou o voucher
-    confirmationCode: v.string(), // Código de confirmação da reserva
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_booking", ["bookingId", "bookingType"])
-    .index("by_voucher_number", ["voucherNumber"])
-    .index("by_partner", ["partnerId"])
-    .index("by_status", ["status"])
-    .index("by_user", ["customerInfo.email"])
-    .index("by_confirmation_code", ["confirmationCode"]),
 
   // Wishlist/Favorites System
   wishlistItems: defineTable({
@@ -1885,4 +1835,93 @@ export default defineSchema({
     .index("by_performed_at", ["performedAt"])
     .index("by_coupon_action", ["couponId", "actionType"])
     .index("by_coupon_performed_at", ["couponId", "performedAt"]),
+
+  // Voucher System Tables
+  vouchers: defineTable({
+    // Identification
+    voucherNumber: v.string(),        // Format: VCH-YYYYMMDD-XXXX
+    qrCode: v.string(),               // QR code content/URL
+    
+    // Booking Reference
+    bookingId: v.string(),            // Unified booking ID as string (support for different types)
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("accommodation"), v.literal("package")),
+    
+    // Status Management
+    status: v.union(v.literal("active"), v.literal("used"), v.literal("cancelled"), v.literal("expired")),
+    generatedAt: v.number(),
+    expiresAt: v.optional(v.number()),
+    usedAt: v.optional(v.number()),
+    
+    // PDF and Delivery
+    pdfUrl: v.optional(v.string()),   // Secure cloud storage URL
+    emailSent: v.boolean(),
+    emailSentAt: v.optional(v.number()),
+    downloadCount: v.number(),
+    
+    // Verification
+    verificationToken: v.string(),    // For QR code security
+    lastScannedAt: v.optional(v.number()),
+    scanCount: v.number(),
+    
+    // Metadata
+    partnerId: v.id("users"),
+    customerId: v.id("users"),
+    isActive: v.boolean(),
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_voucher_number", ["voucherNumber"])
+    .index("by_booking", ["bookingId", "bookingType"])
+    .index("by_status", ["status", "isActive"])
+    .index("by_partner", ["partnerId", "status"])
+    .index("by_customer", ["customerId", "status"])
+    .index("by_expiration", ["expiresAt", "status"])
+    .index("by_verification_token", ["verificationToken"])
+    .index("by_generated_at", ["generatedAt"])
+    .index("by_partner_type", ["partnerId", "bookingType"]),
+
+  voucherUsageLogs: defineTable({
+    voucherId: v.id("vouchers"),
+    action: v.union(v.literal("generated"), v.literal("emailed"), v.literal("downloaded"), v.literal("scanned"), v.literal("used"), v.literal("cancelled")),
+    timestamp: v.number(),
+    userId: v.optional(v.id("users")),
+    userType: v.optional(v.string()),  // "customer", "partner", "employee", "admin"
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    location: v.optional(v.string()),
+    metadata: v.optional(v.string()),  // JSON string for additional context
+    
+    // Timestamps
+    createdAt: v.number(),
+  })
+    .index("by_voucher", ["voucherId", "timestamp"])
+    .index("by_action", ["action", "timestamp"])
+    .index("by_user", ["userId", "timestamp"])
+    .index("by_voucher_action", ["voucherId", "action"])
+    .index("by_user_action", ["userId", "action"]),
+
+  voucherTemplates: defineTable({
+    name: v.string(),
+    assetType: v.string(),
+    version: v.string(),
+    htmlTemplate: v.string(),         // HTML template content
+    cssStyles: v.string(),            // CSS styles
+    isActive: v.boolean(),
+    isDefault: v.boolean(),
+    createdBy: v.id("users"),
+    partnerId: v.optional(v.id("users")), // For custom partner templates
+    organizationId: v.optional(v.id("partnerOrganizations")),
+    metadata: v.optional(v.string()),  // JSON configuration
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_asset_type", ["assetType", "isActive"])
+    .index("by_partner", ["partnerId", "isActive"])
+    .index("by_version", ["assetType", "version"])
+    .index("by_default", ["assetType", "isDefault"])
+    .index("by_organization", ["organizationId", "assetType"]),
 });

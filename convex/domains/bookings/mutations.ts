@@ -905,6 +905,15 @@ export const confirmActivityBooking = mutation({
       updatedAt: Date.now(),
     });
 
+    // Create voucher for confirmed booking
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
+      bookingId: booking._id,
+      bookingType: "activity",
+      partnerId: user._id,
+      customerId: booking.userId,
+      expiresAt: booking.date,
+    });
+
     // Schedule notification for the user
     await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingConfirmationNotification, {
       userId: booking.userId,
@@ -917,20 +926,25 @@ export const confirmActivityBooking = mutation({
       partnerName: user.name ?? "Equipe de Reservas",
     });
 
-    // Schedule voucher email
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
-      bookingId: booking._id,
-      bookingType: "activity",
-      customerInfo: booking.customerInfo,
-      partnerId: activity.partnerId,
-      assetInfo: args.assetInfo, // Passando para a ação
-      bookingDetails: {
-        date: booking.date,
-        time: booking.time,
-        participants: booking.participants,
-      },
-      confirmationCode: booking.confirmationCode,
-    });
+    // Get voucher details for email
+    const voucher: any = await ctx.db.get(voucherId);
+    if (voucher) {
+      // Send voucher email
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        bookingId: booking._id,
+        bookingType: "activity",
+        customerInfo: booking.customerInfo,
+        partnerId: activity.partnerId,
+        assetInfo: args.assetInfo, // Passando para a ação
+        bookingDetails: {
+          date: booking.date,
+          time: booking.time,
+          participants: booking.participants,
+        },
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+      });
+    }
 
     return null;
   },
@@ -996,13 +1010,11 @@ export const confirmEventBooking = mutation({
     });
 
     // Create voucher for confirmed booking
-    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
       bookingId: booking._id,
       bookingType: "event",
-      userId: booking.userId,
       partnerId: user._id,
-      assetId: event._id,
-      customerInfo: booking.customerInfo,
+      customerId: booking.userId,
       expiresAt: event.date,
     });
 
@@ -1105,17 +1117,11 @@ export const confirmRestaurantReservation = mutation({
     });
 
     // Create voucher for confirmed booking
-    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
       bookingId: booking._id,
       bookingType: "restaurant",
-      userId: booking.userId,
       partnerId: user._id,
-      assetId: restaurant._id,
-      customerInfo: {
-        name: booking.name,
-        email: booking.email,
-        phone: booking.phone,
-      },
+      customerId: booking.userId,
       expiresAt: booking.date,
     });
 
@@ -1216,13 +1222,11 @@ export const confirmVehicleBooking = mutation({
     });
 
     // Create voucher for confirmed booking
-    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
       bookingId: booking._id,
       bookingType: "vehicle",
-      userId: booking.userId,
       partnerId: user._id,
-      assetId: vehicle._id,
-      customerInfo: booking.customerInfo,
+      customerId: booking.userId,
       expiresAt: booking.endDate,
     });
 

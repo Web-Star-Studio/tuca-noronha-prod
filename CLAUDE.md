@@ -6,27 +6,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Development
-npm run dev              # Start Next.js development server with Turbo
-npx convex dev          # Start Convex backend in development mode
+bun run dev              # Start Next.js development server with Turbo
+bunx convex dev          # Start Convex backend in development mode
 
 # Build and Production
-npm run build           # Build Next.js for production
-npm start              # Start Next.js production server
+bun run build           # Build Next.js for production
+bun start              # Start Next.js production server
 
 # Code Quality
-npm run lint           # Run ESLint
-npx tsc --noEmit      # TypeScript type checking
+bun run lint           # Run ESLint
+bunx tsc --noEmit      # TypeScript type checking
 
 # Testing
-npm run test:openai            # Test OpenAI integration
-npm run test:integration       # Test Convex integration
-npm run test:email            # Test email functionality
-npm run test:webhook          # Test subscription webhooks
-npm run test:webhook-endpoint # Test webhook endpoints
+bun run test:openai            # Test OpenAI integration
+bun run test:integration       # Test Convex integration
+bun run test:email            # Test email functionality
+bun run test:webhook          # Test subscription webhooks
+bun run test:webhook-endpoint # Test webhook endpoints
 
 # Special Scripts
-npm run setup:subscription    # Setup guide subscription system
-npm run browser-tools-server # Start browser tools server
+bun run setup:subscription    # Setup guide subscription system
+bun run browser-tools-server # Start browser tools server
 ```
 
 ## Architecture Overview

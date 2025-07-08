@@ -1032,6 +1032,8 @@ const restaurantAssetValidator = v.object({
 const eventAssetValidator = v.object({
   ...baseAssetFields,
   assetType: v.literal("events"),
+  title: v.optional(v.string()),
+  shortDescription: v.optional(v.string()),
   date: v.string(),
   time: v.string(),
   location: v.string(),
@@ -1070,6 +1072,8 @@ const eventAssetValidator = v.object({
   stripePaymentLinkId: v.optional(v.string()),
   stripePriceId: v.optional(v.string()),
   stripeProductId: v.optional(v.string()),
+  // Adicionando o campo category para evitar erro de validação
+  category: v.optional(v.string()),
 });
 
 const activityAssetValidator = v.object({

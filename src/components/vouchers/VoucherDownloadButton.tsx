@@ -38,7 +38,7 @@ export function VoucherDownloadButton({
 
   const handleClick = () => {
     // Open voucher in new tab
-    window.open(`/voucher/${voucher.confirmationCode}`, "_blank");
+    window.open(`/voucher/${voucher.voucherNumber}`, "_blank");
   };
 
   return (

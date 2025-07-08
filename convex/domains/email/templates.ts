@@ -263,7 +263,7 @@ export const getBookingConfirmationTemplate = (data: any): string => {
             <p><strong>Importante:</strong> Guarde este código de confirmação. Você precisará dele no dia da sua experiência.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tucanoronha.com/meu-painel" class="button">
+                <a href="https://tuca-noronha.vercel.app/reservas" class="button">
                     Ver Minhas Reservas
                 </a>
             </div>
@@ -275,8 +275,8 @@ export const getBookingConfirmationTemplate = (data: any): string => {
         
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-            <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
-            <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
         </div>
     </div>
   `;
@@ -343,8 +343,8 @@ export const getBookingCancelledTemplate = (data: any): string => {
         
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-            <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
-            <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
         </div>
     </div>
   `;
@@ -411,8 +411,8 @@ export const getPackageRequestReceivedTemplate = (data: any): string => {
         
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-            <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
-            <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
         </div>
     </div>
   `;
@@ -511,8 +511,8 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
         
         <div class="footer">
             <p>Tuca Noronha - Portal do Parceiro</p>
-            <p>📧 parceiros@tucanoronha.com | 📱 (81) 99999-9999</p>
-            <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
+            <p>📧 parceiros@tucanoronha.com | 📱 (81) 979097547</p>
+            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
         </div>
     </div>
   `;
@@ -600,7 +600,7 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
             </div>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tucanoronha.com/${data.userRole === 'traveler' ? 'meu-painel' : 'admin/dashboard'}" class="button">
+                <a href="https://tuca-noronha.vercel.app/${data.userRole === 'traveler' ? 'meu-painel' : 'admin/dashboard'}" class="button">
                     Acessar Plataforma
                 </a>
             </div>
@@ -612,8 +612,8 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
         
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-            <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
-            <p><a href="https://tucanoronha.com">www.tucanoronha.com</a></p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
         </div>
     </div>
   `;
@@ -650,7 +650,7 @@ export const getEmailTemplate = (data: EmailData): string => {
             </div>
             <div class="footer">
                 <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-                <p>📧 suporte@tucanoronha.com | 📱 (81) 99999-9999</p>
+                <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
             </div>
         </div>
       `);

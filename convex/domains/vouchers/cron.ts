@@ -28,8 +28,8 @@ export const expireVouchers = internalMutation({
       for (const voucher of activeVouchers) {
         try {
           // Check if voucher has passed its expiration date
-          if (!voucher.validUntil) continue; // Skip if no expiration date set
-          const expirationDate = voucher.validUntil;
+          if (!voucher.expiresAt) continue; // Skip if no expiration date set
+          const expirationDate = voucher.expiresAt;
           
           if (expirationDate < now) {
             await ctx.db.patch(voucher._id, {

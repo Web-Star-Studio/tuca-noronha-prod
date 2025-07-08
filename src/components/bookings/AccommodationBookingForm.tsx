@@ -359,9 +359,6 @@ export function AccommodationBookingForm({
               assetType="accommodation"
               assetId={accommodationId}
               totalAmount={getFinalPrice()}
-              originalAmount={totalPrice}
-              discountAmount={getDiscountAmount()}
-              couponCode={appliedCoupon?.code}
               onSuccess={handlePaymentSuccess}
               onCancel={() => setPaymentOpen(false)}
             />

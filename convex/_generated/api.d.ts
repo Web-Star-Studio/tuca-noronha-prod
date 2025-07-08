@@ -133,6 +133,7 @@ import type * as domains_vouchers_index from "../domains/vouchers/index.js";
 import type * as domains_vouchers_mutations from "../domains/vouchers/mutations.js";
 import type * as domains_vouchers_queries from "../domains/vouchers/queries.js";
 import type * as domains_vouchers_types from "../domains/vouchers/types.js";
+import type * as domains_vouchers_utils from "../domains/vouchers/utils.js";
 import type * as functions from "../functions.js";
 import type * as guide from "../guide.js";
 import type * as http from "../http.js";
@@ -279,6 +280,7 @@ declare const fullApi: ApiFromModules<{
   "domains/vouchers/mutations": typeof domains_vouchers_mutations;
   "domains/vouchers/queries": typeof domains_vouchers_queries;
   "domains/vouchers/types": typeof domains_vouchers_types;
+  "domains/vouchers/utils": typeof domains_vouchers_utils;
   functions: typeof functions;
   guide: typeof guide;
   http: typeof http;

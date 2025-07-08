@@ -96,24 +96,59 @@ export function VoucherViewer({ voucherId, confirmationCode }: VoucherViewerProp
 
   // Prepare voucher data for template
   const voucherData: VoucherTemplateData = {
-    voucherNumber: voucher.voucherNumber,
-    issueDate: new Date(voucher.issueDate),
-    confirmationCode: voucher.confirmationCode,
-    customerInfo: voucher.customerInfo,
-    assetInfo: voucher.assetInfo,
-    bookingType: voucher.bookingType,
-    bookingDetails: voucher.bookingDetails,
-    qrCode: voucher.qrCode,
-    validFrom: voucher.validFrom ? new Date(voucher.validFrom) : undefined,
-    validUntil: voucher.validUntil ? new Date(voucher.validUntil) : undefined,
-    partnerName: voucher.partner?.name,
-    partnerLogo: voucher.partner?.image,
+    voucher: {
+      voucherNumber: voucher.voucherNumber,
+      status: voucher.status,
+      qrCode: voucher.qrCode,
+      generatedAt: voucher.generatedAt,
+      expiresAt: voucher.expiresAt,
+      usedAt: voucher.usedAt,
+      downloadCount: voucher.downloadCount,
+      scanCount: voucher.scanCount,
+    },
+    booking: {
+      id: voucher.bookingId || "",
+      type: voucher.bookingType,
+      confirmationCode: voucher.confirmationCode || "",
+      status: voucher.status,
+      date: voucher.booking?.date || voucher.validFrom || new Date().toISOString(),
+      time: voucher.booking?.time,
+      participants: voucher.booking?.participants,
+      totalAmount: voucher.booking?.totalAmount,
+    },
+    customer: {
+      name: voucher.customer?.name || "",
+      email: voucher.customer?.email || "",
+      phone: voucher.customer?.phone || "",
+    },
+    asset: {
+      name: voucher.asset?.name || "",
+      location: voucher.asset?.location,
+      description: voucher.asset?.description,
+      type: voucher.bookingType,
+    },
+    partner: {
+      name: voucher.partner?.name || "",
+      contactInfo: voucher.partner?.contactInfo,
+    },
+    brandInfo: {
+      logoUrl: voucher.partner?.image,
+      companyName: "Tuca Noronha",
+      website: "https://tucanonronha.com",
+      supportEmail: "suporte@tucanonronha.com",
+      supportPhone: "(11) 99999-9999",
+    },
+    instructions: {
+      checkIn: ["Chegue 15 minutos antes do horário", "Apresente este voucher"],
+      preparation: ["Traga documento de identidade", "Siga as instruções do estabelecimento"],
+      cancellation: "Cancelamentos seguem as políticas do estabelecimento",
+    },
     termsAndConditions: [
       "Este voucher é pessoal e intransferível",
       "Apresente este voucher no estabelecimento",
       "Sujeito à disponibilidade e condições do estabelecimento",
       "Em caso de cancelamento, siga as políticas do estabelecimento",
-    ],
+    ].join(". "),
   };
 
   const handleDownloadPDF = async () => {
@@ -156,7 +191,7 @@ export function VoucherViewer({ voucherId, confirmationCode }: VoucherViewerProp
       try {
         await navigator.share({
           title: `Voucher ${voucher.voucherNumber}`,
-          text: `Voucher de ${voucherData.assetInfo.name}`,
+          text: `Voucher de ${voucherData.asset.name}`,
           url: shareUrl,
         });
       } catch (error) {

@@ -501,13 +501,11 @@ export const confirmPackageBooking = mutation({
     });
 
     // Create voucher for confirmed booking
-    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.createVoucher, {
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
       bookingId: booking._id,
       bookingType: "package",
-      userId: booking.userId,
       partnerId: user._id,
-      assetId: packageData._id,
-      customerInfo: booking.customerInfo,
+      customerId: booking.userId,
       expiresAt: booking.endDate,
     });
 
