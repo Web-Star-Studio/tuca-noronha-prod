@@ -43,7 +43,8 @@ export const createVoucherValidator = v.object({
     v.literal("event"),
     v.literal("restaurant"),
     v.literal("vehicle"),
-    v.literal("accommodation")
+    v.literal("accommodation"),
+    v.literal("package")
   ),
   partnerId: v.id("users"),
   customerId: v.id("users"),

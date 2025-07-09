@@ -1,4 +1,4 @@
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 import { 
   verifyVoucherValidator,
@@ -6,6 +6,50 @@ import {
   getCustomerVouchersValidator
 } from "./types";
 import { isVoucherExpired, parseQRCodeString, verifyToken } from "./utils";
+
+/**
+ * Get voucher by confirmation code
+ */
+export const getVoucherByConfirmationCode = query({
+  args: { confirmationCode: v.string() },
+  handler: async (ctx, { confirmationCode }) => {
+    // Find voucher by confirmation code (using booking reference)
+    const vouchers = await ctx.db
+      .query("vouchers")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+    
+    // Find voucher associated with this confirmation code
+    for (const voucher of vouchers) {
+      // Check different booking types for confirmation code match
+      let booking: any = null;
+      
+      switch (voucher.bookingType) {
+        case "activity":
+          booking = await ctx.db.get(voucher.bookingId as any);
+          break;
+        case "event":
+          booking = await ctx.db.get(voucher.bookingId as any);
+          break;
+        case "restaurant":
+          booking = await ctx.db.get(voucher.bookingId as any);
+          break;
+        case "vehicle":
+          booking = await ctx.db.get(voucher.bookingId as any);
+          break;
+        case "accommodation":
+          booking = await ctx.db.get(voucher.bookingId as any);
+          break;
+      }
+      
+      if (booking?.confirmationCode === confirmationCode) {
+        return await getVoucherData(ctx, voucher.voucherNumber);
+      }
+    }
+    
+    return null;
+  },
+});
 
 /**
  * Helper function to get voucher data - internal use only
@@ -146,7 +190,12 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
 export const getVoucherByNumber = query({
   args: { voucherNumber: v.string() },
   handler: async (ctx, { voucherNumber }) => {
-    return await getVoucherData(ctx, voucherNumber);
+    try {
+      return await getVoucherData(ctx, voucherNumber);
+    } catch (error) {
+      // Return null if voucher not found (to match VoucherViewer expectations)
+      return null;
+    }
   },
 });
 
@@ -306,6 +355,110 @@ export const getPartnerVouchers = query({
     let query = ctx.db
       .query("vouchers")
       .withIndex("by_partner", (q) => q.eq("partnerId", partnerId))
+      .filter((q) => q.eq(q.field("isActive"), true));
+
+    // Apply status filter
+    if (status) {
+      query = query.filter((q) => q.eq(q.field("status"), status));
+    }
+
+    // Apply booking type filter
+    if (bookingType) {
+      query = query.filter((q) => q.eq(q.field("bookingType"), bookingType));
+    }
+
+    // Apply date range filter
+    if (dateRange) {
+      query = query.filter((q) => 
+        q.and(
+          q.gte(q.field("generatedAt"), dateRange.from),
+          q.lte(q.field("generatedAt"), dateRange.to)
+        )
+      );
+    }
+
+    // Get vouchers with pagination
+    const vouchers = await query
+      .order("desc")
+      .take(limit + offset);
+
+    const paginatedVouchers = vouchers.slice(offset, offset + limit);
+
+    // Enrich vouchers with booking and asset data
+    const enrichedVouchers = await Promise.all(
+      paginatedVouchers.map(async (voucher) => {
+        try {
+          const voucherData = await getVoucherData(ctx, voucher.voucherNumber);
+          return voucherData;
+        } catch (error) {
+          // Return basic voucher data if enrichment fails
+          return {
+            voucher: {
+              voucherNumber: voucher.voucherNumber,
+              status: voucher.status,
+              qrCode: voucher.qrCode,
+              generatedAt: voucher.generatedAt,
+              expiresAt: voucher.expiresAt,
+              usedAt: voucher.usedAt,
+              downloadCount: voucher.downloadCount,
+              scanCount: voucher.scanCount,
+              pdfUrl: voucher.pdfUrl,
+            },
+            booking: null,
+            customer: null,
+            asset: null,
+            partner: null,
+          };
+        }
+      })
+    );
+
+    return {
+      vouchers: enrichedVouchers,
+      hasMore: vouchers.length > offset + limit,
+      total: vouchers.length,
+    };
+  },
+});
+
+/**
+ * Get all vouchers for master users
+ */
+export const getAllVouchers = query({
+  args: {
+    status: v.optional(v.string()),
+    bookingType: v.optional(v.string()),
+    dateRange: v.optional(v.object({
+      from: v.number(),
+      to: v.number()
+    })),
+    limit: v.optional(v.number()),
+    offset: v.optional(v.number())
+  },
+  handler: async (ctx, { status, bookingType, dateRange, limit = 50, offset = 0 }) => {
+    // Get current user for RBAC
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Only masters can access this query
+    if (currentUser.role !== "master") {
+      throw new Error("Acesso negado - apenas masters podem ver todos os vouchers");
+    }
+
+    // Build query
+    let query = ctx.db
+      .query("vouchers")
       .filter((q) => q.eq(q.field("isActive"), true));
 
     // Apply status filter

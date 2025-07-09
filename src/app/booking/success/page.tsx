@@ -285,17 +285,30 @@ export default function BookingSuccessPage() {
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          {/* Voucher Download Button */}
+          {/* Voucher Buttons */}
           {bookingData.paymentStatus === 'succeeded' && bookingData.bookingId && (
-            <VoucherDownloadButton
-              bookingId={bookingData.bookingId}
-              bookingType={bookingData.assetType}
-              variant="default"
-              size="default"
-              className="w-full"
-              showIcon={true}
-              showLabel={true}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <VoucherDownloadButton
+                bookingId={bookingData.bookingId}
+                bookingType={bookingData.assetType}
+                variant="default"
+                size="default"
+                className="w-full"
+                showIcon={true}
+                showLabel={true}
+                downloadPDF={false}
+              />
+              <VoucherDownloadButton
+                bookingId={bookingData.bookingId}
+                bookingType={bookingData.assetType}
+                variant="outline"
+                size="default"
+                className="w-full"
+                showIcon={true}
+                showLabel={true}
+                downloadPDF={true}
+              />
+            </div>
           )}
           
           {bookingData.paymentDetails?.receiptUrl && (

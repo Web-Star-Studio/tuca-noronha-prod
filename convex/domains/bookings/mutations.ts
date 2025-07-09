@@ -929,20 +929,23 @@ export const confirmActivityBooking = mutation({
     // Get voucher details for email
     const voucher: any = await ctx.db.get(voucherId);
     if (voucher) {
-      // Send voucher email
+      // Send voucher email with PDF attachment
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
-        bookingId: booking._id,
+        customerEmail: booking.customerInfo.email,
+        customerName: booking.customerInfo.name,
+        assetName: activity.title,
         bookingType: "activity",
-        customerInfo: booking.customerInfo,
-        partnerId: activity.partnerId,
-        assetInfo: args.assetInfo, // Passando para a ação
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+        bookingDate: booking.date,
+        totalPrice: booking.totalPrice,
+        partnerName: user.name,
+        attachPDF: true,
         bookingDetails: {
           date: booking.date,
           time: booking.time,
           participants: booking.participants,
         },
-        confirmationCode: booking.confirmationCode,
-        voucherNumber: voucher.voucherNumber,
       });
     }
 
@@ -1033,7 +1036,7 @@ export const confirmEventBooking = mutation({
     // Get voucher details for email
     const voucher: any = await ctx.db.get(voucherId);
     if (voucher) {
-      // Send voucher email
+      // Send voucher email with PDF attachment
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
         customerEmail: booking.customerInfo.email,
         customerName: booking.customerInfo.name,
@@ -1044,6 +1047,7 @@ export const confirmEventBooking = mutation({
         bookingDate: event.date,
         totalPrice: booking.totalPrice,
         partnerName: user.name,
+        attachPDF: true,
         bookingDetails: {
           quantity: booking.quantity,
           time: event.time,
@@ -1140,7 +1144,7 @@ export const confirmRestaurantReservation = mutation({
     // Get voucher details for email
     const voucher: any = await ctx.db.get(voucherId);
     if (voucher) {
-      // Send voucher email
+      // Send voucher email with PDF attachment
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
         customerEmail: booking.email,
         customerName: booking.name,
@@ -1150,6 +1154,7 @@ export const confirmRestaurantReservation = mutation({
         voucherNumber: voucher.voucherNumber,
         bookingDate: `${booking.date} ${booking.time}`,
         partnerName: user.name,
+        attachPDF: true,
         bookingDetails: {
           partySize: booking.partySize,
           time: booking.time,
@@ -1245,7 +1250,7 @@ export const confirmVehicleBooking = mutation({
     // Get voucher details for email
     const voucher: any = await ctx.db.get(voucherId);
     if (voucher) {
-      // Send voucher email
+      // Send voucher email with PDF attachment
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
         customerEmail: booking.customerInfo?.email || "",
         customerName: booking.customerInfo?.name || "",
@@ -1256,6 +1261,7 @@ export const confirmVehicleBooking = mutation({
         bookingDate: booking.startDate,
         totalPrice: booking.totalPrice,
         partnerName: user.name,
+        attachPDF: true,
         bookingDetails: {
           vehicleModel: vehicle.model,
           pickupLocation: booking.pickupLocation,
@@ -1263,6 +1269,107 @@ export const confirmVehicleBooking = mutation({
           startDate: booking.startDate,
           endDate: booking.endDate,
           additionalDrivers: booking.additionalDrivers,
+        },
+      });
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Confirm accommodation booking (Partner only)
+ */
+export const confirmAccommodationBooking = mutation({
+  args: {
+    bookingId: v.id("accommodationBookings"),
+    partnerNotes: v.optional(v.string()),
+    assetInfo: assetInfoValidator,
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      throw new Error("Reserva não encontrada");
+    }
+
+    // Get accommodation to verify ownership
+    const accommodation = await ctx.db.get(booking.accommodationId);
+    if (!accommodation) {
+      throw new Error("Hospedagem não encontrada");
+    }
+
+    // Authorization check
+    const isMaster = user.role === "master";
+    const isPartner = user._id === accommodation.partnerId;
+
+    if (!isMaster && !isPartner) {
+      throw new Error("Não autorizado a confirmar esta reserva");
+    }
+
+    if (booking.status === BOOKING_STATUS.CONFIRMED) {
+      throw new Error("Reserva já está confirmada");
+    }
+
+    // Update booking status
+    await ctx.db.patch(args.bookingId, {
+      status: BOOKING_STATUS.CONFIRMED,
+      partnerNotes: args.partnerNotes,
+      updatedAt: Date.now(),
+    });
+
+    // Generate voucher
+    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
+      bookingId: args.bookingId,
+      bookingType: "accommodation",
+      partnerId: accommodation.partnerId,
+      customerId: booking.userId,
+    });
+
+    // Send booking confirmation email
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+      bookingId: args.bookingId,
+      bookingType: "accommodation",
+      assetName: accommodation.name,
+      confirmationCode: booking.confirmationCode,
+      customerEmail: booking.customerInfo.email,
+      customerName: booking.customerInfo.name,
+      partnerName: user.name,
+    });
+
+    // Get voucher details for email
+    const voucher: any = await ctx.db.get(voucherId);
+    if (voucher) {
+      // Send voucher email with PDF attachment
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        customerEmail: booking.customerInfo.email,
+        customerName: booking.customerInfo.name,
+        assetName: accommodation.name,
+        bookingType: "accommodation",
+        confirmationCode: booking.confirmationCode,
+        voucherNumber: voucher.voucherNumber,
+        bookingDate: `${booking.checkInDate} - ${booking.checkOutDate}`,
+        partnerName: user.name,
+        attachPDF: true,
+        bookingDetails: {
+          checkIn: booking.checkInDate,
+          checkOut: booking.checkOutDate,
+          guests: booking.guests,
+          totalPrice: booking.totalPrice,
         },
       });
     }
@@ -2144,6 +2251,103 @@ export const updateBookingPaymentSuccess = mutation({
       stripePaymentIntentId: args.stripePaymentIntentId,
       updatedAt: Date.now(),
     });
+
+    // Get the booking type
+    const bookingType = args.bookingType || 
+      (booking._id.startsWith("activityBookings") ? "activity" :
+       booking._id.startsWith("eventBookings") ? "event" :
+       booking._id.startsWith("accommodationBookings") ? "accommodation" :
+       booking._id.startsWith("vehicleBookings") ? "vehicle" : "unknown");
+
+    // Generate voucher for confirmed booking
+    try {
+      // Get partner ID from booking's associated asset
+      let partnerId: string;
+      let customerId: string = booking.userId;
+      
+      switch (bookingType) {
+        case "activity":
+          const activity = await ctx.db.get(booking.activityId);
+          partnerId = (activity as any)?.partnerId;
+          break;
+        case "event":
+          const event = await ctx.db.get(booking.eventId);
+          partnerId = (event as any)?.partnerId;
+          break;
+        case "accommodation":
+          const accommodation = await ctx.db.get(booking.accommodationId);
+          partnerId = (accommodation as any)?.partnerId;
+          break;
+        case "vehicle":
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          partnerId = (vehicle as any)?.partnerId;
+          break;
+        case "restaurant":
+          const restaurant = await ctx.db.get(booking.restaurantId);
+          partnerId = (restaurant as any)?.partnerId;
+          break;
+        default:
+          throw new Error(`Tipo de reserva não suportado: ${bookingType}`);
+      }
+      
+      if (!partnerId) {
+        throw new Error("Partner ID não encontrado para esta reserva");
+      }
+      
+      const voucher = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
+        bookingId: booking._id,
+        bookingType,
+        partnerId,
+        customerId,
+      });
+      
+      console.log(`✅ Voucher generated for ${bookingType} booking: ${voucher.voucherNumber}`);
+      
+      // Send voucher email based on booking type
+      const customerEmail = booking.customerInfo?.email || booking.email || booking.customerEmail;
+      const customerName = booking.customerInfo?.name || booking.name || booking.customerName;
+      
+      // Get asset name for email
+      let assetName = "Serviço";
+      switch (bookingType) {
+        case "activity":
+          const activity = await ctx.db.get(booking.activityId);
+          assetName = (activity as any)?.name || "Atividade";
+          break;
+        case "event":
+          const event = await ctx.db.get(booking.eventId);
+          assetName = (event as any)?.name || "Evento";
+          break;
+        case "accommodation":
+          const accommodation = await ctx.db.get(booking.accommodationId);
+          assetName = (accommodation as any)?.name || "Hospedagem";
+          break;
+        case "vehicle":
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          assetName = (vehicle as any)?.name || "Veículo";
+          break;
+        case "restaurant":
+          const restaurant = await ctx.db.get(booking.restaurantId);
+          assetName = (restaurant as any)?.name || "Restaurante";
+          break;
+      }
+      
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+        voucherNumber: voucher.voucherNumber,
+        customerEmail: customerEmail,
+        customerName: customerName,
+        assetName: assetName,
+        bookingType: bookingType,
+        confirmationCode: booking.confirmationCode,
+        bookingDetails: {},
+      });
+      
+      console.log(`✅ Voucher email sent for: ${voucher.voucherNumber}`);
+      
+    } catch (voucherError) {
+      console.error("Error generating voucher:", voucherError);
+      // Don't throw - voucher generation failure shouldn't fail the payment update
+    }
 
     // Send confirmation emails
     await sendBookingPaymentConfirmationEmails(ctx, booking);

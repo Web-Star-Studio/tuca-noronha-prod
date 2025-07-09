@@ -18,6 +18,17 @@ export const storeWebhookEvent = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Check if event already exists (for idempotency)
+    const existingEvent = await ctx.db
+      .query("stripeWebhookEvents")
+      .filter((q) => q.eq(q.field("stripeEventId"), args.eventId))
+      .first();
+
+    if (existingEvent) {
+      console.log(`Webhook event ${args.eventId} already exists, skipping insertion`);
+      return null;
+    }
+
     await ctx.db.insert("stripeWebhookEvents", {
       stripeEventId: args.eventId,
       eventType: args.eventType,
@@ -48,7 +59,7 @@ export const markWebhookEventProcessed = internalMutation({
     const event = await ctx.db
       .query("stripeWebhookEvents")
       .filter((q) => q.eq(q.field("stripeEventId"), args.eventId))
-      .unique();
+      .first();
 
     if (event) {
       await ctx.db.patch(event._id, {
@@ -74,7 +85,7 @@ export const addWebhookEventError = internalMutation({
     const event = await ctx.db
       .query("stripeWebhookEvents")
       .filter((q) => q.eq(q.field("stripeEventId"), args.eventId))
-      .unique();
+      .first();
 
     if (event) {
       const currentErrors = event.processingErrors || [];

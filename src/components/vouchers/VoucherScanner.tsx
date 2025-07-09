@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, QrCode, AlertCircle, CheckCircle, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, QrCode, AlertCircle, CheckCircle, X, Search, User, Calendar, MapPin, Camera } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
+import { Id } from "../../../convex/_generated/dataModel";
 
 interface VoucherScannerProps {
   partnerId: string;

@@ -1,4 +1,4 @@
-import { mutation } from "../../_generated/server";
+import { mutation, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import {
   createVoucherValidator,
@@ -23,7 +23,8 @@ import {
  */
 export const generateVoucher = mutation({
   args: createVoucherValidator,
-  handler: async (ctx, { bookingId, bookingType, partnerId, customerId, expiresAt }) => {
+  handler: async (ctx, args) => {
+    const { bookingId, bookingType, partnerId, customerId, expiresAt } = args;
     // Get current user for audit logging
     const identity = await ctx.auth.getUserIdentity();
     const currentUser = identity
@@ -386,15 +387,31 @@ export const cancelVoucher = mutation({
  */
 export const recordVoucherScan = mutation({
   args: {
-    voucherId: v.id("vouchers"),
+    voucherId: v.optional(v.id("vouchers")),
+    voucherNumber: v.optional(v.string()),
     userId: v.optional(v.id("users")),
+    userType: v.optional(v.string()),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
     location: v.optional(v.string()),
+    metadata: v.optional(v.string()),
   },
-  handler: async (ctx, { voucherId, userId, ipAddress, userAgent, location }) => {
-    // Get voucher
-    const voucher = await ctx.db.get(voucherId);
+  handler: async (ctx, { voucherId, voucherNumber, userId, userType, ipAddress, userAgent, location, metadata }) => {
+    let voucher;
+    
+    // Get voucher either by ID or by number
+    if (voucherId) {
+      voucher = await ctx.db.get(voucherId);
+    } else if (voucherNumber) {
+      voucher = await ctx.db
+        .query("vouchers")
+        .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .first();
+    } else {
+      throw new Error("Voucher ID ou número deve ser fornecido");
+    }
+
     if (!voucher) {
       throw new Error("Voucher não encontrado");
     }
@@ -402,7 +419,7 @@ export const recordVoucherScan = mutation({
     const now = Date.now();
 
     // Update scan count and last scanned time
-    await ctx.db.patch(voucherId, {
+    await ctx.db.patch(voucher._id, {
       scanCount: voucher.scanCount + 1,
       lastScannedAt: now,
       updatedAt: now,
@@ -410,15 +427,15 @@ export const recordVoucherScan = mutation({
 
     // Log scan
     await ctx.db.insert("voucherUsageLogs", {
-      voucherId,
+      voucherId: voucher._id,
       action: VOUCHER_ACTIONS.SCANNED,
       timestamp: now,
       userId,
-      userType: userId ? undefined : "anonymous",
+      userType: userType || (userId ? undefined : "anonymous"),
       ipAddress,
       userAgent,
       location,
-      metadata: JSON.stringify({
+      metadata: metadata || JSON.stringify({
         scanCount: voucher.scanCount + 1,
       }),
       createdAt: now,
@@ -433,14 +450,30 @@ export const recordVoucherScan = mutation({
  */
 export const recordVoucherDownload = mutation({
   args: {
-    voucherId: v.id("vouchers"),
+    voucherId: v.optional(v.id("vouchers")),
+    voucherNumber: v.optional(v.string()),
     userId: v.optional(v.id("users")),
+    userType: v.optional(v.string()),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
+    metadata: v.optional(v.string()),
   },
-  handler: async (ctx, { voucherId, userId, ipAddress, userAgent }) => {
-    // Get voucher
-    const voucher = await ctx.db.get(voucherId);
+  handler: async (ctx, { voucherId, voucherNumber, userId, userType, ipAddress, userAgent, metadata }) => {
+    let voucher;
+    
+    // Get voucher either by ID or by number
+    if (voucherId) {
+      voucher = await ctx.db.get(voucherId);
+    } else if (voucherNumber) {
+      voucher = await ctx.db
+        .query("vouchers")
+        .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .first();
+    } else {
+      throw new Error("Voucher ID ou número deve ser fornecido");
+    }
+
     if (!voucher) {
       throw new Error("Voucher não encontrado");
     }
@@ -448,21 +481,21 @@ export const recordVoucherDownload = mutation({
     const now = Date.now();
 
     // Update download count
-    await ctx.db.patch(voucherId, {
+    await ctx.db.patch(voucher._id, {
       downloadCount: voucher.downloadCount + 1,
       updatedAt: now,
     });
 
     // Log download
     await ctx.db.insert("voucherUsageLogs", {
-      voucherId,
+      voucherId: voucher._id,
       action: VOUCHER_ACTIONS.DOWNLOADED,
       timestamp: now,
       userId,
-      userType: userId ? undefined : "anonymous",
+      userType: userType || (userId ? undefined : "anonymous"),
       ipAddress,
       userAgent,
-      metadata: JSON.stringify({
+      metadata: metadata || JSON.stringify({
         downloadCount: voucher.downloadCount + 1,
       }),
       createdAt: now,
@@ -477,13 +510,27 @@ export const recordVoucherDownload = mutation({
  */
 export const recordVoucherEmailSent = mutation({
   args: {
-    voucherId: v.id("vouchers"),
+    voucherId: v.optional(v.id("vouchers")),
+    voucherNumber: v.optional(v.string()),
     emailAddress: v.string(),
     userId: v.optional(v.id("users")),
   },
-  handler: async (ctx, { voucherId, emailAddress, userId }) => {
-    // Get voucher
-    const voucher = await ctx.db.get(voucherId);
+  handler: async (ctx, { voucherId, voucherNumber, emailAddress, userId }) => {
+    let voucher;
+    
+    // Get voucher either by ID or by number
+    if (voucherId) {
+      voucher = await ctx.db.get(voucherId);
+    } else if (voucherNumber) {
+      voucher = await ctx.db
+        .query("vouchers")
+        .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .first();
+    } else {
+      throw new Error("Voucher ID ou número deve ser fornecido");
+    }
+
     if (!voucher) {
       throw new Error("Voucher não encontrado");
     }
@@ -491,7 +538,7 @@ export const recordVoucherEmailSent = mutation({
     const now = Date.now();
 
     // Update email sent status
-    await ctx.db.patch(voucherId, {
+    await ctx.db.patch(voucher._id, {
       emailSent: true,
       emailSentAt: now,
       updatedAt: now,
@@ -499,7 +546,7 @@ export const recordVoucherEmailSent = mutation({
 
     // Log email sent
     await ctx.db.insert("voucherUsageLogs", {
-      voucherId,
+      voucherId: voucher._id,
       action: VOUCHER_ACTIONS.EMAILED,
       timestamp: now,
       userId,
@@ -735,6 +782,213 @@ export const bulkUpdateVoucherExpiration = mutation({
       updatedCount,
       totalVouchers: vouchers.length,
       message: `${updatedCount} vouchers atualizados com sucesso`,
+    };
+  },
+});
+
+/**
+ * Update voucher with PDF storage information (internal use)
+ */
+export const updateVoucherPDF = internalMutation({
+  args: {
+    voucherNumber: v.string(),
+    pdfStorageId: v.string(),
+  },
+  handler: async (ctx, { voucherNumber, pdfStorageId }) => {
+    // Find voucher by number
+    const voucher = await ctx.db
+      .query("vouchers")
+      .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    // Update voucher with PDF storage ID
+    await ctx.db.patch(voucher._id, {
+      pdfStorageId,
+      updatedAt: Date.now(),
+    });
+
+    return voucher._id;
+  },
+});
+
+/**
+ * Update voucher verification token (internal use)
+ */
+export const updateVoucherVerificationToken = internalMutation({
+  args: {
+    voucherNumber: v.string(),
+    verificationToken: v.string(),
+    expiresAt: v.optional(v.number()),
+  },
+  handler: async (ctx, { voucherNumber, verificationToken, expiresAt }) => {
+    // Find voucher by number
+    const voucher = await ctx.db
+      .query("vouchers")
+      .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    // Update voucher with new verification token
+    const updateData: any = {
+      verificationToken,
+      updatedAt: Date.now(),
+    };
+
+    if (expiresAt) {
+      updateData.expiresAt = expiresAt;
+    }
+
+    await ctx.db.patch(voucher._id, updateData);
+
+    return voucher._id;
+  },
+});
+
+/**
+ * Log voucher action (internal use)
+ */
+export const logVoucherAction = internalMutation({
+  args: {
+    voucherNumber: v.string(),
+    action: v.string(),
+    userId: v.optional(v.id("users")),
+    userType: v.optional(v.string()),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    location: v.optional(v.string()),
+    metadata: v.optional(v.string()),
+  },
+  handler: async (ctx, { voucherNumber, action, userId, userType, ipAddress, userAgent, location, metadata }) => {
+    // Find voucher by number
+    const voucher = await ctx.db
+      .query("vouchers")
+      .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (!voucher && voucherNumber !== "unknown") {
+      throw new Error("Voucher não encontrado");
+    }
+
+    const now = Date.now();
+
+    // Log the action
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId: voucher?._id || ("unknown" as any),
+      action: action as any,
+      timestamp: now,
+      userId,
+      userType,
+      ipAddress,
+      userAgent,
+      location,
+      metadata,
+      createdAt: now,
+    });
+
+    // Update voucher scan count if it was a scan action
+    if (voucher && action === "scanned") {
+      await ctx.db.patch(voucher._id, {
+        scanCount: voucher.scanCount + 1,
+        lastScannedAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+/**
+ * Mark voucher as used via QR verification (internal use)
+ */
+export const useVoucherByQR = internalMutation({
+  args: {
+    voucherNumber: v.string(),
+    partnerId: v.id("users"),
+    usageNotes: v.optional(v.string()),
+    location: v.optional(v.string()),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+  },
+  handler: async (ctx, { voucherNumber, partnerId, usageNotes, location, ipAddress, userAgent }) => {
+    // Find voucher by number
+    const voucher = await ctx.db
+      .query("vouchers")
+      .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (!voucher) {
+      throw new Error("Voucher não encontrado");
+    }
+
+    // Verify partner access
+    if (voucher.partnerId !== partnerId) {
+      throw new Error("Acesso negado - voucher não pertence a este parceiro");
+    }
+
+    // Check voucher status
+    if (voucher.status !== VOUCHER_STATUS.ACTIVE) {
+      throw new Error(
+        `Voucher não pode ser utilizado - status: ${
+          voucher.status === "used" ? "já utilizado" :
+          voucher.status === "cancelled" ? "cancelado" :
+          voucher.status === "expired" ? "expirado" : "inválido"
+        }`
+      );
+    }
+
+    // Check expiration
+    if (voucher.expiresAt && Date.now() > voucher.expiresAt) {
+      // Auto-update to expired
+      await ctx.db.patch(voucher._id, {
+        status: VOUCHER_STATUS.EXPIRED,
+        updatedAt: Date.now(),
+      });
+      throw new Error("Voucher expirado");
+    }
+
+    // Mark voucher as used
+    const now = Date.now();
+    await ctx.db.patch(voucher._id, {
+      status: VOUCHER_STATUS.USED,
+      usedAt: now,
+      updatedAt: now,
+    });
+
+    // Log usage
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId: voucher._id,
+      action: VOUCHER_ACTIONS.USED,
+      timestamp: now,
+      userId: partnerId,
+      userType: "partner",
+      ipAddress,
+      userAgent,
+      location,
+      metadata: JSON.stringify({
+        usedViaQR: true,
+        partnerId,
+        usageNotes,
+        location,
+      }),
+      createdAt: now,
+    });
+
+    return {
+      success: true,
+      usedAt: now,
+      message: "Voucher utilizado com sucesso via QR Code",
     };
   },
 });

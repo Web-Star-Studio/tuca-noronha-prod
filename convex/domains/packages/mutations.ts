@@ -524,7 +524,7 @@ export const confirmPackageBooking = mutation({
     // Get voucher details for email
     const voucher: any = await ctx.db.get(voucherId);
     if (voucher) {
-      // Send voucher email
+      // Send voucher email with PDF attachment
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
         customerEmail: booking.customerInfo.email,
         customerName: booking.customerInfo.name,
@@ -535,6 +535,7 @@ export const confirmPackageBooking = mutation({
         bookingDate: booking.startDate,
         totalPrice: booking.totalPrice,
         partnerName: user.name,
+        attachPDF: true,
         bookingDetails: {
           guests: booking.guests,
           duration: packageData.duration,

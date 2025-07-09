@@ -12,9 +12,9 @@ export default function ReservasLayout({
   return (
     <SignedIn>
       <Header />
-      <div className="min-h-screen pt-16">
+      <main className="min-h-screen bg-slate-50 dark:bg-gray-950 pt-16">
         {children}
-      </div>
+      </main>
       <Footer />
     </SignedIn>
   )

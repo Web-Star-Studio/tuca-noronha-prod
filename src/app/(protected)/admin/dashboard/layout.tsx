@@ -46,7 +46,8 @@ import {
   MapPin,
   UserPlus,
   Tag,
-  Ticket
+  Ticket,
+  QrCode
 } from "lucide-react"
 import { UserButton, useUser } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -254,6 +255,7 @@ function MasterSidebar() {
 
   const masterConfigLinks = [
     { href: "/admin/dashboard/cupons", icon: Tag, label: "Sistema de Cupons" },
+    { href: "/admin/dashboard/vouchers", icon: QrCode, label: "Vouchers" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
     { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
   ]

@@ -10,13 +10,7 @@ export const getBookingById = internalQuery({
     tableName: v.string(),
   },
   returns: v.union(
-    v.object({
-      _id: v.string(),
-      stripePaymentIntentId: v.optional(v.string()),
-      stripeCheckoutSessionId: v.optional(v.string()),
-      paymentStatus: v.optional(v.string()),
-      status: v.optional(v.string()),
-    }),
+    v.any(),
     v.null()
   ),
   handler: async (ctx, args) => {
@@ -29,12 +23,6 @@ export const getBookingById = internalQuery({
       return null;
     }
 
-    return {
-      _id: booking._id,
-      stripePaymentIntentId: booking.stripePaymentIntentId,
-      stripeCheckoutSessionId: booking.stripeCheckoutSessionId,
-      paymentStatus: booking.paymentStatus,
-      status: booking.status,
-    };
+    return booking;
   },
 });

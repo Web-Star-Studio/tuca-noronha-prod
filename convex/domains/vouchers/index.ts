@@ -22,7 +22,14 @@ export {
   recordVoucherEmailSent,
   regenerateVoucher,
   bulkUpdateVoucherExpiration,
+  updateVoucherPDF,
 } from "./mutations";
+
+// Actions
+export {
+  generateVoucherPDF,
+  getVoucherPDFUrl,
+} from "./actions";
 
 // Types and constants
 export {

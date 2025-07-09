@@ -1853,7 +1853,8 @@ export default defineSchema({
     usedAt: v.optional(v.number()),
     
     // PDF and Delivery
-    pdfUrl: v.optional(v.string()),   // Secure cloud storage URL
+    pdfUrl: v.optional(v.string()),   // Secure cloud storage URL (deprecated)
+    pdfStorageId: v.optional(v.string()), // Convex storage ID for PDF
     emailSent: v.boolean(),
     emailSentAt: v.optional(v.number()),
     downloadCount: v.number(),

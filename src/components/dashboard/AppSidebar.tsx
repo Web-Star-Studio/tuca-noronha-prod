@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Activity,
   Utensils,
-  Building,
   CalendarDays,
   Package,
   ShoppingBag,
@@ -15,7 +14,8 @@ import {
   Image as ImageIcon,
   BarChart3,
   ListOrderedIcon,
-  ClipboardList
+  ClipboardList,
+  QrCode
 } from "lucide-react"
 import { TeamSwitcher } from "./TeamSwitcher"
 import { Sidebar, SidebarContent, SidebarHeader, SidebarRail, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"
@@ -72,6 +72,11 @@ const data = {
       title: "Minhas Reservas",
       url: "/admin/dashboard/minhas-reservas",
       icon: ClipboardList,
+    },
+    {
+      title: "Vouchers",
+      url: "/admin/dashboard/vouchers",
+      icon: QrCode,
     },
     {
       title: "Usuários",

@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
+  apiVersion: '2025-05-28.basil',
 });
 
 // Create a Convex client for server-side API calls
@@ -161,20 +161,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       console.log('✅ Booking payment status updated successfully');
     }
     
-    // Send confirmation notification if userId is available
-    if (metadata.userId) {
-      try {
-        await convex.action(internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-          userId: metadata.userId,
-          bookingId: metadata.bookingId,
-          bookingType: metadata.assetType,
-        });
-        console.log('✅ Confirmation notification sent');
-      } catch (notificationError) {
-        console.error('Failed to send notification:', notificationError);
-        // Don't throw - notification failure shouldn't fail the payment update
-      }
-    }
+    // Note: Notification is handled by updateBookingPaymentSuccess function
+    // which calls sendBookingPaymentConfirmationEmails with complete booking data
+    console.log('✅ Booking payment updated - confirmation emails will be sent via updateBookingPaymentSuccess');
     
   } catch (error) {
     console.error('Error updating booking payment status:', error);

@@ -19,6 +19,13 @@ export type EmailType =
   | "review_request"
   | "voucher_ready";
 
+// Interface para anexos de email
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
 // Interface base para dados de email
 export interface BaseEmailData {
   to: string;
@@ -26,6 +33,7 @@ export interface BaseEmailData {
   bcc?: string[];
   subject: string;
   priority?: "low" | "normal" | "high";
+  attachments?: EmailAttachment[];
 }
 
 // Dados específicos para cada tipo de email

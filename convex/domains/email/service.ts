@@ -85,6 +85,15 @@ export class EmailService {
         html: htmlContent,
         priority: settings?.priority || emailData.priority || "normal",
       };
+
+      // Adicionar anexos se existirem
+      if (emailData.attachments && emailData.attachments.length > 0) {
+        mailOptions.attachments = emailData.attachments.map(attachment => ({
+          filename: attachment.filename,
+          content: attachment.content,
+          contentType: attachment.contentType,
+        }));
+      }
       
       // Adicionar CC se configurado
       const settingsTyped = settings as any;

@@ -9,25 +9,26 @@ import { ptBR } from "date-fns/locale";
 import { 
   ArrowLeft, 
   Calendar, 
-  Clock, 
   MapPin, 
   Users, 
-  Phone, 
-  Mail, 
   Copy, 
   Check,
   QrCode,
   Star,
-  MessageCircle
+  MessageCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Hourglass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, badgeStyles } from "@/lib/ui-config";
 import { ChatButton } from "@/components/chat/ChatButton";
+import { VoucherDownloadButton } from "@/components/vouchers/VoucherDownloadButton";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface ReservationDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -38,12 +39,9 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   const router = useRouter();
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // Fetch all user reservations and find the specific one
   const reservationsData = useQuery(api.domains.bookings.queries.getUserReservations);
-  
   const reservation = reservationsData?.find(r => r.id === resolvedParams.id);
   
-  // Fetch partner details for contact functionality
   const partnerDetails = useQuery(
     api.domains.bookings.queries.getReservationWithPartnerDetails,
     reservation ? {
@@ -56,32 +54,32 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
     if (reservation?.confirmationCode) {
       navigator.clipboard.writeText(reservation.confirmationCode);
       setCopiedCode(true);
-      toast.success("Código copiado para a área de transferência!");
-      setTimeout(() => setCopiedCode(false), 2000);
+      toast.success("Código de confirmação copiado!");
+      setTimeout(() => setCopiedCode(false), 3000);
     }
   };
 
   const getStatusConfig = (status: string) => {
     const configs = {
       pending: { 
-        variant: "secondary" as const, 
         label: "Pendente", 
-        color: "bg-yellow-500" 
+        color: "bg-amber-500 text-amber-foreground",
+        icon: <Hourglass className="h-4 w-4" />
       },
       confirmed: { 
-        variant: "default" as const, 
         label: "Confirmado", 
-        color: "bg-green-500" 
+        color: "bg-green-500 text-green-foreground",
+        icon: <CheckCircle2 className="h-4 w-4" />
       },
       canceled: { 
-        variant: "destructive" as const, 
         label: "Cancelado", 
-        color: "bg-red-500" 
+        color: "bg-red-500 text-red-foreground",
+        icon: <AlertTriangle className="h-4 w-4" />
       },
       completed: { 
-        variant: "outline" as const, 
         label: "Concluído", 
-        color: "bg-blue-500" 
+        color: "bg-blue-500 text-blue-foreground",
+        icon: <CheckCircle2 className="h-4 w-4" />
       },
     };
     return configs[status as keyof typeof configs] || configs.pending;
@@ -100,10 +98,16 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
 
   if (!reservationsData) {
     return (
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <div className="animate-pulse space-y-8">
-          <div className="h-10 w-40 bg-gray-200 rounded" />
-          <div className="h-96 w-full bg-gray-200 rounded-xl" />
+      <div className="bg-slate-50 dark:bg-gray-950 min-h-screen">
+        <div className="container mx-auto px-4 py-8 pt-24 max-w-4xl">
+          <div className="animate-pulse space-y-8">
+            <div className="h-8 w-1/3 bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-64 w-full bg-slate-200 dark:bg-slate-700 rounded-xl" />
+            <div className="space-y-4">
+              <div className="h-8 w-full bg-slate-200 dark:bg-slate-700 rounded" />
+              <div className="h-8 w-2/3 bg-slate-200 dark:bg-slate-700 rounded" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -111,10 +115,11 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
 
   if (!reservation) {
     return (
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Reserva não encontrada</h1>
-          <p className="text-gray-600 mb-6">A reserva solicitada não foi encontrada ou você não tem permissão para visualizá-la.</p>
+      <div className="bg-slate-50 dark:bg-gray-950 min-h-screen">
+        <div className="container mx-auto px-4 py-8 pt-24 text-center">
+          <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
+          <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white mb-4">Reserva não encontrada</h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">A reserva solicitada não foi encontrada ou você não tem permissão para visualizá-la.</p>
           <Button onClick={() => router.push('/meu-painel')} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar ao Painel
@@ -127,107 +132,106 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   const statusConfig = getStatusConfig(reservation.status);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 pt-24">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="bg-slate-50 dark:bg-gray-950 font-sans">
+      <div className="container mx-auto px-4 py-8 lg:py-12 pt-24">
         {/* Header */}
         <div className="mb-8">
           <Button 
             variant="ghost" 
             onClick={() => router.push('/meu-painel')}
-            className="mb-4 text-gray-600 hover:text-gray-800"
+            className="mb-6 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-0"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Meu Painel
+            Voltar para Minhas Reservas
           </Button>
           
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{reservation.name}</h1>
-              <p className="text-gray-600 mt-1">{getTypeLabel(reservation.type)}</p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="max-w-3xl">
+              <p className="text-base font-semibold text-blue-600 dark:text-blue-400">{getTypeLabel(reservation.type)}</p>
+              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">{reservation.name}</h1>
             </div>
-            <Badge variant={statusConfig.variant} className="text-sm px-3 py-1">
-              {statusConfig.label}
+            <Badge className={cn("text-sm px-4 py-2 rounded-full flex items-center gap-2", statusConfig.color)}>
+              {statusConfig.icon}
+              <span className="font-semibold">{statusConfig.label}</span>
             </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Main Details */}
-          <div className="xl:col-span-2 space-y-6">
-            {/* Image Card */}
-            <Card className={cardStyles.base}>
-              <CardContent className="p-0">
-                <div className="relative h-48 sm:h-64 w-full">
-                  <Image
-                    src={reservation.imageUrl || "/images/default-reservation.jpg"}
-                    alt={reservation.name}
-                    fill
-                    className="object-cover rounded-t-lg"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+          <div className="lg:col-span-3 space-y-8">
+            {/* Image */}
+            <div className="relative h-64 md:h-80 w-full rounded-2xl overflow-hidden shadow-lg shadow-slate-200 dark:shadow-slate-900">
+              <Image
+                src={reservation.imageUrl || "/images/default-reservation.jpg"}
+                alt={reservation.name}
+                fill
+                className="object-cover transition-transform duration-300 ease-in-out hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            </div>
 
-            {/* Date and Time Details */}
-            <Card className={cardStyles.base}>
+            {/* Reservation Details */}
+            <Card className="bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center text-lg sm:text-xl">
-                  <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-                  Informações da Reserva
+                <CardTitle className="flex items-center text-xl text-slate-800 dark:text-white">
+                  <Calendar className="h-6 w-6 mr-3 text-blue-500" />
+                  Detalhes da Reserva
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 pt-2">
+                <Separator className="bg-slate-200 dark:bg-slate-700" />
                 {reservation.type === 'accommodation' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="flex items-center">
-                      <Calendar className="h-5 w-5 mr-3 text-green-600 flex-shrink-0" />
+                    <div className="flex items-center gap-4">
+                      <Calendar className="h-8 w-8 p-1.5 text-green-600 bg-green-100 dark:bg-green-900/50 dark:text-green-400 rounded-full flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-gray-600">Check-in</p>
-                        <p className="font-semibold">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Check-in</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-100 text-lg">
                           {reservation.checkIn && format(reservation.checkIn, "dd 'de' MMMM, yyyy", { locale: ptBR })}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      <Calendar className="h-5 w-5 mr-3 text-red-600 flex-shrink-0" />
+                    <div className="flex items-center gap-4">
+                      <Calendar className="h-8 w-8 p-1.5 text-red-600 bg-red-100 dark:bg-red-900/50 dark:text-red-400 rounded-full flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-gray-600">Check-out</p>
-                        <p className="font-semibold">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Check-out</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-100 text-lg">
                           {reservation.checkOut && format(reservation.checkOut, "dd 'de' MMMM, yyyy", { locale: ptBR })}
                         </p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-3 text-blue-600 flex-shrink-0" />
+                  <div className="flex items-center gap-4">
+                    <Calendar className="h-8 w-8 p-1.5 text-blue-600 bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400 rounded-full flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-gray-600">Data</p>
-                      <p className="font-semibold">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Data e Hora</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100 text-lg">
                         {reservation.date && format(reservation.date, "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                        {reservation.type === 'restaurant' && reservation.date && ` às ${format(reservation.date, "HH:mm", { locale: ptBR })}`}
                       </p>
-                      {reservation.type === 'restaurant' && reservation.date && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          às {format(reservation.date, "HH:mm", { locale: ptBR })}
-                        </p>
-                      )}
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center">
-                  <Users className="h-5 w-5 mr-3 text-purple-600 flex-shrink-0" />
+                <Separator className="bg-slate-200 dark:bg-slate-700" />
+
+                <div className="flex items-center gap-4">
+                  <Users className="h-8 w-8 p-1.5 text-purple-600 bg-purple-100 dark:bg-purple-900/50 dark:text-purple-400 rounded-full flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-gray-600">Pessoas</p>
-                    <p className="font-semibold">{reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Participantes</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-100 text-lg">{reservation.guests} {reservation.guests === 1 ? 'pessoa' : 'pessoas'}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start">
-                  <MapPin className="h-5 w-5 mr-3 text-orange-600 flex-shrink-0 mt-0.5" />
+                <Separator className="bg-slate-200 dark:bg-slate-700" />
+
+                <div className="flex items-start gap-4">
+                  <MapPin className="h-8 w-8 p-1.5 text-orange-600 bg-orange-100 dark:bg-orange-900/50 dark:text-orange-400 rounded-full flex-shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-gray-600">Local</p>
-                    <p className="font-semibold break-words">{reservation.location}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Localização</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100 break-words">{reservation.location}</p>
                   </div>
                 </div>
               </CardContent>
@@ -235,87 +239,59 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Enhanced Confirmation Code */}
-            <Card className={`${cardStyles.base} border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50`}>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center text-blue-800 text-lg">
-                  <QrCode className="h-6 w-6 mr-2" />
-                  Código de Confirmação
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-white rounded-xl p-6 border-2 border-dashed border-blue-300 shadow-sm">
-                  <div className="text-center space-y-4">
-                    <div className="text-3xl sm:text-4xl font-mono font-bold text-blue-900 tracking-wider leading-tight break-all">
-                      {reservation.confirmationCode}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm text-blue-700 font-medium">
-                        Apresente este código no local da reserva
-                      </p>
-                      <p className="text-xs text-blue-600">
-                        Guarde bem este código - você precisará dele para confirmar sua reserva
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleCopyCode}
-                      variant="outline"
-                      size="lg"
-                      className="w-full border-blue-300 text-blue-700 hover:bg-blue-100 font-medium h-12"
-                    >
-                      {copiedCode ? (
-                        <>
-                          <Check className="h-5 w-5 mr-2" />
-                          Copiado!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-5 w-5 mr-2" />
-                          Copiar Código
-                        </>
-                      )}
-                    </Button>
-                  </div>
+          <div className="lg:col-span-2 space-y-8">
+            {/* Confirmation Code */}
+            <Card className="bg-blue-600 dark:bg-blue-800/50 text-white shadow-lg overflow-hidden">
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <QrCode className="h-7 w-7" />
+                  <h3 className="text-xl font-bold">Seu Código de Confirmação</h3>
                 </div>
-              </CardContent>
+                <p className="text-blue-100 dark:text-blue-300 text-sm">
+                  Apresente este código ou o QR Code do voucher no local da reserva para o check-in.
+                </p>
+                <div className="bg-white/10 rounded-lg p-4 text-center">
+                  <p className="text-4xl font-mono font-bold tracking-widest break-all">
+                    {reservation.confirmationCode}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleCopyCode}
+                  variant="secondary"
+                  size="lg"
+                  className="w-full bg-white/90 text-blue-700 hover:bg-white font-bold h-12 text-base group"
+                >
+                  {copiedCode ? (
+                    <>
+                      <Check className="h-5 w-5 mr-2 text-green-500" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                      Copiar Código
+                    </>
+                  )}
+                </Button>
+              </div>
             </Card>
 
-            {/* Status Card */}
-            <Card className={cardStyles.base}>
+            {/* Actions & Status */}
+            <Card className="bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 shadow-sm">
               <CardHeader>
-                <CardTitle>Status da Reserva</CardTitle>
+                <CardTitle className="text-xl text-slate-800 dark:text-white">Ações da Reserva</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${statusConfig.color}`}></div>
-                  <span className="font-semibold">{statusConfig.label}</span>
-                </div>
-                
-                {reservation.status === 'confirmed' && (
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-800">
-                      ✅ Sua reserva foi confirmada! Você pode apresentar o código de confirmação no local.
-                    </p>
-                  </div>
+                {(reservation.status === 'confirmed' || reservation.status === 'completed') && reservation.confirmationCode && (
+                  <VoucherDownloadButton
+                    bookingId={reservation.id}
+                    bookingType={reservation.type as any}
+                    variant="default"
+                    className="w-full h-12 text-base font-bold"
+                    showIcon={true}
+                    showLabel={true}
+                  />
                 )}
-                
-                {reservation.status === 'pending' && (
-                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <p className="text-sm text-yellow-800">
-                      ⏳ Sua reserva está aguardando confirmação do estabelecimento.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <Card className={cardStyles.base}>
-              <CardHeader>
-                <CardTitle>Ações</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
                 {partnerDetails ? (
                   <ChatButton
                     assetId={partnerDetails.assetId}
@@ -325,26 +301,27 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                     bookingId={reservation.id}
                     bookingContext={`Reserva ${reservation.confirmationCode || reservation.id} - ${partnerDetails.assetName}`}
                     variant="outline"
-                    className="w-full h-11"
+                    className="w-full h-12 text-base"
                     showLabel={true}
-                    customLabel="Entrar em Contato"
+                    customLabel="Falar com o parceiro"
                   />
                 ) : (
-                  <Button variant="outline" className="w-full h-11" disabled>
+                  <Button variant="outline" className="w-full h-12 text-base" disabled>
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Carregando contato...
                   </Button>
                 )}
                 
-                {reservation.status === 'confirmed' && (
-                  <Button variant="outline" className="w-full h-11">
+                {reservation.status === 'completed' && (
+                  <Button variant="outline" className="w-full h-12 text-base">
                     <Star className="h-4 w-4 mr-2" />
                     Avaliar Experiência
                   </Button>
                 )}
                 
                 {(reservation.status === 'pending' || reservation.status === 'confirmed') && (
-                  <Button variant="destructive" className="w-full h-11">
+                  <Button variant="destructive" className="w-full h-12 text-base">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
                     Cancelar Reserva
                   </Button>
                 )}

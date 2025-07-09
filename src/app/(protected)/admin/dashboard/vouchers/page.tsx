@@ -53,9 +53,11 @@ export default function AdminVouchersPage() {
 
   // Get vouchers based on user role
   const vouchers = useQuery(
-    api.domains.vouchers.queries.getPartnerVouchers,
     currentUser?.role === "master" 
-      ? { partnerId: "all" } // Masters can see all vouchers
+      ? api.domains.vouchers.queries.getAllVouchers
+      : api.domains.vouchers.queries.getPartnerVouchers,
+    currentUser?.role === "master" 
+      ? {} // Masters can see all vouchers
       : currentUser?._id 
       ? { partnerId: currentUser._id }
       : "skip"
@@ -68,13 +70,14 @@ export default function AdminVouchersPage() {
   );
 
   // Filter vouchers based on search and filters
-  const filteredVouchers = vouchers?.filter(voucher => {
-    const matchesSearch = voucher.voucherNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         voucher.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         voucher.booking.assetName.toLowerCase().includes(searchTerm.toLowerCase());
+  const voucherList = vouchers?.vouchers || vouchers || [];
+  const filteredVouchers = voucherList.filter(voucher => {
+    const matchesSearch = voucher.voucher?.voucherNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         voucher.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         voucher.asset?.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || voucher.status === statusFilter;
-    const matchesType = typeFilter === "all" || voucher.bookingType === typeFilter;
+    const matchesStatus = statusFilter === "all" || voucher.voucher?.status === statusFilter;
+    const matchesType = typeFilter === "all" || voucher.voucher?.bookingType === typeFilter;
     
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -292,29 +295,29 @@ export default function AdminVouchersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredVouchers?.map((voucher) => (
-                      <TableRow key={voucher._id}>
+                    {filteredVouchers?.map((voucherData, index) => (
+                      <TableRow key={voucherData.voucher?.voucherNumber || index}>
                         <TableCell className="font-mono text-sm">
-                          {voucher.voucherNumber}
+                          {voucherData.voucher?.voucherNumber}
                         </TableCell>
-                        <TableCell>{voucher.customer.name}</TableCell>
-                        <TableCell>{voucher.booking.assetName}</TableCell>
-                        <TableCell>{getTypeLabel(voucher.bookingType)}</TableCell>
-                        <TableCell>{getStatusBadge(voucher.status)}</TableCell>
-                        <TableCell>{formatDate(voucher.generatedAt)}</TableCell>
+                        <TableCell>{voucherData.customer?.name || 'N/A'}</TableCell>
+                        <TableCell>{voucherData.asset?.name || 'N/A'}</TableCell>
+                        <TableCell>{getTypeLabel(voucherData.voucher?.bookingType || '')}</TableCell>
+                        <TableCell>{getStatusBadge(voucherData.voucher?.status || '')}</TableCell>
+                        <TableCell>{formatDate(voucherData.voucher?.generatedAt || Date.now())}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleVoucherClick(voucher)}
+                              onClick={() => handleVoucherClick(voucherData)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => window.open(`/voucher/${voucher.voucherNumber}`, "_blank")}
+                              onClick={() => window.open(`/voucher/${voucherData.voucher?.voucherNumber}`, "_blank")}
                             >
                               <Download className="h-4 w-4" />
                             </Button>

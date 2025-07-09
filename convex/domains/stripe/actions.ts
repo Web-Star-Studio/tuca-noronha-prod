@@ -16,7 +16,7 @@ import {
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-06-30.basil",
+  apiVersion: "2025-05-28.basil",
 });
 
 /**
@@ -601,12 +601,82 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
       receiptUrl: sessionData.receipt_url,
     });
 
-    // Send confirmation notification
-    await ctx.runAction(internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-      userId: metadata.userId,
+    // Get booking details for notification
+    const booking = await ctx.runQuery(internal["domains/stripe/bookingQueries"].getBookingById, {
       bookingId: metadata.bookingId,
-      bookingType: metadata.assetType,
+      tableName: `${metadata.assetType}Bookings`,
     });
+
+    if (booking) {
+      // Get asset name for notification
+      let assetName = "Serviço";
+      try {
+        switch (metadata.assetType) {
+          case "activity":
+            if (booking.activityId) {
+              const activity = await ctx.runQuery(internal.domains.activities.queries.getById, {
+                id: booking.activityId,
+              });
+              assetName = activity?.title || "Atividade";
+            }
+            break;
+          case "event":
+            if (booking.eventId) {
+              const event = await ctx.runQuery(internal.domains.events.queries.getById, {
+                id: booking.eventId,
+              });
+              assetName = event?.title || "Evento";
+            }
+            break;
+          case "restaurant":
+            if (booking.restaurantId) {
+              const restaurant = await ctx.runQuery(internal.domains.restaurants.queries.getById, {
+                id: booking.restaurantId,
+              });
+              assetName = restaurant?.name || "Restaurante";
+            }
+            break;
+          case "vehicle":
+            if (booking.vehicleId) {
+              const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getById, {
+                id: booking.vehicleId,
+              });
+              assetName = vehicle?.name || "Veículo";
+            }
+            break;
+          case "accommodation":
+            if (booking.accommodationId) {
+              const accommodation = await ctx.runQuery(internal.domains.accommodations.queries.getById, {
+                id: booking.accommodationId,
+              });
+              assetName = accommodation?.name || "Hospedagem";
+            }
+            break;
+          case "package":
+            if (booking.packageId) {
+              const packageData = await ctx.runQuery(internal.domains.packages.queries.getById, {
+                id: booking.packageId,
+              });
+              assetName = packageData?.name || "Pacote";
+            }
+            break;
+        }
+      } catch (error) {
+        console.error("Error getting asset name for notification:", error);
+      }
+
+      // Send confirmation notification
+      await ctx.runAction(internal.domains.notifications.actions.sendBookingConfirmationNotification, {
+        userId: metadata.userId,
+        bookingId: metadata.bookingId,
+        bookingType: metadata.assetType,
+        assetName,
+        confirmationCode: booking.confirmationCode || "",
+        customerEmail: booking.customerInfo?.email || booking.email || "",
+        customerName: booking.customerInfo?.name || booking.name || "",
+        partnerName: undefined,
+      });
+    }
   }
 }
 

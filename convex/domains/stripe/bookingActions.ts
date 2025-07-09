@@ -78,6 +78,140 @@ export const approveBookingAndCapturePayment = action({
         partnerNotes: args.partnerNotes,
       });
 
+      // Generate voucher for confirmed booking
+      try {
+        // Get partner ID from booking's associated asset
+        let partnerId: string | undefined;
+        let customerId: string = booking.userId || booking.customerId;
+        
+        // Get partner ID from booking's associated asset using internal queries
+        switch (args.assetType) {
+          case "activity":
+            if (booking.activityId) {
+              const activity = await ctx.runQuery(internal.domains.activities.queries.getById, {
+                id: booking.activityId,
+              });
+              partnerId = activity?.partnerId;
+            }
+            break;
+          case "event":
+            if (booking.eventId) {
+              const event = await ctx.runQuery(internal.domains.events.queries.getById, {
+                id: booking.eventId,
+              });
+              partnerId = event?.partnerId;
+            }
+            break;
+          case "accommodation":
+            if (booking.accommodationId) {
+              const accommodation = await ctx.runQuery(internal.domains.accommodations.queries.getById, {
+                id: booking.accommodationId,
+              });
+              partnerId = accommodation?.partnerId;
+            }
+            break;
+          case "vehicle":
+            if (booking.vehicleId) {
+              const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getById, {
+                id: booking.vehicleId,
+              });
+              partnerId = vehicle?.partnerId;
+            }
+            break;
+          case "restaurant":
+            if (booking.restaurantId) {
+              const restaurant = await ctx.runQuery(internal.domains.restaurants.queries.getById, {
+                id: booking.restaurantId,
+              });
+              partnerId = restaurant?.partnerId;
+            }
+            break;
+          default:
+            throw new Error(`Tipo de reserva não suportado: ${args.assetType}`);
+        }
+        
+        if (!partnerId) {
+          throw new Error("Partner ID não encontrado para esta reserva");
+        }
+        
+        const voucher = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
+          bookingId: args.bookingId,
+          bookingType: args.assetType,
+          partnerId,
+          customerId,
+        });
+        
+        console.log(`✅ Voucher generated for ${args.assetType} booking: ${voucher.voucherNumber}`);
+        
+        // Send voucher email based on booking type
+        const customerEmail = booking.customerInfo?.email || booking.email || booking.customerEmail;
+        const customerName = booking.customerInfo?.name || booking.name || booking.customerName;
+        
+        // Get asset name for email (reuse already fetched assets from above)
+        let assetName = "Serviço";
+        switch (args.assetType) {
+          case "activity":
+            if (booking.activityId) {
+              const activity = await ctx.runQuery(internal.domains.activities.queries.getById, {
+                id: booking.activityId,
+              });
+              assetName = activity?.name || "Atividade";
+            }
+            break;
+          case "event":
+            if (booking.eventId) {
+              const event = await ctx.runQuery(internal.domains.events.queries.getById, {
+                id: booking.eventId,
+              });
+              assetName = event?.name || "Evento";
+            }
+            break;
+          case "accommodation":
+            if (booking.accommodationId) {
+              const accommodation = await ctx.runQuery(internal.domains.accommodations.queries.getById, {
+                id: booking.accommodationId,
+              });
+              assetName = accommodation?.name || "Hospedagem";
+            }
+            break;
+          case "vehicle":
+            if (booking.vehicleId) {
+              const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getById, {
+                id: booking.vehicleId,
+              });
+              assetName = vehicle?.name || "Veículo";
+            }
+            break;
+          case "restaurant":
+            if (booking.restaurantId) {
+              const restaurant = await ctx.runQuery(internal.domains.restaurants.queries.getById, {
+                id: booking.restaurantId,
+              });
+              assetName = restaurant?.name || "Restaurante";
+            }
+            break;
+        }
+        
+        await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
+          voucherNumber: voucher.voucherNumber,
+          customerEmail: customerEmail,
+          customerName: customerName,
+          assetName: assetName,
+          bookingType: args.assetType,
+          confirmationCode: booking.confirmationCode,
+          bookingDetails: {},
+        });
+        
+        console.log(`✅ Voucher email sent for: ${voucher.voucherNumber}`);
+        
+      } catch (voucherError) {
+        console.error("Error generating voucher:", voucherError);
+        console.error("Booking data:", JSON.stringify(booking, null, 2));
+        console.error("Booking ID:", args.bookingId);
+        console.error("Asset type:", args.assetType);
+        // Don't throw - voucher generation failure shouldn't fail the booking approval
+      }
+
       return { success: true };
     } catch (error) {
       console.error("Failed to approve booking and capture payment:", error);

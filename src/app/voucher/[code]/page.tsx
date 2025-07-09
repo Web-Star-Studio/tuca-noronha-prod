@@ -17,5 +17,5 @@ export async function generateMetadata({ params }: VoucherPageProps): Promise<Me
 
 export default async function VoucherPage({ params }: VoucherPageProps) {
   const { code } = await params;
-  return <VoucherViewer confirmationCode={code} />;
+  return <VoucherViewer voucherNumber={code} />;
 } 

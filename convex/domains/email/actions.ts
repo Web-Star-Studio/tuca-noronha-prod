@@ -494,6 +494,7 @@ export const sendVoucherEmail = internalAction({
     totalPrice: v.optional(v.number()),
     partnerName: v.optional(v.string()),
     bookingDetails: v.any(),
+    attachPDF: v.optional(v.boolean()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -501,6 +502,34 @@ export const sendVoucherEmail = internalAction({
   }),
   handler: async (ctx, args) => {
     try {
+      let attachments: any[] = [];
+
+      // If PDF attachment is requested, generate and attach PDF
+      if (args.attachPDF) {
+        try {
+          // Generate PDF for the voucher
+          const pdfResult = await ctx.runAction(internal.domains.vouchers.actions.generateVoucherPDF, {
+            voucherNumber: args.voucherNumber,
+          });
+
+          if (pdfResult.success && pdfResult.storageId) {
+            // Get PDF from storage
+            const pdfBlob = await ctx.storage.get(pdfResult.storageId);
+            if (pdfBlob) {
+              const pdfBuffer = await pdfBlob.arrayBuffer();
+              attachments.push({
+                filename: `voucher-${args.voucherNumber}.pdf`,
+                content: Buffer.from(pdfBuffer),
+                contentType: 'application/pdf',
+              });
+            }
+          }
+        } catch (pdfError) {
+          console.error("Error generating PDF for email:", pdfError);
+          // Continue with email without PDF attachment
+        }
+      }
+
       const emailData: VoucherEmailData = {
         type: "voucher_ready",
         to: args.customerEmail,
@@ -514,6 +543,7 @@ export const sendVoucherEmail = internalAction({
         totalPrice: args.totalPrice,
         partnerName: args.partnerName,
         bookingDetails: args.bookingDetails,
+        attachments: attachments.length > 0 ? attachments : undefined,
       };
 
       const result = await sendQuickEmail(emailData);
@@ -528,6 +558,18 @@ export const sendVoucherEmail = internalAction({
           error: result.error,
           sentAt: result.sentAt,
         });
+      }
+
+      // Update voucher email tracking fields
+      if (result.status === "sent") {
+        try {
+          await ctx.runMutation(internal.domains.vouchers.mutations.recordVoucherEmailSent, {
+            voucherNumber: args.voucherNumber,
+            emailAddress: args.customerEmail,
+          });
+        } catch (emailUpdateError) {
+          console.error("Failed to update voucher email tracking:", emailUpdateError);
+        }
       }
 
       return {

@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, FileText } from "lucide-react";
-import { useQuery } from "convex/react";
+import { Download, FileText, Loader2 } from "lucide-react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { toast } from "sonner";
 
 interface VoucherDownloadButtonProps {
   bookingId: string;
@@ -15,6 +16,7 @@ interface VoucherDownloadButtonProps {
   showIcon?: boolean;
   showLabel?: boolean;
   className?: string;
+  downloadPDF?: boolean; // New prop to enable PDF download
 }
 
 export function VoucherDownloadButton({
@@ -25,21 +27,66 @@ export function VoucherDownloadButton({
   showIcon = true,
   showLabel = true,
   className,
+  downloadPDF = false,
 }: VoucherDownloadButtonProps) {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
   // Check if voucher exists for this booking
-  const voucher = useQuery(api.domains.vouchers.queries.getVoucherByBooking, {
-    bookingId,
-    bookingType,
-  });
+  const voucher = useQuery(
+    api.domains.vouchers.queries.getVoucherByBooking, 
+    bookingId ? { bookingId, bookingType } : "skip"
+  );
+
+  // PDF generation action
+  const getVoucherPDFUrl = useAction(api.domains.vouchers.actions.getVoucherPDFUrl);
 
   if (!voucher) {
     return null;
   }
 
-  const handleClick = () => {
-    // Open voucher in new tab
-    window.open(`/voucher/${voucher.voucherNumber}`, "_blank");
+  const handleClick = async () => {
+    if (downloadPDF) {
+      await handlePDFDownload();
+    } else {
+      // Open voucher in new tab
+      window.open(`/voucher/${voucher.voucherNumber}`, "_blank");
+    }
   };
+
+  const handlePDFDownload = async () => {
+    if (!voucher.voucherNumber) return;
+
+    setIsGeneratingPDF(true);
+    try {
+      toast.loading("Gerando PDF...", { id: "pdf-generation" });
+      
+      const pdfUrl = await getVoucherPDFUrl({
+        voucherNumber: voucher.voucherNumber,
+      });
+
+      if (pdfUrl) {
+        // Create download link
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = `voucher-${voucher.voucherNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success("PDF baixado com sucesso!", { id: "pdf-generation" });
+      } else {
+        throw new Error("Não foi possível gerar o PDF");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Erro ao baixar PDF. Tente novamente.", { id: "pdf-generation" });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const buttonLabel = downloadPDF ? "Baixar PDF" : "Ver Voucher";
+  const buttonIcon = downloadPDF ? Download : FileText;
 
   return (
     <Button
@@ -47,10 +94,19 @@ export function VoucherDownloadButton({
       size={size}
       onClick={handleClick}
       className={className}
-      title="Ver Voucher"
+      title={buttonLabel}
+      disabled={isGeneratingPDF}
     >
-      {showIcon && <FileText className="w-4 h-4" />}
-      {showLabel && <span className={showIcon ? "ml-2" : ""}>Ver Voucher</span>}
+      {isGeneratingPDF ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        showIcon && React.createElement(buttonIcon, { className: "w-4 h-4" })
+      )}
+      {showLabel && (
+        <span className={showIcon ? "ml-2" : ""}>
+          {isGeneratingPDF ? "Gerando..." : buttonLabel}
+        </span>
+      )}
     </Button>
   );
 } 

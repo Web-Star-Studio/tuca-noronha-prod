@@ -12,7 +12,25 @@ interface VoucherTemplateProps {
   assetType: VoucherBookingType;
 }
 
+const formatSafeDate = (dateValue: any): string => {
+  try {
+    if (!dateValue) return "Data não disponível";
+    
+    const date = new Date(dateValue);
+    
+    if (isNaN(date.getTime()) || date.getTime() === 0) {
+      return "Data inválida";
+    }
+    
+    return format(date, "dd/MM/yyyy", { locale: ptBR });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Erro na data";
+  }
+};
+
 export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps) {
+
   const getAssetIcon = () => {
     switch (assetType) {
       case "activity":
@@ -54,7 +72,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Voucher de {getAssetTypeLabel()}</h1>
-            <p className="text-gray-600 mt-1">Número: {voucherData.voucher.voucherNumber}</p>
+            <p className="text-gray-600 mt-1">Número: {voucherData.voucher.voucherNumber || "N/A"}</p>
           </div>
           <div className="text-right">
             {voucherData.brandInfo.logoUrl ? (
@@ -66,7 +84,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
               </div>
             )}
             <p className="text-sm text-gray-600">
-              Emitido em: {format(voucherData.voucher.generatedAt, "dd/MM/yyyy", { locale: ptBR })}
+              Emitido em: {formatSafeDate(voucherData.voucher.generatedAt)}
             </p>
           </div>
         </div>
@@ -78,43 +96,51 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         <div className="md:col-span-2">
           <h2 className="text-xl font-semibold mb-4">Informações do Cliente</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="font-medium text-lg mb-2">{voucherData.customer.name}</p>
+            <p className="font-medium text-lg mb-2">{voucherData.customer.name || "Atendimento Tuca Noronha"}</p>
             <div className="space-y-1 text-gray-600">
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                {voucherData.customer.email}
+                {voucherData.customer.email || "atendimentotucanoronha@gmail.com"}
               </p>
-              <p className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                {voucherData.customer.phone}
-              </p>
+              {voucherData.customer.phone && (
+                <p className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  {voucherData.customer.phone}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Asset Info */}
           <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Serviço</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="font-medium text-lg mb-2">{voucherData.asset.name}</p>
-            <div className="space-y-1 text-gray-600">
-              <p className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                {voucherData.asset.location}
-              </p>
-            </div>
+            <p className="font-medium text-lg mb-2">{voucherData.asset.name || getAssetTypeLabel()}</p>
+            {voucherData.asset.location && (
+              <div className="space-y-1 text-gray-600">
+                <p className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {voucherData.asset.location}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* QR Code */}
         <div className="flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-4">QR Code</h2>
-          {voucherData.voucher.qrCode && (
+          {voucherData.voucher.qrCode ? (
             <div className="bg-white p-4 border-2 border-gray-200 rounded-lg">
               <QRCodeSVG value={voucherData.voucher.qrCode} size={160} />
+            </div>
+          ) : (
+            <div className="bg-gray-100 p-8 border-2 border-gray-200 rounded-lg">
+              <p className="text-gray-500">QR Code não disponível</p>
             </div>
           )}
           <p className="text-sm text-gray-600 mt-2 text-center">
             Código de Confirmação:<br />
-            <span className="font-mono font-semibold">{voucherData.booking.confirmationCode}</span>
+            <span className="font-mono font-semibold">{voucherData.booking.confirmationCode || voucherData.voucher.voucherNumber}</span>
           </p>
         </div>
       </div>
@@ -147,32 +173,41 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
 }
 
 function renderBookingDetails(assetType: VoucherBookingType, details: any) {
+  // If no details available, show a default message
+  if (!details || Object.keys(details).length === 0) {
+    return <p className="text-gray-600">Detalhes da reserva não disponíveis.</p>;
+  }
+
   switch (assetType) {
     case "activity":
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="font-medium">Data:</p>
-            <p>{format(new Date(details.date), "dd/MM/yyyy", { locale: ptBR })}</p>
+            <p>{formatSafeDate(details.date)}</p>
           </div>
-          <div>
-            <p className="font-medium">Horário:</p>
-            <p>{details.time}</p>
-          </div>
-          <div>
-            <p className="font-medium">Participantes:</p>
-            <p className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              {details.participants} {details.participants === 1 ? "pessoa" : "pessoas"}
-            </p>
-          </div>
+          {details.time && (
+            <div>
+              <p className="font-medium">Horário:</p>
+              <p>{details.time}</p>
+            </div>
+          )}
+          {details.participants && (
+            <div>
+              <p className="font-medium">Participantes:</p>
+              <p className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                {details.participants} {details.participants === 1 ? "pessoa" : "pessoas"}
+              </p>
+            </div>
+          )}
           {details.ticketType && (
             <div>
               <p className="font-medium">Tipo de Ingresso:</p>
               <p>{details.ticketType}</p>
             </div>
           )}
-          {details.totalPrice > 0 && (
+          {details.totalPrice && details.totalPrice > 0 && (
             <div>
               <p className="font-medium">Valor Total:</p>
               <p className="text-lg font-semibold">
@@ -203,26 +238,32 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="font-medium">Data:</p>
-            <p>{format(new Date(details.date), "dd/MM/yyyy", { locale: ptBR })}</p>
+            <p>{formatSafeDate(details.date)}</p>
           </div>
-          <div>
-            <p className="font-medium">Horário:</p>
-            <p>{details.time}</p>
-          </div>
-          <div>
-            <p className="font-medium">Quantidade:</p>
-            <p>{details.quantity} {details.quantity === 1 ? "ingresso" : "ingressos"}</p>
-          </div>
+          {details.time && (
+            <div>
+              <p className="font-medium">Horário:</p>
+              <p>{details.time}</p>
+            </div>
+          )}
+          {details.quantity && (
+            <div>
+              <p className="font-medium">Quantidade:</p>
+              <p>{details.quantity} {details.quantity === 1 ? "ingresso" : "ingressos"}</p>
+            </div>
+          )}
           {details.ticketType && (
             <div>
               <p className="font-medium">Tipo de Ingresso:</p>
               <p>{details.ticketType}</p>
             </div>
           )}
-          <div className="md:col-span-2">
-            <p className="font-medium">Local:</p>
-            <p>{details.location}</p>
-          </div>
+          {details.location && (
+            <div className="md:col-span-2">
+              <p className="font-medium">Local:</p>
+              <p>{details.location}</p>
+            </div>
+          )}
           {details.sector && (
             <div>
               <p className="font-medium">Setor:</p>
@@ -235,7 +276,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               <p>{details.seats}</p>
             </div>
           )}
-          {details.totalPrice > 0 && (
+          {details.totalPrice && details.totalPrice > 0 && (
             <div className="md:col-span-2">
               <p className="font-medium">Valor Total:</p>
               <p className="text-lg font-semibold">
@@ -254,19 +295,23 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="font-medium">Data:</p>
-            <p>{format(new Date(details.date), "dd/MM/yyyy", { locale: ptBR })}</p>
+            <p>{formatSafeDate(details.date)}</p>
           </div>
-          <div>
-            <p className="font-medium">Horário:</p>
-            <p>{details.time}</p>
-          </div>
-          <div>
-            <p className="font-medium">Número de Pessoas:</p>
-            <p className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              {details.partySize} {details.partySize === 1 ? "pessoa" : "pessoas"}
-            </p>
-          </div>
+          {details.time && (
+            <div>
+              <p className="font-medium">Horário:</p>
+              <p>{details.time}</p>
+            </div>
+          )}
+          {details.partySize && (
+            <div>
+              <p className="font-medium">Número de Pessoas:</p>
+              <p className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                {details.partySize} {details.partySize === 1 ? "pessoa" : "pessoas"}
+              </p>
+            </div>
+          )}
           {details.table && (
             <div>
               <p className="font-medium">Mesa:</p>
@@ -293,35 +338,43 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="font-medium">Data de Retirada:</p>
-            <p>{format(new Date(details.startDate), "dd/MM/yyyy", { locale: ptBR })}</p>
+            <p>{formatSafeDate(details.startDate)}</p>
           </div>
           <div>
             <p className="font-medium">Data de Devolução:</p>
-            <p>{format(new Date(details.endDate), "dd/MM/yyyy", { locale: ptBR })}</p>
+            <p>{formatSafeDate(details.endDate)}</p>
           </div>
-          <div>
-            <p className="font-medium">Modelo:</p>
-            <p>{details.vehicleModel}</p>
-          </div>
-          <div>
-            <p className="font-medium">Categoria:</p>
-            <p>{details.vehicleCategory}</p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="font-medium">Local de Retirada:</p>
-            <p>{details.pickupLocation}</p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="font-medium">Local de Devolução:</p>
-            <p>{details.returnLocation}</p>
-          </div>
+          {details.vehicleModel && (
+            <div>
+              <p className="font-medium">Modelo:</p>
+              <p>{details.vehicleModel}</p>
+            </div>
+          )}
+          {details.vehicleCategory && (
+            <div>
+              <p className="font-medium">Categoria:</p>
+              <p>{details.vehicleCategory}</p>
+            </div>
+          )}
+          {details.pickupLocation && (
+            <div className="md:col-span-2">
+              <p className="font-medium">Local de Retirada:</p>
+              <p>{details.pickupLocation}</p>
+            </div>
+          )}
+          {details.returnLocation && (
+            <div className="md:col-span-2">
+              <p className="font-medium">Local de Devolução:</p>
+              <p>{details.returnLocation}</p>
+            </div>
+          )}
           {details.additionalDrivers && details.additionalDrivers > 0 && (
             <div>
               <p className="font-medium">Motoristas Adicionais:</p>
               <p>{details.additionalDrivers}</p>
             </div>
           )}
-          {details.totalPrice > 0 && (
+          {details.totalPrice && details.totalPrice > 0 && (
             <div>
               <p className="font-medium">Valor Total:</p>
               <p className="text-lg font-semibold">
@@ -342,8 +395,8 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
             <div>
               <p className="font-medium">Período:</p>
               <p>
-                {format(new Date(details.startDate), "dd/MM/yyyy", { locale: ptBR })} até{" "}
-                {format(new Date(details.endDate), "dd/MM/yyyy", { locale: ptBR })}
+                {formatSafeDate(details.startDate)} até{" "}
+                {formatSafeDate(details.endDate)}
               </p>
             </div>
             <div>

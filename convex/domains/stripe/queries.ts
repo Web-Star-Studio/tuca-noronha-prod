@@ -40,7 +40,7 @@ export const getWebhookEvent = internalQuery({
     const event = await ctx.db
       .query("stripeWebhookEvents")
       .filter((q) => q.eq(q.field("stripeEventId"), args.eventId))
-      .unique();
+      .first();
 
     return event || null;
   },
