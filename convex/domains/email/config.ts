@@ -100,6 +100,10 @@ export const EMAIL_SETTINGS = {
     priority: "normal" as const,
     replyTo: SYSTEM_EMAILS.SUPPORT,
   },
+  package_proposal_sent: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
   partner_new_booking: {
     priority: "high" as const,
     replyTo: SYSTEM_EMAILS.SUPPORT,

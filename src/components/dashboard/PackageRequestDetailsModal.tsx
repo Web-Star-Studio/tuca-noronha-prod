@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +33,14 @@ import {
   XCircle,
   User,
   Send,
-  Reply
+  Reply,
+  FileText,
+  Plus,
+  Eye,
+  SendIcon,
+  CheckCircle as CheckCircleIcon,
+  Upload,
+  X
 } from "lucide-react";
 import { 
   STATUS_LABELS, 
@@ -41,6 +48,7 @@ import {
 } from "../../../convex/domains/packages/types";
 import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
+import { ProposalDocumentManager } from "./ProposalDocumentManager";
 
 interface PackageRequestDetailsModalProps {
   isOpen: boolean;
@@ -70,6 +78,11 @@ export default function PackageRequestDetailsModal({
   
   const requestMessages = useQuery(
     api.packages.getPackageRequestMessages,
+    requestId ? { packageRequestId: requestId } : "skip"
+  );
+
+  const requestProposals = useQuery(
+    api.domains.packageProposals.queries.getProposalsForRequest,
     requestId ? { packageRequestId: requestId } : "skip"
   );
 
@@ -328,10 +341,14 @@ export default function PackageRequestDetailsModal({
 
         <div className="mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Detalhes da Solicitação
+              </TabsTrigger>
+              <TabsTrigger value="proposals" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Propostas ({requestProposals?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="messages" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -580,11 +597,735 @@ export default function PackageRequestDetailsModal({
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="proposals" className="space-y-6 mt-0">
+              <ProposalsTab 
+                requestId={requestId!} 
+                requestDetails={requestDetails}
+                proposals={requestProposals || []}
+              />
+            </TabsContent>
             </div>
           </Tabs>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Component for managing proposals within a package request
+interface ProposalsTabProps {
+  requestId: Id<"packageRequests">;
+  requestDetails: any;
+  proposals: any[];
+}
+
+function ProposalsTab({ requestId, requestDetails, proposals }: ProposalsTabProps) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [isCreatingProposal, setIsCreatingProposal] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState("proposals");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  
+  const sendProposal = useMutation(api.domains.packageProposals.mutations.sendPackageProposal);
+  const createProposal = useMutation(api.domains.packageProposals.mutations.createPackageProposal);
+  const generateUploadUrl = useMutation(api.domains.media.mutations.generateUploadUrl);
+  const uploadAttachment = useMutation(api.domains.packageProposals.documents.uploadProposalAttachment);
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('pt-BR');
+  };
+
+  const handleSendProposal = async (proposalId: Id<"packageProposals">) => {
+    try {
+      await sendProposal({
+        id: proposalId,
+        sendEmail: true,
+        sendNotification: true,
+        customMessage: "Sua proposta personalizada está pronta! Confira todos os detalhes e entre em contato se tiver dúvidas.",
+      });
+      toast.success("Proposta enviada com sucesso!");
+    } catch (error) {
+      console.error("Error sending proposal:", error);
+      toast.error("Erro ao enviar proposta");
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    
+    // Validate files
+    const validFiles = files.filter(file => {
+      if (file.type !== 'application/pdf') {
+        toast.error(`Arquivo "${file.name}" não é um PDF válido`);
+        return false;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error(`Arquivo "${file.name}" é muito grande. Limite: 10MB`);
+        return false;
+      }
+      return true;
+    });
+
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFilesToProposal = async (proposalId: Id<"packageProposals">) => {
+    if (uploadedFiles.length === 0) return;
+
+    try {
+      for (const file of uploadedFiles) {
+        // Get upload URL
+        const uploadUrl = await generateUploadUrl();
+        
+        // Upload file to storage
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+
+        const { storageId } = await result.json();
+
+        // Save attachment info to database
+        await uploadAttachment({
+          proposalId,
+          storageId,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          description: `Documento anexado durante criação da proposta`,
+        });
+      }
+      
+      toast.success(`${uploadedFiles.length} arquivo(s) anexado(s) à proposta!`);
+      setUploadedFiles([]);
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      toast.error("Erro ao anexar arquivos à proposta");
+    }
+  };
+
+  const statusConfig = {
+    draft: { label: "Rascunho", color: "bg-gray-500" },
+    review: { label: "Em Revisão", color: "bg-yellow-500" },
+    sent: { label: "Enviada", color: "bg-blue-500" },
+    viewed: { label: "Visualizada", color: "bg-purple-500" },
+    under_negotiation: { label: "Em Negociação", color: "bg-orange-500" },
+    accepted: { label: "Aceita", color: "bg-green-500" },
+    rejected: { label: "Rejeitada", color: "bg-red-500" },
+    expired: { label: "Expirada", color: "bg-gray-500" },
+    withdrawn: { label: "Retirada", color: "bg-gray-500" },
+  };
+
+  const priorityConfig = {
+    low: { label: "Baixa", color: "bg-gray-500" },
+    normal: { label: "Normal", color: "bg-blue-500" },
+    high: { label: "Alta", color: "bg-orange-500" },
+    urgent: { label: "Urgente", color: "bg-red-500" },
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h3 className="text-lg font-semibold">Propostas de Pacote</h3>
+        <p className="text-sm text-gray-600">
+          Gerencie propostas e documentos para a solicitação #{requestDetails.requestNumber}
+        </p>
+      </div>
+
+      {/* Sub-tabs */}
+      <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="proposals" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Propostas ({proposals.length})
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Documentos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="proposals" className="space-y-6 mt-4">
+          {/* Action buttons */}
+          <div className="flex justify-end gap-2">
+            <Button 
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              variant={showCreateForm ? "secondary" : "default"}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Criação Rápida
+            </Button>
+            <Button 
+              onClick={() => window.open(`/admin/dashboard/propostas-pacotes/criar/${requestId}`, '_blank')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              Criação Completa
+            </Button>
+          </div>
+
+      {/* Quick Create Form */}
+      {showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Criação Rápida de Proposta</CardTitle>
+            <CardDescription>
+              Crie uma proposta básica rapidamente. Para mais opções, use a criação completa.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setIsCreatingProposal(true);
+              
+              const formData = new FormData(e.currentTarget);
+              const title = formData.get('title') as string;
+              const description = formData.get('description') as string;
+              const totalPrice = parseFloat(formData.get('totalPrice') as string);
+              const validDays = parseInt(formData.get('validDays') as string);
+              
+              try {
+                const proposalId = await createProposal({
+                  packageRequestId: requestId,
+                  title,
+                  description,
+                  summary: description.substring(0, 200),
+                  components: [{
+                    type: "other",
+                    name: "Pacote Completo",
+                    description: "Pacote turístico completo conforme solicitação",
+                    quantity: 1,
+                    unitPrice: totalPrice,
+                    totalPrice: totalPrice,
+                    included: true,
+                    optional: false,
+                  }],
+                  subtotal: totalPrice,
+                  taxes: totalPrice * 0.05, // 5% taxes
+                  fees: totalPrice * 0.02, // 2% fees
+                  discount: 0,
+                  totalPrice: totalPrice * 1.07, // Total with taxes and fees
+                  currency: "BRL",
+                  validUntil: Date.now() + (validDays * 24 * 60 * 60 * 1000),
+                  paymentTerms: "Pagamento via cartão de crédito ou transferência bancária",
+                  cancellationPolicy: "Cancelamento gratuito até 48h antes da viagem",
+                  inclusions: ["Hospedagem", "Transporte", "Atividades", "Seguro viagem"],
+                  exclusions: ["Refeições não mencionadas", "Despesas pessoais"],
+                  requiresApproval: false,
+                  priority: "normal" as const,
+                });
+                
+                // Upload files to the created proposal
+                await uploadFilesToProposal(proposalId);
+                
+                toast.success("Proposta criada com sucesso!");
+                setShowCreateForm(false);
+                setUploadedFiles([]);
+                e.currentTarget.reset();
+              } catch (error) {
+                console.error("Error creating proposal:", error);
+                toast.error("Erro ao criar proposta");
+              } finally {
+                setIsCreatingProposal(false);
+              }
+            }} className="space-y-4">
+              <div>
+                <Label htmlFor="title">Título da Proposta *</Label>
+                <Input
+                  id="title"
+                  name="title"
+                  placeholder="Ex: Pacote Noronha 7 dias - Família Silva"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Descrição *</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  placeholder="Descreva brevemente o que está incluído nesta proposta..."
+                  rows={3}
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="totalPrice">Valor Total (R$) *</Label>
+                  <Input
+                    id="totalPrice"
+                    name="totalPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="5000.00"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="validDays">Válida por (dias) *</Label>
+                  <Input
+                    id="validDays"
+                    name="validDays"
+                    type="number"
+                    defaultValue="30"
+                    min="1"
+                    max="90"
+                    required
+                  />
+                </div>
+              </div>
+              
+              {/* File Upload Section */}
+              <div>
+                <Label htmlFor="file-upload">Documentos PDF (opcional)</Label>
+                <div className="mt-2">
+                  <Input
+                    id="file-upload"
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Apenas arquivos PDF. Máximo 10MB por arquivo.
+                  </p>
+                </div>
+                
+                {/* Selected Files List */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      Arquivos selecionados ({uploadedFiles.length}):
+                    </p>
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-red-500" />
+                          <span className="text-sm text-gray-700">{file.name}</span>
+                          <span className="text-xs text-gray-500">
+                            ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setUploadedFiles([]);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isCreatingProposal}>
+                  {isCreatingProposal ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Proposta
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Proposals List */}
+      {proposals.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhuma proposta criada
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Crie a primeira proposta para esta solicitação de pacote.
+            </p>
+            <Button 
+              onClick={() => window.open(`/admin/dashboard/propostas-pacotes/criar/${requestId}`, '_blank')}
+              className="mx-auto"
+            >
+              Criar Proposta
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {proposals.map((proposal) => {
+            const status = statusConfig[proposal.status as keyof typeof statusConfig];
+            const priority = priorityConfig[proposal.priority as keyof typeof priorityConfig];
+            const isExpired = proposal.validUntil < Date.now();
+
+            return (
+              <Card key={proposal._id} className="hover:shadow-md transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-semibold">{proposal.title}</h4>
+                        <Badge className={`${status.color} text-white text-xs`}>
+                          {status.label}
+                        </Badge>
+                        <Badge className={`${priority.color} text-white text-xs`}>
+                          {priority.label}
+                        </Badge>
+                        {isExpired && (
+                          <Badge variant="destructive" className="text-xs">
+                            Expirada
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 mb-3">
+                        Proposta #{proposal.proposalNumber}
+                      </p>
+                      
+                      {proposal.summary && (
+                        <p className="text-sm text-gray-700 mb-3">
+                          {proposal.summary}
+                        </p>
+                      )}
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-600">Valor: </span>
+                          <span className="text-green-600 font-semibold">
+                            {formatCurrency(proposal.totalPrice)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Válida até: </span>
+                          <span>{formatDate(proposal.validUntil)}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Componentes: </span>
+                          <span>{proposal.components.length}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Criada: </span>
+                          <span>{formatDate(proposal.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      {/* Additional proposal metrics */}
+                      {proposal.negotiationRounds > 0 && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <span className="font-medium">Rodadas de negociação: </span>
+                          <span>{proposal.negotiationRounds}</span>
+                        </div>
+                      )}
+
+                      {proposal.convertedToBooking && (
+                        <div className="mt-2">
+                          <Badge className="bg-green-100 text-green-800">
+                            Convertida em Reserva
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProposal(proposal);
+                          setShowViewDialog(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver
+                      </Button>
+                      
+                      {proposal.status === "draft" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleSendProposal(proposal._id)}
+                        >
+                          <SendIcon className="h-4 w-4 mr-1" />
+                          Enviar
+                        </Button>
+                      )}
+                      
+                      {(proposal.status === "sent" || proposal.status === "viewed") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`/propostas/${proposal._id}`, '_blank')}
+                        >
+                          Link Público
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Quick Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Resumo das Propostas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-600">Total: </span>
+                  <span className="font-semibold">{proposals.length}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600">Aceitas: </span>
+                  <span className="font-semibold text-green-600">
+                    {proposals.filter(p => p.status === "accepted").length}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600">Em Negociação: </span>
+                  <span className="font-semibold text-orange-600">
+                    {proposals.filter(p => p.status === "under_negotiation").length}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600">Valor Total: </span>
+                  <span className="font-semibold">
+                    {formatCurrency(proposals.reduce((acc, p) => acc + p.totalPrice, 0))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action suggestions based on proposal status */}
+              {proposals.filter(p => p.status === "accepted").length > 0 && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <CheckCircleIcon className="h-4 w-4 inline mr-1" />
+                    Existem propostas aceitas! Considere convertê-las em reservas.
+                  </p>
+                </div>
+              )}
+              
+              {proposals.filter(p => p.status === "draft").length > 0 && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <Clock className="h-4 w-4 inline mr-1" />
+                    Há propostas em rascunho aguardando envio.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* View Proposal Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedProposal?.title}
+            </DialogTitle>
+            <DialogDescription>
+              Proposta #{selectedProposal?.proposalNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProposal && (
+            <div className="space-y-6">
+              {/* Proposal Details */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Status: </span>
+                  <Badge className={`${statusConfig[selectedProposal.status as keyof typeof statusConfig]?.color} text-white`}>
+                    {statusConfig[selectedProposal.status as keyof typeof statusConfig]?.label}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="font-medium">Prioridade: </span>
+                  <Badge className={`${priorityConfig[selectedProposal.priority as keyof typeof priorityConfig]?.color} text-white`}>
+                    {priorityConfig[selectedProposal.priority as keyof typeof priorityConfig]?.label}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="font-medium">Valor Total: </span>
+                  <span className="text-green-600 font-semibold">
+                    {formatCurrency(selectedProposal.totalPrice)}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Válida até: </span>
+                  <span>{formatDate(selectedProposal.validUntil)}</span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <h4 className="font-medium mb-2">Descrição</h4>
+                <p className="text-sm text-gray-600">{selectedProposal.description}</p>
+              </div>
+
+              {/* Components */}
+              <div>
+                <h4 className="font-medium mb-2">Componentes ({selectedProposal.components.length})</h4>
+                <div className="space-y-2">
+                  {selectedProposal.components.map((component: any, index: number) => (
+                    <div key={index} className="border rounded p-3 text-sm">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-medium">{component.name}</span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(component.totalPrice)}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 text-xs mb-1">{component.description}</p>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {component.type}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {component.quantity}x {formatCurrency(component.unitPrice)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pricing Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Detalhamento de Preços</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>{formatCurrency(selectedProposal.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Taxas:</span>
+                      <span>{formatCurrency(selectedProposal.taxes)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Fees:</span>
+                      <span>{formatCurrency(selectedProposal.fees)}</span>
+                    </div>
+                    {selectedProposal.discount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Desconto:</span>
+                        <span>-{formatCurrency(selectedProposal.discount)}</span>
+                      </div>
+                    )}
+                    <div className="border-t pt-2 flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span className="text-green-600">{formatCurrency(selectedProposal.totalPrice)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  onClick={() => window.open(`/propostas/${selectedProposal._id}`, '_blank')}
+                >
+                  Ver Página Pública
+                </Button>
+                {selectedProposal.status === "draft" && (
+                  <Button
+                    onClick={() => {
+                      handleSendProposal(selectedProposal._id);
+                      setShowViewDialog(false);
+                    }}
+                  >
+                    Enviar Proposta
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-6 mt-4">
+          {/* Check if there are any proposals to show documents for */}
+          {proposals.length > 0 ? (
+            <div className="space-y-4">
+              {proposals.map((proposal) => (
+                <Card key={proposal._id}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      {proposal.title}
+                    </CardTitle>
+                    <CardDescription>
+                      Proposta #{proposal.proposalNumber} - Documentos e anexos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ProposalDocumentManager proposalId={proposal._id} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">Nenhuma proposta criada ainda</p>
+                  <p className="text-sm text-gray-500">
+                    Crie uma proposta primeiro para poder gerenciar documentos
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 

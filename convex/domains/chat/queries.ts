@@ -154,12 +154,24 @@ export const getChatRoom = query({
     v.object({
       _id: v.id("chatRooms"),
       _creationTime: v.number(),
-      contextType: v.union(v.literal("asset"), v.literal("booking")),
+      contextType: v.union(
+        v.literal("asset"), 
+        v.literal("booking"), 
+        v.literal("admin_reservation"),
+        v.literal("package_request"),
+        v.literal("package_proposal")
+      ),
       contextId: v.string(),
       assetType: v.optional(v.string()),
       travelerId: v.id("users"),
       partnerId: v.id("users"),
-      status: v.union(v.literal("active"), v.literal("closed"), v.literal("archived")),
+      status: v.union(
+        v.literal("active"), 
+        v.literal("closed"), 
+        v.literal("archived"),
+        v.literal("escalated"),
+        v.literal("pending_response")
+      ),
       title: v.string(),
       lastMessageAt: v.optional(v.number()),
       lastMessagePreview: v.optional(v.string()),

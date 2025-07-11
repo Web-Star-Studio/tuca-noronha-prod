@@ -52,29 +52,32 @@ export default defineSchema({
   users: defineTable({
     clerkId: v.optional(v.string()),
     email: v.optional(v.string()),
-    emailVerificationTime: v.optional(v.float64()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
     image: v.optional(v.string()),
     isAnonymous: v.optional(v.boolean()),
-    name: v.optional(v.string()),
-    phone: v.optional(v.string()),
-    phoneVerificationTime: v.optional(v.float64()),
+    isActive: v.optional(v.boolean()),
     role: v.optional(v.string()),
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
-    isActive: v.optional(v.boolean()),                  // Status ativo/inativo do usuário
-    
-    // Campos de onboarding para travelers
-    fullName: v.optional(v.string()),
-    dateOfBirth: v.optional(v.string()), // Formato ISO string (YYYY-MM-DD)
-    phoneNumber: v.optional(v.string()),
+    // Onboarding fields for travelers
+    dateOfBirth: v.optional(v.string()),
     onboardingCompleted: v.optional(v.boolean()),
     onboardingCompletedAt: v.optional(v.number()),
+    stripeCustomerId: v.optional(v.string()),
   })
-    .index("email", ["email"])
-    .index("phone", ["phone"])
     .index("clerkId", ["clerkId"])
+    .index("email", ["email"])
     .index("by_partner", ["partnerId"])
-    .index("by_organization", ["organizationId"]),
+    .index("by_organization", ["organizationId"])
+    .searchIndex("by_name_email", {
+      searchField: "name",
+      filterFields: ["email"],
+    }),
   assetPermissions: defineTable({
     employeeId: v.id("users"),
     assetId: v.string(), // Store as string for flexibility across different asset types
@@ -176,10 +179,16 @@ export default defineSchema({
 
   // Sistema de Chat
   chatRooms: defineTable({
-    // Tipo de contexto do chat (asset ou booking)
-    contextType: v.union(v.literal("asset"), v.literal("booking")),
+    // Tipo de contexto do chat (asset, booking, ou admin_reservation)
+    contextType: v.union(
+      v.literal("asset"), 
+      v.literal("booking"),
+      v.literal("admin_reservation"),
+      v.literal("package_request"),
+      v.literal("package_proposal")
+    ),
     
-    // ID do contexto (asset ID ou booking ID)
+    // ID do contexto (asset ID, booking ID, admin reservation ID, etc.)
     contextId: v.string(),
     
     // Tipo do asset (se contextType for "asset")
@@ -189,17 +198,54 @@ export default defineSchema({
     travelerId: v.id("users"), // O traveler que iniciou o chat
     partnerId: v.id("users"),  // O partner/employee responsável pelo asset
     
+    // Reservation-specific fields
+    reservationId: v.optional(v.string()), // Admin reservation ID for reservation-specific chats
+    reservationType: v.optional(v.union(
+      v.literal("admin_reservation"),
+      v.literal("regular_booking")
+    )),
+    
+    // Priority and categorization
+    priority: v.union(
+      v.literal("low"),
+      v.literal("normal"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    
+    // Assignment and delegation
+    assignedTo: v.optional(v.id("users")), // Staff member assigned to handle this chat
+    assignedBy: v.optional(v.id("users")), // Who assigned the chat
+    assignedAt: v.optional(v.number()),    // When assigned
+    
     // Status do chat
     status: v.union(
       v.literal("active"),
       v.literal("closed"),
-      v.literal("archived")
+      v.literal("archived"),
+      v.literal("escalated"),
+      v.literal("pending_response")
     ),
     
     // Metadata
     title: v.string(), // Título do chat baseado no contexto
+    description: v.optional(v.string()), // Chat description
+    tags: v.optional(v.array(v.string())), // Tags for categorization
     lastMessageAt: v.optional(v.number()),
     lastMessagePreview: v.optional(v.string()),
+    
+    // Unread message counts
+    unreadCountTraveler: v.number(), // Unread messages for traveler
+    unreadCountPartner: v.number(),  // Unread messages for partner
+    
+    // Auto-close settings
+    autoCloseAfter: v.optional(v.number()), // Auto-close after X hours of inactivity
+    autoCloseNotified: v.optional(v.boolean()), // Whether auto-close notification was sent
+    
+    // SLA and response tracking
+    firstResponseTime: v.optional(v.number()), // Time to first response
+    averageResponseTime: v.optional(v.number()), // Average response time
+    lastResponseTime: v.optional(v.number()), // Last response time
     
     // Timestamps
     createdAt: v.number(),
@@ -209,7 +255,15 @@ export default defineSchema({
     .index("by_partner", ["partnerId"])
     .index("by_context", ["contextType", "contextId"])
     .index("by_traveler_partner", ["travelerId", "partnerId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_reservation", ["reservationId", "reservationType"])
+    .index("by_assigned_to", ["assignedTo"])
+    .index("by_priority", ["priority"])
+    .index("by_partner_status", ["partnerId", "status"])
+    .index("by_traveler_status", ["travelerId", "status"])
+    .index("by_priority_status", ["priority", "status"])
+    .index("by_last_message", ["lastMessageAt"])
+    .index("by_context_status", ["contextType", "status"]),
 
   chatMessages: defineTable({
     // Referência à sala de chat
@@ -240,6 +294,50 @@ export default defineSchema({
     .index("by_chatroom_timestamp", ["chatRoomId", "createdAt"])
     .index("by_sender", ["senderId"])
     .index("by_unread", ["isRead"]),
+
+  // Chat Message Templates
+  chatMessageTemplates: defineTable({
+    name: v.string(),                               // Template name
+    category: v.union(                              // Template category
+      v.literal("greeting"),
+      v.literal("booking_confirmation"),
+      v.literal("booking_modification"),
+      v.literal("cancellation"),
+      v.literal("payment_reminder"),
+      v.literal("special_request"),
+      v.literal("follow_up"),
+      v.literal("escalation"),
+      v.literal("closing")
+    ),
+    assetType: v.optional(v.union(                  // Asset type this template applies to
+      v.literal("activities"),
+      v.literal("events"), 
+      v.literal("restaurants"),
+      v.literal("vehicles"),
+      v.literal("accommodations"),
+      v.literal("packages"),
+      v.literal("general")
+    )),
+    subject: v.string(),                            // Message subject/title
+    content: v.string(),                            // Template content with variables
+    variables: v.array(v.string()),                 // Available variables like customerName, assetTitle
+    isActive: v.boolean(),                          // Whether template is active
+    partnerId: v.optional(v.id("users")),           // Partner-specific templates (null for system templates)
+    language: v.optional(v.string()),               // Language code (pt, en, es)
+    
+    // Metadata
+    createdBy: v.id("users"),                       // Who created the template
+    updatedBy: v.optional(v.id("users")),           // Who last updated the template
+    createdAt: v.number(),                          // Creation timestamp
+    updatedAt: v.number(),                          // Last update timestamp
+  })
+    .index("by_category", ["category"])
+    .index("by_asset_type", ["assetType"])
+    .index("by_partner", ["partnerId"])
+    .index("by_category_asset", ["category", "assetType"])
+    .index("by_partner_category", ["partnerId", "category"])
+    .index("by_active", ["isActive"])
+    .index("by_language", ["language"]),
 
   activities: defineTable({
     title: v.string(),
@@ -450,6 +548,10 @@ export default defineSchema({
     status: v.string(),                                 // Status (ex: "pending", "confirmed", "canceled")
     confirmationCode: v.string(),                       // Código de confirmação
     tableId: v.optional(v.id("restaurantTables")),      // Mesa atribuída (opcional)
+    // Coupon fields
+    couponCode: v.optional(v.string()),                 // Applied coupon code
+    discountAmount: v.optional(v.number()),             // Discount amount applied
+    finalAmount: v.optional(v.number()),                // Final amount after discount
     // Stripe integration fields
     paymentStatus: v.optional(v.string()),              // Status do pagamento
     paymentMethod: v.optional(v.string()),              // Método de pagamento
@@ -613,6 +715,10 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     }),
+    // Coupon fields
+    couponCode: v.optional(v.string()),            // Applied coupon code
+    discountAmount: v.optional(v.number()),        // Discount amount applied
+    finalAmount: v.optional(v.number()),           // Final amount after discount
     // Stripe integration fields
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
@@ -656,6 +762,10 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     }),
+    // Coupon fields
+    couponCode: v.optional(v.string()),            // Applied coupon code
+    discountAmount: v.optional(v.number()),        // Discount amount applied
+    finalAmount: v.optional(v.number()),           // Final amount after discount
     // Stripe integration fields
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
@@ -747,6 +857,10 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     })),
+    // Coupon fields
+    couponCode: v.optional(v.string()),         // Applied coupon code
+    discountAmount: v.optional(v.number()),     // Discount amount applied
+    finalAmount: v.optional(v.number()),        // Final amount after discount
     // Stripe integration fields
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
@@ -870,6 +984,10 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
     }),
+    // Coupon fields
+    couponCode: v.optional(v.string()),                 // Applied coupon code
+    discountAmount: v.optional(v.number()),             // Discount amount applied
+    finalAmount: v.optional(v.number()),                // Final amount after discount
     // Stripe integration fields
     stripeCheckoutSessionId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
@@ -917,6 +1035,7 @@ export default defineSchema({
       assetType: v.optional(v.string()),
       bookingCode: v.optional(v.string()),
       travelerName: v.optional(v.string()),
+      proposalTitle: v.optional(v.string()), // Added for package proposals
     })),
     createdAt: v.number(),                      // When the notification was created
     readAt: v.optional(v.number()),             // When it was read (if applicable)
@@ -1101,6 +1220,8 @@ export default defineSchema({
 
   // Package Request System (Simplified)
   packageRequests: defineTable({
+    // User Information
+    userId: v.optional(v.id("users")), // User who made the request
     // Customer Information
     customerInfo: v.object({
       name: v.string(),
@@ -1157,17 +1278,26 @@ export default defineSchema({
     proposalSent: v.optional(v.boolean()),
     proposalDetails: v.optional(v.string()),
     
+    // Proposal related fields
+    proposalCount: v.optional(v.number()),
+    lastProposalSent: v.optional(v.number()),
+    conversionStatus: v.optional(v.string()), // e.g., "converted", "abandoned"
+    estimatedValue: v.optional(v.number()),
+    
     // Metadata
     requestNumber: v.string(), // Unique request number for tracking
     createdAt: v.number(),
     updatedAt: v.number(),
     assignedTo: v.optional(v.id("users")), // Admin user assigned to this request
+    partnerId: v.optional(v.id("users")),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   })
     .index("by_status", ["status"])
     .index("by_email", ["customerInfo.email"])
     .index("by_request_number", ["requestNumber"])
     .index("by_assigned_to", ["assignedTo"])
-    .index("by_created_date", ["createdAt"]),
+    .index("by_created_date", ["createdAt"])
+    .index("by_user", ["userId"]),
 
   // Messages de contato para solicitações de pacotes
   packageRequestMessages: defineTable({
@@ -1333,6 +1463,38 @@ export default defineSchema({
         v.literal("booking_update"),
         v.literal("booking_cancel"),
         v.literal("booking_confirm"),
+        // Admin Reservation Operations
+        v.literal("admin_reservation_create"),
+        v.literal("admin_reservation_update"),
+        v.literal("admin_reservation_cancel"),
+        v.literal("admin_reservation_confirm"),
+        v.literal("admin_reservation_delete"),
+        // Package Proposal Operations
+        v.literal("package_proposal_create"),
+        v.literal("package_proposal_update"),
+        v.literal("package_proposal_send"),
+        v.literal("package_proposal_viewed"),
+        v.literal("package_proposal_approve"),
+        v.literal("package_proposal_reject"),
+        v.literal("package_proposal_accept"),
+        v.literal("package_proposal_convert"),
+        v.literal("package_proposal_delete"),
+        v.literal("package_proposal_attachment_add"),
+        v.literal("package_proposal_attachment_remove"),
+        v.literal("package_proposal_template_create"),
+        v.literal("package_proposal_template_update"),
+        v.literal("package_proposal_template_delete"),
+        // Auto-Confirmation Operations
+        v.literal("auto_confirmation_create"),
+        v.literal("auto_confirmation_update"),
+        v.literal("auto_confirmation_enable"),
+        v.literal("auto_confirmation_disable"),
+        v.literal("auto_confirmation_delete"),
+        // Reservation Communication
+        v.literal("reservation_chat_create"),
+        v.literal("reservation_message_send"),
+        v.literal("reservation_comm_status_change"),
+        v.literal("reservation_comm_assign"),
         // Organization Management
         v.literal("organization_create"),
         v.literal("organization_update"),
@@ -1360,6 +1522,11 @@ export default defineSchema({
         v.literal("user_management"),
         v.literal("asset_management"),
         v.literal("booking_management"),
+        v.literal("admin_reservation_management"),
+        v.literal("package_management"),
+        v.literal("auto_confirmation_management"),
+        v.literal("document_management"),
+        v.literal("template_management"),
         v.literal("communication"),
         v.literal("security"),
         v.literal("compliance"),
@@ -1519,6 +1686,7 @@ export default defineSchema({
       v.literal("booking_reminder"),
       v.literal("package_request_received"),
       v.literal("package_request_status_update"),
+      v.literal("package_proposal_sent"),
       v.literal("partner_new_booking"),
       v.literal("welcome_new_user"),
       v.literal("new_partner_registration"),
@@ -1840,11 +2008,22 @@ export default defineSchema({
   vouchers: defineTable({
     // Identification
     voucherNumber: v.string(),        // Format: VCH-YYYYMMDD-XXXX
+    code: v.string(),                 // Same as voucherNumber, for compatibility
     qrCode: v.string(),               // QR code content/URL
     
     // Booking Reference
     bookingId: v.string(),            // Unified booking ID as string (support for different types)
-    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("accommodation"), v.literal("package")),
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("accommodation"), v.literal("package"), v.literal("admin_reservation")),
+    
+    // Voucher Details
+    type: v.optional(v.string()),     // Type of voucher
+    userId: v.optional(v.id("users")), // User ID
+    assetType: v.optional(v.string()), // Asset type
+    assetId: v.optional(v.string()),   // Asset ID
+    relatedBookingId: v.optional(v.string()), // Related booking ID
+    details: v.optional(v.any()),      // Flexible details object
+    validFrom: v.optional(v.number()), // Valid from date
+    validUntil: v.optional(v.number()), // Valid until date
     
     // Status Management
     status: v.union(v.literal("active"), v.literal("used"), v.literal("cancelled"), v.literal("expired")),
@@ -1925,4 +2104,524 @@ export default defineSchema({
     .index("by_version", ["assetType", "version"])
     .index("by_default", ["assetType", "isDefault"])
     .index("by_organization", ["organizationId", "assetType"]),
+
+  // Admin Reservation System Tables
+  adminReservations: defineTable({
+    // Basic Information
+    id: v.optional(v.string()),                    // Optional external ID
+    assetId: v.string(),                          // Asset ID
+    assetType: v.union(
+      v.literal("activities"),
+      v.literal("events"),
+      v.literal("restaurants"),
+      v.literal("vehicles"),
+      v.literal("accommodations"),
+      v.literal("packages")
+    ),
+    travelerId: v.id("users"),                    // Traveler assigned to this reservation
+    adminId: v.id("users"),                       // Admin who created this reservation
+    
+    // Customer Information
+    customerName: v.optional(v.string()),                     // Customer name
+    customerEmail: v.optional(v.string()),                    // Customer email
+    customerPhone: v.optional(v.string()),                    // Customer phone
+    customerDocument: v.optional(v.string()),     // Customer document (CPF, etc)
+    
+    // Booking Reference
+    originalBookingId: v.optional(v.string()),    // Original booking ID if converted from existing
+    confirmationCode: v.optional(v.string()),     // Unique confirmation code (optional until confirmed)
+    voucherId: v.optional(v.id("vouchers")),      // Associated voucher
+    
+    // Reservation Details
+    reservationDate: v.optional(v.float64()),                  // Main reservation date
+    reservationData: v.object({
+      // Common fields
+      startDate: v.optional(v.number()),          // Start date/time
+      endDate: v.optional(v.number()),            // End date/time
+      guests: v.optional(v.number()),             // Number of guests
+      specialRequests: v.optional(v.string()),    // Special requests
+      
+      // Asset-specific fields (flexible object)
+      assetSpecific: v.optional(v.any()),         // Asset-specific data
+    }),
+    assetSpecific: v.optional(v.any()),           // Direct asset-specific data
+    
+    // Creation Method
+    createdMethod: v.union(
+      v.literal("admin_direct"),                  // Created directly by admin
+      v.literal("admin_conversion"),              // Converted from package request
+      v.literal("admin_group"),                   // Part of group booking
+      v.literal("admin_phone"),                   // Created from phone reservation
+      v.literal("admin_walkin")                   // Walk-in reservation
+    ),
+    
+    // Payment Information
+    paymentStatus: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("requires_capture"),
+      v.literal("succeeded"),
+      v.literal("failed"),
+      v.literal("completed"),
+      v.literal("cash"),
+      v.literal("transfer"),
+      v.literal("deferred"),
+      v.literal("partial"),
+      v.literal("refunded"),
+      v.literal("cancelled")
+    ),
+    totalAmount: v.number(),                      // Total reservation amount
+    paidAmount: v.optional(v.number()),           // Amount already paid
+    paymentMethod: v.optional(v.string()),        // Payment method used
+    paymentNotes: v.optional(v.string()),         // Payment-related notes
+    
+    // Stripe Integration
+    stripePaymentIntentId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+    stripePaymentLinkUrl: v.optional(v.string()),
+    paymentDueDate: v.optional(v.number()),
+    
+    // Status Management
+    status: v.union(
+      v.literal("draft"),
+      v.literal("confirmed"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("no_show")
+    ),
+    
+    // Admin Notes and Customer Service
+    adminNotes: v.optional(v.string()),           // Internal admin notes
+    customerNotes: v.optional(v.string()),        // Notes for customer
+    notes: v.optional(v.string()),                // General notes
+    internalFlags: v.optional(v.array(v.string())), // Internal flags (VIP, special, etc.)
+    
+    // Communication
+    lastContactedAt: v.optional(v.number()),      // Last customer contact
+    reminderSent: v.optional(v.boolean()),        // Whether reminder was sent
+    sendNotifications: v.optional(v.boolean()),    // Whether to send notifications
+    autoConfirm: v.optional(v.boolean()),         // Whether to auto-confirm
+    
+    // Audit Trail
+    createdBy: v.id("users"),                     // Who created (same as adminId)
+    createdByName: v.optional(v.string()),        // Name of who created
+    lastModifiedBy: v.optional(v.id("users")),    // Who last modified
+    partnerId: v.optional(v.id("users")),         // Partner responsible
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organization
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    
+    // Soft delete
+    isActive: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    deletedBy: v.optional(v.id("users")),
+  })
+    .index("by_traveler", ["travelerId"])
+    .index("by_admin", ["adminId"])
+    .index("by_asset", ["assetType", "assetId"])
+    .index("by_status", ["status"])
+    .index("by_payment_status", ["paymentStatus"])
+    .index("by_partner", ["partnerId"])
+    .index("by_organization", ["organizationId"])
+    .index("by_created_method", ["createdMethod"])
+    .index("by_confirmation_code", ["confirmationCode"])
+    .index("by_traveler_status", ["travelerId", "status"])
+    .index("by_admin_status", ["adminId", "status"])
+    .index("by_partner_status", ["partnerId", "status"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_is_active", ["isActive"]),
+
+  // Package Proposals System
+  packageProposals: defineTable({
+    packageRequestId: v.id("packageRequests"),   // Reference to package request
+    adminId: v.id("users"),                       // Admin who created proposal
+    proposalNumber: v.string(),                   // Unique proposal number
+    
+    // Proposal Content
+    title: v.string(),                            // Proposal title
+    description: v.string(),                      // Detailed description
+    summary: v.optional(v.string()),              // Executive summary
+    
+    // Package Components
+    components: v.array(v.object({
+      type: v.union(
+        v.literal("accommodation"),
+        v.literal("activity"),
+        v.literal("event"),
+        v.literal("restaurant"),
+        v.literal("vehicle"),
+        v.literal("transfer"),
+        v.literal("guide"),
+        v.literal("insurance"),
+        v.literal("other")
+      ),
+      assetId: v.optional(v.string()),            // Asset ID if applicable
+      name: v.string(),                           // Component name
+      description: v.string(),                    // Component description
+      quantity: v.number(),                       // Quantity
+      unitPrice: v.number(),                      // Unit price
+      totalPrice: v.number(),                     // Total for this component
+      included: v.boolean(),                      // Whether included in package
+      optional: v.boolean(),                      // Whether optional
+      notes: v.optional(v.string()),              // Component notes
+    })),
+    
+    // Pricing
+    subtotal: v.number(),                         // Subtotal before taxes/fees
+    taxes: v.number(),                            // Tax amount
+    fees: v.number(),                             // Additional fees
+    discount: v.number(),                         // Discount amount
+    totalPrice: v.number(),                       // Final total price
+    currency: v.string(),                         // Currency code
+    
+    // Proposal Terms
+    validUntil: v.number(),                       // Proposal expiration
+    paymentTerms: v.string(),                     // Payment terms
+    cancellationPolicy: v.string(),               // Cancellation policy
+    inclusions: v.array(v.string()),              // What's included
+    exclusions: v.array(v.string()),              // What's excluded
+    
+    // Documents and Media
+    proposalDocument: v.optional(v.string()),     // Main proposal document storage ID
+    attachments: v.array(v.object({
+      storageId: v.string(),                      // Convex storage ID
+      fileName: v.string(),                       // Original filename
+      fileType: v.string(),                       // MIME type
+      fileSize: v.number(),                       // File size in bytes
+      uploadedAt: v.number(),                     // Upload timestamp
+      uploadedBy: v.id("users"),                  // Who uploaded
+      description: v.optional(v.string()),        // File description
+    })),
+    
+    // Status and Tracking
+    status: v.union(
+      v.literal("draft"),
+      v.literal("review"),
+      v.literal("sent"),
+      v.literal("viewed"),
+      v.literal("under_negotiation"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+      v.literal("expired"),
+      v.literal("withdrawn")
+    ),
+    
+    // Interaction Tracking
+    sentAt: v.optional(v.number()),               // When proposal was sent
+    viewedAt: v.optional(v.number()),             // When customer viewed
+    respondedAt: v.optional(v.number()),          // When customer responded
+    acceptedAt: v.optional(v.number()),           // When accepted
+    
+    // Negotiation
+    negotiationRounds: v.number(),                // Number of negotiation rounds
+    customerFeedback: v.optional(v.string()),     // Customer feedback
+    adminResponse: v.optional(v.string()),        // Admin response
+    
+    // Approval Workflow
+    requiresApproval: v.boolean(),                // Whether requires approval
+    approvalStatus: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    )),
+    approvedBy: v.optional(v.id("users")),        // Who approved
+    approvedAt: v.optional(v.number()),           // When approved
+    approvalNotes: v.optional(v.string()),        // Approval notes
+    
+    // Conversion Tracking
+    convertedToBooking: v.boolean(),              // Whether converted to booking
+    bookingId: v.optional(v.string()),            // Booking ID if converted
+    convertedAt: v.optional(v.number()),          // When converted
+    
+    // Metadata
+    partnerId: v.optional(v.id("users")),         // Partner responsible
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organization
+    tags: v.optional(v.array(v.string())),        // Tags for categorization
+    priority: v.union(
+      v.literal("low"),
+      v.literal("normal"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    
+    // Soft delete
+    isActive: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    deletedBy: v.optional(v.id("users")),
+    rejectionReason: v.optional(v.string()),
+  })
+    .index("by_package_request", ["packageRequestId"])
+    .index("by_admin", ["adminId"])
+    .index("by_status", ["status"])
+    .index("by_approval_status", ["approvalStatus"])
+    .index("by_partner", ["partnerId"])
+    .index("by_organization", ["organizationId"])
+    .index("by_proposal_number", ["proposalNumber"])
+    .index("by_valid_until", ["validUntil"])
+    .index("by_priority", ["priority"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_conversion_status", ["convertedToBooking"])
+    .index("by_partner_status", ["partnerId", "status"])
+    .index("by_admin_status", ["adminId", "status"])
+    .searchIndex("by_title_description", {
+      searchField: "title",
+      filterFields: ["description"],
+    }),
+
+  // Auto-Confirmation Settings
+  autoConfirmationSettings: defineTable({
+    // Asset Reference
+    assetId: v.string(),                          // Asset ID
+    assetType: v.union(
+      v.literal("activities"),
+      v.literal("events"),
+      v.literal("restaurants"),
+      v.literal("vehicles"),
+      v.literal("accommodations")
+    ),
+    partnerId: v.id("users"),                     // Partner who owns this setting
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organization
+    
+    // Basic Settings
+    enabled: v.boolean(),                         // Whether auto-confirmation is enabled
+    name: v.string(),                             // Setting name/description
+    priority: v.number(),                         // Priority order (lower = higher priority)
+    
+    // Conditions
+    conditions: v.object({
+      // Time-based conditions
+      timeRestrictions: v.object({
+        enableTimeRestrictions: v.boolean(),
+        allowedDaysOfWeek: v.array(v.number()),   // 0-6 (Sunday-Saturday)
+        allowedHours: v.object({
+          start: v.string(),                      // "09:00"
+          end: v.string(),                        // "17:00"
+        }),
+        timezone: v.string(),                     // Timezone identifier
+      }),
+      
+      // Amount-based conditions
+      amountThresholds: v.object({
+        enableAmountThresholds: v.boolean(),
+        minAmount: v.optional(v.number()),        // Minimum booking amount
+        maxAmount: v.optional(v.number()),        // Maximum booking amount
+      }),
+      
+      // Customer-based conditions
+      customerTypeFilters: v.object({
+        enableCustomerFilters: v.boolean(),
+        allowedCustomerTypes: v.array(v.string()), // ["new", "returning", "vip"]
+        minBookingHistory: v.optional(v.number()), // Minimum previous bookings
+        blacklistedCustomers: v.array(v.id("users")), // Blacklisted customers
+      }),
+      
+      // Booking-specific conditions
+      bookingConditions: v.object({
+        enableBookingConditions: v.boolean(),
+        maxGuestsCount: v.optional(v.number()),   // Maximum guests
+        minAdvanceBooking: v.optional(v.number()), // Minimum hours in advance
+        maxAdvanceBooking: v.optional(v.number()), // Maximum hours in advance
+        allowedPaymentMethods: v.array(v.string()), // Allowed payment methods
+      }),
+      
+      // Availability conditions
+      availabilityConditions: v.object({
+        enableAvailabilityConditions: v.boolean(),
+        requireAvailabilityCheck: v.boolean(),    // Check availability before auto-confirm
+        maxOccupancyPercentage: v.optional(v.number()), // Max % of capacity
+        bufferTime: v.optional(v.number()),       // Buffer time in minutes
+      }),
+    }),
+    
+    // Notification Settings
+    notifications: v.object({
+      notifyCustomer: v.boolean(),                // Send customer notification
+      notifyPartner: v.boolean(),                 // Send partner notification
+      notifyEmployees: v.boolean(),               // Send employee notifications
+      customMessage: v.optional(v.string()),      // Custom notification message
+      emailTemplate: v.optional(v.string()),     // Email template ID
+    }),
+    
+    // Override Settings
+    overrideSettings: v.object({
+      allowManualOverride: v.boolean(),           // Allow manual override
+      overrideRequiresApproval: v.boolean(),      // Override requires approval
+      overrideApprovers: v.array(v.id("users")), // Who can approve overrides
+    }),
+    
+    // Statistics
+    statistics: v.object({
+      totalApplied: v.number(),                   // Total times applied
+      totalOverridden: v.number(),                // Total times overridden
+      successRate: v.number(),                    // Success rate (0-1)
+      lastApplied: v.optional(v.number()),        // Last time applied
+    }),
+    
+    // Metadata
+    createdBy: v.id("users"),                     // Who created
+    lastModifiedBy: v.optional(v.id("users")),    // Who last modified
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    
+    // Status
+    isActive: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    deletedBy: v.optional(v.id("users")),
+  })
+    .index("by_asset", ["assetType", "assetId"])
+    .index("by_partner", ["partnerId"])
+    .index("by_organization", ["organizationId"])
+    .index("by_enabled", ["enabled"])
+    .index("by_partner_enabled", ["partnerId", "enabled"])
+    .index("by_asset_enabled", ["assetType", "assetId", "enabled"])
+    .index("by_priority", ["priority"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_is_active", ["isActive"]),
+
+  // Reservation Change History
+  reservationChangeHistory: defineTable({
+    // Reference
+    reservationId: v.string(),                    // Admin reservation ID or regular booking ID
+    reservationType: v.union(
+      v.literal("admin_reservation"),
+      v.literal("regular_booking")
+    ),
+    
+    // Change Information
+    changeType: v.union(
+      v.literal("created"),
+      v.literal("updated"),
+      v.literal("status_changed"),
+      v.literal("payment_updated"),
+      v.literal("cancelled"),
+      v.literal("notes_added")
+    ),
+    
+    // Change Details
+    fieldChanged: v.optional(v.string()),         // Field that was changed
+    oldValue: v.optional(v.any()),                // Previous value
+    newValue: v.optional(v.any()),                // New value
+    changeDescription: v.string(),                // Human-readable description
+    
+    // Actor Information
+    changedBy: v.id("users"),                     // Who made the change
+    changedByRole: v.string(),                    // Role of the person who made change
+    changeReason: v.optional(v.string()),         // Reason for change
+    
+    // Customer Communication
+    customerNotified: v.boolean(),                // Whether customer was notified
+    notificationSent: v.boolean(),                // Whether notification was sent
+    notificationMethod: v.optional(v.string()),   // Email, SMS, etc.
+    
+    // Metadata
+    ipAddress: v.optional(v.string()),            // IP address of change
+    userAgent: v.optional(v.string()),            // User agent
+    sessionId: v.optional(v.string()),            // Session ID
+    
+    // Timestamps
+    timestamp: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_reservation", ["reservationId", "reservationType"])
+    .index("by_change_type", ["changeType"])
+    .index("by_changed_by", ["changedBy"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_reservation_timestamp", ["reservationId", "timestamp"]),
+
+  // Package Proposal Templates
+  packageProposalTemplates: defineTable({
+    name: v.string(),                               // Template name
+    description: v.string(),                        // Template description
+    category: v.union(                              // Template category
+      v.literal("adventure"),
+      v.literal("leisure"),
+      v.literal("business"),
+      v.literal("family"),
+      v.literal("honeymoon"),
+      v.literal("luxury"),
+      v.literal("budget"),
+      v.literal("custom")
+    ),
+    
+    // Template Content
+    titleTemplate: v.string(),                      // Template for proposal title with variables
+    descriptionTemplate: v.string(),               // Template for proposal description
+    summaryTemplate: v.optional(v.string()),       // Template for executive summary
+    
+    // Default Components
+    defaultComponents: v.array(v.object({
+      type: v.union(
+        v.literal("accommodation"),
+        v.literal("activity"),
+        v.literal("event"),
+        v.literal("restaurant"),
+        v.literal("vehicle"),
+        v.literal("transfer"),
+        v.literal("guide"),
+        v.literal("insurance"),
+        v.literal("other")
+      ),
+      name: v.string(),                             // Component name template
+      description: v.string(),                      // Component description template
+      quantity: v.number(),                         // Default quantity
+      unitPrice: v.number(),                        // Default unit price
+      included: v.boolean(),                        // Whether included by default
+      optional: v.boolean(),                        // Whether optional by default
+      notes: v.optional(v.string()),                // Default notes
+    })),
+    
+    // Default Pricing Configuration
+    defaultPricing: v.object({
+      taxRate: v.number(),                          // Default tax rate (0.1 for 10%)
+      feeRate: v.number(),                          // Default fee rate (0.05 for 5%)
+      currency: v.string(),                         // Default currency
+    }),
+    
+    // Default Terms
+    paymentTermsTemplate: v.string(),               // Payment terms template
+    cancellationPolicyTemplate: v.string(),        // Cancellation policy template
+    defaultInclusions: v.array(v.string()),        // Default inclusions
+    defaultExclusions: v.array(v.string()),        // Default exclusions
+    
+    // Template Configuration
+    variables: v.array(v.string()),                 // Available variables like {destination}, {duration}
+    validityDays: v.number(),                       // Default validity period in days
+    requiresApproval: v.boolean(),                  // Whether proposals from this template require approval
+    priority: v.union(                              // Default priority level
+      v.literal("low"),
+      v.literal("normal"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    
+    // Access Control
+    isActive: v.boolean(),                          // Whether template is active
+    isPublic: v.boolean(),                          // Whether available to all partners
+    partnerId: v.optional(v.id("users")),           // Partner-specific templates (null for system templates)
+    organizationId: v.optional(v.id("partnerOrganizations")), // Organization-specific templates
+    
+    // Metadata
+    createdBy: v.id("users"),                       // Who created the template
+    updatedBy: v.optional(v.id("users")),           // Who last updated the template
+    usageCount: v.number(),                         // How many times template was used
+    createdAt: v.number(),                          // Creation timestamp
+    updatedAt: v.number(),                          // Last update timestamp
+  })
+    .index("by_category", ["category"])
+    .index("by_partner", ["partnerId"])
+    .index("by_organization", ["organizationId"])
+    .index("by_active", ["isActive"])
+    .index("by_public", ["isPublic"])
+    .index("by_category_partner", ["category", "partnerId"])
+    .index("by_usage_count", ["usageCount"])
+    .index("by_created_at", ["createdAt"]),
 });

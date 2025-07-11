@@ -15,13 +15,13 @@ interface VoucherTemplateProps {
 const formatSafeDate = (dateValue: any): string => {
   try {
     if (!dateValue) return "Data não disponível";
-    
+
     const date = new Date(dateValue);
-    
+
     if (isNaN(date.getTime()) || date.getTime() === 0) {
       return "Data inválida";
     }
-    
+
     return format(date, "dd/MM/yyyy", { locale: ptBR });
   } catch (error) {
     console.error("Error formatting date:", error);
@@ -51,7 +51,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
   const getAssetTypeLabel = () => {
     switch (assetType) {
       case "activity":
-        return "Atividade";
+        return "Passeio";
       case "event":
         return "Evento";
       case "restaurant":
@@ -71,8 +71,9 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       <div className="border-b-2 border-gray-200 pb-6 mb-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Voucher de {getAssetTypeLabel()}</h1>
-            <p className="text-gray-600 mt-1">Número: {voucherData.voucher.voucherNumber || "N/A"}</p>
+            <h1 className="text-3xl font-bold text-gray-800">{voucherData.asset.name || getAssetTypeLabel()}</h1>
+            <p>{voucherData.partner.name}</p>
+            <p className="text-gray-600 mt-1">Voucher: {voucherData.voucher.voucherNumber || "N/A"}</p>  
           </div>
           <div className="text-right">
             {voucherData.brandInfo.logoUrl ? (
@@ -86,6 +87,11 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             <p className="text-sm text-gray-600">
               Emitido em: {formatSafeDate(voucherData.voucher.generatedAt)}
             </p>
+            {voucherData.confirmationInfo && (
+              <p className="text-sm text-gray-600">
+                Reserva Confirmada por: {voucherData.confirmationInfo.confirmedBy}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -114,9 +120,10 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
           {/* Asset Info */}
           <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Serviço</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="font-medium text-lg mb-2">{voucherData.asset.name || getAssetTypeLabel()}</p>
+            <p className="font-medium text-lg mb-2"></p>
+            {renderBookingDetails(assetType, voucherData.booking)}
             {voucherData.asset.location && (
-              <div className="space-y-1 text-gray-600">
+              <div className="space-y-1 mt-4 text-gray-600">
                 <p className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
                   {voucherData.asset.location}
@@ -139,7 +146,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             </div>
           )}
           <p className="text-sm text-gray-600 mt-2 text-center">
-            Código de Confirmação:<br />
+            Código da Reserva:<br />
             <span className="font-mono font-semibold">{voucherData.booking.confirmationCode || voucherData.voucher.voucherNumber}</span>
           </p>
         </div>
@@ -148,9 +155,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       {/* Booking Details */}
       <div className="border-t-2 border-gray-200 pt-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Detalhes da Reserva</h2>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          {renderBookingDetails(assetType, voucherData.booking)}
-        </div>
+
       </div>
 
       {/* Terms and Conditions */}
@@ -188,7 +193,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
           </div>
           {details.time && (
             <div>
-              <p className="font-medium">Horário:</p>
+              <p className="font-medium">Horário de saída:</p>
               <p>{details.time}</p>
             </div>
           )}
@@ -407,7 +412,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           </div>
-          
+
           {details.includedItems && (
             <div>
               <p className="font-medium mb-2">Itens Incluídos:</p>
@@ -441,7 +446,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </div>
             </div>
           )}
-          
+
           {details.totalPrice > 0 && (
             <div className="pt-4 border-t">
               <p className="font-medium">Valor Total:</p>

@@ -418,6 +418,80 @@ export const getUsersByRole = query({
 });
 
 /**
+ * List travelers with search and pagination
+ */
+export const listTravelers = query({
+  args: {
+    search: v.optional(v.string()),
+    paginationOpts: v.optional(
+      v.object({
+        numItems: v.number(),
+        cursor: v.union(v.string(), v.null()),
+      })
+    ),
+  },
+  returns: v.object({
+    page: v.array(
+      v.object({
+        _id: v.id("users"),
+        clerkId: v.optional(v.string()),
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+        phone: v.optional(v.string()),
+        image: v.optional(v.string()),
+        onboardingCompleted: v.optional(v.boolean()),
+        joinedAt: v.string(),
+      })
+    ),
+    isDone: v.boolean(),
+    continueCursor: v.optional(v.string()),
+    total: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId || !["master", "partner", "employee"].includes(currentUserRole)) {
+      throw new Error("Unauthorized");
+    }
+
+    let usersQuery;
+    if (args.search) {
+      usersQuery = ctx.db
+        .query("users")
+        .withSearchIndex("by_name_email", q => q.search("name", args.search!));
+    } else {
+      usersQuery = ctx.db.query("users");
+    }
+
+    const travelers = await usersQuery
+      .filter(q => q.eq(q.field("role"), "traveler"))
+      .order("desc")
+      .paginate({
+        numItems: args.paginationOpts?.numItems ?? 10,
+        cursor: args.paginationOpts?.cursor ?? null,
+      });
+    const total = await ctx.db.query("users").filter(q => q.eq(q.field("role"), "traveler")).collect();
+
+    return {
+      page: travelers.page.map(user => ({
+        _id: user._id,
+        clerkId: user.clerkId,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        image: user.image,
+        onboardingCompleted: user.onboardingCompleted,
+        joinedAt: new Date(user._creationTime).toLocaleDateString(),
+      })),
+      isDone: travelers.isDone,
+      continueCursor: travelers.continueCursor,
+      total: total.length,
+    };
+  },
+});
+
+/**
  * Get employees by organization
  */
 export const getEmployeesByOrganization = query({
@@ -2218,40 +2292,7 @@ export const shouldRedirectToOnboarding = query({
   },
 });
 
-/**
- * Get user by ID (internal query for actions)
- */
-export const getUserById = internalQuery({
-  args: {
-    userId: v.id("users"),
-  },
-  returns: v.union(
-    v.object({
-      _id: v.id("users"),
-      clerkId: v.optional(v.string()),
-      email: v.optional(v.string()),
-      name: v.optional(v.string()),
-      role: v.optional(v.string()),
-      partnerId: v.optional(v.id("users")),
-    }),
-    v.null()
-  ),
-  handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) {
-      return null;
-    }
 
-    return {
-      _id: user._id,
-      clerkId: user.clerkId,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      partnerId: user.partnerId,
-    };
-  },
-});
 
 /**
  * Get employees with failed or temporary clerk IDs (internal query for auto-fix)
@@ -2289,3 +2330,34 @@ export const getFailedEmployees = internalQuery({
     }));
   },
 }); 
+
+/**
+ * Get user by ID (internal use only)
+ */
+export const getUserById = internalQuery({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      return null;
+    }
+    
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      stripeCustomerId: user.stripeCustomerId,
+      partnerId: user.partnerId,
+      organizationId: user.organizationId,
+      isActive: user.isActive !== false,
+      onboardingCompleted: user.onboardingCompleted,
+    };
+  },
+});

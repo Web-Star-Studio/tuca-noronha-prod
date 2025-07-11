@@ -959,3 +959,23 @@ export const updateUserProfile = mutation({
     };
   },
 }); 
+
+/**
+ * Update user's Stripe customer ID (internal use only)
+ */
+export const updateUserStripeCustomerId = internalMutation({
+  args: {
+    userId: v.id("users"),
+    stripeCustomerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(args.userId, {
+      stripeCustomerId: args.stripeCustomerId,
+    });
+  },
+}); 

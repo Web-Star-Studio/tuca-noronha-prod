@@ -160,6 +160,7 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       "Sujeito à disponibilidade e condições do estabelecimento",
       "Em caso de cancelamento, siga as políticas do estabelecimento",
     ].join(". "),
+    confirmationInfo: voucher.confirmationInfo || undefined,
   };
 
   // Log processed data for debugging

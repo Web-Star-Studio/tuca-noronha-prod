@@ -395,6 +395,257 @@ export async function logBookingOperation(
   });
 }
 
+/**
+ * Helper function to log admin reservation operations
+ */
+export async function logAdminReservationOperation(
+  ctx: MutationCtx,
+  operation: "create" | "update" | "cancel" | "confirm" | "delete",
+  reservationId: string,
+  confirmationCode?: string,
+  travelerName?: string,
+  metadata?: Record<string, any>,
+  request?: any
+): Promise<Id<"auditLogs">> {
+  const eventTypeMap = {
+    create: "admin_reservation_create" as AuditEventType,
+    update: "admin_reservation_update" as AuditEventType,
+    cancel: "admin_reservation_cancel" as AuditEventType,
+    confirm: "admin_reservation_confirm" as AuditEventType,
+    delete: "admin_reservation_delete" as AuditEventType,
+  };
+
+  const actionMap = {
+    create: "criou",
+    update: "atualizou",
+    cancel: "cancelou",
+    confirm: "confirmou",
+    delete: "excluiu",
+  };
+
+  const travelerInfo = travelerName ? ` para ${travelerName}` : "";
+  const codeInfo = confirmationCode ? ` (${confirmationCode})` : "";
+
+  return await createAuditLog(ctx, {
+    event: {
+      type: eventTypeMap[operation],
+      action: `${actionMap[operation]} reserva administrativa${travelerInfo}${codeInfo}`,
+      category: "admin_reservation_management",
+      severity: operation === "delete" || operation === "cancel" ? "high" : "medium",
+    },
+    resource: {
+      type: "admin_reservation",
+      id: reservationId,
+      name: confirmationCode,
+    },
+    metadata: {
+      ...metadata,
+      confirmationCode,
+      travelerName,
+      operation,
+    },
+    request,
+  });
+}
+
+/**
+ * Helper function to log package proposal operations
+ */
+export async function logPackageProposalOperation(
+  ctx: MutationCtx,
+  operation: "create" | "update" | "send" | "approve" | "reject" | "accept" | "convert" | "delete",
+  proposalId: string,
+  proposalNumber?: string,
+  packageRequestId?: string,
+  metadata?: Record<string, any>,
+  request?: any
+): Promise<Id<"auditLogs">> {
+  const eventTypeMap = {
+    create: "package_proposal_create" as AuditEventType,
+    update: "package_proposal_update" as AuditEventType,
+    send: "package_proposal_send" as AuditEventType,
+    approve: "package_proposal_approve" as AuditEventType,
+    reject: "package_proposal_reject" as AuditEventType,
+    accept: "package_proposal_accept" as AuditEventType,
+    convert: "package_proposal_convert" as AuditEventType,
+    delete: "package_proposal_delete" as AuditEventType,
+  };
+
+  const actionMap = {
+    create: "criou",
+    update: "atualizou",
+    send: "enviou",
+    approve: "aprovou",
+    reject: "rejeitou",
+    accept: "aceitou",
+    convert: "converteu",
+    delete: "excluiu",
+  };
+
+  const proposalInfo = proposalNumber ? ` ${proposalNumber}` : "";
+  const requestInfo = packageRequestId ? ` (solicitação ${packageRequestId})` : "";
+
+  return await createAuditLog(ctx, {
+    event: {
+      type: eventTypeMap[operation],
+      action: `${actionMap[operation]} proposta de pacote${proposalInfo}${requestInfo}`,
+      category: "package_management",
+      severity: operation === "delete" || operation === "convert" ? "high" : "medium",
+    },
+    resource: {
+      type: "package_proposal",
+      id: proposalId,
+      name: proposalNumber,
+    },
+    metadata: {
+      ...metadata,
+      proposalNumber,
+      packageRequestId,
+      operation,
+    },
+    request,
+  });
+}
+
+/**
+ * Helper function to log auto-confirmation setting operations
+ */
+export async function logAutoConfirmationOperation(
+  ctx: MutationCtx,
+  operation: "create" | "update" | "enable" | "disable" | "delete",
+  settingId: string,
+  assetType: string,
+  assetId: string,
+  metadata?: Record<string, any>,
+  request?: any
+): Promise<Id<"auditLogs">> {
+  const eventTypeMap = {
+    create: "auto_confirmation_create" as AuditEventType,
+    update: "auto_confirmation_update" as AuditEventType,
+    enable: "auto_confirmation_enable" as AuditEventType,
+    disable: "auto_confirmation_disable" as AuditEventType,
+    delete: "auto_confirmation_delete" as AuditEventType,
+  };
+
+  const actionMap = {
+    create: "criou",
+    update: "atualizou",
+    enable: "habilitou",
+    disable: "desabilitou",
+    delete: "excluiu",
+  };
+
+  return await createAuditLog(ctx, {
+    event: {
+      type: eventTypeMap[operation],
+      action: `${actionMap[operation]} configuração de auto-confirmação para ${assetType}`,
+      category: "system_admin",
+      severity: operation === "delete" ? "high" : "medium",
+    },
+    resource: {
+      type: "auto_confirmation_setting",
+      id: settingId,
+      name: `${assetType}:${assetId}`,
+    },
+    metadata: {
+      ...metadata,
+      assetType,
+      assetId,
+      operation,
+    },
+    request,
+  });
+}
+
+/**
+ * Helper function to log reservation communication events
+ */
+export async function logReservationCommunication(
+  ctx: MutationCtx,
+  operation: "chat_created" | "message_sent" | "status_changed" | "assigned",
+  communicationType: "chat" | "email" | "sms" | "notification",
+  reservationId: string,
+  reservationType: "admin_reservation" | "regular_booking",
+  metadata?: Record<string, any>,
+  request?: any
+): Promise<Id<"auditLogs">> {
+  const eventTypeMap = {
+    chat_created: "reservation_chat_create" as AuditEventType,
+    message_sent: "reservation_message_send" as AuditEventType,
+    status_changed: "reservation_comm_status_change" as AuditEventType,
+    assigned: "reservation_comm_assign" as AuditEventType,
+  };
+
+  const actionMap = {
+    chat_created: "criou chat de",
+    message_sent: "enviou mensagem sobre",
+    status_changed: "alterou status de comunicação da",
+    assigned: "atribuiu comunicação da",
+  };
+
+  return await createAuditLog(ctx, {
+    event: {
+      type: eventTypeMap[operation],
+      action: `${actionMap[operation]} reserva via ${communicationType}`,
+      category: "communication",
+      severity: "low",
+    },
+    resource: {
+      type: reservationType,
+      id: reservationId,
+    },
+    metadata: {
+      ...metadata,
+      communicationType,
+      reservationType,
+      operation,
+    },
+    request,
+  });
+}
+
+/**
+ * Helper function to log bulk operations
+ */
+export async function logBulkOperation(
+  ctx: MutationCtx,
+  operation: "bulk_create" | "bulk_update" | "bulk_delete" | "bulk_confirm" | "bulk_cancel",
+  resourceType: string,
+  affectedIds: string[],
+  metadata?: Record<string, any>,
+  request?: any
+): Promise<Id<"auditLogs">> {
+  const actionMap = {
+    bulk_create: "criou em massa",
+    bulk_update: "atualizou em massa",
+    bulk_delete: "excluiu em massa",
+    bulk_confirm: "confirmou em massa",
+    bulk_cancel: "cancelou em massa",
+  };
+
+  return await createAuditLog(ctx, {
+    event: {
+      type: "bulk_operation",
+      action: `${actionMap[operation]} ${affectedIds.length} ${resourceType}(s)`,
+      category: "system_admin",
+      severity: "high",
+    },
+    resource: {
+      type: resourceType,
+      id: "bulk_operation",
+      name: `${affectedIds.length} items`,
+    },
+    metadata: {
+      ...metadata,
+      operation,
+      affectedCount: affectedIds.length,
+      affectedIds: affectedIds.slice(0, 10), // Limit to first 10 IDs
+      totalAffected: affectedIds.length,
+    },
+    request,
+  });
+}
+
 // Helper functions for risk assessment
 
 function isOffHours(timestamp: number): boolean {
@@ -529,6 +780,39 @@ function categorizeEvent(eventType: AuditEventType): AuditEventCategory {
     booking_update: "booking_management",
     booking_cancel: "booking_management",
     booking_confirm: "booking_management",
+    // Admin Reservation Operations
+    admin_reservation_create: "admin_reservation_management",
+    admin_reservation_update: "admin_reservation_management", 
+    admin_reservation_cancel: "admin_reservation_management",
+    admin_reservation_confirm: "admin_reservation_management",
+    admin_reservation_delete: "admin_reservation_management",
+    // Package Proposal Operations
+    package_proposal_create: "package_management",
+    package_proposal_update: "package_management",
+    package_proposal_send: "package_management",
+    package_proposal_viewed: "package_management",
+    package_proposal_approve: "package_management",
+    package_proposal_reject: "package_management",
+    package_proposal_accept: "package_management",
+    package_proposal_convert: "package_management",
+    package_proposal_delete: "package_management",
+    package_proposal_attachment_add: "package_management",
+    package_proposal_attachment_remove: "document_management",
+    package_proposal_template_create: "template_management",
+    package_proposal_template_update: "template_management",
+    package_proposal_template_delete: "template_management",
+
+    // Auto-Confirmation Operations
+    auto_confirmation_create: "auto_confirmation_management",
+    auto_confirmation_update: "auto_confirmation_management",
+    auto_confirmation_enable: "auto_confirmation_management",
+    auto_confirmation_disable: "auto_confirmation_management",
+    auto_confirmation_delete: "auto_confirmation_management",
+    // Reservation Communication
+    reservation_chat_create: "communication",
+    reservation_message_send: "communication",
+    reservation_comm_status_change: "communication",
+    reservation_comm_assign: "communication",
     organization_create: "user_management",
     organization_update: "user_management",
     organization_delete: "user_management",

@@ -29,7 +29,9 @@ import {
   Mail,
   Phone,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  Clock
 } from "lucide-react";
 import { 
   STATUS_LABELS, 
@@ -281,6 +283,22 @@ export default function PackageRequestsAdmin() {
                           <span>{formatCurrency(request.tripDetails.budget)}</span>
                         </div>
                       </div>
+
+                      {/* Proposal indicators */}
+                      {request.proposalCount && request.proposalCount > 0 && (
+                        <div className="mt-3 flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1 text-blue-600">
+                            <FileText className="h-4 w-4" />
+                            <span className="font-medium">{request.proposalCount} proposta{request.proposalCount > 1 ? 's' : ''}</span>
+                          </div>
+                          {request.lastProposalSent && (
+                            <div className="flex items-center gap-1 text-gray-500">
+                              <Clock className="h-3 w-3" />
+                              <span className="text-xs">Última proposta: {formatDate(new Date(request.lastProposalSent).toISOString())}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex gap-2">

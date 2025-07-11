@@ -9,6 +9,7 @@ export type EmailType =
   | "booking_reminder"
   | "package_request_received"
   | "package_request_status_update"
+  | "package_proposal_sent"
   | "partner_new_booking"
   | "welcome_new_user"
   | "new_partner_registration"
@@ -142,18 +143,38 @@ export interface SupportMessageEmailData extends BaseEmailData {
   isUrgent: boolean;
 }
 
+export interface PackageProposalEmailData extends BaseEmailData {
+  type: "package_proposal_sent";
+  customerName: string;
+  proposalTitle: string;
+  proposalNumber: string;
+  totalPrice: number;
+  currency: string;
+  validUntil: string;
+  adminName: string;
+  adminEmail?: string;
+  customMessage?: string;
+  proposalUrl: string;
+}
+
+// Generic email data for custom emails
+export interface GenericEmailData extends BaseEmailData {
+  type?: string;
+  html?: string;
+  text?: string;
+}
+
 // União de todos os tipos de dados de email
 export type EmailData = 
   | BookingConfirmationEmailData
   | BookingCancelledEmailData
-  | VoucherEmailData
   | PackageRequestReceivedEmailData
-  | PackageRequestStatusUpdateEmailData
+  | PackageProposalEmailData
   | PartnerNewBookingEmailData
   | WelcomeNewUserEmailData
-  | NewPartnerRegistrationEmailData
-  | EmployeeInvitationEmailData
-  | SupportMessageEmailData;
+  | SupportMessageEmailData
+  | VoucherEmailData
+  | GenericEmailData;
 
 // Configuração de email
 export interface EmailConfig {

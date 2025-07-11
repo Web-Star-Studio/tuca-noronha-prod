@@ -10,12 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Calendar, MapPin, Users, Download, ArrowLeft, Loader2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { VoucherDownloadButton } from '@/components/vouchers/VoucherDownloadButton';
+import { Id } from 'convex/_generated/dataModel';
+import React from 'react';
 
 export default function BookingSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get('session_id');
-  const bookingId = searchParams.get('booking_id');
+  const bookingId = searchParams.get('booking_id') || searchParams.get('bookingId');
+  const bookingType = searchParams.get('type');
   const [bookingData, setBookingData] = useState<any>(null);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 20; // Máximo de 20 tentativas (20 segundos)
@@ -23,41 +26,49 @@ export default function BookingSuccessPage() {
   // Query to get booking details based on session ID or booking ID
   const bookingBySession = useQuery(
     api.domains.stripe.queries.getBookingBySessionId,
-    sessionId ? { sessionId } : "skip"
+    sessionId && bookingType !== 'admin' ? { sessionId } : "skip"
   );
 
   const bookingByConfirmation = useQuery(
     api.domains.stripe.queries.getBookingByConfirmationCode,
-    bookingId ? { confirmationCode: bookingId } : "skip"
+    bookingId && bookingType !== 'admin' ? { confirmationCode: bookingId } : "skip"
   );
 
-  // Use polling to check for booking data
+  // Add query for admin reservations
+  const adminReservation = useQuery(
+    api.domains.adminReservations.queries.getAdminReservationById,
+    bookingType === 'admin' && bookingId ? { id: bookingId as Id<"adminReservations"> } : "skip"
+  );
+
+
+  // Get booking data from appropriate source
   useEffect(() => {
-    const checkBookingStatus = () => {
-      const booking = bookingBySession || bookingByConfirmation;
-      
-      if (booking) {
-        console.log('📊 Booking found:', booking);
-        setBookingData(booking);
-        
-        // Show success toast when payment is confirmed
-        if (booking.paymentStatus === 'succeeded') {
-          toast.success('Pagamento confirmado com sucesso!', {
-            description: 'Sua reserva foi aprovada. Você receberá um email de confirmação.',
-            duration: 5000,
-          });
-        }
-      } else if (retryCount < maxRetries) {
-        // If no booking found and haven't exceeded max retries, try again
-        console.log(`🔄 Retry ${retryCount + 1}/${maxRetries} - Booking not found yet`);
-        setRetryCount(prev => prev + 1);
+    if (bookingType === 'admin' && adminReservation) {
+      setBookingData({
+        _id: adminReservation._id,
+        confirmationCode: adminReservation.confirmationCode,
+        customerName: adminReservation.customerInfo.name,
+        totalPrice: adminReservation.totalPrice,
+        status: adminReservation.status,
+        paymentStatus: adminReservation.paymentStatus,
+        assetName: adminReservation.assetName,
+        bookingDate: new Date(adminReservation.date).toLocaleDateString('pt-BR'),
+        assetType: adminReservation.assetType,
+      });
+    } else if (bookingBySession) {
+      setBookingData(bookingBySession);
+    } else if (bookingByConfirmation) {
+      setBookingData(bookingByConfirmation);
+    } else if (sessionId) {
+      // Retry logic for session-based bookings
+      if (retryCount < maxRetries) {
+        const timer = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, 1000);
+        return () => clearTimeout(timer);
       }
-    };
-
-    const timer = setTimeout(checkBookingStatus, 1000); // Check every second
-
-    return () => clearTimeout(timer);
-  }, [bookingBySession, bookingByConfirmation, retryCount, maxRetries]);
+    }
+  }, [bookingBySession, bookingByConfirmation, adminReservation, sessionId, retryCount, bookingType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -266,11 +277,16 @@ export default function BookingSuccessPage() {
               {/* Payment Summary */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>Total Pago</span>
-                  <span className="text-green-600">{formatCurrency(bookingData.totalPrice)}</span>
+                  <span>Total {bookingData.paymentStatus === 'pending' ? 'a Pagar' : 'Pago'}</span>
+                  <span className={bookingData.paymentStatus === 'pending' ? 'text-orange-600' : 'text-green-600'}>
+                    {formatCurrency(bookingData.totalPrice || bookingData.totalAmount)}
+                  </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
-                  Pagamento processado via Stripe
+                  {bookingData.paymentMethod === 'card' ? 'Pagamento processado via Stripe' : 
+                   bookingData.paymentMethod === 'cash' ? 'Pagamento em dinheiro' :
+                   bookingData.paymentMethod === 'transfer' ? 'Pagamento via transferência' :
+                   'Pagamento diferido'}
                 </p>
                 {bookingData.paymentStatus === 'processing' && (
                   <Badge variant="outline" className="mt-2">

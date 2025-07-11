@@ -13,6 +13,7 @@ export const logEmail = internalMutation({
       v.literal("booking_reminder"),
       v.literal("package_request_received"),
       v.literal("package_request_status_update"),
+      v.literal("package_proposal_sent"),
       v.literal("partner_new_booking"),
       v.literal("welcome_new_user"),
       v.literal("new_partner_registration"),

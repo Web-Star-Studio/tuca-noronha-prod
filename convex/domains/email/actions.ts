@@ -13,6 +13,7 @@ import type {
   SupportMessageEmailData,
   VoucherEmailData
 } from "./types";
+import { EmailService, emailService } from "./service";
 
 /**
  * Enviar email de confirmação de reserva para o cliente
@@ -587,6 +588,76 @@ export const sendVoucherEmail = internalAction({
 });
 
 /**
+ * Enviar email com proposta de pacote
+ */
+export const sendPackageProposalEmail = internalAction({
+  args: {
+    to: v.string(),
+    customerName: v.string(),
+    proposalTitle: v.string(),
+    proposalNumber: v.string(),
+    totalPrice: v.number(),
+    currency: v.string(),
+    validUntil: v.string(),
+    adminName: v.string(),
+    adminEmail: v.optional(v.string()),
+    customMessage: v.optional(v.string()),
+    proposalUrl: v.string(),
+    attachments: v.optional(v.array(v.any())),
+    templateId: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const emailData = {
+        type: "package_proposal_sent" as const,
+        to: args.to,
+        subject: `Nova Proposta de Pacote - ${args.proposalTitle}`,
+        customerName: args.customerName,
+        proposalTitle: args.proposalTitle,
+        proposalNumber: args.proposalNumber,
+        totalPrice: args.totalPrice,
+        currency: args.currency,
+        validUntil: args.validUntil,
+        adminName: args.adminName,
+        adminEmail: args.adminEmail,
+        customMessage: args.customMessage,
+        proposalUrl: args.proposalUrl,
+        attachments: args.attachments,
+      };
+
+      const result = await sendQuickEmail(emailData);
+      
+      // Salvar log no banco de dados
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "package_proposal_sent",
+          to: result.to,
+          subject: result.subject,
+          status: result.status,
+          error: result.error,
+          sentAt: result.sentAt,
+        });
+      }
+
+      return {
+        success: result.status === "sent",
+        error: result.error,
+      };
+    } catch (error) {
+      console.error("Failed to send package proposal email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
  * Ação para testar o serviço de email
  */
 export const testEmailService = action({
@@ -623,5 +694,119 @@ export const testEmailService = action({
         message: `Erro no teste: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
+  },
+}); 
+
+/**
+ * Send admin reservation payment link email
+ */
+export const sendAdminReservationPaymentLinkEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    assetName: v.string(),
+    confirmationCode: v.string(),
+    totalAmount: v.number(),
+    paymentLinkUrl: v.string(),
+    paymentDueDate: v.string(),
+    adminName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const service = emailService;
+    
+    const template = `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h1 style="color: #1e3a5f; font-size: 32px; margin: 0;">Pagamento Pendente</h1>
+          <p style="color: #64748b; font-size: 18px; margin-top: 10px;">Sua reserva está aguardando pagamento</p>
+        </div>
+        
+        <div style="background: #f8fafc; border-radius: 12px; padding: 30px; margin-bottom: 30px;">
+          <h2 style="color: #1e3a5f; font-size: 24px; margin-top: 0;">Olá, ${args.customerName}!</h2>
+          
+          <p style="color: #475569; font-size: 16px; line-height: 1.6;">
+            Sua reserva foi criada com sucesso pelo nosso administrador <strong>${args.adminName}</strong>.
+            Para garantir sua reserva, por favor realize o pagamento até <strong>${new Date(args.paymentDueDate).toLocaleDateString('pt-BR')}</strong>.
+          </p>
+          
+          <div style="background: #fff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1e3a5f; font-size: 18px; margin-top: 0;">Detalhes da Reserva:</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <strong style="color: #64748b;">Serviço:</strong> 
+                <span style="color: #1e3a5f;">${args.assetName}</span>
+              </li>
+              <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <strong style="color: #64748b;">Código de Confirmação:</strong> 
+                <span style="color: #1e3a5f; font-family: monospace;">${args.confirmationCode}</span>
+              </li>
+              <li style="padding: 8px 0;">
+                <strong style="color: #64748b;">Valor Total:</strong> 
+                <span style="color: #059669; font-size: 20px; font-weight: bold;">R$ ${args.totalAmount.toFixed(2)}</span>
+              </li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${args.paymentLinkUrl}" 
+               style="display: inline-block; background: #059669; color: white; padding: 16px 40px; 
+                      border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 18px;">
+              Pagar Agora
+            </a>
+          </div>
+          
+          <p style="color: #64748b; font-size: 14px; text-align: center;">
+            Ou copie e cole este link no seu navegador:<br>
+            <span style="color: #3b82f6; word-break: break-all;">${args.paymentLinkUrl}</span>
+          </p>
+        </div>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+          <p style="color: #856404; margin: 0;">
+            <strong>⚠️ Importante:</strong> O link de pagamento expira em 3 dias. 
+            Após este prazo, será necessário solicitar um novo link.
+          </p>
+        </div>
+        
+        <div style="text-align: center; color: #94a3b8; font-size: 14px;">
+          <p>Dúvidas? Entre em contato conosco respondendo este email.</p>
+          <p style="margin-top: 20px;">© ${new Date().getFullYear()} Turismo Noronha. Todos os direitos reservados.</p>
+        </div>
+      </div>
+    `;
+
+    const result = await service.sendEmail({
+      to: args.customerEmail,
+      subject: `Pagamento Pendente - Reserva ${args.confirmationCode}`,
+      html: template,
+      type: "admin_reservation_payment_link" as any,
+      logData: {
+        type: "admin_reservation_payment_link" as any,
+        userId: undefined,
+        metadata: {
+          confirmationCode: args.confirmationCode,
+          assetName: args.assetName,
+          totalAmount: args.totalAmount,
+          paymentDueDate: args.paymentDueDate,
+        },
+      },
+    } as any);
+
+    // Log the email
+    await ctx.runMutation(internal.domains.email.mutations.createEmailLog, {
+      to: args.customerEmail,
+      subject: `Pagamento Pendente - Reserva ${args.confirmationCode}`,
+      type: "admin_reservation_payment_link",
+      status: result.status === "sent" ? "sent" : "failed",
+      error: result.error,
+      messageId: (result as any).messageId,
+      metadata: {
+        confirmationCode: args.confirmationCode,
+        assetName: args.assetName,
+        totalAmount: args.totalAmount,
+      },
+    });
+
+    return result;
   },
 }); 

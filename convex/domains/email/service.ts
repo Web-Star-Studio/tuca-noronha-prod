@@ -1,7 +1,7 @@
 "use node";
 
 import nodemailer from "nodemailer";
-import type { EmailData, EmailLog } from "./types";
+import type { EmailData, EmailLog, EmailType } from "./types";
 import { getEmailConfig, EMAIL_SETTINGS } from "./config";
 import { getEmailTemplate } from "./templates";
 
@@ -52,8 +52,12 @@ export class EmailService {
   }
   
   async sendEmail(emailData: EmailData): Promise<EmailLog> {
+    if (!emailData.type || !EMAIL_SETTINGS[emailData.type]) {
+      throw new Error(`Invalid or missing email type: ${emailData.type}`);
+    }
+
     const log: EmailLog = {
-      type: emailData.type,
+      type: emailData.type as EmailType,
       to: emailData.to,
       subject: emailData.subject,
       status: "pending",
@@ -127,6 +131,7 @@ export class EmailService {
       
       log.status = "sent";
       log.sentAt = Date.now();
+      (log as any).messageId = result.messageId;
       
     } catch (error) {
       console.error(`❌ Failed to send email: ${emailData.type} to ${emailData.to}`, error);
@@ -149,14 +154,16 @@ export class EmailService {
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`Failed to send bulk email to ${emailData.to}:`, error);
-        logs.push({
-          type: emailData.type,
-          to: emailData.to,
-          subject: emailData.subject,
-          status: "failed",
-          error: error instanceof Error ? error.message : String(error),
-          createdAt: Date.now(),
-        });
+        if (emailData.type) {
+          logs.push({
+            type: emailData.type as EmailType,
+            to: emailData.to,
+            subject: emailData.subject,
+            status: "failed",
+            error: error instanceof Error ? error.message : String(error),
+            createdAt: Date.now(),
+          });
+        }
       }
     }
     
@@ -181,20 +188,12 @@ export class EmailService {
   }
 }
 
-// Instância singleton do serviço de email
-let emailServiceInstance: EmailService | null = null;
-
-export const getEmailService = (): EmailService => {
-  if (!emailServiceInstance) {
-    emailServiceInstance = new EmailService();
-  }
-  return emailServiceInstance;
-};
+// Export singleton instance
+export const emailService = new EmailService();
 
 // Função auxiliar para enviar email rapidamente
 export const sendQuickEmail = async (emailData: EmailData): Promise<EmailLog> => {
-  const service = getEmailService();
-  return await service.sendEmail(emailData);
+  return await emailService.sendEmail(emailData);
 };
 
 // Função para criar conta de teste (desenvolvimento)

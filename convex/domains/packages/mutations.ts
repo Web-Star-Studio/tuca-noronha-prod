@@ -773,6 +773,18 @@ export const createPackageRequest = mutation({
     requestNumber: v.string(),
   }),
   handler: async (ctx, args) => {
+    // Get current user identity (optional for package requests)
+    const identity = await ctx.auth.getUserIdentity();
+    let userId: Id<"users"> | undefined;
+    
+    if (identity) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+        .first();
+      userId = user?._id;
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(args.customerInfo.email)) {
@@ -822,6 +834,7 @@ export const createPackageRequest = mutation({
     
     const packageRequestId = await ctx.db.insert("packageRequests", {
       requestNumber,
+      userId, // Include userId if available
       customerInfo: args.customerInfo,
       tripDetails: args.tripDetails,
       preferences: args.preferences,

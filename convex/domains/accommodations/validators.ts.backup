@@ -1,0 +1,91 @@
+import { v } from "convex/values";
+
+// Validador para endereço
+export const addressValidator = v.object({
+  street: v.string(),
+  city: v.string(),
+  state: v.string(),
+  zipCode: v.string(),
+  neighborhood: v.string(),
+  coordinates: v.object({
+    latitude: v.number(),
+    longitude: v.number(),
+  }),
+});
+
+// Validador para camas
+export const bedsValidator = v.object({
+  single: v.number(),
+  double: v.number(),
+  queen: v.number(),
+  king: v.number(),
+});
+
+// Validador para avaliações
+export const ratingValidator = v.object({
+  overall: v.number(),
+  cleanliness: v.number(),
+  location: v.number(),
+  checkin: v.number(),
+  value: v.number(),
+  accuracy: v.number(),
+  communication: v.number(),
+  totalReviews: v.number(),
+});
+
+// Validador para informações do criador
+export const creatorValidator = v.object({
+  id: v.string(),
+  name: v.optional(v.string()),
+  email: v.optional(v.string()),
+  image: v.optional(v.string()),
+});
+
+// Validador para acomodação completa
+export const accommodationValidator = v.object({
+  _id: v.id("accommodations"),
+  _creationTime: v.number(),
+  name: v.string(),
+  slug: v.string(),
+  description: v.string(),
+  description_long: v.string(),
+  address: addressValidator,
+  phone: v.string(),
+  website: v.optional(v.string()),
+  type: v.string(),
+  checkInTime: v.string(),
+  checkOutTime: v.string(),
+  pricePerNight: v.number(),
+  currency: v.string(),
+  discountPercentage: v.optional(v.number()),
+  taxes: v.optional(v.number()),
+  cleaningFee: v.optional(v.number()),
+  totalRooms: v.number(),
+  maxGuests: v.number(),
+  bedrooms: v.number(),
+  bathrooms: v.number(),
+  beds: bedsValidator,
+  area: v.number(),
+  amenities: v.array(v.string()),
+  houseRules: v.array(v.string()),
+  cancellationPolicy: v.string(),
+  petsAllowed: v.boolean(),
+  smokingAllowed: v.boolean(),
+  eventsAllowed: v.boolean(),
+  minimumStay: v.number(),
+  mainImage: v.string(),
+  galleryImages: v.array(v.string()),
+  rating: ratingValidator,
+  isActive: v.boolean(),
+  isFeatured: v.boolean(),
+  tags: v.array(v.string()),
+  partnerId: v.id("users"),
+  creator: v.optional(creatorValidator),
+});
+
+// Validador para resposta paginada
+export const accommodationPageValidator = v.object({
+  page: v.array(accommodationValidator),
+  isDone: v.boolean(),
+  continueCursor: v.string(),
+}); 

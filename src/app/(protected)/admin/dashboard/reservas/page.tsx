@@ -683,18 +683,16 @@ export default function AdminBookingsPage() {
                               }
                             />
                             
-                            {/* Voucher button - show only for confirmed bookings */}
-                            {(booking.status === "confirmed" || booking.status === "completed") && booking.confirmationCode && (
-                              <VoucherDownloadButton
-                                bookingId={booking._id}
-                                bookingType={getBookingTypeForVoucher(selectedAsset.assetType)}
-                                variant="outline"
-                                size="sm"
-                                showIcon={true}
-                                showLabel={false}
-                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              />
-                            )}
+                            {/* Voucher button - component handles voucher existence check */}
+                            <VoucherDownloadButton
+                              bookingId={booking._id}
+                              bookingType={getBookingTypeForVoucher(selectedAsset.assetType)}
+                              variant="outline"
+                              size="sm"
+                              showIcon={true}
+                              showLabel={false}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            />
                             
                             {(booking.status === "pending" || booking.status === "awaiting_confirmation" || booking.paymentStatus === "requires_capture") && (
                               <>

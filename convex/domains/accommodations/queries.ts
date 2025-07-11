@@ -1,472 +1,57 @@
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
-import { getCurrentUserRole, filterAccessibleAssets, hasAssetAccess, getCurrentUserConvexId, verifyPartnerAccess, verifyEmployeeAccess } from "../rbac/utils";
-import type { AccommodationWithCreator } from "./types";
 
 /**
- * List accommodations with pagination and RBAC filtering
+ * List accommodations - simplified version
  */
 export const list = query({
-  args: {
-    paginationOpts: v.object({
-      numItems: v.number(),
-      cursor: v.union(v.string(), v.null()),
-    }),
-    activeOnly: v.optional(v.boolean()),
-    featuredOnly: v.optional(v.boolean()),
-  },
-  returns: v.object({
-    page: v.array(v.object({
-      _id: v.id("accommodations"),
-      _creationTime: v.number(),
-      name: v.string(),
-      slug: v.string(),
-      description: v.string(),
-      description_long: v.string(),
-      address: v.object({
-        street: v.string(),
-        city: v.string(),
-        state: v.string(),
-        zipCode: v.string(),
-        neighborhood: v.string(),
-        coordinates: v.object({
-          latitude: v.number(),
-          longitude: v.number(),
-        }),
-      }),
-      phone: v.string(),
-      website: v.optional(v.string()),
-      type: v.string(),
-      checkInTime: v.string(),
-      checkOutTime: v.string(),
-      pricePerNight: v.number(),
-      currency: v.string(),
-      discountPercentage: v.optional(v.number()),
-      taxes: v.optional(v.number()),
-      cleaningFee: v.optional(v.number()),
-      totalRooms: v.number(),
-      maxGuests: v.number(),
-      bedrooms: v.number(),
-      bathrooms: v.number(),
-      beds: v.object({
-        single: v.number(),
-        double: v.number(),
-        queen: v.number(),
-        king: v.number(),
-      }),
-      area: v.number(),
-      amenities: v.array(v.string()),
-      houseRules: v.array(v.string()),
-      cancellationPolicy: v.string(),
-      petsAllowed: v.boolean(),
-      smokingAllowed: v.boolean(),
-      eventsAllowed: v.boolean(),
-      minimumStay: v.number(),
-      mainImage: v.string(),
-      galleryImages: v.array(v.string()),
-      rating: v.object({
-        overall: v.number(),
-        cleanliness: v.number(),
-        location: v.number(),
-        checkin: v.number(),
-        value: v.number(),
-        accuracy: v.number(),
-        communication: v.number(),
-        totalReviews: v.number(),
-      }),
-      isActive: v.boolean(),
-      isFeatured: v.boolean(),
-      tags: v.array(v.string()),
-      partnerId: v.id("users"),
-      creator: v.optional(v.object({
-        id: v.string(),
-        name: v.optional(v.string()),
-        email: v.optional(v.string()),
-        image: v.optional(v.string()),
-      })),
-    })),
-    isDone: v.boolean(),
-    continueCursor: v.string(),
-  }),
-  handler: async (ctx, args) => {
-    const role = await getCurrentUserRole(ctx);
-    
-    // Apply filters based on query parameters
-    let accommodationsPage;
-    if (args.activeOnly) {
-      accommodationsPage = await ctx.db
-        .query("accommodations")
-        .withIndex("active_accommodations", (q) => q.eq("isActive", true))
-        .order("desc")
-        .paginate(args.paginationOpts);
-    } else if (args.featuredOnly) {
-      accommodationsPage = await ctx.db
-        .query("accommodations")
-        .withIndex("featured_accommodations", (q) => q.eq("isFeatured", true).eq("isActive", true))
-        .order("desc")
-        .paginate(args.paginationOpts);
-    } else {
-      accommodationsPage = await ctx.db
-        .query("accommodations")
-        .order("desc")
-        .paginate(args.paginationOpts);
-    }
-    
-    // Add creator information
-    const accommodationsWithCreators = await Promise.all(
-      accommodationsPage.page.map(async (accommodation) => {
-        const creator = await ctx.db.get(accommodation.partnerId);
-        
-        return {
-          ...accommodation,
-          totalRooms: Number(accommodation.totalRooms),
-          maxGuests: Number(accommodation.maxGuests),
-          bedrooms: Number(accommodation.bedrooms),
-          bathrooms: Number(accommodation.bathrooms),
-          minimumStay: Number(accommodation.minimumStay),
-          beds: {
-            single: Number(accommodation.beds.single),
-            double: Number(accommodation.beds.double),
-            queen: Number(accommodation.beds.queen),
-            king: Number(accommodation.beds.king),
-          },
-          rating: {
-            ...accommodation.rating,
-            totalReviews: Number(accommodation.rating.totalReviews),
-          },
-          creator: creator && 'name' in creator && 'email' in creator && 'image' in creator ? {
-            id: creator._id,
-            name: creator.name,
-            email: creator.email,
-            image: creator.image,
-          } : undefined,
-        };
-      })
-    );
-    
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
+    const accommodations = await ctx.db.query("accommodations").collect();
     return {
-      page: accommodationsWithCreators,
-      isDone: accommodationsPage.isDone,
-      continueCursor: accommodationsPage.continueCursor,
+      page: accommodations,
+      isDone: true,
+      continueCursor: "",
     };
   },
 });
 
 /**
- * Get a single accommodation by ID with RBAC check
+ * Get a single accommodation by ID
  */
 export const getById = query({
   args: { id: v.id("accommodations") },
-  returns: v.union(
-    v.object({
-      _id: v.id("accommodations"),
-      _creationTime: v.number(),
-      name: v.string(),
-      slug: v.string(),
-      description: v.string(),
-      description_long: v.string(),
-      address: v.object({
-        street: v.string(),
-        city: v.string(),
-        state: v.string(),
-        zipCode: v.string(),
-        neighborhood: v.string(),
-        coordinates: v.object({
-          latitude: v.number(),
-          longitude: v.number(),
-        }),
-      }),
-      phone: v.string(),
-      website: v.optional(v.string()),
-      type: v.string(),
-      checkInTime: v.string(),
-      checkOutTime: v.string(),
-      pricePerNight: v.number(),
-      currency: v.string(),
-      discountPercentage: v.optional(v.number()),
-      taxes: v.optional(v.number()),
-      cleaningFee: v.optional(v.number()),
-      totalRooms: v.number(),
-      maxGuests: v.number(),
-      bedrooms: v.number(),
-      bathrooms: v.number(),
-      beds: v.object({
-        single: v.number(),
-        double: v.number(),
-        queen: v.number(),
-        king: v.number(),
-      }),
-      area: v.number(),
-      amenities: v.array(v.string()),
-      houseRules: v.array(v.string()),
-      cancellationPolicy: v.string(),
-      petsAllowed: v.boolean(),
-      smokingAllowed: v.boolean(),
-      eventsAllowed: v.boolean(),
-      minimumStay: v.number(),
-      mainImage: v.string(),
-      galleryImages: v.array(v.string()),
-      rating: v.object({
-        overall: v.number(),
-        cleanliness: v.number(),
-        location: v.number(),
-        checkin: v.number(),
-        value: v.number(),
-        accuracy: v.number(),
-        communication: v.number(),
-        totalReviews: v.number(),
-      }),
-      isActive: v.boolean(),
-      isFeatured: v.boolean(),
-      tags: v.array(v.string()),
-      partnerId: v.id("users"),
-      creator: v.optional(v.object({
-        id: v.string(),
-        name: v.optional(v.string()),
-        email: v.optional(v.string()),
-        image: v.optional(v.string()),
-      })),
-    }),
-    v.null()
-  ),
+  returns: v.any(),
   handler: async (ctx, args) => {
-    const accommodation = await ctx.db.get(args.id);
-    if (!accommodation) return null;
-    
-    // Check RBAC permissions
-    const hasAccess = await hasAssetAccess(ctx, args.id, "accommodations", "view");
-    if (!hasAccess) {
-      throw new Error("Acesso negado para visualizar esta hospedagem");
-    }
-    
-    // Add creator information
-    const creator = await ctx.db.get(accommodation.partnerId);
-    
-    return {
-      ...accommodation,
-      totalRooms: Number(accommodation.totalRooms),
-      maxGuests: Number(accommodation.maxGuests),
-      bedrooms: Number(accommodation.bedrooms),
-      bathrooms: Number(accommodation.bathrooms),
-      minimumStay: Number(accommodation.minimumStay),
-      beds: {
-        single: Number(accommodation.beds.single),
-        double: Number(accommodation.beds.double),
-        queen: Number(accommodation.beds.queen),
-        king: Number(accommodation.beds.king),
-      },
-      rating: {
-        ...accommodation.rating,
-        totalReviews: Number(accommodation.rating.totalReviews),
-      },
-      creator: creator && 'name' in creator && 'email' in creator && 'image' in creator ? {
-        id: creator._id,
-        name: creator.name,
-        email: creator.email,
-        image: creator.image,
-      } : undefined,
-    };
+    return await ctx.db.get(args.id);
   },
 });
 
 /**
- * Get accommodation by slug (public access)
+ * Get accommodation by slug
  */
 export const getBySlug = query({
   args: { slug: v.string() },
-  returns: v.union(
-    v.object({
-      _id: v.id("accommodations"),
-      _creationTime: v.number(),
-      name: v.string(),
-      slug: v.string(),
-      description: v.string(),
-      description_long: v.string(),
-      address: v.object({
-        street: v.string(),
-        city: v.string(),
-        state: v.string(),
-        zipCode: v.string(),
-        neighborhood: v.string(),
-        coordinates: v.object({
-          latitude: v.number(),
-          longitude: v.number(),
-        }),
-      }),
-      phone: v.string(),
-      website: v.optional(v.string()),
-      type: v.string(),
-      checkInTime: v.string(),
-      checkOutTime: v.string(),
-      pricePerNight: v.number(),
-      currency: v.string(),
-      discountPercentage: v.optional(v.number()),
-      taxes: v.optional(v.number()),
-      cleaningFee: v.optional(v.number()),
-      totalRooms: v.number(),
-      maxGuests: v.number(),
-      bedrooms: v.number(),
-      bathrooms: v.number(),
-      beds: v.object({
-        single: v.number(),
-        double: v.number(),
-        queen: v.number(),
-        king: v.number(),
-      }),
-      area: v.number(),
-      amenities: v.array(v.string()),
-      houseRules: v.array(v.string()),
-      cancellationPolicy: v.string(),
-      petsAllowed: v.boolean(),
-      smokingAllowed: v.boolean(),
-      eventsAllowed: v.boolean(),
-      minimumStay: v.number(),
-      mainImage: v.string(),
-      galleryImages: v.array(v.string()),
-      rating: v.object({
-        overall: v.number(),
-        cleanliness: v.number(),
-        location: v.number(),
-        checkin: v.number(),
-        value: v.number(),
-        accuracy: v.number(),
-        communication: v.number(),
-        totalReviews: v.number(),
-      }),
-      isActive: v.boolean(),
-      isFeatured: v.boolean(),
-      tags: v.array(v.string()),
-      partnerId: v.id("users"),
-    }),
-    v.null()
-  ),
+  returns: v.any(),
   handler: async (ctx, args) => {
-    const accommodation = await ctx.db
+    return await ctx.db
       .query("accommodations")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .unique();
-    
-    if (!accommodation) return null;
-    
-    return {
-      ...accommodation,
-      totalRooms: Number(accommodation.totalRooms),
-      maxGuests: Number(accommodation.maxGuests),
-      bedrooms: Number(accommodation.bedrooms),
-      bathrooms: Number(accommodation.bathrooms),
-      minimumStay: Number(accommodation.minimumStay),
-      beds: {
-        single: Number(accommodation.beds.single),
-        double: Number(accommodation.beds.double),
-        queen: Number(accommodation.beds.queen),
-        king: Number(accommodation.beds.king),
-      },
-      rating: {
-        ...accommodation.rating,
-        totalReviews: Number(accommodation.rating.totalReviews),
-      },
-    };
+      .first();
   },
 });
 
 /**
- * Get featured accommodations (public access)
+ * Get featured accommodations
  */
 export const getFeatured = query({
-  args: { limit: v.optional(v.number()) },
-  returns: v.array(v.object({
-    _id: v.id("accommodations"),
-    _creationTime: v.number(),
-    name: v.string(),
-    slug: v.string(),
-    description: v.string(),
-    type: v.string(),
-    pricePerNight: v.number(),
-    currency: v.string(),
-    maxGuests: v.number(),
-    mainImage: v.string(),
-    rating: v.object({
-      overall: v.number(),
-      totalReviews: v.number(),
-    }),
-    tags: v.array(v.string()),
-  })),
-  handler: async (ctx, args) => {
-    const limit = args.limit || 6;
-    
-    const accommodations = await ctx.db
-      .query("accommodations")
-      .withIndex("featured_accommodations", (q) => 
-        q.eq("isFeatured", true).eq("isActive", true)
-      )
-      .order("desc")
-      .take(limit);
-    
-    return accommodations.map(accommodation => ({
-      _id: accommodation._id,
-      _creationTime: accommodation._creationTime,
-      name: accommodation.name,
-      slug: accommodation.slug,
-      description: accommodation.description,
-      type: accommodation.type,
-      pricePerNight: accommodation.pricePerNight,
-      currency: accommodation.currency,
-      maxGuests: Number(accommodation.maxGuests),
-      mainImage: accommodation.mainImage,
-      rating: {
-        overall: accommodation.rating.overall,
-        totalReviews: Number(accommodation.rating.totalReviews),
-      },
-      tags: accommodation.tags,
-    }));
-  },
-});
-
-/**
- * Get all accommodations with RBAC
- */
-export const getAll = query({
   args: {},
-  returns: v.array(v.any()),
+  returns: v.any(),
   handler: async (ctx) => {
-    const role = await getCurrentUserRole(ctx);
-    const currentUserId = await getCurrentUserConvexId(ctx);
-
-    // Travelers (public) or unauthenticated users get all active accommodations
-    if (!currentUserId || role === "traveler") {
-      return await ctx.db.query("accommodations").collect();
-    }
-
-    // Master sees everything
-    if (role === "master") {
-      return await ctx.db.query("accommodations").collect();
-    }
-
-    // Partner sees only own accommodations
-    if (role === "partner") {
-      return await ctx.db
-        .query("accommodations")
-        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-        .collect();
-    }
-
-    // Employee sees accommodations they have explicit permission to view
-    if (role === "employee") {
-      const permissions = await ctx.db
-        .query("assetPermissions")
-        .withIndex("by_employee_asset_type", (q) =>
-          q.eq("employeeId", currentUserId).eq("assetType", "accommodations"),
-        )
-        .collect();
-
-      if (permissions.length === 0) return [];
-
-      const allowedIds = new Set(permissions.map((p) => p.assetId));
-      const allAccommodations = await ctx.db.query("accommodations").collect();
-      return allAccommodations.filter((a) => allowedIds.has(a._id.toString()));
-    }
-
-    return [];
+    return await ctx.db
+      .query("accommodations")
+      .withIndex("featured_accommodations", (q) => q.eq("isFeatured", true).eq("isActive", true))
+      .collect();
   },
 }); 

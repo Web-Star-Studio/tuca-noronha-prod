@@ -47,7 +47,10 @@ import {
   UserPlus,
   Tag,
   Ticket,
-  QrCode
+  QrCode,
+  LayoutDashboard,
+  Plus,
+  CheckCircle
 } from "lucide-react"
 import { UserButton, useUser } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -248,9 +251,11 @@ function MasterSidebar() {
 
   const masterReportLinks = [
     { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },
+    { href: "/admin/dashboard/reservas-admin", icon: Calendar, label: "Reservas Admin" },
     { href: "/admin/dashboard/metricas", icon: BarChart3, label: "Métricas do Sistema" },
     { href: "/admin/dashboard/relatorios", icon: TrendingUp, label: "Relatórios" },
     { href: "/admin/dashboard/solicitacoes-pacotes", icon: Package, label: "Solicitações de Pacotes" },
+    { href: "/admin/dashboard/propostas-pacotes", icon: FileText, label: "Propostas de Pacotes" },
   ]
 
   const masterConfigLinks = [
@@ -258,6 +263,7 @@ function MasterSidebar() {
     { href: "/admin/dashboard/vouchers", icon: QrCode, label: "Vouchers" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
     { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
+    { href: "/admin/dashboard/configuracoes/auto-confirmacao", icon: CheckCircle, label: "Auto-Confirmação" },
   ]
 
   return (
@@ -397,7 +403,10 @@ function AdminSidebar() {
   }> => {
     const baseLink = "/admin/dashboard"
     const baseLinks = [
-      { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" }
+      { href: `${baseLink}/nova-reserva`, icon: PlusCircle, label: "Nova Reserva" },
+      { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
+      { href: `${baseLink}/reservas-admin`, icon: Calendar, label: "Reservas Admin" },
+      { href: `${baseLink}/propostas-pacotes`, icon: FileText, label: "Propostas de Pacotes" }
     ]
     
     if (!activeOrganization) return baseLinks

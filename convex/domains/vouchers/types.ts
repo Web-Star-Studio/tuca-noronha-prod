@@ -223,6 +223,11 @@ export interface VoucherTemplateData extends VoucherDisplayData {
     cancellation: string;
   };
   termsAndConditions: string;
+  confirmationInfo?: {
+    confirmedBy: string;
+    confirmedAt: number;
+    role: string;
+  };
 }
 
 // Asset-specific data interfaces

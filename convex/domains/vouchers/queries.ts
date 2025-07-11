@@ -86,6 +86,21 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
     throw new Error("Parceiro não encontrado");
   }
 
+  // Get confirmation info - try to find who confirmed the booking
+  let confirmationInfo: {
+    confirmedBy: string;
+    confirmedAt: number;
+    role: string;
+  } | null = null;
+  const confirmedBy = await ctx.db.get(voucher.partnerId);
+  if (confirmedBy) {
+    confirmationInfo = {
+      confirmedBy: confirmedBy.name,
+      confirmedAt: voucher.generatedAt, // Use voucher generation time as confirmation time
+      role: confirmedBy.role || 'partner'
+    };
+  }
+
   // Get booking information based on type
   let booking: any = null;
   let asset: any = null;
@@ -181,6 +196,7 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       name: partner.name,
       contactInfo: partner.email,
     },
+    confirmationInfo,
   };
 }
 

@@ -6,7 +6,7 @@ export * from "./config";
 export * from "./service";
 
 // Re-export key functions for convenience
-export { getEmailService, sendQuickEmail } from "./service";
+export { sendQuickEmail } from "./service";
 export { getEmailConfig, SYSTEM_EMAILS, EMAIL_SETTINGS } from "./config";
 export { getEmailTemplate } from "./templates";
 

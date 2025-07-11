@@ -21,6 +21,10 @@ export interface Reservation {
   location: string;
   imageUrl: string;
   confirmationCode?: string;
+  isAdminCreated?: boolean;
+  paymentStatus?: string;
+  paymentLinkUrl?: string;
+  paymentDueDate?: number;
 }
 
 export interface RecommendationItem {

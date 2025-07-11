@@ -19,10 +19,12 @@ import {
   createEventBookingValidator,
   createRestaurantReservationValidator,
   createVehicleBookingValidator,
+  createAccommodationBookingValidator,
   updateActivityBookingValidator,
   updateEventBookingValidator,
   updateRestaurantReservationValidator,
-  updateVehicleBookingValidator
+  updateVehicleBookingValidator,
+  updateAccommodationBookingValidator
 } from "./types";
 
 const assetInfoValidator = v.object({
@@ -64,8 +66,8 @@ export const createActivityBooking = mutation({
     const rateLimitCheck = await checkRateLimit(ctx, user._id, "CREATE_BOOKING");
     if (!rateLimitCheck.allowed) {
       throw new Error(
-        `Limite de reservas excedido. ${rateLimitCheck.remainingAttempts} tentativas restantes. ` +
-        `Limite será resetado em ${new Date(rateLimitCheck.resetTime).toLocaleString()}`
+        "Limite de reservas excedido. " + rateLimitCheck.remainingAttempts + " tentativas restantes. " +
+        "Limite será resetado em " + new Date(rateLimitCheck.resetTime).toLocaleString()
       );
     }
 
@@ -100,10 +102,10 @@ export const createActivityBooking = mutation({
 
     // Check participant limits
     if (args.participants < activity.minParticipants) {
-      throw new Error(`Mínimo de ${activity.minParticipants} participantes`);
+      throw new Error("Mínimo de " + activity.minParticipants + " participantes");
     }
     if (args.participants > activity.maxParticipants) {
-      throw new Error(`Máximo de ${activity.maxParticipants} participantes`);
+      throw new Error("Máximo de " + activity.maxParticipants + " participantes");
     }
 
     // Calculate price
@@ -116,7 +118,9 @@ export const createActivityBooking = mutation({
       totalPrice = ticket.price;
     }
 
-    const finalPrice = calculateActivityBookingPrice(totalPrice, args.participants);
+    const calculatedPrice = calculateActivityBookingPrice(totalPrice, args.participants);
+    // Use finalAmount if coupon is applied, otherwise use calculated price
+    const finalPrice = args.finalAmount ?? calculatedPrice;
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
 
     // Determine initial booking status based on payment requirement
@@ -153,6 +157,9 @@ export const createActivityBooking = mutation({
       confirmationCode,
       customerInfo,
       specialRequests: args.specialRequests,
+      couponCode: args.couponCode,
+      discountAmount: args.discountAmount,
+      finalAmount: args.finalAmount,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -275,7 +282,9 @@ export const createEventBooking = mutation({
       totalPrice = ticket.price;
     }
 
-    const finalPrice = calculateEventBookingPrice(totalPrice, args.quantity);
+    const calculatedPrice = calculateEventBookingPrice(totalPrice, args.quantity);
+    // Use finalAmount if coupon is applied, otherwise use calculated price
+    const finalPrice = args.finalAmount ?? calculatedPrice;
     const confirmationCode = generateConfirmationCode(event.date, customerInfo.name);
 
     // Determine initial booking status based on payment requirement
@@ -310,6 +319,9 @@ export const createEventBooking = mutation({
       confirmationCode,
       customerInfo,
       specialRequests: args.specialRequests,
+      couponCode: args.couponCode,
+      discountAmount: args.discountAmount,
+      finalAmount: args.finalAmount,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -323,7 +335,7 @@ export const createEventBooking = mutation({
         assetName: event.title,
         bookingType: "event",
         confirmationCode,
-        bookingDate: `${event.date} às ${event.time}`,
+        bookingDate: event.date + " às " + event.time,
         totalPrice: finalPrice,
         bookingDetails: {
           eventId: event._id,
@@ -346,7 +358,7 @@ export const createEventBooking = mutation({
           assetName: event.title,
           bookingType: "event",
           confirmationCode,
-          bookingDate: `${event.date} às ${event.time}`,
+          bookingDate: event.date + " às " + event.time,
           totalPrice: finalPrice,
           bookingDetails: {
             eventId: event._id,
@@ -425,7 +437,7 @@ export const createRestaurantReservation = mutation({
     }
 
     if (args.partySize > restaurant.maximumPartySize) {
-      throw new Error(`Máximo de ${restaurant.maximumPartySize} pessoas por reserva`);
+      throw new Error("Máximo de " + restaurant.maximumPartySize + " pessoas por reserva");
     }
 
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
@@ -443,6 +455,9 @@ export const createRestaurantReservation = mutation({
       specialRequests: args.specialRequests,
       status: BOOKING_STATUS.AWAITING_CONFIRMATION,
       confirmationCode,
+      couponCode: args.couponCode,
+      discountAmount: args.discountAmount,
+      finalAmount: args.finalAmount,
     });
 
     // Send email confirmation to customer
@@ -452,7 +467,7 @@ export const createRestaurantReservation = mutation({
       assetName: restaurant.name,
       bookingType: "restaurant",
       confirmationCode,
-      bookingDate: `${args.date} às ${args.time}`,
+      bookingDate: args.date + " às " + args.time,
       bookingDetails: {
         restaurantId: restaurant._id,
         partySize: args.partySize,
@@ -474,7 +489,7 @@ export const createRestaurantReservation = mutation({
         assetName: restaurant.name,
         bookingType: "restaurant",
         confirmationCode,
-        bookingDate: `${args.date} às ${args.time}`,
+        bookingDate: args.date + " às " + args.time,
         bookingDetails: {
           restaurantId: restaurant._id,
           partySize: args.partySize,
@@ -561,12 +576,14 @@ export const createVehicleBooking = mutation({
     }
 
     // Calculate total price
-    const totalPrice = calculateVehicleBookingPrice(
+    const calculatedPrice = calculateVehicleBookingPrice(
       vehicle.pricePerDay,
       args.startDate,
       args.endDate,
       args.additionalDrivers
     );
+    // Use finalAmount if coupon is applied, otherwise use calculated price
+    const totalPrice = args.finalAmount ?? calculatedPrice;
 
     // Generate confirmation code
     const confirmationCode = generateConfirmationCode(args.startDate.toString(), customerInfo.name);
@@ -607,6 +624,9 @@ export const createVehicleBooking = mutation({
       additionalDrivers: args.additionalDrivers,
       additionalOptions: args.additionalOptions,
       notes: args.notes,
+      couponCode: args.couponCode,
+      discountAmount: args.discountAmount,
+      finalAmount: args.finalAmount,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -618,6 +638,125 @@ export const createVehicleBooking = mutation({
     };
   },
 });
+
+/**
+ * Create accommodation booking
+ */
+export const createAccommodationBooking = mutation({
+  args: createAccommodationBookingValidator,
+  returns: v.object({
+    bookingId: v.id("accommodationBookings"),
+    confirmationCode: v.string(),
+    totalPrice: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    // Get current user
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // Definir informações do cliente usando dados do usuário caso não fornecidas
+    const customerInfo = args.customerInfo ?? {
+      name: user.name || identity.name || "",
+      email: user.email || identity.email || "",
+      phone: user.phoneNumber || "",
+    };
+
+    // Validar informações do cliente
+    if (!isValidEmail(customerInfo.email)) {
+      throw new Error("Email inválido");
+    }
+    if (!isValidPhone(customerInfo.phone)) {
+      throw new Error("Telefone inválido");
+    }
+
+    // Substituir args.customerInfo por customerInfo consolidado
+    args.customerInfo = customerInfo as any;
+
+    // Get accommodation
+    const accommodation = await ctx.db.get(args.accommodationId);
+    if (!accommodation) {
+      throw new Error("Hospedagem não encontrada");
+    }
+
+    if (!accommodation.isActive) {
+      throw new Error("Hospedagem não está disponível");
+    }
+
+    // Check guest limits
+    if (args.guestCount > accommodation.maxGuests) {
+      throw new Error("Máximo de " + accommodation.maxGuests + " hóspedes");
+    }
+
+    // Calculate total price (simplified - in real implementation, consider nights, season, etc.)
+    const calculatedPrice = accommodation.pricePerNight * calculateNights(args.checkInDate, args.checkOutDate);
+    // Use finalAmount if coupon is applied, otherwise use calculated price
+    const totalPrice = args.finalAmount ?? calculatedPrice;
+
+    // Generate confirmation code
+    const confirmationCode = generateConfirmationCode(args.checkInDate, customerInfo.name);
+
+    // Determine initial booking status
+    let initialStatus: string = BOOKING_STATUS.DRAFT;
+    let initialPaymentStatus: string = PAYMENT_STATUS.PENDING;
+    
+    if (totalPrice === 0) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.NOT_REQUIRED;
+    } else if (accommodation.acceptsOnlinePayment && accommodation.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.DRAFT;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    } else if (!accommodation.requiresUpfrontPayment) {
+      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
+      initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    }
+
+    // Create booking
+    const bookingId = await ctx.db.insert("accommodationBookings", {
+      accommodationId: args.accommodationId,
+      userId: user._id,
+      checkInDate: args.checkInDate,
+      checkOutDate: args.checkOutDate,
+      guests: BigInt(args.guestCount),
+      totalPrice,
+      status: initialStatus,
+      paymentStatus: initialPaymentStatus,
+      confirmationCode,
+      customerInfo,
+      specialRequests: args.specialRequests,
+      couponCode: args.couponCode,
+      discountAmount: args.discountAmount,
+      finalAmount: args.finalAmount,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return {
+      bookingId,
+      confirmationCode,
+      totalPrice,
+    };
+  },
+});
+
+// Helper function to calculate nights between dates
+function calculateNights(checkInDate: string, checkOutDate: string): number {
+  const checkIn = new Date(checkInDate);
+  const checkOut = new Date(checkOutDate);
+  const timeDiff = checkOut.getTime() - checkIn.getTime();
+  const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+  return Math.max(1, nights); // Minimum 1 night
+}
 
 /**
  * Update activity booking status
@@ -785,8 +924,8 @@ export const cancelRestaurantReservation = mutation({
     await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
       userId: reservation.userId,
       type: "booking_canceled",
-      title: "Reserva de Restaurante Cancelada ❌",
-      message: `Sua reserva no "${restaurant.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      title: "Reserva de Restaurante Cancelada",
+      message: "Sua reserva no \"" + restaurant.name + "\" foi cancelada." + (args.reason ? " Motivo: " + args.reason : ""),
       relatedId: reservation._id,
       relatedType: "restaurant_booking",
       data: {
@@ -833,8 +972,8 @@ export const cancelVehicleBooking = mutation({
     await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
       userId: booking.userId,
       type: "booking_canceled",
-      title: "Reserva de Veículo Cancelada ❌",
-      message: `Sua reserva para "${vehicle.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      title: "Reserva de Veículo Cancelada",
+      message: "Sua reserva para \"" + vehicle.name + "\" foi cancelada." + (args.reason ? " Motivo: " + args.reason : ""),
       relatedId: booking._id,
       relatedType: "vehicle_booking",
       data: {
@@ -1152,7 +1291,7 @@ export const confirmRestaurantReservation = mutation({
         bookingType: "restaurant",
         confirmationCode: booking.confirmationCode,
         voucherNumber: voucher.voucherNumber,
-        bookingDate: `${booking.date} ${booking.time}`,
+        bookingDate: booking.date + " " + booking.time,
         partnerName: user.name,
         attachPDF: true,
         bookingDetails: {
@@ -1362,7 +1501,7 @@ export const confirmAccommodationBooking = mutation({
         bookingType: "accommodation",
         confirmationCode: booking.confirmationCode,
         voucherNumber: voucher.voucherNumber,
-        bookingDate: `${booking.checkInDate} - ${booking.checkOutDate}`,
+        bookingDate: booking.checkInDate + " - " + booking.checkOutDate,
         partnerName: user.name,
         attachPDF: true,
         bookingDetails: {
@@ -1656,7 +1795,7 @@ export const seedTestReservations = mutation({
 
       return {
         success: true,
-        message: `${reservationsCreated} reservas de teste criadas com sucesso para ${args.travelerEmail}`,
+        message: reservationsCreated + " reservas de teste criadas com sucesso para " + args.travelerEmail,
         reservationsCreated,
       };
 
@@ -1664,7 +1803,7 @@ export const seedTestReservations = mutation({
       console.error("Erro ao criar dados de teste:", error);
       return {
         success: false,
-        message: `Erro ao criar dados de teste: ${error}`,
+        message: "Erro ao criar dados de teste: " + error,
         reservationsCreated,
       };
     }
@@ -1755,7 +1894,7 @@ export const cancelBooking = mutation({
           throw new Error("Tipo de reserva não reconhecido");
       }
     } catch (error) {
-      throw new Error(`Erro ao cancelar reserva: ${error}`);
+      throw new Error("Erro ao cancelar reserva: " + error);
     }
 
     return null;
@@ -1923,8 +2062,8 @@ export const cancelRestaurantReservationInternal = mutation({
     await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
       userId: reservation.userId,
       type: "booking_canceled",
-      title: "Reserva de Restaurante Cancelada ❌",
-      message: `Sua reserva no "${restaurant.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      title: "Reserva de Restaurante Cancelada",
+      message: "Sua reserva no \"" + restaurant.name + "\" foi cancelada." + (args.reason ? " Motivo: " + args.reason : ""),
       relatedId: reservation._id,
       relatedType: "restaurant_booking",
       data: {
@@ -1977,8 +2116,8 @@ export const cancelVehicleBookingInternal = mutation({
     await ctx.runMutation(internal.domains.notifications.mutations.createNotification, {
       userId: booking.userId,
       type: "booking_canceled",
-      title: "Reserva de Veículo Cancelada ❌",
-      message: `Sua reserva para "${vehicle.name}" foi cancelada.${args.reason ? ` Motivo: ${args.reason}` : ''}`,
+      title: "Reserva de Veículo Cancelada",
+      message: "Sua reserva para \"" + vehicle.name + "\" foi cancelada." + (args.reason ? " Motivo: " + args.reason : ""),
       relatedId: booking._id,
       relatedType: "vehicle_booking",
       data: {
@@ -2119,7 +2258,7 @@ export const updateBookingStatus = mutation({
     stripePaymentIntentId: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    console.log(`🔍 Updating booking status for ${args.bookingType}:`, {
+    console.log("[DEBUG] Updating booking status for " + args.bookingType + ":", {
       bookingId: args.bookingId,
       bookingType: args.bookingType,
       status: args.status,
@@ -2149,11 +2288,11 @@ export const updateBookingStatus = mutation({
     }
 
     if (!booking) {
-      console.error(`❌ Booking not found for ${args.bookingType}:`, args.bookingId);
+      console.error("[ERROR] Booking not found for " + args.bookingType + ":", args.bookingId);
       throw new Error("Reserva não encontrada");
     }
 
-    console.log(`📝 Current booking status for ${args.bookingType}:`, {
+    console.log("[DEBUG] Current booking status for " + args.bookingType + ":", {
       currentStatus: booking.status,
       currentPaymentStatus: booking.paymentStatus,
       bookingId: booking._id
@@ -2175,7 +2314,7 @@ export const updateBookingStatus = mutation({
 
     await ctx.db.patch(booking._id, updateData);
     
-    console.log(`✅ Successfully updated ${args.bookingType} booking status:`, {
+    console.log("[SUCCESS] Successfully updated " + args.bookingType + " booking status:", {
       bookingId: booking._id,
       newStatus: args.status,
       updateData
@@ -2287,7 +2426,7 @@ export const updateBookingPaymentSuccess = mutation({
           partnerId = (restaurant as any)?.partnerId;
           break;
         default:
-          throw new Error(`Tipo de reserva não suportado: ${bookingType}`);
+          throw new Error("Tipo de reserva não suportado: " + bookingType);
       }
       
       if (!partnerId) {
@@ -2301,7 +2440,7 @@ export const updateBookingPaymentSuccess = mutation({
         customerId,
       });
       
-      console.log(`✅ Voucher generated for ${bookingType} booking: ${voucher.voucherNumber}`);
+      console.log("[SUCCESS] Voucher generated for " + bookingType + " booking: " + voucher.voucherNumber);
       
       // Send voucher email based on booking type
       const customerEmail = booking.customerInfo?.email || booking.email || booking.customerEmail;
@@ -2342,7 +2481,7 @@ export const updateBookingPaymentSuccess = mutation({
         bookingDetails: {},
       });
       
-      console.log(`✅ Voucher email sent for: ${voucher.voucherNumber}`);
+      console.log("[SUCCESS] Voucher email sent for: " + voucher.voucherNumber);
       
     } catch (voucherError) {
       console.error("Error generating voucher:", voucherError);
@@ -2547,7 +2686,7 @@ export const markNoShowBookings = mutation({
           userId: activity.partnerId,
           type: "booking_no_show",
           title: "Cliente não compareceu",
-          message: `O cliente ${booking.customerInfo.name} não compareceu à atividade ${activity.title}`,
+          message: "O cliente " + booking.customerInfo.name + " não compareceu à atividade " + activity.title,
           relatedId: booking._id,
           relatedType: "activity_booking",
         });

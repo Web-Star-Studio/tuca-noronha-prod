@@ -14,6 +14,7 @@ export function useDashboard() {
   const eventBookings = useQuery(api.domains.bookings.queries.getUserEventBookings, { paginationOpts: { numItems: 100, cursor: null } });
   const restaurantReservations = useQuery(api.domains.bookings.queries.getUserRestaurantReservations, { paginationOpts: { numItems: 100, cursor: null } });
   const vehicleBookings = useQuery(api.domains.bookings.queries.getUserVehicleBookings, { paginationOpts: { numItems: 100, cursor: null } });
+  const adminReservations = useQuery(api.domains.adminReservations.queries.getUserAdminReservations, { paginationOpts: { numItems: 100, cursor: null } });
   
   // Use real notifications from Convex
   const notificationsResult = useQuery(api.domains.notifications.queries.getUserNotifications, {
@@ -46,6 +47,7 @@ export function useDashboard() {
   const reservations = useMemo(() => {
     const allReservations: Reservation[] = [];
 
+    // Add regular activity bookings
     activityBookings?.page.forEach(b => allReservations.push({
       id: b._id,
       type: 'activity',
@@ -58,6 +60,7 @@ export function useDashboard() {
       confirmationCode: b.confirmationCode,
     }));
 
+    // Add regular event bookings
     eventBookings?.page.forEach(b => allReservations.push({
       id: b._id,
       type: 'event',
@@ -70,6 +73,7 @@ export function useDashboard() {
       confirmationCode: b.confirmationCode,
     }));
 
+    // Add regular restaurant reservations
     restaurantReservations?.page.forEach(r => allReservations.push({
       id: r._id,
       type: 'restaurant',
@@ -82,6 +86,7 @@ export function useDashboard() {
       confirmationCode: r.confirmationCode,
     }));
 
+    // Add regular vehicle bookings
     vehicleBookings?.page.forEach(b => allReservations.push({
       id: b._id,
       type: 'vehicle',
@@ -95,19 +100,45 @@ export function useDashboard() {
       confirmationCode: b.confirmationCode,
     }));
 
+    // Add admin-created reservations
+    adminReservations?.page.forEach(r => {
+      const reservationType = r.assetType === 'activities' ? 'activity' :
+                             r.assetType === 'events' ? 'event' :
+                             r.assetType === 'restaurants' ? 'restaurant' :
+                             r.assetType === 'accommodations' ? 'accommodation' :
+                             r.assetType === 'vehicles' ? 'vehicle' : r.assetType;
+      
+      allReservations.push({
+        id: r._id,
+        type: reservationType,
+        name: r.assetName,
+        date: new Date(r.date),
+        guests: r.guests,
+        status: r.status,
+        location: r.assetLocation,
+        imageUrl: r.assetImageUrl,
+        confirmationCode: r.confirmationCode,
+        isAdminCreated: true,
+        paymentStatus: r.paymentStatus,
+        paymentLinkUrl: r.stripePaymentLinkUrl,
+        paymentDueDate: r.paymentDueDate,
+      });
+    });
+
     return allReservations.sort((a, b) => {
       const dateA = a.date || a.checkIn || 0;
       const dateB = b.date || b.checkIn || 0;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
-  }, [activityBookings, eventBookings, restaurantReservations, vehicleBookings]);
+  }, [activityBookings, eventBookings, restaurantReservations, vehicleBookings, adminReservations]);
 
   // Handle loading state
   const isLoadingReservations = 
     activityBookings === undefined ||
     eventBookings === undefined ||
     restaurantReservations === undefined ||
-    vehicleBookings === undefined;
+    vehicleBookings === undefined ||
+    adminReservations === undefined;
 
   const handleCancelReservation = async (reservationId: string) => {
     try {
@@ -116,6 +147,12 @@ export function useDashboard() {
       
       if (!reservation) {
         toast.error("Reserva não encontrada");
+        return;
+      }
+
+      // Admin reservations cannot be cancelled by users
+      if (reservation.isAdminCreated) {
+        toast.error("Esta reserva foi criada por um administrador e não pode ser cancelada diretamente. Entre em contato com o suporte.");
         return;
       }
 

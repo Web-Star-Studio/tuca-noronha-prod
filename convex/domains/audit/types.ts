@@ -19,6 +19,22 @@ export type AuditEventType =
   | "permission_grant" | "permission_revoke" | "permission_update" | "role_change"
   // Booking Operations
   | "booking_create" | "booking_update" | "booking_cancel" | "booking_confirm"
+  // Admin Reservation Operations
+  | "admin_reservation_create" | "admin_reservation_update" | "admin_reservation_cancel" 
+  | "admin_reservation_confirm" | "admin_reservation_delete"
+  // Package Proposal Operations
+  | "package_proposal_create" | "package_proposal_update" | "package_proposal_send"
+  | "package_proposal_viewed" | "package_proposal_approve" | "package_proposal_reject" 
+  | "package_proposal_accept" | "package_proposal_convert" | "package_proposal_delete" 
+  | "package_proposal_attachment_add" | "package_proposal_attachment_remove" 
+  | "package_proposal_template_create" | "package_proposal_template_update" 
+  | "package_proposal_template_delete"
+  // Auto-Confirmation Operations
+  | "auto_confirmation_create" | "auto_confirmation_update" | "auto_confirmation_enable"
+  | "auto_confirmation_disable" | "auto_confirmation_delete"
+  // Reservation Communication
+  | "reservation_chat_create" | "reservation_message_send" | "reservation_comm_status_change"
+  | "reservation_comm_assign"
   // Organization Management
   | "organization_create" | "organization_update" | "organization_delete"
   // System Operations
@@ -34,6 +50,8 @@ export type AuditEventType =
 export type AuditEventCategory = 
   | "authentication" | "authorization" | "data_access" | "data_modification"
   | "system_admin" | "user_management" | "asset_management" | "booking_management"
+  | "admin_reservation_management" | "package_management" | "auto_confirmation_management"
+  | "document_management" | "template_management"
   | "communication" | "security" | "compliance" | "other";
 
 // Severity levels for risk assessment
@@ -348,6 +366,16 @@ export const auditLogValidators = {
       v.literal("permission_update"), v.literal("role_change"),
       v.literal("booking_create"), v.literal("booking_update"), 
       v.literal("booking_cancel"), v.literal("booking_confirm"),
+      v.literal("package_proposal_create"), v.literal("package_proposal_update"), 
+      v.literal("package_proposal_send"), v.literal("package_proposal_viewed"),
+      v.literal("package_proposal_approve"), v.literal("package_proposal_reject"), 
+      v.literal("package_proposal_accept"), v.literal("package_proposal_convert"), 
+      v.literal("package_proposal_delete"), v.literal("package_proposal_attachment_add"), 
+      v.literal("package_proposal_attachment_remove"), v.literal("package_proposal_template_create"), 
+      v.literal("package_proposal_template_update"), v.literal("package_proposal_template_delete"),
+      v.literal("auto_confirmation_create"), v.literal("auto_confirmation_update"), 
+      v.literal("auto_confirmation_enable"), v.literal("auto_confirmation_disable"),
+      v.literal("auto_confirmation_delete"),
       v.literal("organization_create"), v.literal("organization_update"), 
       v.literal("organization_delete"),
       v.literal("system_config_change"), v.literal("bulk_operation"),
@@ -362,8 +390,10 @@ export const auditLogValidators = {
       v.literal("data_access"), v.literal("data_modification"),
       v.literal("system_admin"), v.literal("user_management"), 
       v.literal("asset_management"), v.literal("booking_management"),
-      v.literal("communication"), v.literal("security"), 
-      v.literal("compliance"), v.literal("other")
+      v.literal("admin_reservation_management"), v.literal("package_management"),
+      v.literal("auto_confirmation_management"), v.literal("document_management"),
+      v.literal("template_management"), v.literal("communication"), 
+      v.literal("security"), v.literal("compliance"), v.literal("other")
     ),
     severity: v.union(
       v.literal("low"), v.literal("medium"), 

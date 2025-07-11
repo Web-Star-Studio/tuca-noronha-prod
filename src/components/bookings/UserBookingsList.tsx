@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Users, Ticket, Eye, CheckCircle2, Hourglass, AlertTriangle, XCircle, Car, BedDouble, Utensils, Mountain } from "lucide-react";
 import { VoucherDownloadButton } from "@/components/vouchers/VoucherDownloadButton";
 import Link from "next/link";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type BookingStatus = "pending" | "confirmed" | "canceled" | "completed" | "draft" | "payment_pending" | "awaiting_confirmation" | "in_progress" | "no_show" | "expired";
@@ -55,129 +54,122 @@ function BookingCard({ booking }: { booking: any }) {
   const TypeIcon = typeInfo.icon;
 
   const getBookingDetails = () => {
-    let imageUrl: string | undefined;
     let details: { icon: React.ElementType; text: string | undefined }[] = [];
-    let assetName = booking.assetName;
+    let assetName = booking.assetName; // Use the assetName from the query
+
+    // Format date if available
+    const formatDate = (dateString: string) => {
+      if (!dateString) return 'Data não informada';
+      try {
+        return new Date(dateString).toLocaleDateString('pt-BR');
+      } catch {
+        return dateString;
+      }
+    };
 
     switch (booking.type) {
       case 'activity':
-        imageUrl = booking.asset?.imageUrl;
-        assetName = booking.asset?.title;
         details = [
-          { icon: Calendar, text: booking.activityBookings?.date },
-          { icon: Clock, text: booking.activityBookings?.time },
-          { icon: Users, text: `${booking.activityBookings?.participants || 0} ${booking.activityBookings?.participants === 1 ? 'participante' : 'participantes'}` },
+          { icon: Calendar, text: booking.date ? formatDate(booking.date) : 'Data não informada' },
+          { icon: Clock, text: booking.time || 'Horário não informado' },
+          { icon: Users, text: `${booking.participants || 'N/A'} participantes` },
         ];
         break;
       case 'event':
-        imageUrl = booking.asset?.imageUrl;
-        assetName = booking.asset?.title;
         details = [
-          { icon: Calendar, text: booking.eventBookings?.date || booking.asset?.date },
-          { icon: Clock, text: booking.eventBookings?.time || booking.asset?.time },
-          { icon: Ticket, text: `${booking.eventBookings?.quantity || 0} ${booking.eventBookings?.quantity === 1 ? 'ingresso' : 'ingressos'}` },
+          { icon: Calendar, text: booking.date ? formatDate(booking.date) : 'Data não informada' },
+          { icon: Clock, text: booking.time || 'Horário não informado' },
+          { icon: Ticket, text: `${booking.quantity || 'N/A'} ingressos` },
         ];
         break;
       case 'restaurant':
-        imageUrl = booking.asset?.mainImage;
-        assetName = booking.asset?.name;
         details = [
-          { icon: Calendar, text: booking.restaurantReservations?.date },
-          { icon: Clock, text: booking.restaurantReservations?.time },
-          { icon: Users, text: `${Number(booking.restaurantReservations?.partySize || 0)} ${Number(booking.restaurantReservations?.partySize || 0) === 1 ? 'pessoa' : 'pessoas'}` },
+          { icon: Calendar, text: booking.date ? formatDate(booking.date) : 'Data não informada' },
+          { icon: Clock, text: booking.time || 'Horário não informado' },
+          { icon: Users, text: `${booking.partySize || 'N/A'} pessoas` },
         ];
         break;
       case 'vehicle':
-        imageUrl = booking.asset?.imageUrl;
-        assetName = booking.asset?.name;
         details = [
-          { icon: Calendar, text: `De: ${booking.vehicleBookings?.startDate ? new Date(booking.vehicleBookings.startDate).toLocaleDateString('pt-BR') : 'N/A'}` },
-          { icon: Calendar, text: `Até: ${booking.vehicleBookings?.endDate ? new Date(booking.vehicleBookings.endDate).toLocaleDateString('pt-BR') : 'N/A'}` },
-          { icon: Users, text: `${booking.asset?.seats || 'N/A'} assentos` },
+          { icon: Calendar, text: booking.startDate ? `De: ${formatDate(booking.startDate)}` : 'Data de início não informada' },
+          { icon: Calendar, text: booking.endDate ? `Até: ${formatDate(booking.endDate)}` : 'Data de fim não informada' },
+          { icon: Users, text: `${booking.seats || 'N/A'} assentos` },
         ];
         break;
       case 'accommodation':
-        imageUrl = booking.asset?.mainImage;
-        assetName = booking.asset?.name;
         details = [
-          { icon: Calendar, text: `Check-in: ${booking.accommodationBookings?.checkInDate ? new Date(booking.accommodationBookings.checkInDate).toLocaleDateString('pt-BR') : 'N/A'}` },
-          { icon: Calendar, text: `Check-out: ${booking.accommodationBookings?.checkOutDate ? new Date(booking.accommodationBookings.checkOutDate).toLocaleDateString('pt-BR') : 'N/A'}` },
-          { icon: Users, text: `${booking.accommodationBookings?.guests || 0} ${booking.accommodationBookings?.guests === 1 ? 'hóspede' : 'hóspedes'}` },
+          { icon: Calendar, text: booking.checkInDate ? `Check-in: ${formatDate(booking.checkInDate)}` : 'Check-in não informado' },
+          { icon: Calendar, text: booking.checkOutDate ? `Check-out: ${formatDate(booking.checkOutDate)}` : 'Check-out não informado' },
+          { icon: Users, text: `${booking.guests || 'N/A'} hóspedes` },
         ];
         break;
       case 'package':
-        imageUrl = booking.asset?.mainImage;
-        assetName = booking.asset?.name;
         details = [
-          { icon: Calendar, text: `Início: ${booking.packageBookings?.startDate ? new Date(booking.packageBookings.startDate).toLocaleDateString('pt-BR') : 'N/A'}` },
-          { icon: Calendar, text: `Fim: ${booking.packageBookings?.endDate ? new Date(booking.packageBookings.endDate).toLocaleDateString('pt-BR') : 'N/A'}` },
-          { icon: Users, text: `${booking.packageBookings?.guests || 0} ${booking.packageBookings?.guests === 1 ? 'pessoa' : 'pessoas'}` },
+          { icon: Calendar, text: booking.startDate ? `Início: ${formatDate(booking.startDate)}` : 'Data de início não informada' },
+          { icon: Calendar, text: booking.endDate ? `Fim: ${formatDate(booking.endDate)}` : 'Data de fim não informada' },
+          { icon: Users, text: `${booking.guests || 'N/A'} pessoas` },
         ];
         break;
     }
 
-    return { details, imageUrl, assetName };
+    return { details, assetName };
   };
 
   const cardData = getBookingDetails();
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl hover:border-blue-300 dark:bg-slate-800/50 dark:border-slate-700 dark:hover:border-blue-700">
-      <div className="grid grid-cols-1 md:grid-cols-12">
-        <div className="md:col-span-4 relative min-h-[150px] md:min-h-full">
-          <Image
-            src={cardData.imageUrl || "/images/default-reservation.jpg"}
-            alt={cardData.assetName || "Imagem da reserva"}
-            fill
-            className="object-cover"
-          />
-        </div>
-        <div className="md:col-span-8 flex flex-col">
-          <div className="p-6 pb-4 flex-grow">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2 mb-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                <TypeIcon className="h-4 w-4" />
-                <span>{typeInfo.label}</span>
-              </div>
-              <Badge className={cn("text-xs px-2.5 py-1 rounded-full font-semibold border", statusInfo.color)}>
-                <StatusIcon className="h-3 w-3 mr-1.5" />
-                {statusInfo.label}
-              </Badge>
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{cardData.assetName}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-mono">#{booking.confirmationCode}</p>
-
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-              {cardData.details.map((detail, i) => (
-                <div key={i} className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <detail.icon className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                  <span>{detail.text}</span>
-                </div>
-              ))}
-              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold">
-                <span className="text-green-600 dark:text-green-400">R$ {booking.totalPrice?.toFixed(2) || '0.00'}</span>
-              </div>
-            </div>
+      <div className="p-6">
+        {/* Header with type and status */}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2 mb-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
+            <TypeIcon className="h-4 w-4" />
+            <span>{typeInfo.label}</span>
           </div>
+          <Badge className={cn("text-xs px-2.5 py-1 rounded-full font-semibold border", statusInfo.color)}>
+            <StatusIcon className="h-3 w-3 mr-1.5" />
+            {statusInfo.label}
+          </Badge>
+        </div>
 
-          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-end gap-3">
+        {/* Asset name and confirmation code */}
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{cardData.assetName}</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-mono">#{booking.confirmationCode}</p>
+        </div>
+
+        {/* Booking details */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
+          {cardData.details.map((detail, i) => (
+            <div key={i} className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+              <detail.icon className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+              <span>{detail.text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Price and actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="text-lg font-bold text-green-600 dark:text-green-400">
+            R$ {booking.totalPrice?.toFixed(2) || '0.00'}
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button asChild variant="ghost" size="sm" className="w-full sm:w-auto">
               <Link href={`/reservas/${booking._id}`}>
                 <Eye className="h-4 w-4 mr-2" />
                 Ver Detalhes
               </Link>
             </Button>
-            {(booking.status === "confirmed" || booking.status === "completed") && booking.confirmationCode && (
-              <VoucherDownloadButton
-                bookingId={booking._id}
-                bookingType={booking.type as any}
-                variant="default"
-                size="sm"
-                showIcon={true}
-                showLabel={true}
-                className="w-full sm:w-auto"
-              />
-            )}
+            <VoucherDownloadButton
+              bookingId={booking._id}
+              bookingType={booking.type as any}
+              variant="default"
+              size="sm"
+              showIcon={true}
+              showLabel={true}
+              className="w-full sm:w-auto"
+            />
           </div>
         </div>
       </div>
@@ -193,6 +185,12 @@ export default function UserBookingsList() {
   const bookings = allBookings?.bookings || [];
   const tabs = ["activity", "event", "restaurant", "vehicle", "accommodation", "package"]; // Added package tab
   const bookingsByType = (type: string) => bookings.filter(b => b.type === type);
+
+  // Debug log to see what data we're getting
+  console.log('Bookings data:', bookings);
+  if (bookings.length > 0) {
+    console.log('First booking:', bookings[0]);
+  }
 
   if (!allBookings) {
     return (

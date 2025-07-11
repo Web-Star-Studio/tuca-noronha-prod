@@ -24,6 +24,9 @@ export const getUserActivityBookings = query({
       time: v.optional(v.string()),
       participants: v.number(),
       totalPrice: v.number(),
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
       confirmationCode: v.string(),
@@ -117,6 +120,7 @@ export const getUserEventBookings = query({
       eventLocation: v.string(),
       quantity: v.number(),
       totalPrice: v.number(),
+      discountAmount: v.optional(v.number()),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
       confirmationCode: v.string(),
@@ -1059,6 +1063,9 @@ export const getActivityBookings = query({
       time: v.optional(v.string()),
       participants: v.number(),
       totalPrice: v.number(),
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
       confirmationCode: v.string(),
@@ -1424,6 +1431,9 @@ export const getEventBookings = query({
       eventTitle: v.string(),
       quantity: v.number(),
       totalPrice: v.number(),
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
       confirmationCode: v.string(),
@@ -2892,6 +2902,16 @@ export const getBookingsWithRBAC = query({
       createdAt: v.number(),
       updatedAt: v.number(),
       canManage: v.boolean(), // Whether current user can manage this booking
+      // Additional fields for different booking types
+      participants: v.optional(v.number()),
+      quantity: v.optional(v.number()),
+      partySize: v.optional(v.number()),
+      guests: v.optional(v.number()),
+      seats: v.optional(v.number()),
+      startDate: v.optional(v.string()),
+      endDate: v.optional(v.string()),
+      checkInDate: v.optional(v.string()),
+      checkOutDate: v.optional(v.string()),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -2966,6 +2986,7 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: false,
+              participants: booking.participants,
             });
           }
         }
@@ -2999,6 +3020,7 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
+              participants: booking.participants,
             });
           }
         }
@@ -3023,6 +3045,7 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
+              participants: booking.participants,
             });
           }
         }
@@ -3057,6 +3080,7 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: false,
+              quantity: booking.quantity,
             });
           }
         }
@@ -3090,6 +3114,7 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
+              quantity: booking.quantity,
             });
           }
         }
@@ -3114,6 +3139,7 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
+              quantity: booking.quantity,
             });
           }
         }
@@ -3148,6 +3174,7 @@ export const getBookingsWithRBAC = query({
               createdAt: reservation.createdAt ?? reservation._creationTime,
               updatedAt: reservation.updatedAt ?? reservation._creationTime,
               canManage: false,
+              partySize: reservation.partySize,
             });
           }
         }
@@ -3181,6 +3208,7 @@ export const getBookingsWithRBAC = query({
               createdAt: reservation.createdAt ?? reservation._creationTime,
               updatedAt: reservation.updatedAt ?? reservation._creationTime,
               canManage: true,
+              partySize: reservation.partySize,
             });
           }
         }
@@ -3205,6 +3233,7 @@ export const getBookingsWithRBAC = query({
               createdAt: reservation.createdAt ?? reservation._creationTime,
               updatedAt: reservation.updatedAt ?? reservation._creationTime,
               canManage: true,
+              partySize: reservation.partySize,
             });
           }
         }
@@ -3233,12 +3262,15 @@ export const getBookingsWithRBAC = query({
               customerEmail: user.email ?? "N/A",
               totalPrice: booking.totalPrice,
               status: booking.status,
-              confirmationCode: "N/A", // Vehicle bookings might not have this
+              confirmationCode: booking.confirmationCode || "N/A",
               date: new Date(booking.startDate).toLocaleDateString(),
               time: "",
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
-              canManage: true,
+              canManage: false,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              seats: vehicle.seats,
             });
           }
         }
@@ -3262,16 +3294,19 @@ export const getBookingsWithRBAC = query({
               type: "vehicle",
               assetId: booking.vehicleId,
               assetName: vehicle.name,
-              customerName: "Cliente", // Vehicle bookings may not have customer info
-              customerEmail: "cliente@email.com", // Placeholder
+              customerName: booking.customerInfo?.name || "Cliente", 
+              customerEmail: booking.customerInfo?.email || "cliente@email.com",
               totalPrice: booking.totalPrice,
               status: booking.status,
-              confirmationCode: booking._id.toString(), // Use booking ID as confirmation
+              confirmationCode: booking.confirmationCode || booking._id.toString(),
               date: new Date(booking.startDate).toISOString().split('T')[0],
               time: undefined,
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              seats: vehicle.seats,
             });
           }
         }
@@ -3286,16 +3321,19 @@ export const getBookingsWithRBAC = query({
               type: "vehicle",
               assetId: booking.vehicleId,
               assetName: vehicle.name,
-              customerName: "Cliente", // Vehicle bookings may not have customer info
-              customerEmail: "cliente@email.com", // Placeholder
+              customerName: booking.customerInfo?.name || "Cliente", 
+              customerEmail: booking.customerInfo?.email || "cliente@email.com",
               totalPrice: booking.totalPrice,
               status: booking.status,
-              confirmationCode: booking._id.toString(), // Use booking ID as confirmation
+              confirmationCode: booking.confirmationCode || booking._id.toString(),
               date: new Date(booking.startDate).toISOString().split('T')[0],
               time: undefined,
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
+              seats: vehicle.seats,
             });
           }
         }

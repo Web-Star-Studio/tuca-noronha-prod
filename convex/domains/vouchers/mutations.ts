@@ -79,6 +79,7 @@ export const generateVoucher = mutation({
     const now = Date.now();
     const voucherId = await ctx.db.insert("vouchers", {
       voucherNumber,
+      code: voucherNumber,  // For compatibility
       qrCode: qrCodeString,
       bookingId,
       bookingType,
@@ -631,6 +632,7 @@ export const regenerateVoucher = mutation({
 
     const newVoucherId = await ctx.db.insert("vouchers", {
       voucherNumber,
+      code: voucherNumber,  // For compatibility
       qrCode: qrCodeString,
       bookingId: originalVoucher.bookingId,
       bookingType: originalVoucher.bookingType,
