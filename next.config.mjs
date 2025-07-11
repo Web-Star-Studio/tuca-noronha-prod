@@ -26,6 +26,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.clerk.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'gregarious-civet-174.convex.cloud',
+      },
     ],
   },
   webpack: (config) => {
