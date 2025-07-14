@@ -665,17 +665,79 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
         console.error("Error getting asset name for notification:", error);
       }
 
-      // Send confirmation notification
-      await ctx.runAction(internal.domains.notifications.actions.sendBookingConfirmationNotification, {
-        userId: metadata.userId,
-        bookingId: metadata.bookingId,
-        bookingType: metadata.assetType,
-        assetName,
-        confirmationCode: booking.confirmationCode || "",
+      // Send confirmation email to the customer
+      await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: booking.customerInfo?.email || booking.email || "",
         customerName: booking.customerInfo?.name || booking.name || "",
-        partnerName: undefined,
+        assetName,
+        bookingType: metadata.assetType,
+        confirmationCode: booking.confirmationCode || "",
+        bookingDate: booking.date,
+        totalPrice: booking.totalPrice,
+        bookingDetails: {
+          bookingId: metadata.bookingId,
+          assetId: metadata.assetId,
+          participants: booking.participants,
+          date: booking.date,
+          specialRequests: booking.specialRequests,
+        },
       });
+      
+      // Send confirmation email to the partner
+      if (booking.partnerId) {
+        const partner = await ctx.runQuery(internal.domains.users.queries.get, { id: booking.partnerId });
+        if (partner && partner.email) {
+          await ctx.runAction(internal.domains.email.actions.sendPartnerNewBookingEmail, {
+            partnerEmail: partner.email,
+            partnerName: partner.name || "Parceiro",
+            customerName: booking.customerInfo?.name || booking.name || "",
+            customerEmail: booking.customerInfo?.email || booking.email || "",
+            customerPhone: booking.customerInfo?.phone || booking.phone || "",
+            assetName,
+            bookingType: metadata.assetType,
+            confirmationCode: booking.confirmationCode || "",
+            bookingDate: booking.date,
+            totalPrice: booking.totalPrice,
+            bookingDetails: {
+              bookingId: metadata.bookingId,
+              assetId: metadata.assetId,
+              participants: booking.participants,
+              date: booking.date,
+              specialRequests: booking.specialRequests,
+            },
+          });
+        }
+      }
+
+      // Send confirmation email to master admins
+      const masterAdmins = await ctx.runQuery(internal.domains.users.queries.listByRole, { role: "master" });
+      // Get partner info for master admin notification
+      const partnerForAdmin = booking.partnerId ? await ctx.runQuery(internal.domains.users.queries.get, { id: booking.partnerId }) : null;
+      for (const admin of masterAdmins) {
+        if (admin.email) {
+          await ctx.runAction(internal.domains.email.actions.sendPartnerNewBookingEmail, {
+            partnerEmail: admin.email,
+            partnerName: "Admin Master",
+            customerName: booking.customerInfo?.name || booking.name || "",
+            customerEmail: booking.customerInfo?.email || booking.email || "",
+            customerPhone: booking.customerInfo?.phone || booking.phone || "",
+            assetName: `[${metadata.assetType.toUpperCase()}] ${assetName}`,
+            bookingType: metadata.assetType,
+            confirmationCode: booking.confirmationCode || "",
+            bookingDate: booking.date,
+            totalPrice: booking.totalPrice,
+            bookingDetails: {
+              bookingId: metadata.bookingId,
+              assetId: metadata.assetId,
+              partnerId: booking.partnerId,
+              partnerName: partnerForAdmin?.name,
+              participants: booking.participants,
+              date: booking.date,
+              specialRequests: booking.specialRequests,
+            },
+          });
+        }
+      }
     }
   }
 }

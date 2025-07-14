@@ -6,41 +6,81 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true
   },
-  experimental: {
-    clientTraceMetadata: ['next-server-only', 'next-client-only'],
-  },
-  transpilePackages: ['convex'],
+  trailingSlash: true,
+  // Timeout de geração de páginas estáticas (em segundos)
+  staticPageGenerationTimeout: 1000,
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        
       },
       {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
+        protocol: "https",
+        hostname: "viagenseoutrashistorias.com.br",
       },
       {
-        protocol: 'https',
-        hostname: 'img.clerk.com',
+        protocol: "https",
+        hostname: "www.viagenscinematograficas.com.br",
       },
       {
-        protocol: 'https',
-        hostname: 'gregarious-civet-174.convex.cloud',
+        protocol: "https",
+        hostname: "source.unsplash.com"
       },
-    ],
-  },
-  webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-    };
-    return config;
-  },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com"
+      },
+      {
+        protocol: "https",
+        hostname: "img.clerk.com"
+      },
+      {
+        protocol: "https",
+        hostname: "images.sympla.com.br"
+      },
+      {
+        protocol: "https",
+        hostname: "gregarious-civet-174.convex.cloud",
+        pathname: "/api/storage/**"
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co"
+      }
+
+    ]
+  }
 };
 
-export default nextConfig;
+// Configuração do Sentry deve ser a última antes de exportar
+export default withSentryConfig(nextConfig, {
+// Configurações da organização
+org: "web-star-studio",
+project: "tn-next-convex",
+
+// Apenas mostrar logs em CI
+silent: !process.env.CI,
+
+// Tree-shake automaticamente logs do Sentry para reduzir bundle size
+disableLogger: true,
+
+// Upload de source maps mais abrangente para stack traces mais legíveis
+widenClientFileUpload: true,
+
+// Túnel para evitar bloqueadores de anúncios
+tunnelRoute: "/monitoring",
+
+// Configurações de source maps
+sourcemaps: {
+deleteSourcemapsAfterUpload: true,
+},
+
+// Instrumentação automática
+autoInstrumentServerFunctions: true,
+autoInstrumentMiddleware: true,
+autoInstrumentAppDirectory: true,
+});

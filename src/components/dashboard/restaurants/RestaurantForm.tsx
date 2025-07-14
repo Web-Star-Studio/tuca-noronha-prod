@@ -14,8 +14,9 @@ import { Label } from "@/components/ui/label";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, Store } from "lucide-react";
+import { X, Store, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export type WeekDay = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
 export type WeekdayHours = Record<WeekDay, string[]>;
@@ -94,6 +95,7 @@ export function RestaurantForm({
   const [tempPayment, setTempPayment] = useState("");
   const [tempGalleryImage, setTempGalleryImage] = useState("");
   const [tempMenuImage, setTempMenuImage] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Horários de funcionamento
   const defaultHours = useMemo(() => ({
@@ -332,8 +334,59 @@ export function RestaurantForm({
     }
   }, [restaurant, defaultHours]);
 
+
+
   // Handler de submissão
   const processSubmit = (data: Restaurant) => {
+    console.log("RestaurantForm processSubmit called");
+    console.log("Form data:", data);
+    
+    // Reset validation error
+    setValidationError(null);
+    
+    // Validação básica
+    if (!data.name || !data.slug || !data.description || !data.description_long) {
+      const error = "Por favor, preencha todos os campos obrigatórios: Nome, Slug, Descrição e Descrição Completa.";
+      setValidationError(error);
+      console.error("Missing required fields:", {
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        description_long: data.description_long
+      });
+      return;
+    }
+
+    if (cuisineTypes.length === 0) {
+      setValidationError("Por favor, adicione pelo menos um tipo de cozinha.");
+      console.error("No cuisine types selected");
+      return;
+    }
+
+    if (paymentOptions.length === 0) {
+      setValidationError("Por favor, adicione pelo menos uma forma de pagamento.");
+      console.error("No payment options selected");
+      return;
+    }
+
+    if (!data.mainImage) {
+      setValidationError("Por favor, selecione uma imagem principal para o restaurante.");
+      console.error("No main image selected");
+      return;
+    }
+
+    if (!data.address?.street || !data.address?.neighborhood || !data.address?.zipCode) {
+      setValidationError("Por favor, preencha todos os campos de endereço: Rua, Bairro e CEP.");
+      console.error("Missing address fields:", data.address);
+      return;
+    }
+
+    if (!data.phone) {
+      setValidationError("Por favor, informe o telefone do restaurante.");
+      console.error("Missing phone");
+      return;
+    }
+    
     // Garantir que todas as listas estão incluídas
     const completeData = {
       ...data,
@@ -372,12 +425,25 @@ export function RestaurantForm({
       },
     };
 
+    console.log("Complete data to submit:", completeData);
+
     // Chamar a função onSubmit com os dados completos
     onSubmit(completeData);
   };
 
+
+
   return (
     <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
+      {/* Alerta de erro de validação */}
+      {validationError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro de Validação</AlertTitle>
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
+      )}
+      
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
         <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-4">
           <TabsTrigger value="basic">{isEmbedded ? "Config. Base" : "Básico"}</TabsTrigger>
@@ -1090,9 +1156,36 @@ export function RestaurantForm({
       <Separator />
 
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
+        <div>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline"
+            className="ml-2"
+            onClick={() => {
+              // Limpar erro de validação
+              setValidationError(null);
+              
+              // Preencher campos obrigatórios para teste
+              setValue("name", "Restaurante Teste");
+              setValue("slug", "restaurante-teste");
+              setValue("description", "Descrição curta do restaurante teste");
+              setValue("description_long", "Descrição longa e detalhada do restaurante teste para validação do formulário");
+              setValue("phone", "+55 81 99999-9999");
+              setValue("mainImage", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4");
+              setValue("address.street", "Rua Teste, 123");
+              setValue("address.neighborhood", "Centro");
+              setValue("address.zipCode", "53990-000");
+              setCuisineTypes(["Brasileira", "Internacional"]);
+              setPaymentOptions(["Dinheiro", "Cartão de Crédito", "Pix"]);
+              console.log("Test data filled");
+            }}
+          >
+            Preencher Teste
+          </Button>
+        </div>
         <div className="space-x-2">
           <Button 
             type="button" 
@@ -1109,8 +1202,11 @@ export function RestaurantForm({
           >
             Próximo
           </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
+          <Button 
+            type="submit" 
+            disabled={loading}
+          >
+            {loading ? "Salvando..." : isEditing ? "Atualizar" : "Criar Restaurante"}
           </Button>
         </div>
       </div>

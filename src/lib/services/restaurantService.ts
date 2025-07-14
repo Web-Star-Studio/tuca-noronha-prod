@@ -127,8 +127,17 @@ export function useCreateRestaurant() {
       partnerId
     };
     
-    const restaurantId = await createMutation(dataWithPartner as any);
-    return restaurantId;
+    console.log("Creating restaurant with data:", dataWithPartner);
+    console.log("PartnerId type:", typeof partnerId, "Value:", partnerId);
+    
+    try {
+      const restaurantId = await createMutation(dataWithPartner as any);
+      console.log("Restaurant created successfully with ID:", restaurantId);
+      return restaurantId;
+    } catch (error) {
+      console.error("Error in createMutation:", error);
+      throw error;
+    }
   };
 }
 

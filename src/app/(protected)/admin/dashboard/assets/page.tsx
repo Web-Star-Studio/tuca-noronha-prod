@@ -3,95 +3,36 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
-import { useOptimizedAssets, useAssetTypeCounts } from "@/hooks/useOptimizedAssets";
+import { useOptimizedAssets, useAssetTypeCounts, type EnrichedAsset } from "@/hooks/useOptimizedAssets";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
-  Database,
-  Search, 
-  Filter,
-  Store,
-  Calendar,
-  Activity,
-  Car,
-  Building2,
-  User,
-  MapPin,
-  Star,
-  DollarSign,
-  TrendingUp,
-  CheckCircle,
-  XCircle,
-  Shield,
-  Eye,
-  ExternalLink
+  Database, Search, Filter, Store, Calendar, Activity, Car, Building2, User,
+  MapPin, Star, DollarSign, TrendingUp, CheckCircle, XCircle, Shield, Eye,
+  ExternalLink, MoreHorizontal, Info, AlertTriangle, Package
 } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { Id } from "@/../convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
+import Image from 'next/image';
 import { DashboardPageHeader } from "../components";
 
-type Asset = {
-  _id: string;
-  _creationTime: number;
-  name: string;
-  assetType: string;
-  isActive: boolean;
-  partnerId: Id<"users">;
-  partnerName?: string;
-  partnerEmail?: string;
-  bookingsCount?: number;
-  rating?: number;
-  price?: number;
-  // Campos adicionais que podem existir nos assets
-  title?: string;
-  description?: string;
-  shortDescription?: string;
-  category?: string;
-  location?: string;
-  address?: string;
-  imageUrl?: string;
-  galleryImages?: string[];
-  includes?: string[];
-  additionalInfo?: string[];
-  highlights?: string[];
-  isFeatured?: boolean;
-  maxParticipants?: number;
-  hasMultipleTickets?: boolean;
-  date?: string;
-  time?: string;
-  speaker?: string;
-  speakerBio?: string;
-  whatsappContact?: string;
-  pricePerDay?: number;
-  pricePerNight?: number;
-  status?: string;
-  ownerId?: Id<"users">;
-};
+type Asset = EnrichedAsset;
 
 const assetTypeLabels: Record<string, string> = {
   restaurants: "Restaurante",
@@ -117,9 +58,340 @@ const assetTypeIcons: Record<string, any> = {
   accommodations: Building2,
 };
 
+const getAssetIcon = (assetType: string) => {
+  const Icon = assetTypeIcons[assetType] || Database;
+  return <Icon className="h-4 w-4" />;
+};
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(price);
+  };
+
+  // Helper component for rendering asset-specific details in the table
+  const AssetDetailsCell = ({ asset }: { asset: Asset }) => {
+    const getAssetDetails = () => {
+      switch (asset.assetType) {
+        case 'vehicles':
+          return [
+            asset.category && { label: 'Categoria', value: asset.category },
+            asset.licensePlate && { label: 'Placa', value: asset.licensePlate },
+            asset.pricePerDay && { label: 'Diária', value: formatPrice(asset.pricePerDay) }
+          ].filter(Boolean);
+        
+        case 'accommodations':
+          return [
+            asset.type && { label: 'Tipo', value: asset.type },
+            asset.location && { label: 'Local', value: asset.location },
+            asset.pricePerNight && { label: 'Noite', value: formatPrice(asset.pricePerNight) }
+          ].filter(Boolean);
+        
+        case 'events':
+          return [
+            asset.date && { label: 'Data', value: formatDate(new Date(asset.date).getTime()) },
+            asset.location && { label: 'Local', value: asset.location }
+          ].filter(Boolean);
+        
+        case 'activities':
+          return [
+            asset.category && { label: 'Categoria', value: asset.category },
+            asset.duration && { label: 'Duração', value: asset.duration }
+          ].filter(Boolean);
+        
+        case 'restaurants':
+          return [
+            asset.cuisine && Array.isArray(asset.cuisine) && { label: 'Cozinha', value: asset.cuisine.join(', ') },
+            asset.address && { label: 'Endereço', value: String(asset.address) }
+          ].filter(Boolean);
+        
+        default:
+          return [];
+      }
+    };
+
+    const details = getAssetDetails();
+
+    if (details.length === 0) {
+      return <span className="text-gray-500">-</span>;
+    }
+
+    return (
+      <div className="flex flex-col text-xs text-gray-600 space-y-1">
+        {details.slice(0, 2).map((detail, index) => (
+          <div key={index} className="flex">
+            <span className="font-semibold w-20">{(detail as any).label}:</span>
+            <span className="truncate">{(detail as any).value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+// Component for rendering assets in a table (Desktop)
+const AssetsTable = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: {
+  assets: Asset[];
+  handleViewAssetDetails: (asset: Asset) => void;
+  handleNavigateToAsset: (asset: Asset) => void;
+}) => (
+  <div className="rounded-md border">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[300px]">Asset</TableHead>
+          <TableHead>Tipo</TableHead>
+          <TableHead>Detalhes</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Parceiro</TableHead>
+          <TableHead className="text-right">Criado em</TableHead>
+          <TableHead className="w-[50px] text-center">Ações</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {assets.map((asset) => (
+          <TableRow key={asset._id}>
+            <TableCell className="font-medium">
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-12 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden relative">
+                  {asset.imageUrl ? (
+                    <Image 
+                      src={asset.imageUrl} 
+                      alt={asset.name || asset.title || 'Asset Image'} 
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      className="rounded-md"
+                    />
+                  ) : (
+                    getAssetIcon(asset.assetType)
+                  )}
+                </div>
+                <div className="flex-1">
+                  <span className="font-semibold block truncate max-w-[150px]">{asset.name || asset.title}</span>
+                  <p className="text-xs text-gray-500">{asset._id}</p>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge className={`text-xs ${assetTypeColors[asset.assetType] || "bg-gray-100 text-gray-800"}`}>
+                {assetTypeLabels[asset.assetType] || "Desconhecido"}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <AssetDetailsCell asset={asset} />
+            </TableCell>
+            <TableCell>
+              <Badge variant={asset.isActive ? "default" : "outline"} className="flex items-center gap-1.5 w-fit">
+                {asset.isActive ? <CheckCircle className="h-3 w-3 text-green-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+                {asset.isActive ? "Ativo" : "Inativo"}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-400" />
+                <div>
+                  <div className="font-medium">{asset.partnerName || "N/A"}</div>
+                  <div className="text-sm text-gray-500">{asset.partnerEmail}</div>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="flex items-center justify-end gap-1">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                {formatDate(asset._creationTime)}
+              </div>
+            </TableCell>
+            <TableCell className="text-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleViewAssetDetails(asset)}>
+                    <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleNavigateToAsset(asset)}>
+                    <ExternalLink className="mr-2 h-4 w-4" /> Visitar Página
+                  </DropdownMenuItem>
+                  {asset.assetType === "events" && asset.bookingsCount && asset.bookingsCount > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <Package className="mr-2 h-4 w-4" /> Ver Reservas
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);
+
+// Component for rendering assets in a grid (Mobile)
+const AssetsGrid = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: {
+  assets: Asset[];
+  handleViewAssetDetails: (asset: Asset) => void;
+  handleNavigateToAsset: (asset: Asset) => void;
+}) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {assets.map((asset) => (
+      <Card key={asset._id} className="flex flex-col">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden relative flex-shrink-0">
+              {asset.imageUrl ? (
+                <Image 
+                  src={asset.imageUrl} 
+                  alt={asset.name || asset.title || 'Asset Image'} 
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  className="rounded-md"
+                />
+              ) : (
+                getAssetIcon(asset.assetType)
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold block truncate">{asset.name || asset.title}</p>
+              <p className="text-xs text-gray-500 truncate">{asset._id}</p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="flex-shrink-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleViewAssetDetails(asset)}>
+                <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNavigateToAsset(asset)}>
+                <ExternalLink className="mr-2 h-4 w-4" /> Visitar Página
+              </DropdownMenuItem>
+              {asset.assetType === "events" && asset.bookingsCount && asset.bookingsCount > 0 && (
+                 <DropdownMenuItem>
+                  <Package className="mr-2 h-4 w-4" /> Ver Reservas
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        <CardContent className="flex-grow space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <Badge className={`text-xs ${assetTypeColors[asset.assetType] || "bg-gray-100 text-gray-800"}`}>
+              {assetTypeLabels[asset.assetType] || "Desconhecido"}
+            </Badge>
+            <Badge variant={asset.isActive ? "default" : "outline"} className="flex items-center gap-1.5">
+              {asset.isActive ? <CheckCircle className="h-3 w-3 text-green-500" /> : <XCircle className="h-3 w-3 text-red-500" />}
+              {asset.isActive ? "Ativo" : "Inativo"}
+            </Badge>
+          </div>
+          <div className="border-t pt-3">
+            <AssetDetailsCell asset={asset} />
+          </div>
+        </CardContent>
+        <div className="border-t p-4 text-xs text-gray-500 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span>{asset.partnerName || "N/A"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>{formatDate(asset._creationTime)}</span>
+          </div>
+        </div>
+      </Card>
+    ))}
+  </div>
+);
+
+const StatusDisplay = ({
+  isLoading,
+  hasError,
+  hasData,
+  filteredData,
+  searchTerm,
+  selectedAssetType,
+  onRetry,
+}: {
+  isLoading: boolean;
+  hasError: boolean;
+  hasData: boolean;
+  filteredData: any[];
+  searchTerm: string;
+  selectedAssetType: string;
+  onRetry: () => void;
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900">Carregando Assets</h3>
+          <p className="text-sm text-gray-500">
+            {selectedAssetType === "all"
+              ? "Buscando todos os tipos de assets..."
+              : `Carregando ${assetTypeLabels[selectedAssetType] || selectedAssetType}...`}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4 bg-red-50 rounded-lg">
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+          <AlertTriangle className="h-6 w-6 text-red-600" />
+        </div>
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-red-900">Erro ao Carregar Assets</h3>
+          <p className="text-sm text-red-700">Ocorreu um erro ao buscar os dados. Por favor, tente novamente.</p>
+          <Button variant="destructive" className="mt-4" onClick={onRetry}>
+            <ExternalLink className="h-4 w-4 mr-2" /> Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasData && filteredData.length === 0) {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium mb-2">Nenhum asset encontrado</h3>
+        <p className="text-gray-600">
+          {searchTerm
+            ? `Nenhum asset corresponde à busca por "${searchTerm}".`
+            : "Não há assets cadastrados para os filtros selecionados."}
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+
 export default function AssetsManagementPage() {
   const { user } = useCurrentUser();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [selectedAssetType, setSelectedAssetType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -157,38 +429,18 @@ export default function AssetsManagementPage() {
     );
   }
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(price);
-  };
-
   // Filtrar assets baseado na busca
-  const filteredAssets = allAssets?.filter((asset) => {
+  const filteredAssets = useMemo(() => allAssets?.filter((asset) => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
     return (
-      asset.name.toLowerCase().includes(searchLower) ||
+      (asset.name || asset.title || "").toLowerCase().includes(searchLower) ||
       asset.partnerName?.toLowerCase().includes(searchLower) ||
       asset.partnerEmail?.toLowerCase().includes(searchLower) ||
       assetTypeLabels[asset.assetType]?.toLowerCase().includes(searchLower)
     );
-  }) || [];
-
-  const getAssetIcon = (assetType: string) => {
-    const Icon = assetTypeIcons[assetType] || Database;
-    return <Icon className="h-4 w-4" />;
-  };
+  }) || [], [allAssets, searchTerm]);
 
   // Optimized asset statistics using memoization
   const assetStats = useMemo(() => {
@@ -217,11 +469,11 @@ export default function AssetsManagementPage() {
   // Handler for navigating to asset-specific page
   const handleNavigateToAsset = (asset: Asset) => {
     const routes = {
-      restaurants: `/restaurantes/${asset.name.toLowerCase().replace(/\s+/g, '-')}`,
+      restaurants: `/restaurantes/${asset.slug}`,
       events: `/eventos/${asset._id}`,
       activities: `/atividades/${asset._id}`,
       vehicles: `/veiculos/${asset._id}`,
-      accommodations: `/hospedagens/${asset.name.toLowerCase().replace(/\s+/g, '-')}`
+      accommodations: `/hospedagens/${asset.slug}`
     };
 
     const route = routes[asset.assetType as keyof typeof routes];
@@ -363,20 +615,30 @@ export default function AssetsManagementPage() {
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
+      {/* Filtros e Ações */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex-1">
+              <CardTitle className="text-lg">Filtros de Assets</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Refine sua busca para encontrar assets específicos.
+              </p>
+            </div>
+            <div className="relative flex-1 md:max-w-xs">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Buscar por nome, parceiro, ou email..."
+                placeholder="Buscar por nome, parceiro..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-4">
         <Select value={selectedAssetType} onValueChange={setSelectedAssetType}>
-          <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filtrar por tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -390,7 +652,7 @@ export default function AssetsManagementPage() {
         </Select>
 
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filtrar por status" />
           </SelectTrigger>
           <SelectContent>
@@ -399,204 +661,52 @@ export default function AssetsManagementPage() {
             <SelectItem value="inactive">Inativos</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Tabela de Assets */}
+      {/* Tabela de Assets / Grid */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            Assets do Sistema
+            Lista de Assets
             {filteredAssets.length > 0 && (
               <Badge variant="secondary">
-                {filteredAssets.length} {filteredAssets.length === 1 ? "asset" : "assets"}
+                {filteredAssets.length} {filteredAssets.length === 1 ? "encontrado" : "encontrados"}
               </Badge>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Enhanced loading state with query-specific status */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <div className="text-center">
-                <h3 className="text-lg font-medium text-gray-900">Carregando Assets</h3>
-                <p className="text-sm text-gray-500">
-                  {selectedAssetType === "all" 
-                    ? "Buscando todos os tipos de assets..." 
-                    : `Carregando ${assetTypeLabels[selectedAssetType] || selectedAssetType}...`
-                  }
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Error state */}
-          {hasError && (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <XCircle className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-medium text-gray-900">Erro ao Carregar Assets</h3>
-                <p className="text-sm text-gray-500">
-                  Ocorreu um erro ao buscar os dados. Tente novamente.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-2"
-                  onClick={() => window.location.reload()}
-                >
-                  Tentar Novamente
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && !hasError && allAssets && filteredAssets.length === 0 && (
-            <div className="text-center py-12">
-              <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum asset encontrado</h3>
-              <p className="text-gray-600">
-                {searchTerm 
-                  ? `Nenhum asset encontrado para "${searchTerm}".`
-                  : "Não há assets no sistema no momento."
-                }
-              </p>
-            </div>
-          )}
+          <StatusDisplay
+            isLoading={isLoading}
+            hasError={hasError}
+            hasData={!!allAssets}
+            filteredData={filteredAssets}
+            searchTerm={searchTerm}
+            selectedAssetType={selectedAssetType}
+            onRetry={() => refetch()}
+          />
 
           {!isLoading && !hasError && filteredAssets.length > 0 && (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Asset</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Parceiro</TableHead>
-                    <TableHead>Avaliação</TableHead>
-                    <TableHead>Preço</TableHead>
-                    <TableHead>Reservas</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAssets.map((asset) => (
-                    <TableRow key={asset._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
-                            {getAssetIcon(asset.assetType)}
-                          </div>
-                          <div>
-                            <div className="font-medium">
-                              {asset.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {asset._id.slice(0, 8)}...
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${assetTypeColors[asset.assetType]}`}>
-                          {assetTypeLabels[asset.assetType]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={asset.isActive ? "default" : "secondary"}>
-                          <div className="flex items-center gap-1">
-                            {asset.isActive ? (
-                              <CheckCircle className="h-3 w-3" />
+            isMobile ? (
+              <AssetsGrid
+                assets={filteredAssets}
+                handleViewAssetDetails={handleViewAssetDetails}
+                handleNavigateToAsset={handleNavigateToAsset}
+                              />
                             ) : (
-                              <XCircle className="h-3 w-3" />
-                            )}
-                            {asset.isActive ? "Ativo" : "Inativo"}
-                          </div>
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <div className="font-medium">
-                              {asset.partnerName || "Nome não informado"}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {asset.partnerEmail}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {asset.rating && typeof asset.rating === 'number' ? (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                            <span className="font-medium">{asset.rating.toFixed(1)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {asset.price ? (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4 text-green-600" />
-                            <span className="font-medium">{formatPrice(asset.price)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium">{asset.bookingsCount || 0}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          {formatDate(asset._creationTime)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewAssetDetails(asset)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver Detalhes
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleNavigateToAsset(asset)}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Visitar
-                          </Button>
-                          {asset.assetType === "events" && asset.bookingsCount && asset.bookingsCount > 0 && (
-                            <Button variant="outline" size="sm">
-                              Ver Reservas
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+              <AssetsTable
+                assets={filteredAssets}
+                handleViewAssetDetails={handleViewAssetDetails}
+                handleNavigateToAsset={handleNavigateToAsset}
+              />
+            )
           )}
         </CardContent>
       </Card>
 
-      {/* Quick Actions por Tipo */}
+      {/* Quick Actions (já estava bom, mantive) */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
@@ -663,163 +773,105 @@ export default function AssetsManagementPage() {
       <Dialog open={isAssetDetailsModalOpen} onOpenChange={setIsAssetDetailsModalOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Detalhes do Asset
-            </DialogTitle>
+            <DialogTitle>Detalhes do Asset</DialogTitle>
             <DialogDescription>
-              Informações completas sobre {selectedAsset?.name}
+              Informações detalhadas sobre o asset selecionado.
             </DialogDescription>
           </DialogHeader>
-
-          {selectedAsset && (
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {getAssetIcon(selectedAsset.assetType)}
-                    Informações Básicas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Nome:</span>
-                      <p className="text-sm text-gray-900">{selectedAsset.name}</p>
+          <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            {selectedAsset && (
+              <>
+                <div className="relative w-full h-64 rounded-lg overflow-hidden bg-gray-100">
+                  {selectedAsset.imageUrl ? (
+                    <Image 
+                      src={selectedAsset.imageUrl} 
+                      alt={selectedAsset.name || selectedAsset.title || ''}
+                      fill
+                      style={{objectFit: 'cover'}}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <Database className="h-16 w-16 text-gray-400" />
                     </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Tipo:</span>
-                      <Badge className={`${assetTypeColors[selectedAsset.assetType]} ml-2`}>
-                        {assetTypeLabels[selectedAsset.assetType]}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Status:</span>
-                      <Badge variant={selectedAsset.isActive ? "default" : "secondary"} className="ml-2">
-                        {selectedAsset.isActive ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">ID:</span>
-                      <p className="text-sm text-gray-900 font-mono">{selectedAsset._id}</p>
-                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-500">Nome</p>
+                    <p>{selectedAsset.name || selectedAsset.title}</p>
                   </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-500">Tipo</p>
+                    <p>{assetTypeLabels[selectedAsset.assetType] || "Desconhecido"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-500">ID do Asset</p>
+                    <p className="text-xs">{selectedAsset._id}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-500">Status</p>
+                    <p>{selectedAsset.isActive ? "Ativo" : "Inativo"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-500">Parceiro</p>
+                    <p>{selectedAsset.partnerName} ({selectedAsset.partnerEmail})</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-gray-500">Criado em</p>
+                    <p>{formatDate(selectedAsset._creationTime)}</p>
+                  </div>
+                  
+                  {/* Detalhes específicos do asset */}
+                  {selectedAsset.assetType === 'vehicles' && (
+                    <>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Categoria</p><p>{selectedAsset.category}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Placa</p><p>{selectedAsset.licensePlate}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Preço/dia</p><p>{selectedAsset.pricePerDay ? formatPrice(selectedAsset.pricePerDay) : '-'}</p></div>
+                    </>
+                  )}
+                  {selectedAsset.assetType === 'accommodations' && (
+                    <>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Tipo</p><p>{selectedAsset.type}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Localização</p><p>{selectedAsset.location}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Preço/noite</p><p>{selectedAsset.pricePerNight ? formatPrice(selectedAsset.pricePerNight) : '-'}</p></div>
+                    </>
+                  )}
+                  {selectedAsset.assetType === 'events' && (
+                     <>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Data</p><p>{selectedAsset.date ? formatDate(new Date(selectedAsset.date).getTime()) : '-'}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Localização</p><p>{selectedAsset.location}</p></div>
+                    </>
+                  )}
+                  {selectedAsset.assetType === 'activities' && (
+                    <>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Categoria</p><p>{selectedAsset.category}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Duração</p><p>{selectedAsset.duration}</p></div>
+                    </>
+                  )}
+                   {selectedAsset.assetType === 'restaurants' && (
+                    <>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Cozinha</p><p>{Array.isArray(selectedAsset.cuisine) ? selectedAsset.cuisine.join(', ') : '-'}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Endereço</p><p>{String(selectedAsset.address)}</p></div>
+                    </>
+                  )}
 
                   {selectedAsset.description && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Descrição:</span>
-                      <p className="text-sm text-gray-900 mt-1">{selectedAsset.description}</p>
+                    <div className="md:col-span-2 space-y-1">
+                      <p className="text-sm font-semibold text-gray-500">Descrição</p>
+                      <p className="text-sm">{selectedAsset.description}</p>
                     </div>
                   )}
-
-                  {selectedAsset.location && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Localização:</span>
-                      <p className="text-sm text-gray-900 mt-1 flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {selectedAsset.location}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Partner Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Parceiro Responsável
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Nome:</span>
-                      <p className="text-sm text-gray-900">{selectedAsset.partnerName || "Nome não informado"}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Email:</span>
-                      <p className="text-sm text-gray-900">{selectedAsset.partnerEmail || "Email não informado"}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Performance Metrics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Métricas de Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-blue-600">{selectedAsset.bookingsCount || 0}</div>
-                      <p className="text-sm text-gray-600">Reservas</p>
-                    </div>
-                                         <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                       <Star className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                       <div className="text-2xl font-bold text-yellow-600">
-                         {selectedAsset.rating && typeof selectedAsset.rating === 'number' ? selectedAsset.rating.toFixed(1) : "N/A"}
-                       </div>
-                       <p className="text-sm text-gray-600">Avaliação</p>
-                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-green-600">
-                        {selectedAsset.price ? formatPrice(selectedAsset.price) : "N/A"}
-                      </div>
-                      <p className="text-sm text-gray-600">Preço</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Additional Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações Adicionais</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Criado em:</span>
-                      <p>{formatDate(selectedAsset._creationTime)}</p>
-                    </div>
-                    {selectedAsset.maxParticipants && (
-                      <div>
-                        <span className="font-medium text-gray-700">Capacidade máxima:</span>
-                        <p>{selectedAsset.maxParticipants} pessoas</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Action buttons */}
-              <div className="flex justify-between gap-4">
-                <Button 
-                  variant="outline"
-                  onClick={() => handleNavigateToAsset(selectedAsset)}
-                  className="flex-1"
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Visitar Página
-                </Button>
-                <Button 
-                  onClick={() => setIsAssetDetailsModalOpen(false)}
-                  className="flex-1"
-                >
-                  Fechar
-                </Button>
-              </div>
-            </div>
-          )}
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssetDetailsModalOpen(false)}>Fechar</Button>
+            <Button onClick={() => selectedAsset && handleNavigateToAsset(selectedAsset)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Visitar Página
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -49,9 +49,7 @@ interface PackageFormProps {
 
 export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: PackageFormProps) {
   // Fetch data for selects
-  const accommodationsQuery = useQuery(api.domains.accommodations.queries.list, {
-    paginationOpts: { numItems: 100, cursor: null }
-  })
+  const accommodationsQuery = useQuery(api.domains.accommodations.queries.getAll, {})
   const vehiclesQuery = useQuery(api.domains.vehicles.queries.listVehicles, {
     paginationOpts: { limit: 100 },
     organizationId: undefined // Load all vehicles for package creation

@@ -2,18 +2,12 @@ import { v } from "convex/values";
 import { query } from "../../_generated/server";
 
 /**
- * List accommodations - simplified version
+ * Get all accommodations
  */
-export const list = query({
+export const getAll = query({
   args: {},
-  returns: v.any(),
   handler: async (ctx) => {
-    const accommodations = await ctx.db.query("accommodations").collect();
-    return {
-      page: accommodations,
-      isDone: true,
-      continueCursor: "",
-    };
+    return await ctx.db.query("accommodations").collect();
   },
 });
 
@@ -22,7 +16,6 @@ export const list = query({
  */
 export const getById = query({
   args: { id: v.id("accommodations") },
-  returns: v.any(),
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
   },
@@ -33,7 +26,6 @@ export const getById = query({
  */
 export const getBySlug = query({
   args: { slug: v.string() },
-  returns: v.any(),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("accommodations")
@@ -47,11 +39,12 @@ export const getBySlug = query({
  */
 export const getFeatured = query({
   args: {},
-  returns: v.any(),
   handler: async (ctx) => {
     return await ctx.db
       .query("accommodations")
-      .withIndex("featured_accommodations", (q) => q.eq("isFeatured", true).eq("isActive", true))
+      .withIndex("featured_accommodations", (q) => 
+        q.eq("isFeatured", true).eq("isActive", true)
+      )
       .collect();
   },
-}); 
+});

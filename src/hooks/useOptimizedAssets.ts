@@ -13,8 +13,40 @@ export interface AssetQueryOptions {
   limit?: number;
 }
 
+export interface EnrichedAsset {
+  _id: string;
+  _creationTime: number;
+  name: string;
+  title?: string;
+  slug?: string;
+  assetType: string;
+  isActive: boolean;
+  partnerId: string;
+  partnerName?: string;
+  partnerEmail?: string;
+  imageUrl?: string;
+  description?: string;
+  location?: string;
+  address?: string;
+  category?: string;
+  cuisine?: string[];
+  price?: number;
+  pricePerDay?: number;
+  pricePerNight?: number;
+  date?: string;
+  time?: string;
+  duration?: string;
+  type?: string;
+  licensePlate?: string;
+  status?: string;
+  bookingsCount?: number;
+  rating?: number;
+  maxParticipants?: number;
+  [key: string]: any;
+}
+
 export interface OptimizedAssetHookResult {
-  allAssets: any[];
+  allAssets: EnrichedAsset[];
   isLoading: boolean;
   hasError: any;
   refetch: () => void;
@@ -32,101 +64,224 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
 
   // Asset-specific queries with conditional execution
   const restaurantsQuery = useQuery(
-    assetType === "all" || assetType === "restaurants" 
-      ? api.domains.users.queries.listAllRestaurants 
-      : undefined,
-    {
-      isActive: isActive,
-      partnerId: partnerId as any,
-      limit,
-    }
+    api.domains.restaurants.queries.getAll,
+    (assetType === "all" || assetType === "restaurants") ? {} : "skip"
   );
 
   const eventsQuery = useQuery(
-    assetType === "all" || assetType === "events"
-      ? api.domains.users.queries.listAllEvents
-      : undefined,
-    {
-      isActive: isActive,
-      partnerId: partnerId as any,
-      limit,
-    }
+    api.domains.events.queries.getAll,
+    (assetType === "all" || assetType === "events") ? {} : "skip"
   );
 
   const activitiesQuery = useQuery(
-    assetType === "all" || assetType === "activities"
-      ? api.domains.users.queries.listAllActivities
-      : undefined,
-    {
-      isActive: isActive,
-      partnerId: partnerId as any,
-      limit,
-    }
+    api.domains.activities.queries.getAll,
+    (assetType === "all" || assetType === "activities") ? {} : "skip"
   );
 
   const vehiclesQuery = useQuery(
-    assetType === "all" || assetType === "vehicles"
-      ? api.domains.users.queries.listAllVehicles
-      : undefined,
-    {
-      isActive: isActive,
-      ownerId: partnerId as any, // vehicles use ownerId instead of partnerId
-      limit,
-    }
+    api.domains.vehicles.queries.listVehicles,
+    (assetType === "all" || assetType === "vehicles") ? {} : "skip"
   );
 
   const accommodationsQuery = useQuery(
-    assetType === "all" || assetType === "accommodations"
-      ? api.domains.users.queries.listAllAccommodations
-      : undefined,
-    {
-      isActive: isActive,
-      partnerId: partnerId as any,
-      limit,
-    }
+    api.domains.accommodations.queries.getAll,
+    (assetType === "all" || assetType === "accommodations") ? {} : "skip"
   );
 
-  // Memoized combined results with selective updates
+  // Query all users to get partner information
+  const usersQuery = useQuery(api.domains.users.queries.listAllUsers);
+
+  // Create a map of users for fast lookup
+  const usersMap = useMemo(() => {
+    if (!usersQuery) return new Map();
+    
+    const map = new Map();
+    usersQuery.forEach((user: any) => {
+      map.set(user._id, user);
+    });
+    return map;
+  }, [usersQuery]);
+
+  // Helper function to enrich asset with partner info and normalize fields
+  const enrichAsset = (asset: any, assetType: string): EnrichedAsset => {
+    // Get partner information
+    const partnerId = asset.partnerId || asset.ownerId;
+    const partner = partnerId ? usersMap.get(partnerId) : null;
+
+    // Normalize common fields
+    const name = asset.name || asset.title || 'Asset sem nome';
+    const imageUrl = asset.mainImage || asset.imageUrl || asset.image;
+    const isActive = asset.isActive !== undefined ? asset.isActive : true;
+
+    // Asset-specific field mapping
+    let enrichedAsset: EnrichedAsset = {
+      _id: asset._id,
+      _creationTime: asset._creationTime,
+      name,
+      title: asset.title,
+      slug: asset.slug,
+      assetType,
+      isActive,
+      partnerId: partnerId || '',
+      partnerName: partner?.name || 'Usuário Master',
+      partnerEmail: partner?.email || '',
+      imageUrl,
+      description: asset.description || asset.description_long,
+      location: asset.location || (asset.address ? 
+        (typeof asset.address === 'string' ? asset.address : asset.address.city || asset.address.street) 
+        : undefined),
+      address: typeof asset.address === 'string' ? asset.address : 
+        (asset.address ? `${asset.address.street}, ${asset.address.city}` : undefined),
+    };
+
+    // Add asset-type specific fields
+    switch (assetType) {
+      case 'restaurants':
+        enrichedAsset = {
+          ...enrichedAsset,
+          cuisine: asset.cuisine,
+          priceRange: asset.priceRange,
+          rating: asset.rating?.overall,
+          acceptsReservations: asset.acceptsReservations,
+          maximumPartySize: asset.maximumPartySize,
+        };
+        break;
+      
+      case 'events':
+        enrichedAsset = {
+          ...enrichedAsset,
+          date: asset.date,
+          time: asset.time,
+          category: asset.category,
+          speaker: asset.speaker,
+          maxParticipants: asset.maxParticipants,
+          price: asset.ticketPrice || asset.price,
+        };
+        break;
+      
+      case 'activities':
+        enrichedAsset = {
+          ...enrichedAsset,
+          category: asset.category,
+          duration: asset.duration,
+          price: asset.price,
+          maxParticipants: asset.maxParticipants,
+          difficulty: asset.difficulty,
+        };
+        break;
+      
+      case 'vehicles':
+        enrichedAsset = {
+          ...enrichedAsset,
+          category: asset.category,
+          type: asset.type,
+          licensePlate: asset.licensePlate,
+          pricePerDay: asset.pricePerDay,
+          capacity: asset.capacity,
+          transmission: asset.transmission,
+          fuelType: asset.fuelType,
+        };
+        break;
+      
+      case 'accommodations':
+        enrichedAsset = {
+          ...enrichedAsset,
+          type: asset.type,
+          pricePerNight: asset.pricePerNight,
+          maxGuests: asset.maxGuests,
+          bedrooms: asset.bedrooms,
+          bathrooms: asset.bathrooms,
+          amenities: asset.amenities,
+        };
+        break;
+    }
+
+    return enrichedAsset;
+  };
+
+  // Combine and enrich all assets
   const allAssets = useMemo(() => {
-    const assets: any[] = [];
+    const assets: EnrichedAsset[] = [];
     
     if (assetType === "all") {
       // Combine all asset types only when needed
-      if (restaurantsQuery) assets.push(...(restaurantsQuery || []));
-      if (eventsQuery) assets.push(...(eventsQuery || []));
-      if (activitiesQuery) assets.push(...(activitiesQuery || []));
-      if (vehiclesQuery) assets.push(...(vehiclesQuery || []));
-      if (accommodationsQuery) assets.push(...(accommodationsQuery || []));
+      if (restaurantsQuery) {
+        assets.push(...restaurantsQuery.map((asset: any) => enrichAsset(asset, 'restaurants')));
+      }
+      if (eventsQuery) {
+        assets.push(...eventsQuery.map((asset: any) => enrichAsset(asset, 'events')));
+      }
+      if (activitiesQuery) {
+        assets.push(...activitiesQuery.map((asset: any) => enrichAsset(asset, 'activities')));
+      }
+      if (vehiclesQuery?.vehicles) {
+        assets.push(...vehiclesQuery.vehicles.map((asset: any) => enrichAsset(asset, 'vehicles')));
+      }
+      if (accommodationsQuery) {
+        assets.push(...accommodationsQuery.map((asset: any) => enrichAsset(asset, 'accommodations')));
+      }
     } else {
       // Return specific asset type data directly
       switch (assetType) {
         case "restaurants":
-          return restaurantsQuery || [];
+          if (restaurantsQuery) {
+            return restaurantsQuery.map((asset: any) => enrichAsset(asset, 'restaurants'));
+          }
+          break;
         case "events":
-          return eventsQuery || [];
+          if (eventsQuery) {
+            return eventsQuery.map((asset: any) => enrichAsset(asset, 'events'));
+          }
+          break;
         case "activities":
-          return activitiesQuery || [];
+          if (activitiesQuery) {
+            return activitiesQuery.map((asset: any) => enrichAsset(asset, 'activities'));
+          }
+          break;
         case "vehicles":
-          return vehiclesQuery || [];
+          if (vehiclesQuery?.vehicles) {
+            return vehiclesQuery.vehicles.map((asset: any) => enrichAsset(asset, 'vehicles'));
+          }
+          break;
         case "accommodations":
-          return accommodationsQuery || [];
+          if (accommodationsQuery) {
+            return accommodationsQuery.map((asset: any) => enrichAsset(asset, 'accommodations'));
+          }
+          break;
         default:
           return [];
       }
     }
     
-    return assets.sort((a, b) => b._creationTime - a._creationTime);
+    // Apply filters
+    let filteredAssets = assets;
+    
+    if (isActive !== undefined) {
+      filteredAssets = filteredAssets.filter(asset => asset.isActive === isActive);
+    }
+    
+    if (partnerId) {
+      filteredAssets = filteredAssets.filter(asset => asset.partnerId === partnerId);
+    }
+    
+    // Sort by creation time (newest first)
+    return filteredAssets.sort((a, b) => b._creationTime - a._creationTime);
   }, [
     assetType,
+    isActive,
+    partnerId,
     restaurantsQuery,
     eventsQuery,
     activitiesQuery,
     vehiclesQuery,
     accommodationsQuery,
+    usersMap,
   ]);
 
   // Memoized loading state
   const isLoading = useMemo(() => {
+    if (!usersQuery) return true; // Always need users for partner info
+    
     if (assetType === "all") {
       return restaurantsQuery === undefined || eventsQuery === undefined || 
              activitiesQuery === undefined || vehiclesQuery === undefined || 
@@ -143,6 +298,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
     }
   }, [
     assetType,
+    usersQuery,
     restaurantsQuery,
     eventsQuery,
     activitiesQuery,
@@ -188,50 +344,22 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
  */
 export function useAssetTypeCounts() {
   // Individual queries for each asset type count
-  const restaurantCount = useQuery(
-    api.domains.users.queries.listAllRestaurants,
-    { limit: 1000 }
-  );
-
-  const eventCount = useQuery(
-    api.domains.users.queries.listAllEvents,
-    { limit: 1000 }
-  );
-
-  const activityCount = useQuery(
-    api.domains.users.queries.listAllActivities,
-    { limit: 1000 }
-  );
-
-  const vehicleCount = useQuery(
-    api.domains.users.queries.listAllVehicles,
-    { limit: 1000 }
-  );
-
-  const accommodationCount = useQuery(
-    api.domains.users.queries.listAllAccommodations,
-    { limit: 1000 }
-  );
+  const restaurantCount = useQuery(api.domains.restaurants.queries.getAll);
+  const eventCount = useQuery(api.domains.events.queries.getAll);
+  const activityCount = useQuery(api.domains.activities.queries.getAll);
+  const vehicleCount = useQuery(api.domains.vehicles.queries.listVehicles);
+  const accommodationCount = useQuery(api.domains.accommodations.queries.getAll);
 
   return useMemo(() => ({
     restaurants: restaurantCount?.length || 0,
     events: eventCount?.length || 0,
     activities: activityCount?.length || 0,
-    vehicles: vehicleCount?.length || 0,
+    vehicles: vehicleCount?.vehicles?.length || 0,
     accommodations: accommodationCount?.length || 0,
     total: (restaurantCount?.length || 0) + 
            (eventCount?.length || 0) + 
            (activityCount?.length || 0) + 
-           (vehicleCount?.length || 0) + 
+           (vehicleCount?.vehicles?.length || 0) + 
            (accommodationCount?.length || 0),
-    isLoading: restaurantCount === undefined || eventCount === undefined || 
-               activityCount === undefined || vehicleCount === undefined || 
-               accommodationCount === undefined,
-  }), [
-    restaurantCount,
-    eventCount,
-    activityCount,
-    vehicleCount,
-    accommodationCount,
-  ]);
+  }), [restaurantCount, eventCount, activityCount, vehicleCount, accommodationCount]);
 } 

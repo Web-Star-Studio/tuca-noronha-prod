@@ -1814,6 +1814,9 @@ export const getRestaurantReservations = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Timestamp fields
+      createdAt: v.number(),
+      updatedAt: v.number(),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),

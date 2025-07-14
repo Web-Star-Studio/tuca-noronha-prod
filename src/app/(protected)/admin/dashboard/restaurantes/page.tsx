@@ -103,6 +103,8 @@ export default function RestaurantsPage() {
   
   // Handle restaurant operations
   const handleCreateRestaurant = async (restaurantData: Restaurant) => {
+    console.log("handleCreateRestaurant called with data:", restaurantData);
+    
     if (!user) {
       toast.error("Você precisa estar logado para criar um restaurante")
       return
@@ -111,6 +113,9 @@ export default function RestaurantsPage() {
     try {
       setIsSubmitting(true)
       const userId = user._id 
+      console.log("Creating restaurant with userId:", userId);
+      console.log("Restaurant data:", restaurantData);
+      
       await createRestaurant(restaurantData, userId)
       toast.success("Restaurante criado com sucesso!")
       setDialogOpen(false)

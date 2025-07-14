@@ -112,10 +112,10 @@ export const listVehicles = query({
       // Public access - only show available vehicles
       vehicles = vehicles.filter(vehicle => vehicle.status === "available");
     }
-    // Admin/master sees all vehicles (no filtering)
+    // Admin/master sees all vehicles (no filtering by owner)
     
-    // Apply organization filter for non-partner roles
-    if (organizationId && role !== "partner") {
+    // Apply organization filter for non-partner roles, but not for masters
+    if (organizationId && role !== "partner" && role !== "master") {
       vehicles = vehicles.filter(vehicle => vehicle.organizationId === organizationId);
     }
     

@@ -1,9 +1,9 @@
 // Export all queries
 export { 
-  list,
   getById,
   getBySlug,
   getFeatured,
+  getAll,
 } from "./queries";
 
 // Export all mutations

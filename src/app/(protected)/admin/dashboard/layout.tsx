@@ -236,7 +236,6 @@ function MasterSidebar() {
   const masterSystemLinks = [
     { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard Principal" },
     { href: "/admin/dashboard/usuarios", icon: Users, label: "Gestão de Usuários" },
-    { href: "/admin/dashboard/organizacoes", icon: Building2, label: "Organizações" },
     { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte", badge: 3 },
     { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria" },
   ]

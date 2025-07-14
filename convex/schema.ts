@@ -74,6 +74,7 @@ export default defineSchema({
     .index("email", ["email"])
     .index("by_partner", ["partnerId"])
     .index("by_organization", ["organizationId"])
+    .index("by_role", ["role"])
     .searchIndex("by_name_email", {
       searchField: "name",
       filterFields: ["email"],

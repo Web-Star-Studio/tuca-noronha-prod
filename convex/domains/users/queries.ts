@@ -2361,3 +2361,245 @@ export const getUserById = internalQuery({
     };
   },
 });
+
+/**
+ * Get a list of users by their role.
+ * This is an internal query for system use.
+ */
+export const listByRole = internalQuery({
+  args: { role: v.string() },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const users = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", args.role))
+      .collect();
+    return users;
+  },
+});
+
+/**
+ * Get a single user by ID.
+ * This can be called by any authenticated user.
+ */
+export const getUserByIdPublic = query({
+  args: {
+    userId: v.id("users"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      _creationTime: v.number(),
+      clerkId: v.optional(v.string()),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      fullName: v.optional(v.string()),
+      image: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      phoneNumber: v.optional(v.string()),
+      role: v.optional(v.string()),
+      partnerId: v.optional(v.id("users")),
+      organizationId: v.optional(v.id("partnerOrganizations")),
+      emailVerificationTime: v.optional(v.number()),
+      phoneVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+      dateOfBirth: v.optional(v.string()),
+      onboardingCompleted: v.optional(v.boolean()),
+      onboardingCompletedAt: v.optional(v.number()),
+      // Dados enriquecidos
+      organizations: v.array(v.object({
+        _id: v.id("partnerOrganizations"),
+        name: v.string(),
+        type: v.string(),
+        isActive: v.boolean(),
+        _creationTime: v.number(),
+      })),
+      assets: v.object({
+        restaurants: v.number(),
+        events: v.number(),
+        activities: v.number(),
+        vehicles: v.number(),
+        accommodations: v.number(),
+        total: v.number(),
+      }),
+      partnerInfo: v.optional(v.object({
+        name: v.optional(v.string()),
+        email: v.optional(v.string()),
+      })),
+      employeesCount: v.optional(v.number()),
+      lastActivity: v.optional(v.number()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // Verificar permissões baseadas no role
+    const currentUserRole = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const user = await ctx.db.get(args.userId);
+    
+    if (!user) {
+      return null;
+    }
+
+    // Masters podem ver qualquer usuário
+    if (currentUserRole === "master") {
+      // Continue with existing logic
+    }
+    // Partners podem ver apenas travelers que fizeram reservas confirmadas com seus assets
+    else if (currentUserRole === "partner") {
+      // Partners só podem ver detalhes de travelers
+      if (user.role !== "traveler") {
+        throw new Error("Partners só podem ver detalhes de clientes (travelers)");
+      }
+      
+      // Verificar se o traveler tem reservas confirmadas com assets do partner
+      const hasConfirmedBookings = await verifyTravelerBookingAccess(ctx, currentUserId, user._id);
+      if (!hasConfirmedBookings) {
+        throw new Error("Você só pode ver detalhes de clientes que fizeram reservas confirmadas");
+      }
+    }
+    // Employees podem ver apenas travelers que fizeram reservas com assets do seu partner
+    else if (currentUserRole === "employee") {
+      const currentUser = await ctx.db.get(currentUserId);
+      if (!currentUser?.partnerId) {
+        throw new Error("Employee deve estar associado a um partner");
+      }
+      
+      // Employees só podem ver detalhes de travelers
+      if (user.role !== "traveler") {
+        throw new Error("Employees só podem ver detalhes de clientes (travelers)");
+      }
+      
+      // Verificar se o traveler tem reservas confirmadas com assets do partner do employee
+      const hasConfirmedBookings = await verifyTravelerBookingAccess(ctx, currentUser.partnerId, user._id);
+      if (!hasConfirmedBookings) {
+        throw new Error("Você só pode ver detalhes de clientes que fizeram reservas confirmadas");
+      }
+    }
+    else {
+      throw new Error("Acesso negado - role não autorizado");
+    }
+
+    // Buscar organizações (se for partner)
+    let organizations: any[] = [];
+    if (user.role === "partner") {
+      organizations = await ctx.db
+        .query("partnerOrganizations")
+        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+        .collect();
+    }
+
+    // Buscar assets do usuário
+    let assets = {
+      restaurants: 0,
+      events: 0,
+      activities: 0,
+      vehicles: 0,
+      accommodations: 0,
+      total: 0,
+    };
+
+    if (user.role === "partner") {
+      const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+        ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+        ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+        ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+        ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", user._id)).collect(),
+        ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+      ]);
+
+      assets = {
+        restaurants: restaurants.length,
+        events: events.length,
+        activities: activities.length,
+        vehicles: vehicles.length,
+        accommodations: accommodations.length,
+        total: restaurants.length + events.length + activities.length + vehicles.length + accommodations.length,
+      };
+    }
+
+    // Buscar informações do partner (se for employee)
+    let partnerInfo: { name?: string; email?: string } | undefined = undefined;
+    if (user.role === "employee" && user.partnerId) {
+      const partner = await ctx.db.get(user.partnerId);
+      if (partner) {
+        partnerInfo = {
+          name: partner.name,
+          email: partner.email,
+        };
+      }
+    }
+
+    // Contar employees (se for partner)
+    let employeesCount: number | undefined = undefined;
+    if (user.role === "partner") {
+      const employees = await ctx.db
+        .query("users")
+        .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+        .collect();
+      employeesCount = employees.filter(emp => emp.role === "employee").length;
+    }
+
+    // For partners and employees viewing traveler details, return simplified information
+    if ((currentUserRole === "partner" || currentUserRole === "employee") && user.role === "traveler") {
+      return {
+        _id: user._id,
+        _creationTime: user._creationTime,
+        clerkId: user.clerkId,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        phone: user.phone,
+        role: user.role,
+        partnerId: user.partnerId,
+        organizationId: user.organizationId,
+        emailVerificationTime: user.emailVerificationTime,
+        isAnonymous: user.isAnonymous,
+        organizations: [], // Travelers don't have organizations
+        assets: {
+          restaurants: 0,
+          events: 0,
+          activities: 0,
+          vehicles: 0,
+          accommodations: 0,
+          total: 0,
+        }, // Travelers don't have assets
+        partnerInfo: undefined,
+        employeesCount: undefined,
+        lastActivity: user.emailVerificationTime,
+      };
+    }
+
+    // For masters viewing any user, return full information
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      phone: user.phone,
+      role: user.role,
+      partnerId: user.partnerId,
+      organizationId: user.organizationId,
+      emailVerificationTime: user.emailVerificationTime,
+      isAnonymous: user.isAnonymous,
+      organizations: organizations.map(org => ({
+        _id: org._id,
+        name: org.name,
+        type: org.type,
+        isActive: org.isActive,
+        _creationTime: org._creationTime,
+      })),
+      assets,
+      partnerInfo,
+      employeesCount,
+      lastActivity: user.emailVerificationTime, // Placeholder for last activity
+    };
+  },
+});

@@ -94,9 +94,8 @@ function MasterDashboard() {
         iconColorClassName="text-purple-600"
       >
         <div className="flex gap-3">
-          <EmailTestDialog />
           <Link href="/admin/dashboard/suporte">
-            <Button variant="outline" className="gap-2">
+            <Button variant="default" className="gap-2">
               <MessageSquare className="h-4 w-4" />
               Suporte
               {supportStats.open > 0 && (
@@ -156,45 +155,6 @@ function MasterDashboard() {
             subtitle={supportStats.urgent > 0 ? `${supportStats.urgent} urgentes` : `${supportStats.open} abertas`}
             icon={MessageSquare}
             variant={supportStats.urgent > 0 ? "danger" : "default"}
-          />
-        </div>
-      </DashboardSection>
-
-      {/* Breakdown de Assets */}
-      <DashboardSection 
-        title="Assets por Categoria" 
-        description="Distribuição dos recursos cadastrados"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatsCard
-            title="Restaurantes"
-            value={systemStats.assets.restaurants}
-            icon={Store}
-            variant="default"
-          />
-          <StatsCard
-            title="Eventos"
-            value={systemStats.assets.events}
-            icon={Calendar}
-            variant="default"
-          />
-          <StatsCard
-            title="Atividades"
-            value={systemStats.assets.activities}
-            icon={Activity}
-            variant="default"
-          />
-          <StatsCard
-            title="Veículos"
-            value={systemStats.assets.vehicles}
-            icon={Car}
-            variant="default"
-          />
-          <StatsCard
-            title="Hospedagens"
-            value={systemStats.assets.accommodations}
-            icon={Building2}
-            variant="default"
           />
         </div>
       </DashboardSection>

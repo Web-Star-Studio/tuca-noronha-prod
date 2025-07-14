@@ -335,13 +335,12 @@ export const createEventBooking = mutation({
         assetName: event.title,
         bookingType: "event",
         confirmationCode,
-        bookingDate: event.date + " às " + event.time,
+        bookingDate: event.date,
         totalPrice: finalPrice,
         bookingDetails: {
           eventId: event._id,
-          quantity: args.quantity,
-          ticketId: args.ticketId,
-          location: event.location,
+          participants: args.quantity,
+          date: event.date,
           specialRequests: args.specialRequests,
         },
       });
@@ -358,13 +357,12 @@ export const createEventBooking = mutation({
           assetName: event.title,
           bookingType: "event",
           confirmationCode,
-          bookingDate: event.date + " às " + event.time,
+          bookingDate: event.date,
           totalPrice: finalPrice,
           bookingDetails: {
             eventId: event._id,
-            quantity: args.quantity,
-            ticketId: args.ticketId,
-            location: event.location,
+            participants: args.quantity,
+            date: event.date,
             specialRequests: args.specialRequests,
           },
         });

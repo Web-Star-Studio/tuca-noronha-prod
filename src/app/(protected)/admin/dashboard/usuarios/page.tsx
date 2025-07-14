@@ -289,7 +289,7 @@ export default function UsersPage() {
       </Card>
 
       {/* Users List */}
-      <Card className="border-0 shadow-sm">
+      <Card className="shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3">
             <Users className="h-5 w-5 text-blue-600" />
@@ -328,7 +328,7 @@ export default function UsersPage() {
                 const IconComponent = roleConfig.icon;
                 
                 return (
-                  <Card key={userItem._id} className="border border-border/50 hover:shadow-md transition-all duration-300">
+                  <Card key={userItem._id} className="hover:shadow-lg transition-all duration-300">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
