@@ -190,6 +190,94 @@ export const recordPartnerTransaction = internalMutation({
   },
 });
 
+/**
+ * Create a partner transaction record
+ * Called when a payment is processed
+ */
+export const createPartnerTransaction = internalMutation({
+  args: {
+    partnerId: v.id("partners"),
+    bookingId: v.string(),
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("vehicle"),
+      v.literal("accommodation"),
+      v.literal("package")
+    ),
+    stripePaymentIntentId: v.string(),
+    stripeTransferId: v.optional(v.string()),
+    amount: v.number(), // in cents
+    platformFee: v.number(), // in cents
+    partnerAmount: v.number(), // in cents
+    currency: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("refunded")
+    ),
+    metadata: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    // Create the transaction record
+    const transactionId = await ctx.db.insert("partnerTransactions", {
+      partnerId: args.partnerId,
+      bookingId: args.bookingId,
+      bookingType: args.bookingType,
+      stripePaymentIntentId: args.stripePaymentIntentId,
+      stripeTransferId: args.stripeTransferId,
+      amount: args.amount,
+      platformFee: args.platformFee,
+      partnerAmount: args.partnerAmount,
+      currency: args.currency,
+      status: args.status,
+      metadata: args.metadata || {},
+      createdAt: Date.now(),
+    });
+
+    return transactionId;
+  },
+});
+
+/**
+ * Update partner transaction status
+ * Called when payment status changes
+ */
+export const updatePartnerTransactionStatus = internalMutation({
+  args: {
+    stripePaymentIntentId: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("refunded")
+    ),
+    stripeTransferId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Find the transaction by payment intent ID
+    const transaction = await ctx.db
+      .query("partnerTransactions")
+      .withIndex("by_stripePaymentIntentId", (q) => 
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+      )
+      .first();
+
+    if (!transaction) {
+      throw new Error("Partner transaction not found");
+    }
+
+    // Update the transaction
+    await ctx.db.patch(transaction._id, {
+      status: args.status,
+      stripeTransferId: args.stripeTransferId || transaction.stripeTransferId,
+    });
+
+    return transaction._id;
+  },
+});
+
 // Ativar/Desativar partner
 export const togglePartnerActive = mutation({
   args: {

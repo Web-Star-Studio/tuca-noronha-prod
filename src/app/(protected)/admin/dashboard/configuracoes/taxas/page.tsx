@@ -6,9 +6,11 @@ import { api } from "@/convex/_generated/api";
 import { TaxasPartnersList } from "./components/TaxasPartnersList";
 import { TaxaHistoryDrawer } from "./components/TaxaHistoryDrawer";
 import { TaxaBulkActions } from "./components/TaxaBulkActions";
+import { PartnerTransactionsList } from "./components/PartnerTransactionsList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Percent, History, Download, Upload } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Percent, History, Download, Upload, Receipt } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
@@ -104,20 +106,40 @@ export default function TaxasPage() {
         </Card>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedPartners.length > 0 && (
-        <TaxaBulkActions
-          selectedPartners={selectedPartners}
-          onComplete={() => setSelectedPartners([])}
-        />
-      )}
+      {/* Main Content */}
+      <Tabs defaultValue="partners" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="partners">
+            <Percent className="h-4 w-4 mr-2" />
+            Taxas por Parceiro
+          </TabsTrigger>
+          <TabsTrigger value="transactions">
+            <Receipt className="h-4 w-4 mr-2" />
+            Transações
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Partners List */}
-      <TaxasPartnersList
-        selectedPartners={selectedPartners}
-        onSelectionChange={setSelectedPartners}
-        onViewHistory={setHistoryPartnerId}
-      />
+        <TabsContent value="partners" className="space-y-6">
+          {/* Bulk Actions */}
+          {selectedPartners.length > 0 && (
+            <TaxaBulkActions
+              selectedPartners={selectedPartners}
+              onComplete={() => setSelectedPartners([])}
+            />
+          )}
+
+          {/* Partners List */}
+          <TaxasPartnersList
+            selectedPartners={selectedPartners}
+            onSelectionChange={setSelectedPartners}
+            onViewHistory={setHistoryPartnerId}
+          />
+        </TabsContent>
+
+        <TabsContent value="transactions" className="space-y-6">
+          <PartnerTransactionsList />
+        </TabsContent>
+      </Tabs>
 
       {/* History Drawer */}
       {historyPartnerId && (

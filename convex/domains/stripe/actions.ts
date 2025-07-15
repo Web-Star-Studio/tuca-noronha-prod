@@ -182,6 +182,50 @@ export const createCheckoutSession = action({
       const discountAmount = args.discountAmount || 0;
       const hasCoupon = args.couponCode && discountAmount > 0;
 
+      // Get partner information for Direct Charges
+      let stripeAccountId: string | undefined;
+      let applicationFeeAmount: number | undefined;
+      
+      // Get asset owner ID based on asset type
+      let assetOwnerId: string | undefined;
+      
+      switch (args.assetType) {
+        case "activity":
+        case "event":
+        case "restaurant":
+        case "accommodation":
+        case "package":
+          assetOwnerId = booking.asset?.partnerId;
+          break;
+        case "vehicle":
+          assetOwnerId = booking.asset?.ownerId;
+          break;
+      }
+
+      if (assetOwnerId) {
+        // Look up partner information
+        const partner = await ctx.runQuery(internal.domains.partners.queries.getPartnerByUserId, {
+          userId: assetOwnerId,
+        });
+
+        if (partner && partner.stripeAccountId && partner.onboardingStatus === "completed") {
+          stripeAccountId = partner.stripeAccountId;
+          
+          // Calculate application fee based on partner's fee percentage
+          applicationFeeAmount = Math.floor(finalAmount * (partner.feePercentage / 100));
+          
+          console.log(`🔍 Using Direct Charge for partner:`, {
+            partnerId: partner._id,
+            stripeAccountId,
+            feePercentage: partner.feePercentage,
+            applicationFeeAmount,
+            finalAmount,
+          });
+        } else {
+          console.log(`⚠️ Partner not found or not onboarded for asset owner:`, assetOwnerId);
+        }
+      }
+
       // Create checkout session
       console.log(`🔍 Creating checkout session for ${args.assetType}:`, {
         bookingId: args.bookingId,
@@ -192,47 +236,43 @@ export const createCheckoutSession = action({
         couponCode: args.couponCode,
         assetName: booking.assetName,
         userId: booking.userId,
-        assetId: booking.assetId
+        assetId: booking.assetId,
+        stripeAccountId,
+        applicationFeeAmount,
       });
-      
-      // Prepare line items
-      const lineItems: Array<{
-        price_data: {
-          currency: string;
-          product_data: {
-            name: string;
-            description: string;
-            metadata: {
-              assetId: string;
-              assetType: string;
-            };
-          };
-          unit_amount: number;
-        };
-        quantity: number;
-      }> = [];
-      
-      // Main item with original or discounted price
-      lineItems.push({
-        price_data: {
-          currency: "brl",
-          product_data: {
-            name: booking.assetName,
-            description: booking.assetDescription,
-            metadata: {
-              assetId: booking.assetId,
-              assetType: args.assetType,
-            },
-          },
-          unit_amount: Math.round(finalAmount * 100), // Convert to cents
+
+      // Create product and price in Stripe
+      const productName = `${booking.assetName || "Service"} - ${args.assetType}`;
+      const productDescription = hasCoupon ? 
+        `Reserva com desconto aplicado (Cupom: ${args.couponCode})` :
+        `Reserva ${args.assetType}`;
+
+      const product = await stripe.products.create({
+        name: productName,
+        description: productDescription,
+        metadata: {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          assetId: booking.assetId,
+          convexOrigin: "true",
         },
+      }, stripeAccountId ? { stripeAccount: stripeAccountId } : {});
+
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: finalAmount,
+        currency: args.currency || "brl",
+      }, stripeAccountId ? { stripeAccount: stripeAccountId } : {});
+
+      const lineItems = [{
+        price: price.id,
         quantity: 1,
-      });
+      }];
 
       // If there's a coupon, add it to metadata but don't create separate line item
       // Stripe will handle the discount through the adjusted unit_amount above
       
-      const session = await stripe.checkout.sessions.create({
+      const sessionParams: any = {
         customer: customer.stripeCustomerId,
         payment_method_types: ["card"],
         line_items: lineItems,
@@ -252,6 +292,10 @@ export const createCheckoutSession = action({
             discountAmount: discountAmount.toString(),
             finalAmount: finalAmount.toString(),
           }),
+          ...(stripeAccountId && {
+            partnerId: assetOwnerId,
+            partnerStripeAccountId: stripeAccountId,
+          }),
         },
         payment_intent_data: {
           capture_method: 'manual',
@@ -262,14 +306,30 @@ export const createCheckoutSession = action({
               couponCode: args.couponCode,
               discountAmount: discountAmount.toString(),
             }),
+            ...(stripeAccountId && {
+              partnerId: assetOwnerId,
+              partnerStripeAccountId: stripeAccountId,
+            }),
           },
         },
-      });
+      };
+
+      // Add Direct Charge configuration if partner is onboarded
+      if (stripeAccountId && applicationFeeAmount) {
+        sessionParams.payment_intent_data.application_fee_amount = applicationFeeAmount;
+        sessionParams.payment_intent_data.on_behalf_of = stripeAccountId;
+        sessionParams.payment_intent_data.transfer_data = {
+          destination: stripeAccountId,
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
 
       console.log(`✅ Checkout session created for ${args.assetType}:`, {
         sessionId: session.id,
         sessionUrl: session.url,
-        metadata: session.metadata
+        metadata: session.metadata,
+        isDirectCharge: !!stripeAccountId,
       });
 
       // Update booking with checkout session ID
@@ -871,21 +931,45 @@ export const capturePaymentIntent = internalAction({
   }),
   handler: async (ctx, args) => {
     try {
-      const captureParams: any = {};
+      // First, retrieve the payment intent to check if it's a Direct Charge
+      const paymentIntent = await stripe.paymentIntents.retrieve(args.paymentIntentId);
       
+      const captureParams: any = {};
       if (args.amountToCapture) {
         captureParams.amount_to_capture = args.amountToCapture;
       }
 
-      // Capture the payment intent
-      const paymentIntent = await stripe.paymentIntents.capture(
-        args.paymentIntentId,
-        captureParams
-      );
+      // If this is a Direct Charge (has transfer_data), handle it appropriately
+      let capturedPaymentIntent;
+      if (paymentIntent.transfer_data?.destination) {
+        console.log(`🔍 Capturing Direct Charge payment intent:`, {
+          paymentIntentId: args.paymentIntentId,
+          destination: paymentIntent.transfer_data.destination,
+          applicationFee: paymentIntent.application_fee_amount,
+        });
+        
+        // For Direct Charges, we need to capture on the platform account
+        capturedPaymentIntent = await stripe.paymentIntents.capture(
+          args.paymentIntentId,
+          captureParams
+        );
+        
+        // Update partner transaction status
+        await ctx.runMutation(internal.domains.partners.mutations.updatePartnerTransactionStatus, {
+          stripePaymentIntentId: args.paymentIntentId,
+          status: 'completed',
+        });
+      } else {
+        // Standard capture for non-Direct Charge payments
+        capturedPaymentIntent = await stripe.paymentIntents.capture(
+          args.paymentIntentId,
+          captureParams
+        );
+      }
 
       return {
         success: true,
-        paymentIntent: paymentIntent,
+        paymentIntent: capturedPaymentIntent,
       };
     } catch (error) {
       console.error("Failed to capture payment intent:", error);

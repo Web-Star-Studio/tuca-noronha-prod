@@ -119,6 +119,42 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
   
   try {
+    // Create partner transaction record if this is a Direct Charge
+    if (metadata.partnerId && metadata.partnerStripeAccountId && session.payment_intent) {
+      console.log('🔄 Creating partner transaction record for Direct Charge');
+      
+      // Get payment intent details to calculate amounts
+      const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
+      const amount = paymentIntent.amount; // Total amount in cents
+      const applicationFeeAmount = paymentIntent.application_fee_amount || 0; // Platform fee in cents
+      const partnerAmount = amount - applicationFeeAmount; // Partner receives total minus platform fee
+      
+      // Get partner record
+      const partner = await convex.query(internal.domains.partners.queries.getPartnerByUserId, {
+        userId: metadata.partnerId,
+      });
+      
+      if (partner) {
+        await convex.mutation(internal.domains.partners.mutations.createPartnerTransaction, {
+          partnerId: partner._id,
+          bookingId: metadata.bookingId,
+          bookingType: metadata.assetType as any,
+          stripePaymentIntentId: session.payment_intent as string,
+          amount: amount,
+          platformFee: applicationFeeAmount,
+          partnerAmount: partnerAmount,
+          currency: paymentIntent.currency,
+          status: 'pending', // Will be updated when payment is captured
+          metadata: {
+            sessionId: session.id,
+            customerId: session.customer,
+          },
+        });
+        
+        console.log('✅ Partner transaction created successfully');
+      }
+    }
+    
     // For activities and events, payment should be authorized but not captured until admin approval
     // For other types (restaurants, vehicles, accommodations), proceed with immediate confirmation
     if (metadata.assetType === 'activity' || metadata.assetType === 'event') {
@@ -210,6 +246,16 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       // Only update booking to confirmed if payment was actually captured
       if (isCapturing) {
         console.log(`🚀 Confirming booking for ${assetType}: ${metadata.bookingId}`);
+        
+        // Update partner transaction status if this is a Direct Charge
+        if (metadata.partnerId && metadata.partnerStripeAccountId) {
+          console.log('🔄 Updating partner transaction status to completed');
+          await convex.mutation(internal.domains.partners.mutations.updatePartnerTransactionStatus, {
+            stripePaymentIntentId: paymentIntent.id,
+            status: 'completed',
+          });
+        }
+        
         await convex.mutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
           stripePaymentIntentId: paymentIntent.id,
           bookingId: metadata.bookingId,

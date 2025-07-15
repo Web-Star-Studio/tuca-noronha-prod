@@ -109,6 +109,10 @@ export const getBookingForCheckout = internalQuery({
         email: v.string(),
         phone: v.string(),
       }),
+      asset: v.optional(v.object({
+        partnerId: v.optional(v.id("users")),
+        ownerId: v.optional(v.id("users")),
+      })),
     }),
     v.null()
   ),
@@ -186,6 +190,10 @@ export const getBookingForCheckout = internalQuery({
       totalPrice: booking.totalPrice,
       paymentStatus: booking.paymentStatus,
       customerInfo: booking.customerInfo,
+      asset: {
+        partnerId: (asset as any).partnerId,
+        ownerId: (asset as any).ownerId,
+      },
     };
   },
 });

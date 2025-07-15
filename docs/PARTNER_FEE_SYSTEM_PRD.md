@@ -436,10 +436,10 @@ const partnerAmount = totalAmount - platformFee - stripeFee;
 - [x] Validações e regras de negócio
 - [x] Testes de cálculo
 
-### 8.4 Fase 4: Processamento de Pagamentos ⏳ PENDENTE
-- [ ] Modificar checkout para Direct Charges
-- [ ] Implementar cálculo de application_fee
-- [ ] Webhook handlers para eventos
+### 8.4 Fase 4: Processamento de Pagamentos 🔄 EM PROGRESSO
+- [x] Modificar checkout para Direct Charges
+- [x] Implementar cálculo de application_fee
+- [x] Webhook handlers para eventos
 - [ ] Tratamento de erros e reversões
 
 ### 8.5 Fase 5: Dashboards e Relatórios ⏳ PENDENTE
