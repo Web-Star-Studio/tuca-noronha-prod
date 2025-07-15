@@ -26,7 +26,7 @@ Um sistema automatizado de gerenciamento de taxas e distribuição de pagamentos
 - **Fase 1**: ✅ **CONCLUÍDA** - Infraestrutura base implementada
 - **Fase 2**: ✅ **CONCLUÍDA** - Onboarding de partners funcionando
 - **Fase 3**: ✅ **CONCLUÍDA** - Interface admin para taxas
-- **Fase 4**: ⏳ **PENDENTE** - Processamento de pagamentos
+- **Fase 4**: 🔄 **EM PROGRESSO** - Processamento de pagamentos com Direct Charges
 - **Fase 5**: ⏳ **PENDENTE** - Dashboards e relatórios
 
 ### Fluxo Principal Simplificado
@@ -630,8 +630,18 @@ Use Connect to build a platform, marketplace, or other business that manages pay
   - Ações em massa para múltiplos parceiros
   - Testes de cálculo implementados e validados
 
+- **Fase 4 Em Progresso**: Processamento de pagamentos com Direct Charges
+  - ✅ Modificação do `createCheckoutSession` para usar Direct Charges
+  - ✅ Cálculo automático de application_fee baseado na taxa do parceiro
+  - ✅ Criação de transações de parceiros no webhook handler
+  - ✅ Atualização do status de transações quando pagamento é capturado
+  - ✅ Componente `PartnerTransactionsList` para visualizar transações
+  - ✅ Aba de transações na página de configuração de taxas
+  - ✅ Página de teste para Direct Charges
+  - ⏳ Tratamento de erros e reversões (pendente)
+
 #### Próximas Etapas:
-- Fase 4: Modificação do checkout para usar Direct Charges
+- Completar Fase 4: Tratamento de erros e reversões
 - Fase 5: Dashboards financeiros completos
 
 ---
