@@ -39,6 +39,48 @@ export function calculateApplicationFee(
 }
 
 /**
+ * Calcula os valores de taxas para uma transação
+ * @param params - Parâmetros da transação
+ * @returns Objeto com os valores calculados
+ */
+export function calculateFees(params: {
+  amount: number;
+  feePercentage: number;
+}): {
+  transactionAmount: number;
+  stripeFee: number;
+  platformFee: number;
+  partnerAmount: number;
+} {
+  const { amount, feePercentage } = params;
+  
+  // Validações
+  if (amount <= 0) {
+    throw new Error("Amount must be positive");
+  }
+  
+  if (feePercentage < 0 || feePercentage > 100) {
+    throw new Error("Fee percentage must be between 0 and 100");
+  }
+  
+  // Calcular taxa do Stripe (2.9% + 29 centavos)
+  const stripeFee = Math.floor(amount * 0.029) + 29;
+  
+  // Calcular taxa da plataforma
+  const platformFee = Math.floor(amount * (feePercentage / 100));
+  
+  // Partner recebe o total menos taxas
+  const partnerAmount = amount - stripeFee - platformFee;
+  
+  return {
+    transactionAmount: amount,
+    stripeFee,
+    platformFee,
+    partnerAmount,
+  };
+}
+
+/**
  * Formata valor em centavos para moeda BRL
  * @param cents - Valor em centavos
  * @returns String formatada em BRL

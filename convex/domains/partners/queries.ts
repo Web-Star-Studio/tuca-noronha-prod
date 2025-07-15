@@ -89,8 +89,98 @@ export const getPartnerByStripeId = internalQuery({
   },
 });
 
-// Listar todos os partners (paginado, admin only)
+// Buscar partner por ID
+export const getPartnerById = query({
+  args: {
+    partnerId: v.id("partners"),
+  },
+  handler: async (ctx, args) => {
+    const partner = await ctx.db.get(args.partnerId);
+    if (!partner) {
+      return null;
+    }
+    
+    const user = await ctx.db.get(partner.userId);
+    const userDoc = user as any;
+    
+    return {
+      ...partner,
+      user: user ? {
+        name: userDoc.name || userDoc.fullName || "",
+        email: userDoc.email || "",
+        image: userDoc.image || null,
+      } : null,
+    };
+  },
+});
+
+// Listar todos os partners (sem paginação para admin)
 export const listPartners = query({
+  args: {
+    filterStatus: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("rejected")
+    )),
+    onlyActive: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    // TODO: Verificar se é admin
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autorizado");
+    }
+    
+    let query = ctx.db.query("partners");
+    
+    // Aplicar filtros se especificados
+    const partners = await query.collect();
+    
+    let filteredPartners = partners;
+    
+    // Filtrar por status se especificado
+    if (args.filterStatus) {
+      filteredPartners = filteredPartners.filter(p => p.onboardingStatus === args.filterStatus);
+    }
+    
+    // Filtrar por ativo se especificado
+    if (args.onlyActive !== undefined) {
+      filteredPartners = filteredPartners.filter(p => p.isActive === args.onlyActive);
+    }
+    
+    // Enriquecer com dados do usuário
+    const enrichedPartners = await Promise.all(
+      filteredPartners.map(async (partner) => {
+        const user = await ctx.db.get(partner.userId);
+        // Type guard para garantir que é um usuário válido da tabela users
+        if (!user || user._id !== partner.userId) {
+          return {
+            ...partner,
+            user: null,
+          };
+        }
+        
+        // Cast explícito após validação
+        const userDoc = user as any;
+        return {
+          ...partner,
+          user: {
+            name: userDoc.name || userDoc.fullName || "",
+            email: userDoc.email || "",
+            image: userDoc.image || null,
+          },
+        };
+      })
+    );
+    
+    // Ordenar por data de criação desc
+    return enrichedPartners.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+// Listar todos os partners (paginado, admin only)
+export const listPartnersPaginated = query({
   args: {
     paginationOpts: paginationOptsValidator,
     filterStatus: v.optional(v.union(
@@ -227,7 +317,7 @@ export const getPartnerFeeHistory = query({
     createdBy: v.id("users"),
     reason: v.optional(v.string()),
     previousFee: v.optional(v.number()),
-    createdByUser: v.union(
+    createdBy: v.union(
       v.object({
         name: v.string(),
         email: v.string(),
@@ -244,20 +334,39 @@ export const getPartnerFeeHistory = query({
       .collect();
     
     // Enriquecer com dados do usuário que criou
-    const enrichedFees = await Promise.all(
+          const enrichedFees = await Promise.all(
       fees.map(async (fee) => {
         const user = await ctx.db.get(fee.createdBy);
+        const userDoc = user as any;
         return {
           ...fee,
-          createdByUser: user ? {
-            name: user.name || "",
-            email: user.email || "",
+          createdBy: user ? {
+            name: userDoc.name || userDoc.fullName || "",
+            email: userDoc.email || "",
           } : null,
         };
       })
     );
     
     return enrichedFees;
+  },
+});
+
+// Buscar todas as transações de partners (admin only)
+export const listPartnerTransactions = query({
+  args: {},
+  handler: async (ctx) => {
+    // TODO: Verificar se é admin
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autorizado");
+    }
+    
+    const transactions = await ctx.db
+      .query("partnerTransactions")
+      .collect();
+    
+    return transactions;
   },
 });
 

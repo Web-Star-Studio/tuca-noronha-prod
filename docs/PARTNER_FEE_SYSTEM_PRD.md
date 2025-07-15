@@ -22,10 +22,12 @@ Um sistema automatizado de gerenciamento de taxas e distribuição de pagamentos
 - **Fase 1-3**: Infraestrutura e sistema de taxas (3 semanas)
 - **Fase 4-5**: Pagamentos e dashboards (3 semanas)
 
-### Investimento necessário
-- Configuração Stripe Connect: Sem custo adicional
-- Desenvolvimento: 6 semanas de engenharia
-- Manutenção: Mínima após implementação
+### Status de Implementação
+- **Fase 1**: ✅ **CONCLUÍDA** - Infraestrutura base implementada
+- **Fase 2**: ✅ **CONCLUÍDA** - Onboarding de partners funcionando
+- **Fase 3**: ✅ **CONCLUÍDA** - Interface admin para taxas
+- **Fase 4**: ⏳ **PENDENTE** - Processamento de pagamentos
+- **Fase 5**: ⏳ **PENDENTE** - Dashboards e relatórios
 
 ### Fluxo Principal Simplificado
 
@@ -100,10 +102,10 @@ Implementar um sistema completo de gerenciamento de taxas e distribuição autom
 
 **Critérios de Aceitação:**
 - [ ] Interface para listar todos os parceiros
-- [ ] Campo para definir taxa percentual (0-100%)
-- [ ] Validação de valores (mínimo 0%, máximo permitido configurável)
-- [ ] Histórico de alterações de taxa
-- [ ] Taxa padrão para novos parceiros
+- [x] Campo para definir taxa percentual (0-100%)
+- [x] Validação de valores (mínimo 0%, máximo permitido configurável)
+- [x] Histórico de alterações de taxa
+- [x] Taxa padrão para novos parceiros
 
 #### RF02: Visualização de Configurações
 - **Como** administrador
@@ -118,10 +120,10 @@ Implementar um sistema completo de gerenciamento de taxas e distribuição autom
 - **Para** receber pagamentos automaticamente
 
 **Critérios de Aceitação:**
-- [ ] Fluxo de onboarding simplificado
-- [ ] Coleta de informações necessárias (KYC/AML)
-- [ ] Verificação de documentos
-- [ ] Status de aprovação visível
+- [x] Fluxo de onboarding simplificado
+- [x] Coleta de informações necessárias (KYC/AML)
+- [x] Verificação de documentos
+- [x] Status de aprovação visível
 
 ### 3.3 Processamento de Pagamentos
 
@@ -250,50 +252,57 @@ graph TB
 ```
 convex/
 ├── domains/
-│   ├── partners/
-│   │   ├── schema.ts
+│   ├── partners/    ✅ IMPLEMENTADO
+│   │   ├── index.ts
 │   │   ├── mutations.ts
 │   │   ├── queries.ts
 │   │   ├── actions.ts
-│   │   └── types.ts
-│   ├── partnerFees/
-│   │   ├── mutations.ts
-│   │   ├── queries.ts
-│   │   └── validators.ts
-│   └── stripe/
-│       ├── connect.ts
-│       ├── webhooks.ts
-│       └── utils.ts
+│   │   ├── types.ts
+│   │   └── utils.ts
+│   ├── stripe/      ✅ ATUALIZADO
+│   │   ├── connect.ts (integrado)
+│   │   ├── webhooks.ts (atualizado)
+│   │   └── utils.ts (existente)
 ```
 
 ### 5.2 APIs Principais
 
-#### Mutations
-- `createPartnerAccount`: Cria conta conectada no Stripe
+#### Mutations ✅ IMPLEMENTADAS
+- `createPartner`: Cria registro de parceiro
+- `updateOnboardingStatus`: Atualiza status de onboarding
 - `updatePartnerFee`: Atualiza taxa do parceiro
-- `processPartnerPayout`: Processa pagamento para parceiro
+- `updatePartnerCapabilities`: Atualiza capacidades
+- `updatePartnerMetadata`: Atualiza metadados
 
-#### Queries
+#### Queries ✅ IMPLEMENTADAS
 - `getPartnerByUserId`: Busca parceiro por userId
+- `getPartnerByStripeAccountId`: Busca por Stripe ID
+- `listPartners`: Lista todos os parceiros
 - `getPartnerTransactions`: Lista transações do parceiro
+- `getPartnerTransactionsByBooking`: Busca por booking
 - `getPartnerAnalytics`: Analytics do parceiro
 
-#### Actions
+#### Actions ✅ IMPLEMENTADAS
 - `createStripeConnectedAccount`: Cria conta no Stripe
 - `generateOnboardingLink`: Gera link de onboarding
-- `calculateAndTransferFunds`: Calcula e transfere valores
+- `refreshAccountStatus`: Atualiza status da conta
+- `getStripeLoginLink`: Gera link para Express Dashboard
+- `calculatePartnerPayout`: Calcula valores de repasse
 
-### 5.3 Webhook Handlers
+### 5.3 Webhook Handlers ✅ IMPLEMENTADOS
 
 ```typescript
-// Eventos críticos do Stripe Connect
-- account.updated
-- account.application.authorized
-- payment_intent.succeeded
-- transfer.created
-- transfer.failed
-- payout.paid
-- payout.failed
+// Eventos críticos do Stripe Connect implementados
+- account.updated ✅
+- account.application.authorized ✅
+- account.external_account.created ✅
+- account.external_account.updated ✅
+- capability.updated ✅
+- payment_intent.succeeded ⏳ (parcialmente)
+- transfer.created ⏳
+- transfer.failed ⏳
+- payout.paid ⏳
+- payout.failed ⏳
 ```
 
 ## 6. Implementação Frontend
@@ -302,37 +311,53 @@ convex/
 
 #### Admin Dashboard
 ```
-/admin/dashboard/configuracoes/taxas
-├── TaxasPartnersList.tsx
-├── TaxaPartnerModal.tsx
-├── TaxaHistoryDrawer.tsx
-└── TaxaBulkActions.tsx
+/admin/dashboard/configuracoes/taxas ✅ IMPLEMENTADO
+├── page.tsx ✅
+├── components/
+│   ├── TaxasPartnersList.tsx ✅
+│   ├── TaxaPartnerModal.tsx ✅
+│   ├── TaxaHistoryDrawer.tsx ✅
+│   └── TaxaBulkActions.tsx ✅
 ```
 
 #### Partner Dashboard
 ```
-/meu-painel/financeiro
+/meu-painel/configuracoes ✅ IMPLEMENTADO
+├── page.tsx (com abas)
+├── onboarding/page.tsx (callback)
+
+/meu-painel/financeiro ⏳ PENDENTE
 ├── TransactionsList.tsx
 ├── BalanceCard.tsx
 ├── PayoutHistory.tsx
 └── FinancialReports.tsx
 ```
 
+#### Componentes Implementados ✅
+```
+/components/partners/
+├── PartnerOnboarding.tsx ✅
+├── OnboardingStatus.tsx ✅
+
+/lib/hooks/
+├── usePartner.ts ✅
+```
+
 ### 6.2 Fluxos de UI
 
-#### Fluxo de Configuração de Taxa
+#### Fluxo de Configuração de Taxa ⏳ PENDENTE
 1. Admin acessa página de configurações
 2. Visualiza lista de parceiros com taxas atuais
 3. Clica em "Editar Taxa"
 4. Modal com validações e confirmação
 5. Salva e cria registro no histórico
 
-#### Fluxo de Onboarding do Parceiro
-1. Parceiro acessa área de configurações
-2. Clica em "Conectar Conta Bancária"
-3. Redirecionado para Stripe Connect
-4. Completa informações necessárias
-5. Retorna ao sistema com status atualizado
+#### Fluxo de Onboarding do Parceiro ✅ IMPLEMENTADO
+1. Parceiro acessa área de configurações ✅
+2. Clica em "Conectar Conta Bancária" ✅
+3. Redirecionado para Stripe Connect ✅
+4. Completa informações necessárias ✅
+5. Retorna ao sistema com status atualizado ✅
 
 ## 7. Integrações com Stripe Connect
 
@@ -393,31 +418,31 @@ const partnerAmount = totalAmount - platformFee - stripeFee;
 
 ## 8. Fluxo de Implementação
 
-### 8.1 Fase 1: Infraestrutura Base (1 semana)
-- [ ] Configurar Stripe Connect na conta
-- [ ] Criar schemas no Convex
-- [ ] Implementar autenticação de webhooks
-- [ ] Criar estrutura base de arquivos
+### 8.1 Fase 1: Infraestrutura Base ✅ CONCLUÍDA
+- [x] Configurar Stripe Connect na conta
+- [x] Criar schemas no Convex
+- [x] Implementar autenticação de webhooks
+- [x] Criar estrutura base de arquivos
 
-### 8.2 Fase 2: Onboarding de Partners (1 semana)
-- [ ] Implementar criação de contas conectadas
-- [ ] Criar fluxo de onboarding
-- [ ] Implementar verificação de status
-- [ ] Testes com contas de teste
+### 8.2 Fase 2: Onboarding de Partners ✅ CONCLUÍDA
+- [x] Implementar criação de contas conectadas
+- [x] Criar fluxo de onboarding
+- [x] Implementar verificação de status
+- [x] Testes com contas de teste
 
-### 8.3 Fase 3: Sistema de Taxas (1 semana)
-- [ ] Interface admin para configurar taxas
-- [ ] Histórico de alterações
-- [ ] Validações e regras de negócio
-- [ ] Testes de cálculo
+### 8.3 Fase 3: Sistema de Taxas ✅ CONCLUÍDA
+- [x] Interface admin para configurar taxas
+- [x] Histórico de alterações
+- [x] Validações e regras de negócio
+- [x] Testes de cálculo
 
-### 8.4 Fase 4: Processamento de Pagamentos (2 semanas)
+### 8.4 Fase 4: Processamento de Pagamentos ⏳ PENDENTE
 - [ ] Modificar checkout para Direct Charges
 - [ ] Implementar cálculo de application_fee
 - [ ] Webhook handlers para eventos
 - [ ] Tratamento de erros e reversões
 
-### 8.5 Fase 5: Dashboards e Relatórios (1 semana)
+### 8.5 Fase 5: Dashboards e Relatórios ⏳ PENDENTE
 - [ ] Dashboard do parceiro
 - [ ] Relatórios financeiros
 - [ ] Exportação de dados
@@ -568,6 +593,50 @@ Use Connect to build a platform, marketplace, or other business that manages pay
 ---
 
 **Documento criado em**: Janeiro 2025  
-**Versão**: 1.0  
+**Versão**: 1.1  
 **Autor**: Equipe de Engenharia TN-Next  
-**Status**: Aguardando Aprovação 
+**Status**: Em Implementação (Fases 1-2 Concluídas)
+
+## 15. Histórico de Atualizações
+
+### Versão 1.1 - Janeiro 2025
+**Status**: Fases 1 e 2 Concluídas
+
+#### Implementações Realizadas:
+1. **Backend (Convex)**:
+   - Domínio completo de `partners` com 5 mutations, 6 queries e 5 actions
+   - Integração com webhooks do Stripe Connect
+   - Sistema de tipos TypeScript completo
+   - Utilitários para cálculo de taxas
+
+2. **Frontend (Next.js)**:
+   - Hook `usePartner` para gerenciamento de estado
+   - Componente `PartnerOnboarding` com seleção PF/PJ
+   - Componente `OnboardingStatus` com indicadores visuais
+   - Página de configurações com abas
+   - Integração com header (botão de configurações)
+
+3. **Integrações**:
+   - Stripe Connect API versão 2025-05-28.basil
+   - Webhooks configurados e funcionando
+   - Direct Charges com Application Fees preparado
+
+#### Atualizações:
+- **Fase 3 Concluída**: Interface administrativa para configuração de taxas
+  - Página de taxas em `/admin/dashboard/configuracoes/taxas`
+  - Lista de parceiros com busca e filtros
+  - Modal para edição individual de taxas
+  - Histórico de alterações com timeline visual
+  - Ações em massa para múltiplos parceiros
+  - Testes de cálculo implementados e validados
+
+#### Próximas Etapas:
+- Fase 4: Modificação do checkout para usar Direct Charges
+- Fase 5: Dashboards financeiros completos
+
+---
+
+**Documento criado em**: Janeiro 2025  
+**Versão**: 1.1  
+**Autor**: Equipe de Engenharia TN-Next  
+**Status**: Em Implementação (Fases 1-2 Concluídas) 

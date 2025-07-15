@@ -6,7 +6,7 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { NotificationCenter } from "@/components/ui/notification-center";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import Link from "next/link";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Settings } from "lucide-react";
 import { ui } from "@/lib/ui-config";
 
 interface UserMenuProps {
@@ -18,6 +18,9 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
   
   // Verifica se o usuário tem permissão para acessar o dashboard
   const canAccessDashboard = user && (user.role === "partner" || user.role === "employee" || user.role === "master");
+  
+  // Verifica se o usuário é partner
+  const isPartner = user && user.role === "partner";
   
   return (
     <>
@@ -51,6 +54,24 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
+              </Button>
+            </Link>
+          )}
+          
+          {/* Configurações Button - apenas para partners */}
+          {!isLoading && isPartner && (
+            <Link href="/meu-painel/configuracoes">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-2 transition-all duration-200 ${
+                  isTransparent
+                    ? "text-white hover:bg-white/10 hover:text-white"
+                    : "text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Configurações</span>
               </Button>
             </Link>
           )}
