@@ -226,11 +226,20 @@ export const getUserRestaurantReservations = query({
       status: v.string(),
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
+      // Coupon fields
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
+      paymentStatus: v.optional(v.string()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.optional(v.number()),
       updatedAt: v.optional(v.number()),
       userId: v.id("users"),
@@ -726,6 +735,10 @@ export const getPartnerBookings = query({
         specialRequests?: string;
         partnerNotes?: string;
         partnerId: any;
+        couponCode?: string;
+        discountAmount?: number;
+        finalAmount?: number;
+        totalPrice?: number;
         stripeCheckoutSessionId?: string;
         stripePaymentIntentId?: string;
         stripeCustomerId?: string;
@@ -919,6 +932,10 @@ export const getPartnerBookings = query({
           specialRequests: reservation.specialRequests,
           partnerNotes: reservation.partnerNotes,
           partnerId: restaurant.partnerId,
+          couponCode: reservation.couponCode,
+          discountAmount: reservation.discountAmount,
+          finalAmount: reservation.finalAmount,
+          totalPrice: reservation.totalPrice,
           stripeCheckoutSessionId: reservation.stripeCheckoutSessionId,
           stripePaymentIntentId: reservation.stripePaymentIntentId,
           stripeCustomerId: reservation.stripeCustomerId,
@@ -1813,11 +1830,20 @@ export const getRestaurantReservations = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       tableId: v.optional(v.id("restaurantTables")),
+      // Coupon fields
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
+      paymentStatus: v.optional(v.string()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       // Timestamp fields
       createdAt: v.number(),
       updatedAt: v.number(),
@@ -2804,11 +2830,20 @@ export const getRestaurantReservationById = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       tableId: v.optional(v.id("restaurantTables")),
+      // Coupon fields
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
+      paymentStatus: v.optional(v.string()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
