@@ -221,62 +221,33 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
   
   try {
-    // Check if this is a captured payment or just authorized
-    const isCapturing = paymentIntent.status === 'succeeded' && paymentIntent.amount_received > 0;
-    const assetType = metadata.assetType;
-    
-    // For activities and events, only mark as 'paid' when authorized, 'succeeded' when captured
-    if (assetType === 'activity' || assetType === 'event') {
-      const paymentStatus = isCapturing ? 'succeeded' : 'paid';
-      
-      // Get the charge details to access the receipt URL
-      let receiptUrl: string | undefined;
-      if (paymentIntent.latest_charge) {
-        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge as string);
-        receiptUrl = charge.receipt_url || undefined;
-      }
-
-      await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
-        bookingId: metadata.bookingId,
-        paymentStatus: paymentStatus,
-        stripePaymentIntentId: paymentIntent.id,
-        receiptUrl: receiptUrl,
-      });
-      
-      // Only update booking to confirmed if payment was actually captured
-      if (isCapturing) {
-        console.log(`🚀 Confirming booking for ${assetType}: ${metadata.bookingId}`);
-        
-        // Update partner transaction status if this is a Direct Charge
-        if (metadata.partnerId && metadata.partnerStripeAccountId) {
-          console.log('🔄 Updating partner transaction status to completed');
-          await convex.mutation(internal.domains.partners.mutations.updatePartnerTransactionStatus, {
-            stripePaymentIntentId: paymentIntent.id,
-            status: 'completed',
-          });
-        }
-        
-        await convex.mutation(internal.domains.bookings.mutations.updateBookingPaymentSuccess, {
+    // Update partner transaction status to completed
+    if (metadata.partnerId) {
+      try {
+        const updatedTransactionId = await convex.mutation(internal.domains.partners.mutations.updatePartnerTransactionStatus, {
           stripePaymentIntentId: paymentIntent.id,
-          bookingId: metadata.bookingId,
-          bookingType: assetType,
+          status: 'completed',
+          stripeTransferId: paymentIntent.transfer_data?.destination as string | undefined,
         });
-        console.log('✅ Activity/Event booking payment captured and confirmed');
-      } else {
-        console.log('✅ Activity/Event booking payment authorized - awaiting admin confirmation');
+        
+        console.log('✅ Partner transaction status updated to completed');
+        
+        // Notify partner about the new transaction
+        if (updatedTransactionId) {
+          await convex.mutation(internal.domains.partners.mutations.notifyPartnerNewTransaction, {
+            transactionId: updatedTransactionId,
+          });
+          console.log('✅ Partner notified about new transaction');
+        }
+      } catch (error) {
+        console.error('Error updating partner transaction:', error);
+        // Log error but don't fail the webhook
       }
-    } else {
-      // For other asset types, proceed as before
-      await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
-        bookingId: metadata.bookingId,
-        paymentStatus: 'succeeded',
-        stripePaymentIntentId: paymentIntent.id,
-      });
-      console.log('✅ Booking updated with payment intent');
     }
     
+    console.log('✅ Payment intent processed successfully');
   } catch (error) {
-    console.error('Error updating booking with payment intent:', error);
+    console.error('Error processing payment intent succeeded:', error);
     throw error;
   }
 }
@@ -289,22 +260,44 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   
   const { metadata } = paymentIntent;
   
-  if (!metadata?.bookingId) {
+  if (!metadata?.bookingId || !metadata?.assetType) {
     console.log('No booking metadata found in payment intent');
     return;
   }
   
   try {
-    // Update booking payment status to failed
+    // Update booking payment status
     await convex.mutation(internal.domains.stripe.mutations.updateBookingPaymentStatus, {
       bookingId: metadata.bookingId,
       paymentStatus: 'failed',
       stripePaymentIntentId: paymentIntent.id,
     });
     
-    console.log('✅ Booking marked as payment failed');
+    // Handle partner transaction error if applicable
+    if (metadata.partnerId) {
+      try {
+        // Find the transaction
+        const partnerTransactions = await convex.query(internal.domains.partners.queries.getPartnerTransactionsByPaymentIntent, {
+          stripePaymentIntentId: paymentIntent.id,
+        });
+        
+        if (partnerTransactions && partnerTransactions.length > 0) {
+          const transaction = partnerTransactions[0];
+          await convex.mutation(internal.domains.partners.mutations.handlePartnerTransactionError, {
+            transactionId: transaction._id,
+            error: paymentIntent.last_payment_error?.message || 'Payment failed',
+            shouldReverse: true,
+          });
+          console.log('✅ Partner transaction error handled');
+        }
+      } catch (error) {
+        console.error('Error handling partner transaction error:', error);
+      }
+    }
+    
+    console.log('✅ Payment failure handled successfully');
   } catch (error) {
-    console.error('Error updating booking payment status:', error);
+    console.error('Error handling payment intent failed:', error);
     throw error;
   }
 } 

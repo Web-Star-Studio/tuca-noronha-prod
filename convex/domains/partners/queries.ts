@@ -303,6 +303,21 @@ export const getPartnerTransactions = query({
   },
 });
 
+// Buscar transações por payment intent ID
+export const getPartnerTransactionsByPaymentIntent = internalQuery({
+  args: {
+    stripePaymentIntentId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("partnerTransactions")
+      .withIndex("by_stripePaymentIntentId", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+      )
+      .collect();
+  },
+});
+
 // Buscar histórico de taxas do partner
 export const getPartnerFeeHistory = query({
   args: {
@@ -317,7 +332,7 @@ export const getPartnerFeeHistory = query({
     createdBy: v.id("users"),
     reason: v.optional(v.string()),
     previousFee: v.optional(v.number()),
-    createdBy: v.union(
+    createdByUser: v.union(
       v.object({
         name: v.string(),
         email: v.string(),
@@ -334,13 +349,13 @@ export const getPartnerFeeHistory = query({
       .collect();
     
     // Enriquecer com dados do usuário que criou
-          const enrichedFees = await Promise.all(
+    const enrichedFees = await Promise.all(
       fees.map(async (fee) => {
         const user = await ctx.db.get(fee.createdBy);
         const userDoc = user as any;
         return {
           ...fee,
-          createdBy: user ? {
+          createdByUser: user ? {
             name: userDoc.name || userDoc.fullName || "",
             email: userDoc.email || "",
           } : null,
@@ -435,5 +450,209 @@ export const getPartnerAnalytics = query({
     // TODO: Implementar agregação mensal
     
     return analytics;
+  },
+}); 
+
+// Buscar analytics financeiras do partner
+export const getPartnerFinancialAnalytics = query({
+  args: {
+    partnerId: v.id("partners"),
+    dateRange: v.optional(v.object({
+      startDate: v.number(),
+      endDate: v.number(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    // Verificar permissões
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autorizado");
+    }
+    
+    const partner = await ctx.db.get(args.partnerId);
+    if (!partner) {
+      throw new Error("Partner não encontrado");
+    }
+    
+    const userId = identity.subject as Id<"users">;
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+    
+    if (partner.userId !== userId && user.role !== "admin" && user.role !== "master") {
+      throw new Error("Sem permissão para acessar estas informações");
+    }
+    
+    // Get all transactions for the partner
+    let transactionsQuery = ctx.db
+      .query("partnerTransactions")
+      .withIndex("by_partnerId", (q) => q.eq("partnerId", args.partnerId));
+    
+    // Get all transactions
+    const allTransactions = await transactionsQuery.collect();
+    
+    // Apply date filter if provided
+    let transactions = allTransactions;
+    if (args.dateRange) {
+      transactions = allTransactions.filter(t => 
+        t.createdAt >= args.dateRange!.startDate && 
+        t.createdAt <= args.dateRange!.endDate
+      );
+    }
+    
+    // Calculate metrics
+    const totalTransactions = transactions.length;
+    const completedTransactions = transactions.filter(t => t.status === "completed");
+    const failedTransactions = transactions.filter(t => t.status === "failed");
+    const refundedTransactions = transactions.filter(t => t.status === "refunded");
+    
+    // Calculate revenue metrics
+    const grossRevenue = completedTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const platformFees = completedTransactions.reduce((sum, t) => sum + t.platformFee, 0);
+    const netRevenue = completedTransactions.reduce((sum, t) => sum + t.partnerAmount, 0);
+    
+    // Calculate refund metrics
+    const totalRefunded = refundedTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const refundedFees = refundedTransactions.reduce((sum, t) => {
+      const refundData = t.metadata as any;
+      return sum + (refundData?.platformFeeRefund || 0);
+    }, 0);
+    
+    // Calculate average transaction value
+    const avgTransactionValue = completedTransactions.length > 0
+      ? grossRevenue / completedTransactions.length
+      : 0;
+    
+    // Group by booking type
+    const revenueByType = transactions.reduce((acc, t) => {
+      if (t.status === "completed") {
+        if (!acc[t.bookingType]) {
+          acc[t.bookingType] = {
+            count: 0,
+            grossRevenue: 0,
+            netRevenue: 0,
+          };
+        }
+        acc[t.bookingType].count += 1;
+        acc[t.bookingType].grossRevenue += t.amount;
+        acc[t.bookingType].netRevenue += t.partnerAmount;
+      }
+      return acc;
+    }, {} as Record<string, { count: number; grossRevenue: number; netRevenue: number }>);
+    
+    // Calculate monthly trends (last 6 months)
+    const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000);
+    const monthlyTransactions = allTransactions.filter(t => t.createdAt >= sixMonthsAgo);
+    
+    const monthlyTrends = monthlyTransactions.reduce((acc, t) => {
+      const date = new Date(t.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
+          month: monthKey,
+          transactions: 0,
+          grossRevenue: 0,
+          netRevenue: 0,
+          refunds: 0,
+        };
+      }
+      
+      acc[monthKey].transactions += 1;
+      if (t.status === "completed") {
+        acc[monthKey].grossRevenue += t.amount;
+        acc[monthKey].netRevenue += t.partnerAmount;
+      } else if (t.status === "refunded") {
+        acc[monthKey].refunds += t.amount;
+      }
+      
+      return acc;
+    }, {} as Record<string, any>);
+    
+    // Convert to array and sort by month
+    const monthlyTrendsArray = Object.values(monthlyTrends)
+      .sort((a: any, b: any) => a.month.localeCompare(b.month));
+    
+    // Get current balance (pending settlements)
+    const pendingTransactions = allTransactions.filter(t => t.status === "pending");
+    const pendingAmount = pendingTransactions.reduce((sum, t) => sum + t.partnerAmount, 0);
+    
+    return {
+      summary: {
+        totalTransactions,
+        completedTransactions: completedTransactions.length,
+        failedTransactions: failedTransactions.length,
+        refundedTransactions: refundedTransactions.length,
+        grossRevenue,
+        platformFees,
+        netRevenue,
+        totalRefunded,
+        refundedFees,
+        avgTransactionValue,
+        pendingAmount,
+        conversionRate: totalTransactions > 0 
+          ? (completedTransactions.length / totalTransactions) * 100 
+          : 0,
+      },
+      revenueByType,
+      monthlyTrends: monthlyTrendsArray,
+      feePercentage: partner.feePercentage,
+    };
+  },
+});
+
+// Buscar saldo disponível do partner
+export const getPartnerBalance = query({
+  args: {
+    partnerId: v.id("partners"),
+  },
+  handler: async (ctx, args) => {
+    // Verificar permissões
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autorizado");
+    }
+    
+    const partner = await ctx.db.get(args.partnerId);
+    if (!partner) {
+      throw new Error("Partner não encontrado");
+    }
+    
+    // Get all completed transactions
+    const completedTransactions = await ctx.db
+      .query("partnerTransactions")
+      .withIndex("by_partnerId", (q) => q.eq("partnerId", args.partnerId))
+      .filter((q) => q.eq(q.field("status"), "completed"))
+      .collect();
+    
+    // Calculate available balance (completed transactions)
+    const availableBalance = completedTransactions.reduce((sum, t) => sum + t.partnerAmount, 0);
+    
+    // Get pending transactions
+    const pendingTransactions = await ctx.db
+      .query("partnerTransactions")
+      .withIndex("by_partnerId", (q) => q.eq("partnerId", args.partnerId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+    
+    const pendingBalance = pendingTransactions.reduce((sum, t) => sum + t.partnerAmount, 0);
+    
+    // Get today's transactions
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    
+    const todayTransactions = completedTransactions.filter(t => t.createdAt >= todayStart);
+    const todayRevenue = todayTransactions.reduce((sum, t) => sum + t.partnerAmount, 0);
+    
+    return {
+      availableBalance,
+      pendingBalance,
+      totalBalance: availableBalance + pendingBalance,
+      todayRevenue,
+      todayTransactions: todayTransactions.length,
+      currency: "BRL",
+    };
   },
 }); 

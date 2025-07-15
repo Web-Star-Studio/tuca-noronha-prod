@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { api } from "../../../../../../../convex/_generated/api";
 import { TaxasPartnersList } from "./components/TaxasPartnersList";
 import { TaxaHistoryDrawer } from "./components/TaxaHistoryDrawer";
 import { TaxaBulkActions } from "./components/TaxaBulkActions";

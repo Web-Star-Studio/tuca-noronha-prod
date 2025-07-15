@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { api } from "../../../../../../../../convex/_generated/api";
 import { toast } from "@/hooks/use-toast";
 
 export default function TestDirectChargesPage() {

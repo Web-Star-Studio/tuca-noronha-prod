@@ -26,8 +26,9 @@ Um sistema automatizado de gerenciamento de taxas e distribuição de pagamentos
 - **Fase 1**: ✅ **CONCLUÍDA** - Infraestrutura base implementada
 - **Fase 2**: ✅ **CONCLUÍDA** - Onboarding de partners funcionando
 - **Fase 3**: ✅ **CONCLUÍDA** - Interface admin para taxas
-- **Fase 4**: 🔄 **EM PROGRESSO** - Processamento de pagamentos com Direct Charges
-- **Fase 5**: ⏳ **PENDENTE** - Dashboards e relatórios
+- **Fase 4**: ✅ **CONCLUÍDA** - Processamento de pagamentos com Direct Charges
+- **Fase 5**: 🚧 **EM PROGRESSO** - Dashboards e relatórios
+  - ✅ Etapa 1: Dashboard financeiro completo para parceiros
 
 ### Fluxo Principal Simplificado
 
@@ -133,10 +134,12 @@ Implementar um sistema completo de gerenciamento de taxas e distribuição autom
 - **Para** distribuir valores conforme taxas configuradas
 
 **Critérios de Aceitação:**
-- [ ] Cálculo automático da taxa da plataforma
-- [ ] Transferência imediata para conta do parceiro
-- [ ] Registro completo da transação
-- [ ] Tratamento de erros e reversões
+- [x] Cálculo automático da taxa da plataforma
+- [x] Transferência imediata para conta do parceiro
+- [x] Registro completo da transação
+- [x] Tratamento de erros e reversões
+- [x] Processamento de refunds com cálculo proporcional
+- [x] Notificações automáticas para parceiros
 
 ### 3.4 Visualização e Relatórios
 
@@ -436,16 +439,27 @@ const partnerAmount = totalAmount - platformFee - stripeFee;
 - [x] Validações e regras de negócio
 - [x] Testes de cálculo
 
-### 8.4 Fase 4: Processamento de Pagamentos 🔄 EM PROGRESSO
+### 8.4 Fase 4: Processamento de Pagamentos ✅ CONCLUÍDA
 - [x] Modificar checkout para Direct Charges
 - [x] Implementar cálculo de application_fee
 - [x] Webhook handlers para eventos
-- [ ] Tratamento de erros e reversões
+- [x] Tratamento de erros e reversões
+- [x] Lógica para lidar com refunds
+- [x] Notificações para partners sobre transações
 
-### 8.5 Fase 5: Dashboards e Relatórios ⏳ PENDENTE
-- [ ] Dashboard do parceiro
-- [ ] Relatórios financeiros
-- [ ] Exportação de dados
+### 8.5 Fase 5: Dashboards e Relatórios 🚧 EM PROGRESSO
+- [x] Dashboard financeiro completo para parceiros
+  - ✅ Visão geral de saldos (disponível, pendente, hoje)
+  - ✅ Cards de métricas (receita bruta/líquida, transações, conversão)
+  - ✅ Gráfico de tendências mensais (últimos 6 meses)
+  - ✅ Gráfico de receitas por tipo de serviço
+  - ✅ Lista de transações com filtros avançados e paginação
+  - ✅ Modal de detalhes de transação completo
+  - ✅ Integração com DateRangePicker para filtros
+  - ✅ Analytics detalhadas com performance metrics
+- [ ] Relatórios financeiros avançados
+- [ ] Exportação de dados (CSV/PDF)
+- [ ] Dashboard para administradores
 - [ ] Testes de integração
 
 ## 9. Testes e Validação
@@ -599,50 +613,40 @@ Use Connect to build a platform, marketplace, or other business that manages pay
 
 ## 15. Histórico de Atualizações
 
-### Versão 1.1 - Janeiro 2025
-**Status**: Fases 1 e 2 Concluídas
+### Versão 1.2 - Janeiro 2025
+**Status**: Fases 1-4 Concluídas
 
 #### Implementações Realizadas:
-1. **Backend (Convex)**:
-   - Domínio completo de `partners` com 5 mutations, 6 queries e 5 actions
-   - Integração com webhooks do Stripe Connect
-   - Sistema de tipos TypeScript completo
-   - Utilitários para cálculo de taxas
 
-2. **Frontend (Next.js)**:
-   - Hook `usePartner` para gerenciamento de estado
-   - Componente `PartnerOnboarding` com seleção PF/PJ
-   - Componente `OnboardingStatus` com indicadores visuais
-   - Página de configurações com abas
-   - Integração com header (botão de configurações)
+**Fase 4 CONCLUÍDA - Tratamento Avançado de Pagamentos**:
+1. **Tratamento de Erros e Reversões**:
+   - Mutation `handlePartnerTransactionError` para gerenciar falhas
+   - Notificação automática ao parceiro sobre erros
+   - Logs detalhados armazenados nos metadados
+   - Integração robusta no webhook handler
 
-3. **Integrações**:
-   - Stripe Connect API versão 2025-05-28.basil
-   - Webhooks configurados e funcionando
-   - Direct Charges com Application Fees preparado
+2. **Processamento de Refunds**:
+   - Mutation `processPartnerTransactionRefund` integrada ao fluxo
+   - Cálculo proporcional de estorno de taxas
+   - Atualização automática do status da transação
+   - Notificação com valores estornados
 
-#### Atualizações:
-- **Fase 3 Concluída**: Interface administrativa para configuração de taxas
-  - Página de taxas em `/admin/dashboard/configuracoes/taxas`
-  - Lista de parceiros com busca e filtros
-  - Modal para edição individual de taxas
-  - Histórico de alterações com timeline visual
-  - Ações em massa para múltiplos parceiros
-  - Testes de cálculo implementados e validados
+3. **Sistema de Notificações**:
+   - Mutation `notifyPartnerNewTransaction` para novas transações
+   - Três tipos de notificação: nova transação, falha, estorno
+   - Componente `PartnerTransactionNotifications` para visualização
+   - Integração completa com sistema de notificações existente
 
-- **Fase 4 Em Progresso**: Processamento de pagamentos com Direct Charges
-  - ✅ Modificação do `createCheckoutSession` para usar Direct Charges
-  - ✅ Cálculo automático de application_fee baseado na taxa do parceiro
-  - ✅ Criação de transações de parceiros no webhook handler
-  - ✅ Atualização do status de transações quando pagamento é capturado
-  - ✅ Componente `PartnerTransactionsList` para visualizar transações
-  - ✅ Aba de transações na página de configuração de taxas
-  - ✅ Página de teste para Direct Charges
-  - ⏳ Tratamento de erros e reversões (pendente)
+#### Arquivos Criados/Modificados:
+- `convex/domains/partners/mutations.ts`: Novas mutations para erros, refunds e notificações
+- `convex/domains/partners/queries.ts`: Query para buscar transações por payment intent
+- `convex/domains/stripe/actions.ts`: Integração de refunds com transações de parceiros
+- `src/api/stripe-webhook/route.ts`: Notificações em payment intent succeeded/failed
+- `src/components/dashboard/partners/PartnerTransactionNotifications.tsx`: Componente de UI
+- `src/app/(protected)/admin/dashboard/partners/test-phase-4/page.tsx`: Página de teste
 
 #### Próximas Etapas:
-- Completar Fase 4: Tratamento de erros e reversões
-- Fase 5: Dashboards financeiros completos
+- Fase 5: Dashboards financeiros completos e relatórios avançados
 
 ---
 

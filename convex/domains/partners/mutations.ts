@@ -300,3 +300,204 @@ export const togglePartnerActive = mutation({
     return null;
   },
 }); 
+
+/**
+ * Handle partner transaction error
+ * Reverses transaction and updates status
+ */
+export const handlePartnerTransactionError = internalMutation({
+  args: {
+    transactionId: v.id("partnerTransactions"),
+    error: v.string(),
+    shouldReverse: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const transaction = await ctx.db.get(args.transactionId);
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+
+    // Update transaction status to failed
+    await ctx.db.patch(args.transactionId, {
+      status: "failed",
+      metadata: {
+        ...transaction.metadata,
+        error: args.error,
+        failedAt: Date.now(),
+      },
+    });
+
+    // Create notification for partner about failed transaction
+    await ctx.db.insert("notifications", {
+      userId: (await ctx.db.get(transaction.partnerId))?.userId!,
+      type: "transaction_failed",
+      title: "Falha na Transação",
+      message: `Houve um erro ao processar a transação da reserva ${transaction.bookingId}. Motivo: ${args.error}`,
+      relatedId: args.transactionId,
+      relatedType: "partner_transaction",
+      isRead: false,
+      data: {
+        bookingType: transaction.bookingType,
+        // Store error in message since data doesn't support arbitrary fields
+      },
+      createdAt: Date.now(),
+    });
+
+    return args.transactionId;
+  },
+});
+
+/**
+ * Process partner transaction refund
+ * Updates transaction when a refund is processed
+ */
+export const processPartnerTransactionRefund = internalMutation({
+  args: {
+    stripePaymentIntentId: v.string(),
+    refundAmount: v.number(), // in cents
+    refundId: v.string(),
+    reason: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Find the original transaction
+    const transaction = await ctx.db
+      .query("partnerTransactions")
+      .withIndex("by_stripePaymentIntentId", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+      )
+      .first();
+
+    if (!transaction) {
+      console.error("Partner transaction not found for refund:", args.stripePaymentIntentId);
+      return null;
+    }
+
+    // Calculate proportional refund amounts
+    const refundPercentage = args.refundAmount / transaction.amount;
+    const platformFeeRefund = Math.floor(transaction.platformFee * refundPercentage);
+    const partnerRefund = Math.floor(transaction.partnerAmount * refundPercentage);
+
+    // Update transaction status to refunded
+    await ctx.db.patch(transaction._id, {
+      status: "refunded",
+      metadata: {
+        ...transaction.metadata,
+        refundId: args.refundId,
+        refundAmount: args.refundAmount,
+        refundReason: args.reason,
+        refundedAt: Date.now(),
+        platformFeeRefund,
+        partnerRefund,
+      },
+    });
+
+    // Get partner info for notification
+    const partner = await ctx.db.get(transaction.partnerId);
+    if (!partner) {
+      console.error("Partner not found for transaction:", transaction.partnerId);
+      return transaction._id;
+    }
+
+    // Create notification for partner about refund
+    await ctx.db.insert("notifications", {
+      userId: partner.userId,
+      type: "transaction_refunded",
+      title: "Transação Estornada",
+      message: `A transação da reserva ${transaction.bookingId} foi estornada. Valor: R$ ${(partnerRefund / 100).toFixed(2)}`,
+      relatedId: transaction._id,
+      relatedType: "partner_transaction",
+      isRead: false,
+      data: {
+        bookingType: transaction.bookingType,
+        // Refund details are in the message
+      },
+      createdAt: Date.now(),
+    });
+
+    return transaction._id;
+  },
+});
+
+/**
+ * Create notification for new partner transaction
+ * Called when a payment is successfully captured
+ */
+export const notifyPartnerNewTransaction = internalMutation({
+  args: {
+    transactionId: v.id("partnerTransactions"),
+  },
+  handler: async (ctx, args) => {
+    const transaction = await ctx.db.get(args.transactionId);
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+
+    const partner = await ctx.db.get(transaction.partnerId);
+    if (!partner) {
+      throw new Error("Partner not found");
+    }
+
+    // Get booking details for the notification
+    let bookingName = "Reserva";
+    let customerName = "Cliente";
+    
+    // Try to get booking details based on type
+    const bookingTables = {
+      activity: "activityBookings",
+      event: "eventBookings", 
+      vehicle: "vehicleBookings",
+      accommodation: "accommodationBookings",
+      package: "packageBookings",
+    };
+
+    const tableName = bookingTables[transaction.bookingType as keyof typeof bookingTables];
+    if (tableName) {
+      const booking = await ctx.db
+        .query(tableName as any)
+        .filter((q) => q.eq(q.field("_id"), transaction.bookingId))
+        .first();
+      
+      if (booking) {
+        customerName = booking.customerInfo?.name || booking.customerName || "Cliente";
+        
+        // Get asset name based on type
+        switch (transaction.bookingType) {
+          case "activity":
+            const activity = await ctx.db.get((booking as any).activityId);
+            bookingName = (activity as any)?.title || "Atividade";
+            break;
+          case "event":
+            const event = await ctx.db.get((booking as any).eventId);
+            bookingName = (event as any)?.title || "Evento";
+            break;
+          case "vehicle":
+            const vehicle = await ctx.db.get((booking as any).vehicleId);
+            bookingName = `${(vehicle as any)?.brand} ${(vehicle as any)?.model}` || "Veículo";
+            break;
+          case "accommodation":
+            const accommodation = await ctx.db.get((booking as any).accommodationId);
+            bookingName = (accommodation as any)?.name || "Hospedagem";
+            break;
+        }
+      }
+    }
+
+    // Create notification
+    await ctx.db.insert("notifications", {
+      userId: partner.userId,
+      type: "new_transaction",
+      title: "Nova Transação Recebida! 💰",
+      message: `Pagamento de ${customerName} para ${bookingName} foi processado. Valor líquido: R$ ${(transaction.partnerAmount / 100).toFixed(2)}`,
+      relatedId: args.transactionId,
+      relatedType: "partner_transaction",
+      isRead: false,
+      data: {
+        bookingType: transaction.bookingType,
+        assetName: bookingName,
+      },
+      createdAt: Date.now(),
+    });
+
+    return args.transactionId;
+  },
+}); 

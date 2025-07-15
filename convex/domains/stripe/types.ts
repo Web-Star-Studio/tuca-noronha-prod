@@ -88,19 +88,13 @@ export const createCheckoutSessionValidator = v.object({
   successUrl: v.string(),
   cancelUrl: v.string(),
   customerEmail: v.optional(v.string()),
-  allowPromotionCodes: v.optional(v.boolean()),
+  // New fields for coupons
   couponCode: v.optional(v.string()),
   discountAmount: v.optional(v.number()),
-  originalAmount: v.optional(v.number()),
   finalAmount: v.optional(v.number()),
-  metadata: v.optional(v.object({
-    bookingId: v.string(),
-    userId: v.string(),
-    assetType: v.string(),
-    assetId: v.string(),
-    couponCode: v.optional(v.string()),
-    discountAmount: v.optional(v.number()),
-  })),
+  currency: v.optional(v.string()),
+  allowPromotionCodes: v.optional(v.boolean()),
+  originalAmount: v.optional(v.number()),
 });
 
 // Validators for processing webhook events

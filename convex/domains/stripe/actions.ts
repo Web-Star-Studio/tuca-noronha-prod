@@ -510,6 +510,22 @@ export const createRefund = internalAction({
         status: refund.status || "pending", // Ensure status is never null
       });
 
+      // Process partner transaction refund if applicable
+      if (bookingPayment.stripePaymentIntentId) {
+        try {
+          await ctx.runMutation(internal.domains.partners.mutations.processPartnerTransactionRefund, {
+            stripePaymentIntentId: bookingPayment.stripePaymentIntentId,
+            refundAmount: refund.amount,
+            refundId: refund.id,
+            reason: args.reason,
+          });
+          console.log("✅ Partner transaction refund processed successfully");
+        } catch (error) {
+          console.error("Failed to process partner transaction refund:", error);
+          // Don't fail the main refund if partner transaction update fails
+        }
+      }
+
       return {
         refundId: refund.id,
         amount: refund.amount,
@@ -832,6 +848,33 @@ async function handlePaymentIntentSucceeded(ctx: any, paymentIntentData: any) {
         bookingId: metadata.bookingId,
         bookingType: metadata.assetType,
       });
+      
+      // Update partner transaction if this is a Direct Charge
+      if (metadata.partnerId) {
+        try {
+          const updatedTransactionId = await ctx.runMutation(
+            internal.domains.partners.mutations.updatePartnerTransactionStatus, 
+            {
+              stripePaymentIntentId: paymentIntentData.id,
+              status: 'completed',
+              stripeTransferId: paymentIntentData.transfer_data?.destination as string | undefined,
+            }
+          );
+          
+          // Notify partner about the new transaction
+          if (updatedTransactionId) {
+            await ctx.runMutation(
+              internal.domains.partners.mutations.notifyPartnerNewTransaction,
+              {
+                transactionId: updatedTransactionId,
+              }
+            );
+          }
+        } catch (error) {
+          console.error('Error updating partner transaction:', error);
+          // Don't fail the webhook - log error for investigation
+        }
+      }
     }
   }
 }
@@ -845,6 +888,31 @@ async function handlePaymentIntentFailed(ctx: any, paymentIntentData: any) {
       paymentStatus: "failed",
       stripePaymentIntentId: paymentIntentData.id,
     });
+    
+    // Handle partner transaction error if applicable
+    if (metadata.partnerId) {
+      try {
+        const transactions = await ctx.runQuery(
+          internal.domains.partners.queries.getPartnerTransactionsByPaymentIntent,
+          {
+            stripePaymentIntentId: paymentIntentData.id,
+          }
+        );
+        
+        if (transactions && transactions.length > 0) {
+          await ctx.runMutation(
+            internal.domains.partners.mutations.handlePartnerTransactionError,
+            {
+              transactionId: transactions[0]._id,
+              error: paymentIntentData.last_payment_error?.message || 'Payment failed',
+              shouldReverse: true,
+            }
+          );
+        }
+      } catch (error) {
+        console.error('Error handling partner transaction failure:', error);
+      }
+    }
   }
 }
 
