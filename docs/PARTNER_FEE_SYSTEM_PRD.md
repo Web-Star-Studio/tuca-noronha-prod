@@ -523,10 +523,36 @@ const partnerAmount = totalAmount - platformFee - stripeFee;
 ## 14. Apêndices
 
 ### A. Referências Técnicas
+Use Connect to build a platform, marketplace, or other business that manages payments and moves money between multiple parties.
+
 - [Stripe Connect Documentation](https://stripe.com/docs/connect)
 - [Direct Charges Guide](https://stripe.com/docs/connect/direct-charges)
 - [Connect Webhooks](https://stripe.com/docs/connect/webhooks)
 - [Convex Documentation](https://docs.convex.dev)
+- [1099-NEC form state requirements](https://docs.stripe.com/connect/1099-NEC.md): View the state requirements for 1099-NEC forms.
+- [Create a charge](https://docs.stripe.com/connect/charges.md): Create a charge and split payments between your platform and your sellers or service providers.
+- [Required verification information](https://docs.stripe.com/connect/required-verification-information.md): Learn what required verification information you need to collect for each country when using Connect.
+- [Connect account types](https://docs.stripe.com/connect/accounts.md): Learn about older connected account configurations.
+- [US tax reporting for Connect platforms](https://docs.stripe.com/connect/tax-reporting.md): Learn how to report the annual payments for your US-based connected accounts.
+- [How Connect works](https://docs.stripe.com/connect/how-connect-works.md): Learn how Connect's features support multiparty integrations.
+- [Payouts to connected accounts](https://docs.stripe.com/connect/payouts-connected-accounts.md): Manage payouts and external accounts for your platform's connected accounts.
+- [1099-K form state requirements](https://docs.stripe.com/connect/1099-K.md): View the state requirements for 1099-K forms.
+- [Making API calls for connected accounts](https://docs.stripe.com/connect/authentication.md): Learn how to add the right information to your API calls so you can make calls for your connected accounts.
+- [Using Connect with Standard connected accounts](https://docs.stripe.com/connect/standard-accounts.md): Use Standard connected accounts to get started using Connect right away, and let Stripe handle the majority of the connected account experience.
+- [Choose your onboarding configuration](https://docs.stripe.com/connect/onboarding.md): Learn about the different options for onboarding your connected accounts.
+- [Using Connect with Custom connected accounts](https://docs.stripe.com/connect/custom-accounts.md): Use Custom connected accounts with Connect to control your connected accounts' entire experience.
+- [Express Dashboard](https://docs.stripe.com/connect/express-dashboard.md): Learn about the features of the Express Dashboard.
+- [Stripe-hosted onboarding](https://docs.stripe.com/connect/hosted-onboarding.md): Onboard connected accounts by redirecting them to a Stripe-hosted onboarding flow.
+- [Payment details](https://docs.stripe.com/connect/supported-embedded-components/payment-details.md): Show details of a given payment and allow users to manage disputes and perform refunds.
+- [Identity verification for connected accounts](https://docs.stripe.com/connect/identity-verification.md): Use identity verification to reduce risk on your platform when using Connect.
+- [Using manual payouts](https://docs.stripe.com/connect/manual-payouts.md): Send manual payouts to your connected accounts.
+- [Connect webhooks](https://docs.stripe.com/connect/webhooks.md): Learn how to use webhooks with Connect to be notified of Stripe activity.
+- [Manage connected accounts with the Dashboard](https://docs.stripe.com/connect/dashboard.md): Learn about using the Stripe Dashboard to find and manage connected accounts, including those with open risk, onboarding, and compliance requirements.
+- [Get started with tax reporting](https://docs.stripe.com/connect/get-started-tax-reporting.md): Use the Stripe 1099 tax reporting product to create, modify, file, and deliver tax forms for your connected accounts.
+- [Platform pricing tools](https://docs.stripe.com/connect/platform-pricing-tools.md): Use your Dashboard editor to manage your application fee pricing logic.
+- [Update and create 1099 tax forms](https://docs.stripe.com/connect/modify-tax-forms.md): Update and create 1099 tax forms for connected accounts.
+- [Balance](https://docs.stripe.com/api/balance.md)
+- [The Balance object](https://docs.stripe.com/api/balance/balance_object.md)
 
 ### B. Exemplos de Código
 - Implementação de referência do Stripe

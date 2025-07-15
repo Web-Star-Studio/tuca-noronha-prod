@@ -528,6 +528,14 @@ export const processWebhookEvent = internalAction({
         case "invoice.payment_failed":
           await handleInvoiceEvent(ctx, args.eventType, args.data);
           break;
+        // Stripe Connect events
+        case "account.updated":
+        case "account.application.deauthorized":
+        case "application_fee.created":
+        case "transfer.created":
+        case "transfer.updated":
+          await handleConnectEvent(ctx, args.eventType, args.data);
+          break;
         default:
           console.log(`Unhandled webhook event type: ${args.eventType}`);
       }
@@ -822,6 +830,28 @@ async function handleInvoiceEvent(ctx: any, eventType: string, invoiceData: any)
       eventType,
       invoice: invoiceData,
     });
+  }
+}
+
+/**
+ * Handle Stripe Connect webhook events
+ */
+async function handleConnectEvent(ctx: any, eventType: string, eventData: any) {
+  try {
+    // Delegar para o processamento específico de Connect
+    await ctx.runAction(internal.domains.partners.actions.processStripeConnectWebhook, {
+      event: {
+        type: eventType,
+        data: {
+          object: eventData
+        },
+        // Se for um evento de conta conectada, o account ID virá no eventData
+        account: eventData.id?.startsWith('acct_') ? eventData.id : undefined,
+      }
+    });
+  } catch (error) {
+    console.error(`Erro ao processar evento Connect ${eventType}:`, error);
+    throw error;
   }
 }
 

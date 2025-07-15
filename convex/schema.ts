@@ -3,6 +3,75 @@ import { v } from "convex/values";
 import { cachedRecommendationsTable } from "./domains/recommendations/schema";
 import { guideSubscriptions, subscriptionPayments } from "./domains/subscriptions/schema";
 
+// Partner schemas
+const partners = defineTable({
+  userId: v.id("users"),
+  stripeAccountId: v.string(),
+  onboardingStatus: v.union(
+    v.literal("pending"),
+    v.literal("in_progress"),
+    v.literal("completed"),
+    v.literal("rejected")
+  ),
+  feePercentage: v.number(), // 0-100
+  isActive: v.boolean(),
+  capabilities: v.object({
+    cardPayments: v.boolean(),
+    transfers: v.boolean(),
+  }),
+  metadata: v.object({
+    businessName: v.optional(v.string()),
+    businessType: v.optional(v.string()),
+    country: v.string(),
+  }),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_userId", ["userId"])
+  .index("by_stripeAccountId", ["stripeAccountId"])
+  .index("by_status", ["onboardingStatus"]);
+
+const partnerFees = defineTable({
+  partnerId: v.id("partners"),
+  feePercentage: v.number(),
+  effectiveDate: v.number(),
+  createdBy: v.id("users"),
+  reason: v.optional(v.string()),
+  previousFee: v.optional(v.number()),
+})
+  .index("by_partnerId", ["partnerId"])
+  .index("by_effectiveDate", ["effectiveDate"]);
+
+const partnerTransactions = defineTable({
+  partnerId: v.id("partners"),
+  bookingId: v.string(), // ID genérico da reserva
+  bookingType: v.union(
+    v.literal("activity"),
+    v.literal("event"),
+    v.literal("vehicle"),
+    v.literal("accommodation"),
+    v.literal("package")
+  ),
+  stripePaymentIntentId: v.string(),
+  stripeTransferId: v.optional(v.string()),
+  amount: v.number(), // em centavos
+  platformFee: v.number(), // em centavos
+  partnerAmount: v.number(), // em centavos
+  currency: v.string(),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("completed"),
+    v.literal("failed"),
+    v.literal("refunded")
+  ),
+  metadata: v.any(),
+  createdAt: v.number(),
+})
+  .index("by_partnerId", ["partnerId"])
+  .index("by_bookingId", ["bookingId"])
+  .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
+  .index("by_status_and_createdAt", ["status", "createdAt"]);
+
 export default defineSchema({
   authAccounts: defineTable({
     emailVerified: v.optional(v.string()),
@@ -2649,4 +2718,9 @@ export default defineSchema({
     .index("by_category_partner", ["category", "partnerId"])
     .index("by_usage_count", ["usageCount"])
     .index("by_created_at", ["createdAt"]),
+
+  // Partner system tables
+  partners,
+  partnerFees,
+  partnerTransactions,
 });

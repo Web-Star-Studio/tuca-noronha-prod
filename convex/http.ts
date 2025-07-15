@@ -144,4 +144,11 @@ http.route({
   handler: testWebhook,
 });
 
+// Stripe Connect webhook endpoint
+http.route({
+  path: "/stripe/connect-webhook",
+  method: "POST",
+  handler: handleStripeWebhook, // Reutiliza o mesmo handler, mas pode ser configurado com eventos diferentes no Stripe Dashboard
+});
+
 export default http;
