@@ -1,0 +1,410 @@
+/* Enhanced Proposal Creation Page Styles */
+
+/* Custom CSS Variables for theming */
+:root {
+  --proposal-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --proposal-gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --proposal-gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --proposal-glass-bg: rgba(255, 255, 255, 0.25);
+  --proposal-glass-border: rgba(255, 255, 255, 0.18);
+  --proposal-shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --proposal-shadow-hover: 0 15px 35px 0 rgba(31, 38, 135, 0.4);
+  --proposal-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --proposal-transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Enhanced Glass Morphism Effects */
+.proposal-glass {
+  background: var(--proposal-glass-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--proposal-glass-border);
+  transition: var(--proposal-transition);
+}
+
+.proposal-glass:hover {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--proposal-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Custom Gradient Text Effects */
+.proposal-gradient-text {
+  background: var(--proposal-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+.proposal-gradient-text-secondary {
+  background: var(--proposal-gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* Enhanced Button Styles */
+.proposal-btn-gradient {
+  background: var(--proposal-gradient-primary);
+  border: none;
+  color: white;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transition: var(--proposal-transition);
+  box-shadow: 0 4px 15px 0 rgba(116, 79, 168, 0.75);
+}
+
+.proposal-btn-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.proposal-btn-gradient:hover::before {
+  left: 100%;
+}
+
+.proposal-btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(116, 79, 168, 0.75);
+}
+
+/* Floating Animation */
+@keyframes proposal-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.proposal-float {
+  animation: proposal-float 3s ease-in-out infinite;
+}
+
+/* Pulse Animation for Important Elements */
+@keyframes proposal-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+.proposal-pulse {
+  animation: proposal-pulse 2s infinite;
+}
+
+/* Shimmer Effect for Loading States */
+@keyframes proposal-shimmer {
+  0% {
+    background-position: -1200px 0;
+  }
+  100% {
+    background-position: 1200px 0;
+  }
+}
+
+.proposal-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1200px 100%;
+  animation: proposal-shimmer 2s infinite linear;
+}
+
+/* Enhanced Card Hover Effects */
+.proposal-card-enhanced {
+  transition: var(--proposal-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.proposal-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.proposal-card-enhanced:hover::before {
+  transform: translateX(100%);
+}
+
+.proposal-card-enhanced:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--proposal-shadow-hover);
+}
+
+/* Icon Bounce Animation */
+@keyframes proposal-icon-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+.proposal-icon-bounce:hover {
+  animation: proposal-icon-bounce 1s;
+}
+
+/* Gradient Border Animation */
+@keyframes proposal-gradient-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.proposal-gradient-border {
+  position: relative;
+  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+  background-size: 400% 400%;
+  animation: proposal-gradient-border 4s ease infinite;
+  padding: 2px;
+  border-radius: 12px;
+}
+
+.proposal-gradient-border-content {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+/* Status Badge Enhancements */
+.proposal-status-pending {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.proposal-status-approved {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.proposal-status-rejected {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Form Enhancement Styles */
+.proposal-form-field {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.proposal-form-field input,
+.proposal-form-field textarea {
+  transition: var(--proposal-transition);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  width: 100%;
+  font-size: 16px;
+}
+
+.proposal-form-field input:focus,
+.proposal-form-field textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+
+.proposal-form-field label {
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: white;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: var(--proposal-transition);
+}
+
+.proposal-form-field input:focus + label,
+.proposal-form-field textarea:focus + label {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* Loading Skeleton Enhancements */
+.proposal-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: proposal-shimmer 1.5s infinite linear;
+  border-radius: 8px;
+}
+
+/* Scroll Indicator */
+.proposal-scroll-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--proposal-gradient-primary);
+  transform-origin: left;
+  z-index: 9999;
+}
+
+/* Notification Enhancement */
+.proposal-notification-enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.proposal-notification-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.3s ease-out;
+}
+
+.proposal-notification-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.proposal-notification-exit-active {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease-in;
+}
+
+/* Custom Scrollbar */
+.proposal-custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.proposal-custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.proposal-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #667eea, #764ba2);
+  border-radius: 4px;
+}
+
+.proposal-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5a67d8, #6b46c1);
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .proposal-float,
+  .proposal-pulse,
+  .proposal-shimmer,
+  .proposal-gradient-border {
+    animation: none;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Focus Indicators for Better Accessibility */
+.proposal-focus-ring:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --proposal-glass-bg: rgba(0, 0, 0, 0.25);
+    --proposal-glass-border: rgba(255, 255, 255, 0.1);
+  }
+
+  .proposal-gradient-border-content {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+
+  .proposal-form-field label {
+    background: #1f2937;
+    color: #9ca3af;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .proposal-card-enhanced:hover {
+    transform: none;
+  }
+
+  .proposal-btn-gradient:hover {
+    transform: none;
+  }
+
+  .proposal-glass:hover {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .proposal-gradient-text,
+  .proposal-gradient-text-secondary {
+    -webkit-text-fill-color: initial;
+    color: #000;
+  }
+
+  .proposal-btn-gradient {
+    background: #000;
+    border: 2px solid #fff;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .proposal-glass,
+  .proposal-card-enhanced,
+  .proposal-btn-gradient {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+
+  .proposal-gradient-text,
+  .proposal-gradient-text-secondary {
+    -webkit-text-fill-color: initial;
+    color: #000 !important;
+  }
+}

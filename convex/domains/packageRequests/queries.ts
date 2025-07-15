@@ -117,6 +117,17 @@ export const getPackageRequestDetails = query({
 });
 
 /**
+ * Get package request by ID (alias for getPackageRequestDetails)
+ */
+export const getPackageRequest = query({
+  args: { id: v.id("packageRequests") },
+  returns: v.union(v.any(), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
+
+/**
  * Get package request by request number
  */
 export const getPackageRequestByNumber = query({

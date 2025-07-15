@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, X, FileText, Calendar, DollarSign, Package, Users, Clock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Loader2, Plus, X, FileText, Calendar, DollarSign, Package, Users, Wand2, Check, ArrowRight, ArrowLeft, Info, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import { formatCurrency, formatDate } from "@/lib/utils";
+
 
 interface PackageComponent {
   type: "accommodation" | "activity" | "event" | "restaurant" | "vehicle" | "transfer" | "guide" | "insurance" | "other";
@@ -33,11 +38,13 @@ interface PackageComponent {
 
 interface PackageProposalCreationFormProps {
   packageRequestId: Id<"packageRequests">;
+  existingProposal?: any;
+  isEditing?: boolean;
   onSuccess?: (proposalId: Id<"packageProposals">) => void;
   onCancel?: () => void;
 }
 
-const COMPONENT_TYPE_LABELS = {
+const COMPONENT_TYPE_LABELS: Record<PackageComponent['type'], string> = {
   accommodation: "Hospedagem",
   activity: "Atividade",
   event: "Evento",
@@ -47,149 +54,108 @@ const COMPONENT_TYPE_LABELS = {
   guide: "Guia",
   insurance: "Seguro",
   other: "Outros",
-} as const;
+};
 
-const COMPONENT_TYPE_ICONS = {
-  accommodation: "🏨",
-  activity: "🏃",
-  event: "🎉",
-  restaurant: "🍽️",
-  vehicle: "🚗",
-  transfer: "🚌",
-  guide: "🗺️",
-  insurance: "🛡️",
-  other: "📋",
-} as const;
+const COMPONENT_TYPE_ICONS: Record<PackageComponent['type'], React.ReactNode> = {
+  accommodation: <FileText className="h-4 w-4" />,
+  activity: <Users className="h-4 w-4" />,
+  event: <Calendar className="h-4 w-4" />,
+  restaurant: <Package className="h-4 w-4" />,
+  vehicle: <DollarSign className="h-4 w-4" />,
+  transfer: <DollarSign className="h-4 w-4" />,
+  guide: <DollarSign className="h-4 w-4" />,
+  insurance: <DollarSign className="h-4 w-4" />,
+  other: <DollarSign className="h-4 w-4" />,
+};
 
+// Main component for creating a package proposal
 export function PackageProposalCreationForm({ 
   packageRequestId, 
+  existingProposal,
+  isEditing = false,
   onSuccess, 
   onCancel 
 }: PackageProposalCreationFormProps) {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'basic' | 'components' | 'pricing' | 'terms' | 'review'>('basic');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
-  // Form state
+  // Initialize form data with existing proposal if editing
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    summary: "",
-    validUntil: "",
-    paymentTerms: "50% na reserva, 50% até 30 dias antes da viagem",
-    cancellationPolicy: "Cancelamento gratuito até 30 dias antes da viagem",
-    priority: "normal" as "low" | "normal" | "high" | "urgent",
-    requiresApproval: false,
-    tags: [] as string[],
-    inclusions: [] as string[],
-    exclusions: [] as string[],
+    title: existingProposal?.title || "",
+    description: existingProposal?.description || "",
+    summary: existingProposal?.summary || "",
+    validUntil: existingProposal?.validUntil ? new Date(existingProposal.validUntil).toISOString().split('T')[0] : "",
+    paymentTerms: existingProposal?.paymentTerms || "50% na reserva, 50% até 30 dias antes da viagem.",
+    cancellationPolicy: existingProposal?.cancellationPolicy || "Cancelamento gratuito até 30 dias antes da viagem. Após esse período, multas podem ser aplicadas conforme o contrato.",
+    priority: existingProposal?.priority || "normal" as "low" | "normal" | "high" | "urgent",
+    requiresApproval: existingProposal?.requiresApproval || false,
+    tags: existingProposal?.tags || [] as string[],
+    inclusions: existingProposal?.inclusions || [] as string[],
+    exclusions: existingProposal?.exclusions || [] as string[],
   });
 
-  const [components, setComponents] = useState<PackageComponent[]>([]);
+  const [components, setComponents] = useState<PackageComponent[]>(
+    existingProposal?.components || []
+  );
   const [pricing, setPricing] = useState({
-    subtotal: 0,
-    taxes: 0,
-    fees: 0,
-    discount: 0,
-    totalPrice: 0,
-    currency: "BRL",
+    subtotal: existingProposal?.subtotal || 0,
+    taxes: existingProposal?.taxes || 0,
+    fees: existingProposal?.fees || 0,
+    discount: existingProposal?.discount || 0,
+    totalPrice: existingProposal?.totalPrice || 0,
+    currency: existingProposal?.currency || "BRL",
   });
 
   const [newInclusion, setNewInclusion] = useState("");
   const [newExclusion, setNewExclusion] = useState("");
   const [newTag, setNewTag] = useState("");
   
-  // Template state
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-
   // Mutations and queries
   const createProposal = useMutation(api.domains.packageProposals.mutations.createPackageProposal);
-  const analyzeRequest = useMutation(api.domains.packageProposals.actions.analyzePackageRequest);
-  const applyTemplate = useQuery(api.domains.packageProposals.templates.applyProposalTemplate, {
-    templateId: selectedTemplate || undefined,
-    packageRequestId,
-    variables: templateVariables,
-  }, { enabled: !!selectedTemplate });
+  const updateProposal = useMutation(api.domains.packageProposals.mutations.updatePackageProposal);
+  const analyzeRequest = useAction(api.domains.packageProposals.actions.analyzePackageRequest);
   
   const packageRequest = useQuery(api.domains.packageRequests.queries.getPackageRequest, {
     id: packageRequestId,
   });
   
-  const templates = useQuery(api.domains.packageProposals.templates.listPackageProposalTemplates, {
-    isActive: true,
-  });
-
-  // Auto-analyze package request on mount
+  // Auto-analyze package request on mount (only if not editing and no existing components)
   useEffect(() => {
-    if (packageRequest && !showAnalysis) {
+    if (!isEditing && packageRequest && components.length === 0) {
       handleAnalyzeRequest();
     }
-  }, [packageRequest]);
+  }, [packageRequest, isEditing]);
 
   // Update pricing when components change
   useEffect(() => {
-    const subtotal = components.reduce((sum, comp) => sum + comp.totalPrice, 0);
-    const taxes = subtotal * 0.1; // 10% tax
-    const fees = subtotal * 0.05; // 5% fees
-    const totalPrice = subtotal + taxes + fees - pricing.discount;
+    const subtotal = components.reduce((sum, comp) => sum + (comp.included ? comp.totalPrice : 0), 0);
+    const totalPrice = subtotal + pricing.taxes + pricing.fees - pricing.discount;
 
     setPricing(prev => ({
       ...prev,
       subtotal,
-      taxes,
-      fees,
       totalPrice,
     }));
-  }, [components, pricing.discount]);
+  }, [components, pricing.discount, pricing.taxes, pricing.fees]);
 
-  // Apply template data when template is loaded
-  useEffect(() => {
-    if (applyTemplate?.success && applyTemplate.proposalData) {
-      const data = applyTemplate.proposalData;
-      setFormData(prev => ({
-        ...prev,
-        title: data.title,
-        description: data.description,
-        summary: data.summary || "",
-        paymentTerms: data.paymentTerms,
-        cancellationPolicy: data.cancellationPolicy,
-        inclusions: data.inclusions,
-        exclusions: data.exclusions,
-        validUntil: new Date(data.validUntil).toISOString().split('T')[0],
-        priority: data.priority,
-        requiresApproval: data.requiresApproval,
-      }));
-      
-      setComponents(data.components);
-      setPricing(prev => ({
-        ...prev,
-        currency: data.currency,
-      }));
-      
-      toast.success("Template aplicado com sucesso!");
-    }
-  }, [applyTemplate]);
 
   const handleAnalyzeRequest = async () => {
     if (!packageRequest) return;
 
+    setIsAnalyzing(true);
     try {
-      setShowAnalysis(true);
       const result = await analyzeRequest({ packageRequestId });
       
       if (result.success) {
-        // Auto-fill form with suggestions
         setFormData(prev => ({
           ...prev,
-          title: `Proposta de Pacote para ${packageRequest.destination}`,
-          description: `Proposta personalizada baseada em sua solicitação para ${packageRequest.destination}`,
+          title: `Proposta de Pacote para ${packageRequest.customerInfo.name} em ${packageRequest.tripDetails.destination}`,
+          description: `Uma proposta de viagem exclusiva para ${packageRequest.tripDetails.destination}, pensada para ${packageRequest.tripDetails.groupSize} pessoa(s), com duração de ${packageRequest.tripDetails.duration} dias.`,
+          summary: `Pacote para ${packageRequest.tripDetails.destination} incluindo as melhores atividades e hospedagens.`,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         }));
 
-        // Add suggested components
         const suggestedComponents: PackageComponent[] = result.suggestions.map(suggestion => ({
           type: suggestion.type as PackageComponent['type'],
           assetId: suggestion.assetId,
@@ -204,11 +170,15 @@ export function PackageProposalCreationForm({
         }));
 
         setComponents(suggestedComponents);
-        toast.success(`${result.suggestions.length} componentes sugeridos com base na análise`);
+        toast.success("Análise concluída!", {
+          description: `${result.suggestions.length} componentes foram sugeridos com base no pedido.`,
+        });
       }
     } catch (error) {
       console.error("Error analyzing request:", error);
-      toast.error("Erro ao analisar solicitação");
+      toast.error("Erro ao analisar solicitação.");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -227,774 +197,283 @@ export function PackageProposalCreationForm({
   };
 
   const updateComponent = (index: number, updates: Partial<PackageComponent>) => {
-    const updatedComponents = [...components];
-    updatedComponents[index] = {
-      ...updatedComponents[index],
-      ...updates,
-      totalPrice: updates.quantity && updates.unitPrice 
-        ? updates.quantity * updates.unitPrice
-        : updatedComponents[index].totalPrice,
-    };
-    setComponents(updatedComponents);
+    const newComponents = [...components];
+    const currentComponent = newComponents[index];
+    
+    const updatedComponent = { ...currentComponent, ...updates };
+
+    if (updates.quantity !== undefined || updates.unitPrice !== undefined) {
+        updatedComponent.totalPrice = updatedComponent.quantity * updatedComponent.unitPrice;
+    }
+    
+    newComponents[index] = updatedComponent;
+    setComponents(newComponents);
   };
 
   const removeComponent = (index: number) => {
     setComponents(components.filter((_, i) => i !== index));
   };
-
-  const addInclusion = () => {
-    if (newInclusion.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        inclusions: [...prev.inclusions, newInclusion.trim()],
-      }));
-      setNewInclusion("");
+  
+  const handleListAction = (
+    list: string[], 
+    setList: (list: string[]) => void, 
+    newItem: string, 
+    setNewItem: (item: string) => void
+  ) => {
+    if (newItem.trim() && !list.includes(newItem.trim())) {
+      setList([...list, newItem.trim()]);
+      setNewItem("");
     }
   };
 
-  const removeInclusion = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      inclusions: prev.inclusions.filter((_, i) => i !== index),
-    }));
-  };
+  const addInclusion = () => handleListAction(formData.inclusions, (l) => setFormData(p => ({...p, inclusions: l})), newInclusion, setNewInclusion);
+  const removeInclusion = (index: number) => setFormData(p => ({...p, inclusions: p.inclusions.filter((_, i) => i !== index)}));
 
-  const addExclusion = () => {
-    if (newExclusion.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        exclusions: [...prev.exclusions, newExclusion.trim()],
-      }));
-      setNewExclusion("");
+  const addExclusion = () => handleListAction(formData.exclusions, (l) => setFormData(p => ({...p, exclusions: l})), newExclusion, setNewExclusion);
+  const removeExclusion = (index: number) => setFormData(p => ({...p, exclusions: p.exclusions.filter((_, i) => i !== index)}));
+
+  const addTag = () => handleListAction(formData.tags, (l) => setFormData(p => ({...p, tags: l})), newTag, setNewTag);
+  const removeTag = (index:number) => setFormData(p => ({...p, tags: p.tags.filter((_, i) => i !== index)}));
+
+
+  const validateStep = (stepIndex: number): boolean => {
+    switch(stepIndex) {
+      case 0: // Basic Info
+        if (!formData.title.trim() || !formData.description.trim()) {
+          toast.error("Título e Descrição são obrigatórios.");
+          return false;
+        }
+        break;
+      case 1: // Components
+        if (components.length === 0) {
+          toast.error("Adicione pelo menos um componente ao pacote.");
+          return false;
+        }
+        if (components.some(c => !c.name.trim() || c.unitPrice <= 0)) {
+           toast.error("Todos os componentes devem ter nome e preço unitário maior que zero.");
+           return false;
+        }
+        break;
+      case 2: // Terms
+        if (!formData.validUntil) {
+           toast.error("A data de validade da proposta é obrigatória.");
+           return false;
+        }
+        break;
+      default:
+        break;
     }
-  };
-
-  const removeExclusion = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      exclusions: prev.exclusions.filter((_, i) => i !== index),
-    }));
-  };
-
-  const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()],
-      }));
-      setNewTag("");
-    }
-  };
-
-  const removeTag = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index),
-    }));
-  };
+    return true;
+  }
 
   const handleSubmit = async () => {
-    if (!packageRequest) return;
+    for (let i = 0; i < steps.length; i++) {
+        if (!validateStep(i)) {
+            setCurrentStep(i);
+            return;
+        }
+    }
 
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
+      if (isEditing && existingProposal) {
+        // Update existing proposal
+        const result = await updateProposal({
+          id: existingProposal._id,
+          title: formData.title,
+          description: formData.description,
+          summary: formData.summary,
+          components,
+          subtotal: pricing.subtotal,
+          taxes: pricing.taxes,
+          fees: pricing.fees,
+          discount: pricing.discount,
+          totalPrice: pricing.totalPrice,
+          currency: pricing.currency,
+          validUntil: new Date(formData.validUntil).getTime(),
+          paymentTerms: formData.paymentTerms,
+          cancellationPolicy: formData.cancellationPolicy,
+          inclusions: formData.inclusions,
+          exclusions: formData.exclusions,
+          requiresApproval: formData.requiresApproval,
+          priority: formData.priority,
+          tags: formData.tags,
+        });
 
-      if (!formData.title.trim()) {
-        toast.error("Título é obrigatório");
-        setCurrentStep('basic');
-        return;
-      }
-
-      if (!formData.description.trim()) {
-        toast.error("Descrição é obrigatória");
-        setCurrentStep('basic');
-        return;
-      }
-
-      if (components.length === 0) {
-        toast.error("Adicione pelo menos um componente");
-        setCurrentStep('components');
-        return;
-      }
-
-      if (!formData.validUntil) {
-        toast.error("Data de validade é obrigatória");
-        setCurrentStep('terms');
-        return;
-      }
-
-      const result = await createProposal({
-        packageRequestId,
-        title: formData.title,
-        description: formData.description,
-        summary: formData.summary,
-        components,
-        subtotal: pricing.subtotal,
-        taxes: pricing.taxes,
-        fees: pricing.fees,
-        discount: pricing.discount,
-        totalPrice: pricing.totalPrice,
-        currency: pricing.currency,
-        validUntil: new Date(formData.validUntil).getTime(),
-        paymentTerms: formData.paymentTerms,
-        cancellationPolicy: formData.cancellationPolicy,
-        inclusions: formData.inclusions,
-        exclusions: formData.exclusions,
-        requiresApproval: formData.requiresApproval,
-        priority: formData.priority,
-        tags: formData.tags,
-      });
-
-      if (result.success && result.proposalId) {
-        toast.success("Proposta criada com sucesso!");
-        onSuccess?.(result.proposalId);
-        router.push(`/admin/dashboard/propostas/${result.proposalId}`);
+        if (result.success) {
+          toast.success("Proposta atualizada com sucesso!");
+          onSuccess?.(existingProposal._id);
+        } else {
+          toast.error(result.message || "Erro ao atualizar proposta");
+        }
       } else {
-        toast.error(result.message || "Erro ao criar proposta");
+        // Create new proposal
+        const result = await createProposal({
+          packageRequestId,
+          title: formData.title,
+          description: formData.description,
+          summary: formData.summary,
+          components,
+          subtotal: pricing.subtotal,
+          taxes: pricing.taxes,
+          fees: pricing.fees,
+          discount: pricing.discount,
+          totalPrice: pricing.totalPrice,
+          currency: pricing.currency,
+          validUntil: new Date(formData.validUntil).getTime(),
+          paymentTerms: formData.paymentTerms,
+          cancellationPolicy: formData.cancellationPolicy,
+          inclusions: formData.inclusions,
+          exclusions: formData.exclusions,
+          requiresApproval: formData.requiresApproval,
+          priority: formData.priority,
+          tags: formData.tags,
+        });
+
+        if (result.success && result.proposalId) {
+          toast.success("Proposta criada com sucesso!");
+          onSuccess?.(result.proposalId);
+        } else {
+          toast.error(result.message || "Erro ao criar proposta");
+        }
       }
     } catch (error) {
-      console.error("Error creating proposal:", error);
-      toast.error("Erro ao criar proposta");
+      console.error("Error submitting proposal:", error);
+      toast.error(`Ocorreu um erro inesperado ao ${isEditing ? 'atualizar' : 'criar'} a proposta.`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const renderBasicInfoStep = () => (
-    <div className="space-y-6">
-      {/* Template Selector */}
-      <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="font-medium">Templates de Proposta</h3>
-            <p className="text-sm text-muted-foreground">
-              Use um template para começar rapidamente ou crie do zero
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTemplateSelector(!showTemplateSelector)}
-          >
-            {showTemplateSelector ? "Ocultar" : "Mostrar"} Templates
-          </Button>
-        </div>
-        
-        {showTemplateSelector && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {templates?.templates?.map((template) => (
-                <div
-                  key={template._id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedTemplate === template._id 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => {
-                    if (selectedTemplate === template._id) {
-                      setSelectedTemplate(null);
-                    } else {
-                      setSelectedTemplate(template._id);
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm">{template.name}</h4>
-                    <Badge variant="secondary" className="text-xs">
-                      {template.category}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {template.description}
-                  </p>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Usado {template.usageCount} vezes
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {selectedTemplate && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  Template selecionado será aplicado automaticamente aos campos abaixo.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div>
-        <Label htmlFor="title">Título da Proposta *</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="Ex: Proposta de Pacote para Fernando de Noronha"
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="description">Descrição Detalhada *</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Descreva os detalhes da proposta..."
-          className="mt-1"
-          rows={4}
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="summary">Resumo Executivo</Label>
-        <Textarea
-          id="summary"
-          value={formData.summary}
-          onChange={(e) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
-          placeholder="Resumo para apresentação executiva..."
-          className="mt-1"
-          rows={3}
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="priority">Prioridade</Label>
-        <Select value={formData.priority} onValueChange={(value: any) => setFormData(prev => ({ ...prev, priority: value }))}>
-          <SelectTrigger className="mt-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="low">Baixa</SelectItem>
-            <SelectItem value="normal">Normal</SelectItem>
-            <SelectItem value="high">Alta</SelectItem>
-            <SelectItem value="urgent">Urgente</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="requiresApproval"
-          checked={formData.requiresApproval}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, requiresApproval: checked }))}
-        />
-        <Label htmlFor="requiresApproval">Requer aprovação antes do envio</Label>
-      </div>
-
-      <div>
-        <Label>Tags</Label>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {formData.tags.map((tag, index) => (
-            <Badge key={index} variant="secondary" className="flex items-center gap-1">
-              {tag}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(index)} />
-            </Badge>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2">
-          <Input
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Adicionar tag..."
-            onKeyPress={(e) => e.key === 'Enter' && addTag()}
-          />
-          <Button type="button" variant="outline" size="sm" onClick={addTag}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderComponentsStep = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Componentes do Pacote</h3>
-          <p className="text-sm text-muted-foreground">Adicione os serviços e produtos incluídos</p>
-        </div>
-        <Button onClick={addComponent} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Componente
-        </Button>
-      </div>
-
-      {components.length === 0 ? (
-        <Alert>
-          <Package className="h-4 w-4" />
-          <AlertDescription>
-            Nenhum componente adicionado ainda. Adicione pelo menos um componente para continuar.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <div className="space-y-4">
-          {components.map((component, index) => (
-            <Card key={index} className="relative">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{COMPONENT_TYPE_ICONS[component.type]}</span>
-                    <Select 
-                      value={component.type} 
-                      onValueChange={(value: any) => updateComponent(index, { type: value })}
-                    >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(COMPONENT_TYPE_LABELS).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeComponent(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Nome do Componente</Label>
-                    <Input
-                      value={component.name}
-                      onChange={(e) => updateComponent(index, { name: e.target.value })}
-                      placeholder="Ex: Mergulho com Cilindro"
-                    />
-                  </div>
-                  <div>
-                    <Label>Quantidade</Label>
-                    <Input
-                      type="number"
-                      value={component.quantity}
-                      onChange={(e) => updateComponent(index, { quantity: parseInt(e.target.value) || 1 })}
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Descrição</Label>
-                  <Textarea
-                    value={component.description}
-                    onChange={(e) => updateComponent(index, { description: e.target.value })}
-                    placeholder="Descreva o componente..."
-                    rows={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Preço Unitário (R$)</Label>
-                    <Input
-                      type="number"
-                      value={component.unitPrice}
-                      onChange={(e) => updateComponent(index, { unitPrice: parseFloat(e.target.value) || 0 })}
-                      step="0.01"
-                      min="0"
-                    />
-                  </div>
-                  <div>
-                    <Label>Preço Total (R$)</Label>
-                    <Input
-                      type="number"
-                      value={component.totalPrice}
-                      onChange={(e) => updateComponent(index, { totalPrice: parseFloat(e.target.value) || 0 })}
-                      step="0.01"
-                      min="0"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={component.included}
-                      onCheckedChange={(checked) => updateComponent(index, { included: checked })}
-                    />
-                    <Label>Incluído no pacote</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={component.optional}
-                      onCheckedChange={(checked) => updateComponent(index, { optional: checked })}
-                    />
-                    <Label>Opcional</Label>
-                  </div>
-                </div>
-
-                {component.notes && (
-                  <div>
-                    <Label>Observações</Label>
-                    <Textarea
-                      value={component.notes}
-                      onChange={(e) => updateComponent(index, { notes: e.target.value })}
-                      placeholder="Observações adicionais..."
-                      rows={2}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderPricingStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold">Precificação</h3>
-        <p className="text-sm text-muted-foreground">Configure os valores e ajustes da proposta</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Resumo Financeiro
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Subtotal</Label>
-              <div className="text-lg font-semibold">R$ {pricing.subtotal.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label>Impostos (10%)</Label>
-              <div className="text-lg font-semibold">R$ {pricing.taxes.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label>Taxas (5%)</Label>
-              <div className="text-lg font-semibold">R$ {pricing.fees.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label>Desconto</Label>
-              <Input
-                type="number"
-                value={pricing.discount}
-                onChange={(e) => setPricing(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
-                step="0.01"
-                min="0"
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="flex justify-between items-center">
-            <span className="text-xl font-bold">Total:</span>
-            <span className="text-2xl font-bold text-green-600">R$ {pricing.totalPrice.toFixed(2)}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div>
-        <Label htmlFor="currency">Moeda</Label>
-        <Select value={pricing.currency} onValueChange={(value) => setPricing(prev => ({ ...prev, currency: value }))}>
-          <SelectTrigger className="mt-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="BRL">Real (BRL)</SelectItem>
-            <SelectItem value="USD">Dólar (USD)</SelectItem>
-            <SelectItem value="EUR">Euro (EUR)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
-
-  const renderTermsStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold">Termos e Condições</h3>
-        <p className="text-sm text-muted-foreground">Configure os termos da proposta</p>
-      </div>
-
-      <div>
-        <Label htmlFor="validUntil">Válido até *</Label>
-        <Input
-          id="validUntil"
-          type="date"
-          value={formData.validUntil}
-          onChange={(e) => setFormData(prev => ({ ...prev, validUntil: e.target.value }))}
-          className="mt-1"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="paymentTerms">Termos de Pagamento</Label>
-        <Textarea
-          id="paymentTerms"
-          value={formData.paymentTerms}
-          onChange={(e) => setFormData(prev => ({ ...prev, paymentTerms: e.target.value }))}
-          className="mt-1"
-          rows={3}
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="cancellationPolicy">Política de Cancelamento</Label>
-        <Textarea
-          id="cancellationPolicy"
-          value={formData.cancellationPolicy}
-          onChange={(e) => setFormData(prev => ({ ...prev, cancellationPolicy: e.target.value }))}
-          className="mt-1"
-          rows={3}
-        />
-      </div>
-
-      <div>
-        <Label>Inclusos</Label>
-        <div className="space-y-2 mt-2">
-          {formData.inclusions.map((inclusion, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                {inclusion}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => removeInclusion(index)} />
-              </Badge>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2">
-          <Input
-            value={newInclusion}
-            onChange={(e) => setNewInclusion(e.target.value)}
-            placeholder="Ex: Transfer aeroporto"
-            onKeyPress={(e) => e.key === 'Enter' && addInclusion()}
-          />
-          <Button type="button" variant="outline" size="sm" onClick={addInclusion}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div>
-        <Label>Não Inclusos</Label>
-        <div className="space-y-2 mt-2">
-          {formData.exclusions.map((exclusion, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                {exclusion}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => removeExclusion(index)} />
-              </Badge>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2">
-          <Input
-            value={newExclusion}
-            onChange={(e) => setNewExclusion(e.target.value)}
-            placeholder="Ex: Refeições não mencionadas"
-            onKeyPress={(e) => e.key === 'Enter' && addExclusion()}
-          />
-          <Button type="button" variant="outline" size="sm" onClick={addExclusion}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderReviewStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold">Revisar Proposta</h3>
-        <p className="text-sm text-muted-foreground">Revise todos os detalhes antes de criar</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{formData.title}</CardTitle>
-          <CardDescription>{formData.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <Label>Prioridade</Label>
-              <Badge variant={formData.priority === 'urgent' ? 'destructive' : 'secondary'}>
-                {formData.priority === 'low' ? 'Baixa' : 
-                 formData.priority === 'normal' ? 'Normal' : 
-                 formData.priority === 'high' ? 'Alta' : 'Urgente'}
-              </Badge>
-            </div>
-            <div>
-              <Label>Válido até</Label>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {new Date(formData.validUntil).toLocaleDateString('pt-BR')}
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <Label>Componentes ({components.length})</Label>
-            <div className="space-y-2 mt-2">
-              {components.map((component, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <span>{COMPONENT_TYPE_ICONS[component.type]}</span>
-                    <span className="font-medium">{component.name}</span>
-                    <Badge variant="outline" size="sm">
-                      {component.quantity}x R$ {component.unitPrice.toFixed(2)}
-                    </Badge>
-                  </div>
-                  <span className="font-semibold">R$ {component.totalPrice.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Inclusos ({formData.inclusions.length})</Label>
-              <div className="space-y-1 mt-1">
-                {formData.inclusions.slice(0, 3).map((inclusion, index) => (
-                  <div key={index} className="text-sm text-muted-foreground">• {inclusion}</div>
-                ))}
-                {formData.inclusions.length > 3 && (
-                  <div className="text-sm text-muted-foreground">... e mais {formData.inclusions.length - 3}</div>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label>Não Inclusos ({formData.exclusions.length})</Label>
-              <div className="space-y-1 mt-1">
-                {formData.exclusions.slice(0, 3).map((exclusion, index) => (
-                  <div key={index} className="text-sm text-muted-foreground">• {exclusion}</div>
-                ))}
-                {formData.exclusions.length > 3 && (
-                  <div className="text-sm text-muted-foreground">... e mais {formData.exclusions.length - 3}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          <div className="flex justify-between items-center">
-            <span className="text-xl font-bold">Total da Proposta:</span>
-            <span className="text-2xl font-bold text-green-600">R$ {pricing.totalPrice.toFixed(2)}</span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   const steps = [
-    { key: 'basic', label: 'Informações Básicas', icon: FileText },
-    { key: 'components', label: 'Componentes', icon: Package },
-    { key: 'pricing', label: 'Precificação', icon: DollarSign },
-    { key: 'terms', label: 'Termos', icon: Calendar },
-    { key: 'review', label: 'Revisar', icon: Users },
+    { name: 'Informações', fields: ['title', 'description'] },
+    { name: 'Componentes', fields: ['components'] },
+    { name: 'Termos', fields: ['validUntil', 'paymentTerms'] },
+    { name: 'Valores', fields: ['pricing'] },
+    { name: 'Revisão' }
   ];
 
-  const currentStepIndex = steps.findIndex(step => step.key === currentStep);
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+  
+  const StepContent = useMemo(() => {
+    switch (currentStep) {
+      case 0: return <StepBasicInfo formData={formData} setFormData={setFormData} newTag={newTag} setNewTag={setNewTag} addTag={addTag} removeTag={removeTag} />;
+      case 1: return <StepComponents components={components} addComponent={addComponent} updateComponent={updateComponent} removeComponent={removeComponent} />;
+      case 2: return <StepTerms formData={formData} setFormData={setFormData} newInclusion={newInclusion} setNewInclusion={setNewInclusion} addInclusion={addInclusion} removeInclusion={removeInclusion} newExclusion={newExclusion} setNewExclusion={setNewExclusion} addExclusion={addExclusion} removeExclusion={removeExclusion} />;
+      case 3: return <StepPricing pricing={pricing} setPricing={setPricing} />;
+      case 4: return <StepReview formData={formData} components={components} pricing={pricing} />;
+      default: return null;
+    }
+  }, [currentStep, formData, components, pricing, newTag, newInclusion, newExclusion]);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Nova Proposta de Pacote</h1>
-          <p className="text-muted-foreground">
-            {packageRequest && `Para: ${packageRequest.destination} - ${packageRequest.adults} adultos`}
-          </p>
-        </div>
-        {showAnalysis && (
-          <Button variant="outline" size="sm" onClick={handleAnalyzeRequest}>
-            <Clock className="h-4 w-4 mr-2" />
-            Re-analisar Solicitação
-          </Button>
-        )}
-      </div>
+    <div className="space-y-8">
+       {!isEditing && (
+         <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+           <Wand2 className="h-4 w-4 !text-blue-800" />
+           <AlertTitle>Assistente de IA</AlertTitle>
+           <AlertDescription className="flex items-center justify-between">
+             <p>Analisamos a solicitação do cliente para sugerir componentes e preencher informações. Você pode ajustá-las a qualquer momento.</p>
+             <Button variant="outline" size="sm" onClick={handleAnalyzeRequest} disabled={isAnalyzing}>
+              {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <Search className="h-4 w-4 mr-2" />}
+               Re-analisar
+             </Button>
+           </AlertDescription>
+         </Alert>
+       )}
 
-      {/* Steps Navigation */}
-      <div className="flex items-center justify-between">
-        {steps.map((step, index) => {
-          const Icon = step.icon;
-          const isActive = step.key === currentStep;
-          const isCompleted = index < currentStepIndex;
-          
-          return (
-            <div key={step.key} className="flex items-center">
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                isActive ? 'bg-blue-100 text-blue-600' : 
-                isCompleted ? 'bg-green-100 text-green-600' : 
-                'bg-gray-100 text-gray-400'
-              }`} onClick={() => setCurrentStep(step.key as any)}>
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{step.label}</span>
+       <div>
+        <div className="flex items-center justify-center">
+          {steps.map((step, index) => (
+            <React.Fragment key={step.name}>
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => setCurrentStep(index)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-lg font-semibold transition-all duration-300
+                    ${index === currentStep ? 'bg-blue-600 text-white scale-110' : ''}
+                    ${index < currentStep ? 'bg-green-500 text-white hover:bg-green-600' : ''}
+                    ${index > currentStep ? 'bg-gray-200 text-gray-500 hover:bg-gray-300' : ''}
+                  `}
+                >
+                  {index < currentStep ? <Check size={24} /> : index + 1}
+                </button>
+                <p className={`text-xs font-semibold ${index === currentStep ? 'text-blue-600' : 'text-gray-500'}`}>{step.name}</p>
               </div>
               {index < steps.length - 1 && (
-                <div className={`w-8 h-px mx-2 ${isCompleted ? 'bg-green-300' : 'bg-gray-200'}`} />
+                <div className={`flex-auto h-1 mx-2 transition-colors duration-500 ${index < currentStep ? 'bg-green-500' : 'bg-gray-200'}`} />
               )}
-            </div>
-          );
-        })}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
-
-      {/* Step Content */}
-      <Card>
-        <CardContent className="p-6">
-          {currentStep === 'basic' && renderBasicInfoStep()}
-          {currentStep === 'components' && renderComponentsStep()}
-          {currentStep === 'pricing' && renderPricingStep()}
-          {currentStep === 'terms' && renderTermsStep()}
-          {currentStep === 'review' && renderReviewStep()}
+      
+      <Card className="shadow-lg border-t-4 border-blue-600">
+        <CardContent className="p-6 min-h-[400px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ x: 30, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -30, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {StepContent}
+            </motion.div>
+          </AnimatePresence>
         </CardContent>
       </Card>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <div className="flex gap-2">
-          {currentStepIndex > 0 && (
-            <Button 
-              variant="outline" 
-              onClick={() => setCurrentStep(steps[currentStepIndex - 1].key as any)}
-            >
-              Anterior
-            </Button>
-          )}
+      <div className="flex justify-between items-center pt-4 border-t">
+        <Button 
+          variant="outline" 
+          onClick={handleBack}
+          disabled={currentStep === 0}
+          className="group"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
+          Anterior
+        </Button>
+        
+        <div className="flex items-center gap-4">
           {onCancel && (
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="ghost" onClick={onCancel} className="text-gray-600">
               Cancelar
             </Button>
           )}
-        </div>
-        
-        <div className="flex gap-2">
-          {currentStepIndex < steps.length - 1 ? (
-            <Button 
-              onClick={() => setCurrentStep(steps[currentStepIndex + 1].key as any)}
-            >
+
+          {currentStep < steps.length - 1 ? (
+            <Button onClick={handleNext} className="group">
               Próximo
+              <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
           ) : (
             <Button 
               onClick={handleSubmit} 
               disabled={isSubmitting}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 group"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Criando Proposta...
+                  {isEditing ? "Atualizando Proposta..." : "Criando Proposta..."}
                 </>
               ) : (
-                "Criar Proposta"
+                <>
+                  {isEditing ? "Atualizar Proposta" : "Criar Proposta"}
+                  <Check className="h-4 w-4 ml-2 transition-transform group-hover:scale-125" />
+                </>
               )}
             </Button>
           )}
@@ -1003,3 +482,333 @@ export function PackageProposalCreationForm({
     </div>
   );
 }
+
+// Step Components
+const StepBasicInfo = ({ formData, setFormData, newTag, setNewTag, addTag, removeTag }: any) => (
+   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+     <div className="space-y-6">
+       <Card>
+          <CardHeader>
+            <CardTitle>Informações Principais</CardTitle>
+            <CardDescription>Defina o título e a descrição da proposta.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="title" className="font-semibold">Título da Proposta *</Label>
+              <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Pacote Essencial Noronha" />
+            </div>
+            <div>
+              <Label htmlFor="description" className="font-semibold">Descrição Detalhada *</Label>
+              <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descreva os detalhes da proposta, o que a torna especial." rows={5} />
+            </div>
+            <div>
+              <Label htmlFor="summary" className="font-semibold">Resumo (Opcional)</Label>
+              <Textarea id="summary" value={formData.summary} onChange={(e) => setFormData({ ...formData, summary: e.target.value })} placeholder="Um resumo curto para o cliente." rows={2} />
+            </div>
+          </CardContent>
+        </Card>
+     </div>
+     <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações Gerais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="priority">Prioridade</Label>
+              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="urgent">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                 <Label>Requer aprovação?</Label>
+                 <p className="text-xs text-muted-foreground">Se ativo, a proposta precisará ser aprovada por um administrador antes do envio.</p>
+              </div>
+              <Switch checked={formData.requiresApproval} onCheckedChange={(c) => setFormData({ ...formData, requiresApproval: c })} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>Tags</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {formData.tags.map((tag: string, index: number) => (
+                <Badge key={index} variant="secondary">{tag} <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => removeTag(index)} /></Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input value={newTag} onChange={(e) => setNewTag(e.target.value)} placeholder="Ex: Família, Aventura" onKeyPress={(e) => e.key === 'Enter' && addTag()} />
+              <Button type="button" variant="outline" size="icon" onClick={addTag}><Plus className="h-4 w-4" /></Button>
+            </div>
+          </CardContent>
+        </Card>
+     </div>
+   </div>
+);
+
+const StepComponents = ({ components, addComponent, updateComponent, removeComponent }: any) => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Componentes do Pacote</h3>
+          <p className="text-sm text-muted-foreground">Adicione os serviços e produtos que compõem a proposta.</p>
+        </div>
+        <Button onClick={addComponent} size="sm" className="group">
+          <Plus className="h-4 w-4 mr-2 transition-transform group-hover:rotate-90" />
+          Adicionar Componente
+        </Button>
+      </div>
+      
+      {components.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <Package className="mx-auto h-12 w-12 text-gray-300" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum componente</h3>
+          <p className="mt-1 text-sm text-gray-500">Adicione o primeiro item do pacote.</p>
+        </div>
+      ) : (
+        <Accordion type="single" collapsible className="w-full space-y-2">
+          {components.map((component: PackageComponent, index: number) => (
+            <AccordionItem value={`item-${index}`} key={index} className="border rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-300">
+               <AccordionPrimitive.Header className="flex items-center w-full">
+                  <AccordionPrimitive.Trigger className="group flex flex-1 items-center gap-3 px-4 py-3 text-sm font-medium text-left transition-all rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                      <div className="flex items-center gap-3 flex-1">
+                        {COMPONENT_TYPE_ICONS[component.type] || <Package className="h-4 w-4 text-muted-foreground" />}
+                        <span className="font-semibold">{component.name || "Novo Componente"}</span>
+                        <Badge variant="outline">{COMPONENT_TYPE_LABELS[component.type]}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="font-bold text-base text-green-600">{formatCurrency(component.totalPrice)}</span>
+                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180 text-muted-foreground" />
+                      </div>
+                  </AccordionPrimitive.Trigger>
+                  <div className="pr-4">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full h-8 w-8" 
+                      onClick={() => removeComponent(index)}
+                      aria-label="Remover componente"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+              </AccordionPrimitive.Header>
+              <AccordionContent className="px-4 pb-4 space-y-6 border-t pt-4 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tipo de Componente</Label>
+                      <Select value={component.type} onValueChange={(v: any) => updateComponent(index, { type: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(COMPONENT_TYPE_LABELS).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                     <div>
+                      <Label>Nome do Componente *</Label>
+                      <Input value={component.name} onChange={(e) => updateComponent(index, { name: e.target.value })} placeholder="Ex: Mergulho com Cilindro" />
+                    </div>
+                 </div>
+                <Textarea value={component.description} onChange={(e) => updateComponent(index, { description: e.target.value })} placeholder="Descreva o que está incluso neste componente..." rows={3} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <Label>Quantidade</Label>
+                        <Input type="number" value={component.quantity} onChange={(e) => updateComponent(index, { quantity: parseInt(e.target.value) || 1 })} min="1" />
+                    </div>
+                    <div>
+                        <Label>Preço Unitário (R$) *</Label>
+                        <Input type="number" value={component.unitPrice} onChange={(e) => updateComponent(index, { unitPrice: parseFloat(e.target.value) || 0 })} step="0.01" min="0" />
+                    </div>
+                    <div>
+                        <Label>Preço Total (R$)</Label>
+                        <Input type="number" value={component.totalPrice} disabled className="bg-gray-100 font-semibold" />
+                    </div>
+                </div>
+                <Textarea value={component.notes} onChange={(e) => updateComponent(index, { notes: e.target.value })} placeholder="Notas internas sobre este componente (opcional)..." rows={2} />
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center space-x-2"><Switch checked={component.included} onCheckedChange={(c) => updateComponent(index, { included: c })} /><Label>Incluído no preço final</Label></div>
+                  <div className="flex items-center space-x-2"><Switch checked={component.optional} onCheckedChange={(c) => updateComponent(index, { optional: c })} /><Label>Opcional para o cliente</Label></div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
+    </div>
+);
+
+const StepTerms = ({ formData, setFormData, newInclusion, setNewInclusion, addInclusion, removeInclusion, newExclusion, setNewExclusion, addExclusion, removeExclusion }: any) => {
+  const renderListEditor = (title: string, items: string[], newItem: string, setNewItem: (val: string) => void, addItem: () => void, removeItem: (i: number) => void) => (
+    <Card>
+      <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
+      <CardContent>
+        {items.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {items.map((item, index) => (
+              <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                <p className="text-sm">{item}</p>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(index)}><X className="h-3 w-3"/></Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Input value={newItem} onChange={(e) => setNewItem(e.target.value)} placeholder={`Adicionar item...`} onKeyPress={(e) => e.key === 'Enter' && addItem()} />
+          <Button type="button" variant="outline" size="icon" onClick={addItem}><Plus className="h-4 w-4" /></Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="space-y-6">
+        <Card>
+          <CardHeader><CardTitle>Validade e Pagamento</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+             <div>
+              <Label htmlFor="validUntil">Proposta válida até *</Label>
+              <Input id="validUntil" type="date" value={formData.validUntil} onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="paymentTerms">Termos de Pagamento</Label>
+              <Textarea id="paymentTerms" value={formData.paymentTerms} onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })} rows={4} />
+            </div>
+            <div>
+              <Label htmlFor="cancellationPolicy">Política de Cancelamento</Label>
+              <Textarea id="cancellationPolicy" value={formData.cancellationPolicy} onChange={(e) => setFormData({ ...formData, cancellationPolicy: e.target.value })} rows={4} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+       <div className="space-y-6">
+        {renderListEditor("Itens Inclusos", formData.inclusions, newInclusion, setNewInclusion, addInclusion, removeInclusion)}
+        {renderListEditor("Itens Não Inclusos", formData.exclusions, newExclusion, setNewExclusion, addExclusion, removeExclusion)}
+      </div>
+    </div>
+  );
+};
+
+const StepPricing = ({ pricing, setPricing }: any) => (
+    <div className="max-w-md mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center text-xl">Detalhamento Financeiro</CardTitle>
+          <CardDescription className="text-center">Ajuste os valores finais da proposta.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-gray-50">
+            <span className="text-muted-foreground">Subtotal dos Componentes</span>
+            <span className="font-medium">{formatCurrency(pricing.subtotal)}</span>
+          </div>
+          <div className="flex justify-between items-center p-2">
+            <Label htmlFor="taxes" className="text-sm text-muted-foreground">Impostos (R$)</Label>
+            <Input
+              id="taxes"
+              type="number"
+              value={pricing.taxes}
+              onChange={(e) => setPricing({ ...pricing, taxes: parseFloat(e.target.value) || 0 })}
+              className="w-32 text-right text-sm"
+              placeholder="0.00"
+              step="0.01"
+            />
+          </div>
+          <div className="flex justify-between items-center p-2">
+            <Label htmlFor="fees" className="text-sm text-muted-foreground">Taxas de Serviço (R$)</Label>
+            <Input
+              id="fees"
+              type="number"
+              value={pricing.fees}
+              onChange={(e) => setPricing({ ...pricing, fees: parseFloat(e.target.value) || 0 })}
+              className="w-32 text-right text-sm"
+              placeholder="0.00"
+              step="0.01"
+            />
+          </div>
+          
+          <Separator />
+          
+          <div className="flex justify-between items-center p-2">
+            <Label htmlFor="discount" className="font-semibold">Desconto (R$)</Label>
+            <Input
+              id="discount"
+              type="number"
+              value={pricing.discount}
+              onChange={(e) => setPricing({ ...pricing, discount: parseFloat(e.target.value) || 0 })}
+              className="w-32 text-right font-semibold"
+              placeholder="0.00"
+            />
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="flex justify-between items-center bg-green-50 p-4 rounded-lg">
+            <span className="text-xl font-bold text-green-800">Total Geral</span>
+            <span className="text-2xl font-bold text-green-800">{formatCurrency(pricing.totalPrice)}</span>
+          </div>
+          
+           <div>
+            <Label htmlFor="currency">Moeda</Label>
+            <Select value={pricing.currency} onValueChange={(v) => setPricing({ ...pricing, currency: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="BRL">Real Brasileiro (BRL)</SelectItem>
+                <SelectItem value="USD">Dólar Americano (USD)</SelectItem>
+                <SelectItem value="EUR">Euro (EUR)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+);
+
+const StepReview = ({ formData, components, pricing }: any) => (
+    <div className="space-y-6">
+      <div className="text-center">
+         <h2 className="text-2xl font-bold">Quase lá!</h2>
+         <p className="text-muted-foreground">Revise todas as informações antes de criar a proposta.</p>
+      </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader><CardTitle>{formData.title}</CardTitle><CardDescription>{formData.summary}</CardDescription></CardHeader>
+            <CardContent className="text-sm space-y-2">
+                <p><strong className="text-muted-foreground">Válido até:</strong> {formatDate(formData.validUntil)}</p>
+                <p><strong className="text-muted-foreground">Prioridade:</strong> {formData.priority}</p>
+            </CardContent>
+          </Card>
+          <Card className="flex flex-col justify-center items-center bg-green-50 text-green-800">
+             <CardHeader className="text-center">
+                <CardTitle className="text-green-800">Valor Total</CardTitle>
+             </CardHeader>
+             <CardContent>
+                <p className="text-4xl font-bold">{formatCurrency(pricing.totalPrice)}</p>
+             </CardContent>
+          </Card>
+       </div>
+       
+       <Card>
+         <CardHeader><CardTitle>Componentes ({components.length})</CardTitle></CardHeader>
+         <CardContent>
+            <div className="space-y-2">
+              {components.map((c: PackageComponent, i: number) => (
+                <div key={i} className="flex justify-between items-center p-2 rounded-md hover:bg-gray-50">
+                  <p>{c.quantity}x {c.name}</p>
+                  <p className="font-semibold">{formatCurrency(c.totalPrice)}</p>
+                </div>
+              ))}
+            </div>
+         </CardContent>
+       </Card>
+    </div>
+);

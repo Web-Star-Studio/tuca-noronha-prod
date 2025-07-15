@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from "framer-motion";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -32,6 +32,33 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
   onViewDetails,
   onCancelReservation
 }) => {
+  // Estados para controlar os filtros
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  // Filtrar reservas baseado nos filtros selecionados
+  const filteredReservations = useMemo(() => {
+    let filtered = reservations;
+
+    // Filtrar por status
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'confirmed') {
+        filtered = filtered.filter(r => ['confirmed', 'in_progress', 'completed'].includes(r.status));
+      } else if (statusFilter === 'pending') {
+        filtered = filtered.filter(r => ['pending', 'payment_pending', 'awaiting_confirmation', 'draft'].includes(r.status));
+      } else if (statusFilter === 'canceled') {
+        filtered = filtered.filter(r => r.status === 'canceled');
+      }
+    }
+
+    // Filtrar por tipo
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(r => r.type === typeFilter);
+    }
+
+    return filtered;
+  }, [reservations, statusFilter, typeFilter]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -39,7 +66,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Suas Reservas</h2>
           <p className="text-gray-600 text-sm mt-1">
-            {reservations.length} {reservations.length === 1 ? 'reserva encontrada' : 'reservas encontradas'}
+            {filteredReservations.length} {filteredReservations.length === 1 ? 'reserva encontrada' : 'reservas encontradas'}
           </p>
         </div>
         <Button
@@ -51,7 +78,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
         </Button>
       </div>
 
-      {reservations.length > 0 ? (
+      {filteredReservations.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar - Filtros e Ações */}
           <div className="lg:col-span-1">
@@ -63,22 +90,48 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Por Status</h4>
                   <div className="space-y-1">
-                    <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => setStatusFilter('all')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        statusFilter === 'all' ? 'bg-blue-50 border-blue-200' : ''
+                      }`}
+                    >
                       <span className="text-sm text-gray-600">Todas</span>
                       <Badge variant="secondary" className="bg-gray-100 text-gray-600">
                         {reservations.length}
                       </Badge>
                     </button>
-                    <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => setStatusFilter('confirmed')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        statusFilter === 'confirmed' ? 'bg-green-50 border-green-200' : ''
+                      }`}
+                    >
                       <span className="text-sm text-gray-600">Confirmadas</span>
                       <Badge variant="secondary" className="bg-green-100 text-green-600">
-                        {reservations.filter(r => r.status === 'confirmed' || r.status === 'in_progress' || r.status === 'completed').length}
+                        {reservations.filter(r => ['confirmed', 'in_progress', 'completed'].includes(r.status)).length}
                       </Badge>
                     </button>
-                    <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => setStatusFilter('pending')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        statusFilter === 'pending' ? 'bg-yellow-50 border-yellow-200' : ''
+                      }`}
+                    >
                       <span className="text-sm text-gray-600">Pendentes</span>
                       <Badge variant="secondary" className="bg-yellow-100 text-yellow-600">
-                        {reservations.filter(r => r.status === 'pending' || r.status === 'payment_pending' || r.status === 'awaiting_confirmation' || r.status === 'draft').length}
+                        {reservations.filter(r => ['pending', 'payment_pending', 'awaiting_confirmation', 'draft'].includes(r.status)).length}
+                      </Badge>
+                    </button>
+                    <button 
+                      onClick={() => setStatusFilter('canceled')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        statusFilter === 'canceled' ? 'bg-red-50 border-red-200' : ''
+                      }`}
+                    >
+                      <span className="text-sm text-gray-600">Canceladas</span>
+                      <Badge variant="secondary" className="bg-red-100 text-red-600">
+                        {reservations.filter(r => r.status === 'canceled').length}
                       </Badge>
                     </button>
                   </div>
@@ -87,22 +140,59 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Por Tipo</h4>
                   <div className="space-y-1">
-                    <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                      <span className="text-sm text-gray-600">Hospedagens</span>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-600">
-                        {reservations.filter(r => r.type === 'accommodation').length}
+                    <button 
+                      onClick={() => setTypeFilter('all')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        typeFilter === 'all' ? 'bg-blue-50 border-blue-200' : ''
+                      }`}
+                    >
+                      <span className="text-sm text-gray-600">Todos</span>
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                        {reservations.length}
                       </Badge>
                     </button>
-                    <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => setTypeFilter('activity')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        typeFilter === 'activity' ? 'bg-purple-50 border-purple-200' : ''
+                      }`}
+                    >
+                      <span className="text-sm text-gray-600">Atividades</span>
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-600">
+                        {reservations.filter(r => r.type === 'activity').length}
+                      </Badge>
+                    </button>
+                    <button 
+                      onClick={() => setTypeFilter('restaurant')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        typeFilter === 'restaurant' ? 'bg-orange-50 border-orange-200' : ''
+                      }`}
+                    >
                       <span className="text-sm text-gray-600">Restaurantes</span>
                       <Badge variant="secondary" className="bg-orange-100 text-orange-600">
                         {reservations.filter(r => r.type === 'restaurant').length}
                       </Badge>
                     </button>
-                    <button className="w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                      <span className="text-sm text-gray-600">Atividades</span>
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-600">
-                        {reservations.filter(r => r.type === 'activity').length}
+                    <button 
+                      onClick={() => setTypeFilter('vehicle')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        typeFilter === 'vehicle' ? 'bg-blue-50 border-blue-200' : ''
+                      }`}
+                    >
+                      <span className="text-sm text-gray-600">Veículos</span>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-600">
+                        {reservations.filter(r => r.type === 'vehicle').length}
+                      </Badge>
+                    </button>
+                    <button 
+                      onClick={() => setTypeFilter('event')}
+                      className={`w-full flex items-center justify-between p-2 text-left hover:bg-gray-50 rounded-lg transition-colors ${
+                        typeFilter === 'event' ? 'bg-green-50 border-green-200' : ''
+                      }`}
+                    >
+                      <span className="text-sm text-gray-600">Eventos</span>
+                      <Badge variant="secondary" className="bg-green-100 text-green-600">
+                        {reservations.filter(r => r.type === 'event').length}
                       </Badge>
                     </button>
                   </div>
@@ -114,7 +204,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
           {/* Main Content - Lista de Reservas */}
           <div className="lg:col-span-3">
             <div className="grid gap-4">
-              {reservations.map((reservation) => {
+              {filteredReservations.map((reservation) => {
                 const reservationDate = reservation.date ? new Date(reservation.date) : null;
 
                 return (
@@ -226,16 +316,45 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
             <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
               <CalendarDays className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sem reservas ativas</h3>
-            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-              Você não possui nenhuma reserva no momento. Que tal explorar algumas opções?
-            </p>
-            <Button 
-              onClick={onNewReservation}
-              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-            >
-              Explorar e Reservar
-            </Button>
+            {reservations.length === 0 ? (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Sem reservas ativas</h3>
+                <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                  Você não possui nenhuma reserva no momento. Que tal explorar algumas opções?
+                </p>
+                <Button 
+                  onClick={onNewReservation}
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                >
+                  Explorar e Reservar
+                </Button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma reserva encontrada</h3>
+                <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                  Não foram encontradas reservas com os filtros selecionados. Tente ajustar os filtros ou criar uma nova reserva.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button 
+                    onClick={() => {
+                      setStatusFilter('all');
+                      setTypeFilter('all');
+                    }}
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Limpar Filtros
+                  </Button>
+                  <Button 
+                    onClick={onNewReservation}
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                  >
+                    Nova Reserva
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

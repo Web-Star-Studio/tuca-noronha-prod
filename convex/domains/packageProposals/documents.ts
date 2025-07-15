@@ -5,6 +5,33 @@ import { createAuditLog } from "../audit/utils";
 import { internal } from "../../_generated/api";
 import type { Doc, Id } from "../../_generated/dataModel";
 
+/**
+ * Helper function to check if a traveler has access to a package request
+ */
+async function checkTravelerAccessToPackageRequest(
+  ctx: any,
+  packageRequest: any,
+  currentUserId: Id<"users">
+): Promise<boolean> {
+  // First try userId if it exists
+  if (packageRequest.userId === currentUserId) {
+    return true;
+  }
+
+  // If no userId or doesn't match, try email matching
+  const currentUser = await ctx.db.get(currentUserId);
+  if (currentUser) {
+    const packageEmail = packageRequest.customerInfo.email.toLowerCase().trim();
+    const userEmail = currentUser.email?.toLowerCase().trim();
+    
+    if (userEmail && packageEmail === userEmail) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // Document attachment validators
 export const ProposalAttachmentArgs = v.object({
   storageId: v.string(),
@@ -232,8 +259,11 @@ export const getProposalAttachments = query({
     if (currentUserRole === "traveler") {
       // Check if this user made the package request
       const packageRequest = await ctx.db.get(proposal.packageRequestId);
-      if (packageRequest && packageRequest.userId === currentUserId) {
-        return proposal.attachments || [];
+      if (packageRequest) {
+        const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+        if (hasAccess) {
+          return proposal.attachments || [];
+        }
       }
     }
 

@@ -459,14 +459,16 @@ export const listTravelers = query({
     if (args.search) {
       usersQuery = ctx.db
         .query("users")
-        .withSearchIndex("by_name_email", q => q.search("name", args.search!));
+        .withSearchIndex("by_name_email", q => q.search("name", args.search!))
+        .filter(q => q.eq(q.field("role"), "traveler"));
     } else {
-      usersQuery = ctx.db.query("users");
+      usersQuery = ctx.db
+        .query("users")
+        .filter(q => q.eq(q.field("role"), "traveler"))
+        .order("desc");
     }
 
     const travelers = await usersQuery
-      .filter(q => q.eq(q.field("role"), "traveler"))
-      .order("desc")
       .paginate({
         numItems: args.paginationOpts?.numItems ?? 10,
         cursor: args.paginationOpts?.cursor ?? null,
@@ -1659,6 +1661,39 @@ export const listAllAccommodations = query({
     );
 
     return enrichedAccommodations.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+/**
+ * Get basic admin info for proposal viewing (public access)
+ */
+export const getAdminBasicInfo = query({
+  args: {
+    userId: v.id("users"),
+  },
+  returns: v.union(
+    v.object({
+      name: v.optional(v.string()),
+      email: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    
+    if (!user) {
+      return null;
+    }
+
+    // Only return basic info for admins (master, partner, employee)
+    if (!["master", "partner", "employee"].includes(user.role || "")) {
+      return null;
+    }
+
+    return {
+      name: user.name,
+      email: user.email,
+    };
   },
 });
 

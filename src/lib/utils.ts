@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format a date object to a readable string in Portuguese format
  */
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | number | string): string {
   // Options for formatting the date
   const options: Intl.DateTimeFormatOptions = { 
     day: 'numeric', 
@@ -16,8 +16,11 @@ export function formatDate(date: Date): string {
     year: 'numeric' 
   };
   
+  // Convert to Date object if needed
+  const dateObj = date instanceof Date ? date : new Date(date);
+  
   // Return formatted date in PT-BR (Portuguese Brazil) format
-  return date.toLocaleDateString('pt-BR', options);
+  return dateObj.toLocaleDateString('pt-BR', options);
 }
 
 /**

@@ -10,6 +10,33 @@ import {
 } from "./types";
 
 /**
+ * Helper function to check if a traveler has access to a package request
+ */
+async function checkTravelerAccessToPackageRequest(
+  ctx: any,
+  packageRequest: any,
+  currentUserId: Id<"users">
+): Promise<boolean> {
+  // First try userId if it exists
+  if (packageRequest.userId === currentUserId) {
+    return true;
+  }
+
+  // If no userId or doesn't match, try email matching
+  const currentUser = await ctx.db.get(currentUserId);
+  if (currentUser) {
+    const packageEmail = packageRequest.customerInfo.email.toLowerCase().trim();
+    const userEmail = currentUser.email?.toLowerCase().trim();
+    
+    if (userEmail && packageEmail === userEmail) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Get a specific package proposal by ID
  */
 export const getPackageProposal = query({
@@ -45,12 +72,92 @@ export const getPackageProposal = query({
     if (currentUserRole === "traveler") {
       // Check if this user made the package request
       const packageRequest = await ctx.db.get(proposal.packageRequestId);
-      if (packageRequest && packageRequest.userId === currentUserId) {
-        return proposal;
+      if (packageRequest) {
+        const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+        if (hasAccess) {
+          return proposal;
+        }
       }
     }
 
     throw new Error("Acesso negado a esta proposta");
+  },
+});
+
+/**
+ * Get a specific package proposal by ID with error handling
+ */
+export const getPackageProposalWithAuth = query({
+  args: {
+    id: v.id("packageProposals"),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    data: v.union(v.null(), v.any()),
+    error: v.optional(v.string()),
+    errorType: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      return {
+        success: false,
+        data: null,
+        error: "Usuário não autenticado",
+        errorType: "unauthenticated"
+      };
+    }
+
+    const proposal = await ctx.db.get(args.id);
+    if (!proposal || !proposal.isActive) {
+      return {
+        success: false,
+        data: null,
+        error: "Proposta não encontrada",
+        errorType: "not_found"
+      };
+    }
+
+    // Check permissions
+    if (currentUserRole === "master") {
+      return {
+        success: true,
+        data: proposal,
+      };
+    }
+
+    if (currentUserRole === "partner" || currentUserRole === "employee") {
+      // Can view proposals they created or belong to their organization
+      if (proposal.adminId === currentUserId || proposal.partnerId === currentUserId) {
+        return {
+          success: true,
+          data: proposal,
+        };
+      }
+    }
+
+    if (currentUserRole === "traveler") {
+      // Check if this user made the package request
+      const packageRequest = await ctx.db.get(proposal.packageRequestId);
+      if (packageRequest) {
+        const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+        if (hasAccess) {
+          return {
+            success: true,
+            data: proposal,
+          };
+        }
+      }
+    }
+
+    return {
+      success: false,
+      data: null,
+      error: "Acesso negado a esta proposta",
+      errorType: "access_denied"
+    };
   },
 });
 
@@ -91,10 +198,25 @@ export const listPackageProposals = query({
         .query("packageProposals")
         .withIndex("by_partner", q => q.eq("partnerId", currentUserId));
     } else {
-      const userPackageRequests = await ctx.db
+      // For travelers, get package requests by userId and email
+      const currentUser = await ctx.db.get(currentUserId);
+      const userEmail = currentUser?.email?.toLowerCase().trim();
+      
+      let userPackageRequests = await ctx.db
         .query("packageRequests")
         .withIndex("by_user", q => q.eq("userId", currentUserId))
         .collect();
+      
+      // Also get requests by email if available
+      if (userEmail) {
+        const allPackageRequests = await ctx.db.query("packageRequests").collect();
+        const emailMatchRequests = allPackageRequests.filter(req => 
+          req.customerInfo.email.toLowerCase().trim() === userEmail &&
+          !userPackageRequests.some(existing => existing._id === req._id)
+        );
+        userPackageRequests = [...userPackageRequests, ...emailMatchRequests];
+      }
+      
       const requestIds = userPackageRequests.map(req => req._id);
       if (requestIds.length === 0) return { proposals: [], total: 0, hasMore: false };
       query = ctx.db
@@ -153,10 +275,25 @@ export const listPackageProposals = query({
         .query("packageProposals")
         .withIndex("by_partner", q => q.eq("partnerId", currentUserId));
     } else {
-      const userPackageRequestsForCount = await ctx.db
+      // For travelers, get package requests by userId and email (same logic as above)
+      const currentUserForCount = await ctx.db.get(currentUserId);
+      const userEmailForCount = currentUserForCount?.email?.toLowerCase().trim();
+      
+      let userPackageRequestsForCount = await ctx.db
         .query("packageRequests")
         .withIndex("by_user", q => q.eq("userId", currentUserId))
         .collect();
+      
+      // Also get requests by email if available
+      if (userEmailForCount) {
+        const allPackageRequestsForCount = await ctx.db.query("packageRequests").collect();
+        const emailMatchRequestsForCount = allPackageRequestsForCount.filter(req => 
+          req.customerInfo.email.toLowerCase().trim() === userEmailForCount &&
+          !userPackageRequestsForCount.some(existing => existing._id === req._id)
+        );
+        userPackageRequestsForCount = [...userPackageRequestsForCount, ...emailMatchRequestsForCount];
+      }
+      
       const requestIdsForCount = userPackageRequestsForCount.map(req => req._id);
       if (requestIdsForCount.length === 0) {
         // Return early since we already know the total is 0
@@ -235,8 +372,13 @@ export const getProposalsForRequest = query({
     }
 
     // Check permissions
-    if (currentUserRole === "traveler" && packageRequest.userId !== currentUserId) {
-      throw new Error("Acesso negado");
+    if (currentUserRole === "traveler") {
+      // For travelers, check both userId (if exists) and email match
+      const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+      
+      if (!hasAccess) {
+        throw new Error("Acesso negado");
+      }
     }
 
     if (currentUserRole === "partner" || currentUserRole === "employee") {
@@ -564,7 +706,13 @@ export const getProposalActivity = query({
         }
       } else if (currentUserRole === "traveler") {
         const packageRequest = await ctx.db.get(proposal.packageRequestId);
-        if (!packageRequest || packageRequest.userId !== currentUserId) {
+        if (!packageRequest) {
+          throw new Error("Acesso negado");
+        }
+        
+        const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+        
+        if (!hasAccess) {
           throw new Error("Acesso negado");
         }
       }
@@ -731,26 +879,3 @@ export const getProposalStats = query({
   },
 });
 
-/**
- * Get proposal for customer viewing (public access)
- */
-export const getProposalForCustomer = query({
-  args: {
-    proposalId: v.id("packageProposals"),
-  },
-  returns: v.union(v.null(), v.any()),
-  handler: async (ctx, args) => {
-    const proposal = await ctx.db.get(args.proposalId);
-    
-    if (!proposal) {
-      return null;
-    }
-
-    // Only return proposals that have been sent to customers
-    if (!["sent", "viewed", "under_negotiation", "accepted", "rejected", "expired"].includes(proposal.status)) {
-      return null;
-    }
-
-    return proposal;
-  },
-});

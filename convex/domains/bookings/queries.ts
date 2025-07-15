@@ -36,6 +36,7 @@ export const getUserActivityBookings = query({
         phone: v.string(),
       }),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
@@ -121,6 +122,7 @@ export const getUserEventBookings = query({
       quantity: v.number(),
       totalPrice: v.number(),
       discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
       confirmationCode: v.string(),
@@ -130,6 +132,7 @@ export const getUserEventBookings = query({
         phone: v.string(),
       }),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),

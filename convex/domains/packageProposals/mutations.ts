@@ -14,6 +14,33 @@ import {
 } from "./types";
 
 /**
+ * Helper function to check if a traveler has access to a package request
+ */
+async function checkTravelerAccessToPackageRequest(
+  ctx: any,
+  packageRequest: any,
+  currentUserId: Id<"users">
+): Promise<boolean> {
+  // First try userId if it exists
+  if (packageRequest.userId === currentUserId) {
+    return true;
+  }
+
+  // If no userId or doesn't match, try email matching
+  const currentUser = await ctx.db.get(currentUserId);
+  if (currentUser) {
+    const packageEmail = packageRequest.customerInfo.email.toLowerCase().trim();
+    const userEmail = currentUser.email?.toLowerCase().trim();
+    
+    if (userEmail && packageEmail === userEmail) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Create a new package proposal
  */
 export const createPackageProposal = mutation({
@@ -64,8 +91,8 @@ export const createPackageProposal = mutation({
       summary: args.summary,
       components: args.components,
       subtotal: args.subtotal,
-      taxes: args.taxes,
-      fees: args.fees,
+      taxes: args.taxes || 0,
+      fees: args.fees || 0,
       discount: args.discount,
       totalPrice: args.totalPrice,
       currency: args.currency,
@@ -757,6 +784,209 @@ export const markProposalAsViewed = mutation({
     return {
       success: true,
       message: "Proposta marcada como visualizada",
+    };
+  },
+});
+
+/**
+ * Accept a proposal (for travelers)
+ */
+export const acceptProposal = mutation({
+  args: {
+    proposalId: v.id("packageProposals"),
+    customerFeedback: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Only travelers can accept proposals
+    if (currentUserRole !== "traveler") {
+      throw new Error("Apenas clientes podem aceitar propostas");
+    }
+
+    // Get the proposal
+    const proposal = await ctx.db.get(args.proposalId);
+    if (!proposal || !proposal.isActive) {
+      throw new Error("Proposta não encontrada");
+    }
+
+    // Check if proposal is in a state that can be accepted
+    if (!["sent", "viewed", "under_negotiation"].includes(proposal.status)) {
+      throw new Error("Esta proposta não pode mais ser aceita");
+    }
+
+    // Check if proposal is expired
+    if (proposal.validUntil < Date.now()) {
+      throw new Error("Esta proposta expirou e não pode mais ser aceita");
+    }
+
+    // Check permissions - verify this traveler can accept this proposal
+    const packageRequest = await ctx.db.get(proposal.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Solicitação de pacote não encontrada");
+    }
+
+    const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+    if (!hasAccess) {
+      throw new Error("Você não tem permissão para aceitar esta proposta");
+    }
+
+    const now = Date.now();
+
+    // Update proposal status to accepted
+    await ctx.db.patch(args.proposalId, {
+      status: "accepted",
+      acceptedAt: now,
+      customerFeedback: args.customerFeedback,
+      updatedAt: now,
+      respondedAt: now,
+      negotiationRounds: proposal.negotiationRounds + 1,
+    });
+
+    // Update package request status to confirmed
+    await ctx.db.patch(proposal.packageRequestId, {
+      status: "confirmed",
+      updatedAt: now,
+    });
+
+    // Create audit log
+    await createAuditLog(ctx, {
+      event: {
+        type: "package_proposal_accept",
+        action: "Proposta aceita pelo cliente",
+        category: "package_management",
+        severity: "medium",
+      },
+      resource: {
+        type: "package_proposal",
+        id: args.proposalId.toString(),
+        name: proposal.title,
+        partnerId: proposal.partnerId,
+      },
+      metadata: {
+        proposalNumber: proposal.proposalNumber,
+        totalPrice: proposal.totalPrice,
+        acceptedAt: now,
+        customerFeedback: args.customerFeedback,
+      },
+      status: "success",
+    });
+
+    return {
+      success: true,
+      message: "Proposta aceita com sucesso! O parceiro será notificado.",
+    };
+  },
+});
+
+/**
+ * Send a question about a proposal (for travelers)
+ */
+export const sendProposalQuestion = mutation({
+  args: {
+    proposalId: v.id("packageProposals"),
+    message: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+    conversationId: v.optional(v.id("packageRequestMessages")),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Only travelers can send questions
+    if (currentUserRole !== "traveler") {
+      throw new Error("Apenas clientes podem enviar perguntas");
+    }
+
+    // Get the proposal
+    const proposal = await ctx.db.get(args.proposalId);
+    if (!proposal || !proposal.isActive) {
+      throw new Error("Proposta não encontrada");
+    }
+
+    // Check permissions - verify this traveler can send questions about this proposal
+    const packageRequest = await ctx.db.get(proposal.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Solicitação de pacote não encontrada");
+    }
+
+    const hasAccess = await checkTravelerAccessToPackageRequest(ctx, packageRequest, currentUserId);
+    if (!hasAccess) {
+      throw new Error("Você não tem permissão para enviar perguntas sobre esta proposta");
+    }
+
+    // Get current user details
+    const currentUser = await ctx.db.get(currentUserId);
+    if (!currentUser) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const now = Date.now();
+
+    // Create a message in the packageRequestMessages table
+    const messageId = await ctx.db.insert("packageRequestMessages", {
+      packageRequestId: proposal.packageRequestId,
+      userId: currentUserId,
+      senderName: currentUser.name || packageRequest.customerInfo.name,
+      senderEmail: currentUser.email || packageRequest.customerInfo.email,
+      subject: `Pergunta sobre proposta #${proposal.proposalNumber}`,
+      message: args.message,
+      status: "sent",
+      priority: "medium",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Update proposal to indicate there's a new question
+    await ctx.db.patch(args.proposalId, {
+      status: "under_negotiation",
+      customerFeedback: args.message,
+      updatedAt: now,
+      respondedAt: now,
+      negotiationRounds: proposal.negotiationRounds + 1,
+    });
+
+    // Create audit log
+    await createAuditLog(ctx, {
+      event: {
+        type: "package_proposal_viewed",
+        action: "Cliente enviou pergunta sobre a proposta",
+        category: "communication",
+        severity: "low",
+      },
+      resource: {
+        type: "package_proposal",
+        id: args.proposalId.toString(),
+        name: proposal.title,
+        partnerId: proposal.partnerId,
+      },
+      metadata: {
+        proposalNumber: proposal.proposalNumber,
+        messagePreview: args.message.substring(0, 100),
+      },
+      status: "success",
+    });
+
+    return {
+      success: true,
+      message: "Pergunta enviada com sucesso! O parceiro será notificado.",
+      conversationId: messageId,
     };
   },
 });

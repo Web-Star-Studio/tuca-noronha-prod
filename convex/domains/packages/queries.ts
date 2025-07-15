@@ -837,6 +837,8 @@ export const getMyPackageRequests = query({
     specialRequirements: v.optional(v.string()),
     status: v.string(),
     adminNotes: v.optional(v.string()),
+    proposalCount: v.optional(v.number()),
+    lastProposalSent: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })),

@@ -1600,6 +1600,30 @@ export default defineSchema({
       feature: v.optional(v.string()),         // Feature específica usada
       experiment: v.optional(v.string()),      // Experimento A/B ativo
       
+      // Informações de arquivo (para operações de upload/download)
+      fileName: v.optional(v.string()),        // Nome do arquivo
+      fileSize: v.optional(v.number()),        // Tamanho do arquivo em bytes
+      fileType: v.optional(v.string()),        // Tipo MIME do arquivo
+      
+      // Informações de proposta/comunicação
+      currency: v.optional(v.string()),        // Moeda utilizada
+      customMessage: v.optional(v.string()),   // Mensagem personalizada
+      proposalNumber: v.optional(v.string()),  // Número da proposta
+      sendEmail: v.optional(v.boolean()),      // Se enviou email
+      sendNotification: v.optional(v.boolean()), // Se enviou notificação
+      totalPrice: v.optional(v.number()),      // Preço total
+      acceptedAt: v.optional(v.number()),      // Timestamp de aceitação
+      customerFeedback: v.optional(v.string()), // Feedback do cliente
+      updatedFields: v.optional(v.array(v.string())), // Campos atualizados
+      oldStatus: v.optional(v.string()),       // Status anterior
+      newStatus: v.optional(v.string()),       // Novo status
+      statusChanged: v.optional(v.boolean()),  // Se o status foi alterado
+      approved: v.optional(v.boolean()),       // Se foi aprovado
+      approvalNotes: v.optional(v.string()),   // Notas de aprovação
+      bookingId: v.optional(v.string()),       // ID da reserva
+      paymentMethod: v.optional(v.string()),   // Método de pagamento
+      notes: v.optional(v.string()),           // Notas gerais
+      
       // Arquivamento
       archived: v.optional(v.boolean()),       // Se o log foi arquivado
       archivedAt: v.optional(v.number()),      // Timestamp do arquivamento
@@ -2272,8 +2296,8 @@ export default defineSchema({
     
     // Pricing
     subtotal: v.number(),                         // Subtotal before taxes/fees
-    taxes: v.number(),                            // Tax amount
-    fees: v.number(),                             // Additional fees
+    taxes: v.optional(v.number()),                // Tax amount
+    fees: v.optional(v.number()),                 // Additional fees
     discount: v.number(),                         // Discount amount
     totalPrice: v.number(),                       // Final total price
     currency: v.string(),                         // Currency code

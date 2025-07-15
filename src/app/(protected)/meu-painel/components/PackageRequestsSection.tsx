@@ -111,6 +111,33 @@ const PackageRequestsSection: React.FC = () => {
     }
   };
 
+  // Component to render proposal button for a request
+  const ProposalButton: React.FC<{ requestId: string }> = ({ requestId }) => {
+    const proposals = useQuery(
+      api.domains.packageProposals.queries.getProposalsForRequest,
+      { packageRequestId: requestId as any }
+    );
+
+    if (!proposals || proposals.length === 0) {
+      return null;
+    }
+
+    // Get the most recent proposal
+    const latestProposal = proposals[0];
+
+    const handleViewProposal = () => {
+      // Navigate to the proposal page
+      window.open(`/propostas/${latestProposal._id}`, '_blank');
+    };
+
+    return (
+      <Button size="sm" onClick={handleViewProposal}>
+        <Eye className="w-4 h-4 mr-2" />
+        Ver Proposta
+      </Button>
+    );
+  };
+
   useEffect(() => {
     if (getPackageRequestByNumber && trackingNumber.trim()) {
       setSearchResults(getPackageRequestByNumber);
@@ -363,10 +390,7 @@ const PackageRequestsSection: React.FC = () => {
                     Chat
                   </Button>
                   {searchResults.status === "proposal_sent" && (
-                    <Button size="sm">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver Proposta
-                    </Button>
+                    <ProposalButton requestId={searchResults._id} />
                   )}
                 </div>
               </CardContent>
@@ -440,10 +464,7 @@ const PackageRequestsSection: React.FC = () => {
                           Chat
                         </Button>
                         {request.status === "proposal_sent" && (
-                          <Button size="sm">
-                            <Eye className="w-4 h-4 mr-2" />
-                            Ver Proposta
-                          </Button>
+                          <ProposalButton requestId={request._id} />
                         )}
                       </div>
                     </CardContent>

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { PackageProposalCreationForm } from "@/components/dashboard/PackageProposalCreationForm";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { 
   PlusIcon, 
   MagnifyingGlassIcon, 
@@ -23,7 +24,9 @@ import {
   CheckCircleIcon,
   XMarkIcon,
   ClockIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  PencilIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 
@@ -45,10 +48,14 @@ interface ProposalFilters {
 }
 
 export default function PackageProposalsPage() {
+  const { user } = useCurrentUser();
   const [filters, setFilters] = useState<ProposalFilters>({});
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Queries
   const proposals = useQuery(api.domains.packageProposals.queries.listPackageProposals, {
@@ -73,6 +80,7 @@ export default function PackageProposalsPage() {
   // Mutations
   const sendProposal = useMutation(api.domains.packageProposals.mutations.sendPackageProposal);
   const updateProposal = useMutation(api.domains.packageProposals.mutations.updatePackageProposal);
+  const deleteProposal = useMutation(api.domains.packageProposals.mutations.deletePackageProposal);
 
   const statusConfig = {
     draft: { label: "Rascunho", color: "bg-gray-500", icon: DocumentTextIcon },
@@ -91,6 +99,18 @@ export default function PackageProposalsPage() {
     normal: { label: "Normal", color: "bg-blue-500" },
     high: { label: "Alta", color: "bg-orange-500" },
     urgent: { label: "Urgente", color: "bg-red-500" },
+  };
+
+  // Check if user can edit/delete a proposal
+  const canEditProposal = (proposal: any) => {
+    if (!user) return false;
+    return user.role === "master" || proposal.adminId === user._id;
+  };
+
+  const canDeleteProposal = (proposal: any) => {
+    if (!user) return false;
+    return (user.role === "master" || (user.role === "partner" && proposal.adminId === user._id)) 
+           && !proposal.convertedToBooking;
   };
 
   const handleSendProposal = async (proposalId: Id<"packageProposals">) => {
@@ -113,6 +133,37 @@ export default function PackageProposalsPage() {
     setShowViewDialog(true);
   };
 
+  const handleEditProposal = (proposal: any) => {
+    // Navigate to edit page
+    window.open(`/admin/dashboard/propostas-pacotes/editar/${proposal._id}`, '_blank');
+  };
+
+  const handleDeleteProposal = (proposal: any) => {
+    setSelectedProposal(proposal);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedProposal) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteProposal({
+        id: selectedProposal._id,
+        reason: deleteReason.trim() || "Excluída pelo administrador",
+      });
+      toast.success("Proposta excluída com sucesso!");
+      setShowDeleteDialog(false);
+      setSelectedProposal(null);
+      setDeleteReason("");
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      toast.error("Erro ao excluir proposta");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const stats: ProposalStats = proposalStats || {
     total: 0,
     pending: 0,
@@ -122,6 +173,9 @@ export default function PackageProposalsPage() {
     totalValue: 0,
     conversionRate: 0,
   };
+
+  // Get active filters count
+  const activeFiltersCount = Object.values(filters).filter(Boolean).length;
 
   return (
     <div className="space-y-6">
@@ -184,7 +238,14 @@ export default function PackageProposalsPage() {
           {/* Filters */}
           <Card>
             <CardHeader>
-              <CardTitle>Filtros</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Filtros
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -202,18 +263,74 @@ export default function PackageProposalsPage() {
                   value={filters.status || "all"}
                   onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === "all" ? undefined : value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={filters.status ? "bg-blue-50 border-blue-200" : ""}>
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os Status</SelectItem>
-                    <SelectItem value="draft">Rascunho</SelectItem>
-                    <SelectItem value="review">Em Revisão</SelectItem>
-                    <SelectItem value="sent">Enviada</SelectItem>
-                    <SelectItem value="viewed">Visualizada</SelectItem>
-                    <SelectItem value="under_negotiation">Em Negociação</SelectItem>
-                    <SelectItem value="accepted">Aceita</SelectItem>
-                    <SelectItem value="rejected">Rejeitada</SelectItem>
+                    <SelectItem value="all">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Todos os Status</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="draft">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Rascunho</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "draft").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="review">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Em Revisão</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "review").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="sent">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Enviada</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "sent").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="viewed">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Visualizada</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "viewed").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="under_negotiation">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Em Negociação</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "under_negotiation").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="accepted">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Aceita</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "accepted").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="rejected">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Rejeitada</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.status === "rejected").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -221,22 +338,68 @@ export default function PackageProposalsPage() {
                   value={filters.priority || "all"}
                   onValueChange={(value) => setFilters(prev => ({ ...prev, priority: value === "all" ? undefined : value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={filters.priority ? "bg-blue-50 border-blue-200" : ""}>
                     <SelectValue placeholder="Prioridade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas as Prioridades</SelectItem>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                    <SelectItem value="urgent">Urgente</SelectItem>
+                    <SelectItem value="all">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Todas as Prioridades</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="low">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Baixa</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.priority === "low").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="normal">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Normal</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.priority === "normal").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="high">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Alta</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.priority === "high").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="urgent">
+                      <div className="flex items-center justify-between w-full">
+                        <span>Urgente</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {proposals?.proposals?.filter(p => p.priority === "urgent").length || 0}
+                        </Badge>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Button onClick={() => setShowCreateDialog(true)}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Nova Proposta
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowCreateDialog(true)} className="flex-1">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Nova Proposta
+                  </Button>
+                  {activeFiltersCount > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setFilters({})}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -311,6 +474,30 @@ export default function PackageProposalsPage() {
                             <EyeIcon className="h-4 w-4 mr-1" />
                             Ver
                           </Button>
+                          
+                          {canEditProposal(proposal) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditProposal(proposal)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <PencilIcon className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                          )}
+                          
+                          {canDeleteProposal(proposal) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteProposal(proposal)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <TrashIcon className="h-4 w-4 mr-1" />
+                              Excluir
+                            </Button>
+                          )}
                           
                           {proposal.status === "draft" && (
                             <Button
@@ -449,6 +636,49 @@ export default function PackageProposalsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir a proposta "{selectedProposal?.title}"?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Motivo da exclusão (opcional)</label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Descreva o motivo da exclusão..."
+                className="w-full mt-1 p-2 border rounded-md text-sm"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Excluindo..." : "Excluir Proposta"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* View Proposal Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>

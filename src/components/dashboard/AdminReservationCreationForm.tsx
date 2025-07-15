@@ -124,12 +124,11 @@ export function AdminReservationCreationForm() {
   const createReservation = useMutation(api.domains.adminReservations.mutations.createAdminReservation);
   
   const steps = [
-    { title: 'Tipo de Serviço', component: AssetTypeStep },
     { title: 'Seleção de Serviço', component: AssetSelectionStep },
-    { title: 'Dados do Cliente', component: CustomerDataStep },
+    { title: 'Dados do Cliente', component: TravelerSelectionStep },
     { title: 'Detalhes da Reserva', component: ReservationDetailsStep },
     { title: 'Pagamento', component: PaymentConfigurationStep },
-    { title: 'Revisão', component: ReviewStep },
+    { title: 'Revisão', component: ConfirmationStep },
   ];
 
   const handleNext = (data: Partial<AdminReservationData>) => {
@@ -272,6 +271,7 @@ export function AdminReservationCreationForm() {
       <CurrentStepComponent
         data={reservationData}
         onNext={handleNext}
+        onComplete={handleNext}
         onBack={handleBack}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
