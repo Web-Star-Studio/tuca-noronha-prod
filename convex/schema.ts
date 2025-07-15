@@ -586,6 +586,7 @@ export default defineSchema({
     isActive: v.boolean(),                              // Status ativo/inativo
     isFeatured: v.boolean(),                            // Status destacado
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
+    price: v.optional(v.number()),                       // Preço por reserva (opcional)
     // Stripe integration fields
     stripeProductId: v.optional(v.string()),
     stripePriceId: v.optional(v.string()),
@@ -921,7 +922,7 @@ export default defineSchema({
     additionalOptions: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
     partnerNotes: v.optional(v.string()), // Notes from partner/employee
-    confirmationCode: v.optional(v.string()), // Unique confirmation code
+    confirmationCode: v.string(), // Unique confirmation code
     customerInfo: v.optional(v.object({     // Customer contact information
       name: v.string(),
       email: v.string(),

@@ -191,4 +191,19 @@ export const isMaintenanceMode = query({
 
     return setting?.value === true;
   },
+});
+
+// Query para buscar a taxa padrão de parceiros
+export const getDefaultPartnerFee = query({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const setting = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "defaultPartnerFeePercentage"))
+      .unique();
+
+    // Retorna o valor configurado ou 15% como padrão
+    return setting?.value as number || 15;
+  },
 }); 

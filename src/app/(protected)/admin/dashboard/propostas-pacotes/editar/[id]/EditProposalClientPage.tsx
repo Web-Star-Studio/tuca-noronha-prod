@@ -14,7 +14,7 @@ import {
   ArrowLeftIcon, 
   FileText,
   Loader2,
-  ShieldExclamationIcon
+  ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,7 +65,7 @@ export default function EditProposalClientPage({ proposalId }: EditProposalClien
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-              <ShieldExclamationIcon className="h-10 w-10 text-red-600" />
+              <ShieldAlert className="h-10 w-10 text-red-600" />
             </div>
             <CardTitle className="text-2xl font-bold text-red-800">
               Acesso Negado

@@ -2,6 +2,7 @@ import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { Doc, Id } from "../../_generated/dataModel";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../rbac/utils";
+import { generateConfirmationCode } from "../bookings/utils";
 
 // Create a new vehicle
 export const createVehicle = mutation({
@@ -211,6 +212,14 @@ export const createVehicleBooking = mutation({
     additionalDrivers: v.optional(v.number()),
     additionalOptions: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
+    customerInfo: v.optional(v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+    })),
+    couponCode: v.optional(v.string()),
+    discountAmount: v.optional(v.number()),
+    finalAmount: v.optional(v.number()),
   },
   returns: v.id("vehicleBookings"),
   handler: async (ctx, args) => {
@@ -269,8 +278,14 @@ export const createVehicleBooking = mutation({
     // Create booking
     const currentTime = Date.now();
     
+    // Generate confirmation code - convert timestamp to date string
+    const startDateString = new Date(args.startDate).toISOString().split('T')[0];
+    const customerName = args.customerInfo?.name || 'Guest';
+    const confirmationCode = generateConfirmationCode(startDateString, customerName);
+    
     const bookingId = await ctx.db.insert("vehicleBookings", {
       ...args,
+      confirmationCode,
       createdAt: currentTime,
       updatedAt: currentTime,
     });

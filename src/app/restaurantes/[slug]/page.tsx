@@ -32,7 +32,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RestaurantReservationForm as ImprovedRestaurantReservationForm } from "@/components/bookings/ImprovedRestaurantReservationForm";
+import { RestaurantReservationForm } from "@/components/bookings/RestaurantReservationForm";
 import { ReviewStats } from "@/components/reviews/ReviewStats";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { useReviewStats } from "@/lib/hooks/useReviews";
@@ -324,13 +324,16 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                 <Card className="shadow-lg">
                   <CardContent className="p-6">
                     {isAuthenticated ? (
-                      <ImprovedRestaurantReservationForm
+                      <RestaurantReservationForm
                         restaurantId={restaurant._id as Id<"restaurants">}
                         restaurant={{
                           name: restaurant.name,
                           address: restaurant.address,
                           maximumPartySize: restaurant.maximumPartySize,
                           acceptsReservations: restaurant.acceptsReservations,
+                          price: restaurant.price,
+                          acceptsOnlinePayment: restaurant.acceptsOnlinePayment,
+                          requiresUpfrontPayment: restaurant.requiresUpfrontPayment,
                         }}
                       />
                     ) : (

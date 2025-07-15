@@ -29,13 +29,13 @@ export function SubscriptionManager() {
   // Get subscription details
   const subscription = useQuery(
     api.domains.subscriptions.queries.getCurrentSubscription,
-    user ? {} : "skip"
+    user ? {} : undefined
   );
   
   // Get payment history
   const payments = useQuery(
     api.domains.subscriptions.queries.getPaymentHistory,
-    user ? {} : "skip"
+    user ? {} : undefined
   );
   
   // Create portal session action

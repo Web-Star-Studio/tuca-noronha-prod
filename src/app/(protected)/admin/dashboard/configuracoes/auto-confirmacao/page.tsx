@@ -182,7 +182,7 @@ export default function AutoConfirmacaoPage() {
     selectedAssetType ? 
       api.domains.shared.queries.getAssetsByType : 
       "skip",
-    selectedAssetType ? { assetType: selectedAssetType as any } : "skip"
+    selectedAssetType ? { assetType: selectedAssetType as any } : undefined
   );
   
   const handleSave = async () => {

@@ -203,26 +203,43 @@ export const createCheckoutSession = action({
       }
 
       if (assetOwnerId) {
-        // Look up partner information
-        const partner = await ctx.runQuery(internal.domains.partners.queries.getPartnerByUserId, {
+        // Check if the asset owner is a master - masters don't pay platform fees
+        const assetOwner = await ctx.runQuery(internal.domains.users.queries.getUserById, {
           userId: assetOwnerId,
         });
-
-        if (partner && partner.stripeAccountId && partner.onboardingStatus === "completed") {
-          stripeAccountId = partner.stripeAccountId;
+        
+        if (assetOwner && assetOwner.role === "master") {
+          // Masters don't have platform fees
+          stripeAccountId = undefined;
+          applicationFeeAmount = 0;
           
-          // Calculate application fee based on partner's fee percentage
-          applicationFeeAmount = Math.floor(finalAmount * (partner.feePercentage / 100));
-          
-          console.log(`🔍 Using Direct Charge for partner:`, {
-            partnerId: partner._id,
-            stripeAccountId,
-            feePercentage: partner.feePercentage,
-            applicationFeeAmount,
-            finalAmount,
+          console.log(`✅ Asset owner is master - no platform fee applied:`, {
+            assetOwnerId,
+            role: assetOwner.role,
+            applicationFeeAmount: 0,
           });
         } else {
-          console.log(`⚠️ Partner not found or not onboarded for asset owner:`, assetOwnerId);
+          // Look up partner information
+          const partner = await ctx.runQuery(internal.domains.partners.queries.getPartnerByUserId, {
+            userId: assetOwnerId,
+          });
+
+          if (partner && partner.stripeAccountId && partner.onboardingStatus === "completed") {
+            stripeAccountId = partner.stripeAccountId;
+            
+            // Calculate application fee based on partner's fee percentage
+            applicationFeeAmount = Math.floor(finalAmount * (partner.feePercentage / 100));
+            
+            console.log(`🔍 Using Direct Charge for partner:`, {
+              partnerId: partner._id,
+              stripeAccountId,
+              feePercentage: partner.feePercentage,
+              applicationFeeAmount,
+              finalAmount,
+            });
+          } else {
+            console.log(`⚠️ Partner not found or not onboarded for asset owner:`, assetOwnerId);
+          }
         }
       }
 
@@ -247,22 +264,39 @@ export const createCheckoutSession = action({
         `Reserva com desconto aplicado (Cupom: ${args.couponCode})` :
         `Reserva ${args.assetType}`;
 
-      const product = await stripe.products.create({
-        name: productName,
-        description: productDescription,
-        metadata: {
-          bookingId: args.bookingId,
-          assetType: args.assetType,
-          assetId: booking.assetId,
-          convexOrigin: "true",
-        },
-      }, stripeAccountId ? { stripeAccount: stripeAccountId } : {});
+      const product = stripeAccountId 
+        ? await stripe.products.create({
+            name: productName,
+            description: productDescription,
+            metadata: {
+              bookingId: args.bookingId,
+              assetType: args.assetType,
+              assetId: booking.assetId,
+              convexOrigin: "true",
+            },
+          }, { stripeAccount: stripeAccountId })
+        : await stripe.products.create({
+            name: productName,
+            description: productDescription,
+            metadata: {
+              bookingId: args.bookingId,
+              assetType: args.assetType,
+              assetId: booking.assetId,
+              convexOrigin: "true",
+            },
+          });
 
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: finalAmount,
-        currency: args.currency || "brl",
-      }, stripeAccountId ? { stripeAccount: stripeAccountId } : {});
+      const price = stripeAccountId
+        ? await stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(finalAmount * 100), // Convert BRL to cents
+            currency: args.currency || "brl",
+          }, { stripeAccount: stripeAccountId })
+        : await stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(finalAmount * 100), // Convert BRL to cents
+            currency: args.currency || "brl",
+          });
 
       const lineItems = [{
         price: price.id,

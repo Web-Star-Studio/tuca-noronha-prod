@@ -56,7 +56,7 @@ const HostingCard = forwardRef<HTMLDivElement, HostingCardProps>(
             <div className="flex flex-wrap gap-1 mt-3">
               {hosting.tags && hosting.tags.slice(0, 2).map((tag, index) => (
                 <span 
-                  key={index} 
+                  key={`${tag}-${index}`} 
                   className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full"
                 >
                   {tag}

@@ -140,85 +140,85 @@ export default function AdminBookingsPage() {
   const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
 
   // Fetch bookings for ALL asset types when typeFilter is "all"
+  const shouldFetchAllActivities = (typeFilter === "all" || typeFilter === "activities") && !selectedAsset;
   const allActivityBookings = useQuery(
-    (typeFilter === "all" || typeFilter === "activities") && !selectedAsset
-      ? api.domains.bookings.queries.getActivityBookings
-      : "skip",
-    {
-      paginationOpts: { numItems: 100, cursor: null },
-      ...(statusFilter !== "all" && { status: statusFilter }),
-    }
+    api.domains.bookings.queries.getActivityBookings,
+    shouldFetchAllActivities
+      ? {
+          paginationOpts: { numItems: 100, cursor: null },
+          ...(statusFilter !== "all" && { status: statusFilter }),
+        }
+      : "skip"
   );
   
+  const shouldFetchAllEvents = (typeFilter === "all" || typeFilter === "events") && !selectedAsset;
   const allEventBookings = useQuery(
-    (typeFilter === "all" || typeFilter === "events") && !selectedAsset
-      ? api.domains.bookings.queries.getEventBookings
-      : "skip",
-    {
-      paginationOpts: { numItems: 100, cursor: null },
-      ...(statusFilter !== "all" && { status: statusFilter }),
-    }
+    api.domains.bookings.queries.getEventBookings,
+    shouldFetchAllEvents
+      ? {
+          paginationOpts: { numItems: 100, cursor: null },
+          ...(statusFilter !== "all" && { status: statusFilter }),
+        }
+      : "skip"
   );
   
+  const shouldFetchAllRestaurants = (typeFilter === "all" || typeFilter === "restaurants") && !selectedAsset;
   const allRestaurantReservations = useQuery(
-    (typeFilter === "all" || typeFilter === "restaurants") && !selectedAsset
-      ? api.domains.bookings.queries.getRestaurantReservations
-      : "skip",
-    {
-      paginationOpts: { numItems: 100, cursor: null },
-      ...(statusFilter !== "all" && { status: statusFilter }),
-    }
+    api.domains.bookings.queries.getRestaurantReservations,
+    shouldFetchAllRestaurants
+      ? {
+          paginationOpts: { numItems: 100, cursor: null },
+          ...(statusFilter !== "all" && { status: statusFilter }),
+        }
+      : "skip"
   );
   
+  const shouldFetchAllVehicles = (typeFilter === "all" || typeFilter === "vehicles") && !selectedAsset;
   const allVehicleBookings = useQuery(
-    (typeFilter === "all" || typeFilter === "vehicles") && !selectedAsset
-      ? api.domains.bookings.queries.getVehicleBookings
-      : "skip",
-    {
-      paginationOpts: { numItems: 100, cursor: null },
-      ...(statusFilter !== "all" && { status: statusFilter }),
-    }
+    api.domains.bookings.queries.getVehicleBookings,
+    shouldFetchAllVehicles
+      ? {
+          paginationOpts: { numItems: 100, cursor: null },
+          ...(statusFilter !== "all" && { status: statusFilter }),
+        }
+      : "skip"
   );
 
   // Fetch bookings based on selected asset type
+  const shouldFetchActivities = selectedAsset?.assetType === "activities";
   const activityBookings = useQuery(
-    selectedAsset?.assetType === "activities" 
-      ? api.domains.bookings.queries.getActivityBookings
-      : "skip",
-    selectedAsset?.assetType === "activities" ? {
+    api.domains.bookings.queries.getActivityBookings,
+    shouldFetchActivities ? {
       paginationOpts: { numItems: 100, cursor: null },
       ...(statusFilter !== "all" && { status: statusFilter }),
       ...(selectedAsset && { organizationId: selectedAsset._id }),
     } : "skip"
   );
   
+  const shouldFetchEvents = selectedAsset?.assetType === "events";
   const eventBookings = useQuery(
-    selectedAsset?.assetType === "events"
-      ? api.domains.bookings.queries.getEventBookings
-      : "skip",
-    selectedAsset?.assetType === "events" ? {
+    api.domains.bookings.queries.getEventBookings,
+    shouldFetchEvents ? {
       paginationOpts: { numItems: 100, cursor: null },
       ...(statusFilter !== "all" && { status: statusFilter }),
       ...(selectedAsset && { organizationId: selectedAsset._id }),
     } : "skip"
   );
   
+  const shouldFetchRestaurants = selectedAsset?.assetType === "restaurants";
   const restaurantReservations = useQuery(
-    selectedAsset?.assetType === "restaurants"
-      ? api.domains.bookings.queries.getRestaurantReservations
-      : "skip",
-    selectedAsset?.assetType === "restaurants" ? {
+    api.domains.bookings.queries.getRestaurantReservations,
+    shouldFetchRestaurants ? {
       paginationOpts: { numItems: 100, cursor: null },
       ...(statusFilter !== "all" && { status: statusFilter }),
       ...(selectedAsset && { organizationId: selectedAsset._id }),
     } : "skip"
   );
   
+  const shouldFetchVehicles = selectedAsset?.assetType === "vehicles";
   const vehicleBookings = useQuery(
-    selectedAsset?.assetType === "vehicles"
-      ? api.domains.bookings.queries.getVehicleBookings
-      : "skip",
-    selectedAsset?.assetType === "vehicles" ? {
+    api.domains.bookings.queries.getVehicleBookings,
+    shouldFetchVehicles ? {
       paginationOpts: { numItems: 100, cursor: null },
       ...(statusFilter !== "all" && { status: statusFilter }),
       // Para veículos, não passamos organizationId pois queremos todos os veículos do partner

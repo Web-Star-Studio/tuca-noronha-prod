@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../../../convex/_generated/api";
 import { TaxasPartnersList } from "./components/TaxasPartnersList";
 import { TaxaHistoryDrawer } from "./components/TaxaHistoryDrawer";
@@ -10,17 +10,62 @@ import { PartnerTransactionsList } from "./components/PartnerTransactionsList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Percent, History, Download, Upload, Receipt } from "lucide-react";
+import { Percent, History, Download, Upload, Receipt, Edit } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 export default function TaxasPage() {
   const [selectedPartners, setSelectedPartners] = useState<Id<"partners">[]>([]);
   const [historyPartnerId, setHistoryPartnerId] = useState<Id<"partners"> | null>(null);
+  const [isEditingDefaultFee, setIsEditingDefaultFee] = useState(false);
+  const [newDefaultFee, setNewDefaultFee] = useState("");
+  
   const partners = useQuery(api.domains.partners.queries.listPartners);
+  const defaultFeePercentage = useQuery(api.domains.systemSettings.queries.getDefaultPartnerFee);
+  const updateDefaultFee = useMutation(api.domains.systemSettings.mutations.updateDefaultPartnerFee);
 
   const activePartners = partners?.filter(p => p.isActive && p.onboardingStatus === "completed");
+
+  const handleUpdateDefaultFee = async () => {
+    const fee = parseFloat(newDefaultFee);
+    
+    if (isNaN(fee) || fee < 0 || fee > 100) {
+      toast({
+        title: "Erro",
+        description: "A taxa deve ser um valor entre 0 e 100",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateDefaultFee({ feePercentage: fee });
+      toast({
+        title: "Taxa padrão atualizada",
+        description: `Taxa padrão para novos parceiros atualizada para ${fee}%`,
+      });
+      setIsEditingDefaultFee(false);
+      setNewDefaultFee("");
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar taxa padrão",
+        description: "Não foi possível atualizar a taxa padrão",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -95,10 +140,20 @@ export default function TaxasPage() {
             <CardTitle className="text-sm font-medium">
               Taxa Padrão
             </CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => {
+                setNewDefaultFee(defaultFeePercentage?.toString() || "15");
+                setIsEditingDefaultFee(true);
+              }}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">15%</div>
+            <div className="text-2xl font-bold">{defaultFeePercentage || 15}%</div>
             <p className="text-xs text-muted-foreground">
               para novos parceiros
             </p>
@@ -149,6 +204,46 @@ export default function TaxasPage() {
           onClose={() => setHistoryPartnerId(null)}
         />
       )}
+
+      {/* Edit Default Fee Dialog */}
+      <Dialog open={isEditingDefaultFee} onOpenChange={setIsEditingDefaultFee}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Taxa Padrão</DialogTitle>
+            <DialogDescription>
+              Configure a taxa padrão que será aplicada automaticamente a novos parceiros.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="defaultFee">Taxa Padrão (%)</Label>
+              <Input
+                id="defaultFee"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={newDefaultFee}
+                onChange={(e) => setNewDefaultFee(e.target.value)}
+                placeholder="Ex: 15"
+              />
+              <p className="text-sm text-muted-foreground">
+                Esta taxa será aplicada automaticamente quando um novo parceiro for cadastrado.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingDefaultFee(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateDefaultFee}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

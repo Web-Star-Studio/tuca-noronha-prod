@@ -62,7 +62,7 @@ const assetTypeLabels: Record<string, string> = {
 export default function UserDetailsModal({ isOpen, onClose, userId }: UserDetailsModalProps) {
   const userDetails = useQuery(
     api.domains.users.queries.getUserDetailsById,
-    userId ? { userId } : "skip"
+    userId ? { userId } : undefined
   );
 
   const formatDate = (timestamp?: number) => {

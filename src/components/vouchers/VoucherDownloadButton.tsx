@@ -34,7 +34,7 @@ export function VoucherDownloadButton({
   // Check if voucher exists for this booking
   const voucher = useQuery(
     api.domains.vouchers.queries.getVoucherByBooking, 
-    bookingId ? { bookingId, bookingType } : "skip"
+    bookingId ? { bookingId, bookingType } : undefined
   );
 
   // PDF generation action

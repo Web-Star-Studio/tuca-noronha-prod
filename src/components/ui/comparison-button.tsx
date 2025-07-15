@@ -32,13 +32,13 @@ export function ComparisonButton({
     api.packageComparison.isInComparison,
     userId ? {
       packageId: packageId as any,
-    } : "skip"
+    } : undefined
   )
 
   // Get comparison count
   const comparisonCount = useQuery(
     api.packageComparison.getComparisonCount,
-    userId ? {} : "skip"
+    userId ? {} : undefined
   )
 
   // Mutations

@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Edit, History, MoreHorizontal, Search } from "lucide-react";
+import { Edit, History, MoreHorizontal, Search, InfoIcon, AlertCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,8 @@ import {
 import { TaxaPartnerModal } from "./TaxaPartnerModal";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
 
 interface TaxasPartnersListProps {
   selectedPartners: Id<"partners">[];
@@ -117,7 +119,47 @@ export function TaxasPartnersList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPartners?.map((partner) => (
+            {!partners ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Carregando parceiros...
+                </TableCell>
+              </TableRow>
+            ) : partners.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  <div className="flex flex-col items-center gap-4">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground" />
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium">Nenhum parceiro encontrado</p>
+                      <p className="text-sm text-muted-foreground">
+                        Não há parceiros cadastrados no sistema ainda.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href="/admin/dashboard/configuracoes/taxas/debug">
+                        <Button variant="outline" size="sm">
+                          <InfoIcon className="h-4 w-4 mr-2" />
+                          Ver Diagnóstico
+                        </Button>
+                      </Link>
+                      <Link href="/admin/dashboard/usuarios">
+                        <Button size="sm">
+                          Gerenciar Usuários
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredPartners?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Nenhum parceiro encontrado com os filtros aplicados
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredPartners?.map((partner) => (
               <TableRow key={partner._id}>
                 <TableCell>
                   <Checkbox
@@ -178,7 +220,7 @@ export function TaxasPartnersList({
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )))}
           </TableBody>
         </Table>
 

@@ -583,8 +583,9 @@ export const createVehicleBooking = mutation({
     // Use finalAmount if coupon is applied, otherwise use calculated price
     const totalPrice = args.finalAmount ?? calculatedPrice;
 
-    // Generate confirmation code
-    const confirmationCode = generateConfirmationCode(args.startDate.toString(), customerInfo.name);
+    // Generate confirmation code - convert timestamp to date string
+    const startDateString = new Date(args.startDate).toISOString().split('T')[0];
+    const confirmationCode = generateConfirmationCode(startDateString, customerInfo.name);
 
     // Determine initial booking status based on payment requirement
     let initialStatus: string = BOOKING_STATUS.DRAFT;
@@ -628,6 +629,55 @@ export const createVehicleBooking = mutation({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    // Only send confirmation emails if payment is not required or not upfront
+    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !vehicle.requiresUpfrontPayment) {
+      // Send email confirmation to customer
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+        customerEmail: customerInfo.email,
+        customerName: customerInfo.name,
+        assetName: vehicle.name,
+        bookingType: "vehicle",
+        confirmationCode,
+        bookingDate: `${new Date(args.startDate).toLocaleDateString()} - ${new Date(args.endDate).toLocaleDateString()}`,
+        totalPrice: totalPrice,
+        bookingDetails: {
+          vehicleId: vehicle._id,
+          startDate: args.startDate,
+          endDate: args.endDate,
+          pickupLocation: args.pickupLocation,
+          returnLocation: args.returnLocation,
+          additionalDrivers: args.additionalDrivers,
+        },
+      });
+
+      // Send notification to partner about new booking
+      if (vehicle.ownerId) {
+        const partner = await ctx.db.get(vehicle.ownerId);
+        if (partner && partner.email) {
+        await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+          partnerEmail: partner.email,
+          partnerName: partner.name || "Parceiro",
+          customerName: customerInfo.name,
+          customerEmail: customerInfo.email,
+          customerPhone: customerInfo.phone,
+          assetName: vehicle.name,
+          bookingType: "vehicle",
+          confirmationCode,
+          bookingDate: `${new Date(args.startDate).toLocaleDateString()} - ${new Date(args.endDate).toLocaleDateString()}`,
+          totalPrice: totalPrice,
+          bookingDetails: {
+            vehicleId: vehicle._id,
+            startDate: args.startDate,
+            endDate: args.endDate,
+            pickupLocation: args.pickupLocation,
+            returnLocation: args.returnLocation,
+            additionalDrivers: args.additionalDrivers,
+          },
+        });
+        }
+      }
+    }
 
     return {
       bookingId,
@@ -2357,7 +2407,12 @@ export const updateBookingPaymentSuccess = mutation({
         .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
         .first();
         
-      booking = activityBooking || eventBooking || accommodationBooking || vehicleBooking;
+      const restaurantReservation = await ctx.db
+        .query("restaurantReservations")
+        .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
+        .first();
+        
+      booking = activityBooking || eventBooking || accommodationBooking || vehicleBooking || restaurantReservation;
     }
     // Or find by booking ID if provided
     else if (args.bookingId && args.bookingType) {
@@ -2373,6 +2428,9 @@ export const updateBookingPaymentSuccess = mutation({
           break;
         case "vehicle":
           booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
+          break;
+        case "restaurant":
+          booking = await ctx.db.get(args.bookingId as Id<"restaurantReservations">);
           break;
       }
     }
@@ -2394,7 +2452,8 @@ export const updateBookingPaymentSuccess = mutation({
       (booking._id.startsWith("activityBookings") ? "activity" :
        booking._id.startsWith("eventBookings") ? "event" :
        booking._id.startsWith("accommodationBookings") ? "accommodation" :
-       booking._id.startsWith("vehicleBookings") ? "vehicle" : "unknown");
+       booking._id.startsWith("vehicleBookings") ? "vehicle" :
+       booking._id.startsWith("restaurantReservations") ? "restaurant" : "unknown");
 
     // Generate voucher for confirmed booking
     try {
@@ -2453,7 +2512,7 @@ export const updateBookingPaymentSuccess = mutation({
           break;
         case "event":
           const event = await ctx.db.get(booking.eventId);
-          assetName = (event as any)?.name || "Evento";
+          assetName = (event as any)?.title || "Evento";
           break;
         case "accommodation":
           const accommodation = await ctx.db.get(booking.accommodationId);
@@ -2487,7 +2546,7 @@ export const updateBookingPaymentSuccess = mutation({
     }
 
     // Send confirmation emails
-    await sendBookingPaymentConfirmationEmails(ctx, booking);
+    await sendBookingPaymentConfirmationEmails(ctx, { ...booking, assetType: bookingType });
   },
 });
 
@@ -2559,8 +2618,89 @@ export const expireIncompletedBookings = mutation({
 
 // Helper function to send payment confirmation emails
 async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: any) {
-  // Implementation to send emails after successful payment
-  // This would include logic to identify booking type and send appropriate emails
+  // Get asset name based on booking type
+  let assetName = "Serviço";
+  let bookingDate = booking.date;
+  
+  // Send confirmation email to customer
+  // For restaurants, customer info is stored directly in booking fields
+  const customerEmail = booking.customerInfo?.email || booking.email;
+  const customerName = booking.customerInfo?.name || booking.name;
+  
+  if (customerEmail) {
+    
+    try {
+      switch (booking.assetType) {
+        case "activity":
+          const activity = await ctx.db.get(booking.activityId);
+          assetName = (activity as any)?.name || "Atividade";
+          break;
+        case "event":
+          const event = await ctx.db.get(booking.eventId);
+          assetName = (event as any)?.title || "Evento";
+          bookingDate = (event as any)?.date || booking.date;
+          break;
+        case "restaurant":
+          const restaurant = await ctx.db.get(booking.restaurantId);
+          assetName = (restaurant as any)?.name || "Restaurante";
+          break;
+        case "vehicle":
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          assetName = (vehicle as any)?.name || "Veículo";
+          break;
+        case "accommodation":
+          const accommodation = await ctx.db.get(booking.accommodationId);
+          assetName = (accommodation as any)?.name || "Hospedagem";
+          break;
+      }
+    } catch (error) {
+      console.error("Error getting asset name for payment confirmation email:", error);
+    }
+
+    // Send booking confirmation email
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+      customerEmail: customerEmail,
+      customerName: customerName || "Cliente",
+      assetName,
+      bookingType: booking.assetType,
+      confirmationCode: booking.confirmationCode,
+      bookingDate,
+      totalPrice: booking.totalPrice,
+      bookingDetails: {
+        bookingId: booking._id,
+        assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId || booking.accommodationId,
+        participants: booking.participants || booking.quantity,
+        date: bookingDate,
+        specialRequests: booking.specialRequests,
+      },
+    });
+  }
+
+  // Send notification email to partner
+  if (booking.partnerId) {
+    try {
+      const partner = await ctx.db.get(booking.partnerId);
+      if (partner && (partner as any).email) {
+        await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPartnerNewBookingEmail, {
+          partnerEmail: (partner as any).email,
+          partnerName: (partner as any).name || "Partner",
+          customerName: customerName || "Cliente",
+          assetName: assetName,
+          bookingType: booking.assetType,
+          confirmationCode: booking.confirmationCode,
+          bookingDate: booking.date,
+          totalPrice: booking.totalPrice,
+          bookingDetails: {
+            bookingId: booking._id,
+            participants: booking.participants || booking.quantity,
+            specialRequests: booking.specialRequests,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error sending partner notification email:", error);
+    }
+  }
 }
 
 /**

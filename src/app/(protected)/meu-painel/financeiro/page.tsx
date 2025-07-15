@@ -53,12 +53,12 @@ export default function FinanceiroPage() {
           partnerId: partner._id,
           dateRange: dateRangeForQuery,
         }
-      : "skip"
+      : undefined
   );
 
   const balance = useQuery(
     api.domains.partners.queries.getPartnerBalance,
-    partner?._id ? { partnerId: partner._id } : "skip"
+    partner?._id ? { partnerId: partner._id } : undefined
   );
 
   // Handle loading states

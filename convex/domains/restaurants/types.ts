@@ -56,6 +56,9 @@ export interface Restaurant {
   isActive: boolean;
   isFeatured: boolean;
   partnerId: Id<"users">;
+  price?: number;
+  acceptsOnlinePayment?: boolean;
+  requiresUpfrontPayment?: boolean;
 }
 
 export interface RestaurantCreator {
@@ -123,6 +126,9 @@ export interface RestaurantCreateInput {
   isActive: boolean;
   isFeatured: boolean;
   partnerId: Id<"users">;
+  price?: number;
+  acceptsOnlinePayment?: boolean;
+  requiresUpfrontPayment?: boolean;
 }
 
 export interface RestaurantUpdateInput {
@@ -180,4 +186,7 @@ export interface RestaurantUpdateInput {
   isActive?: boolean;
   isFeatured?: boolean;
   partnerId?: Id<"users">;
+  price?: number;
+  acceptsOnlinePayment?: boolean;
+  requiresUpfrontPayment?: boolean;
 } 

@@ -84,8 +84,8 @@ const PackageRequestsSection: React.FC = () => {
   }, [allPackageRequests]);
 
   const getPackageRequestByNumber = useQuery(
-    api.packages.getPackageRequestByNumber,
-    trackingNumber.trim() ? { requestNumber: trackingNumber.trim() } : "skip"
+    trackingNumber.trim() ? api.packages.getPackageRequestByNumber : undefined,
+    trackingNumber.trim() ? { requestNumber: trackingNumber.trim() } : undefined
   );
 
   const searchPackageRequest = async () => {

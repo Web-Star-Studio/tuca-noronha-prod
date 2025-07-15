@@ -17,7 +17,7 @@ const WishlistIcon = ({ isTransparent }: WishlistIconProps) => {
   // Buscar contagem de itens na wishlist
   const wishlistCount = useQuery(
     api.wishlist.getWishlistCount,
-    userId ? {} : "skip"
+    userId ? {} : undefined
   );
 
   const hasItems = wishlistCount && wishlistCount > 0;

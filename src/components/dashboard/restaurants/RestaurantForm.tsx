@@ -177,6 +177,9 @@ export function RestaurantForm({
       privatePartyInfo: "",
       isActive: true,
       isFeatured: false,
+      price: undefined,
+      acceptsOnlinePayment: false,
+      requiresUpfrontPayment: false,
     },
   });
 
@@ -899,6 +902,79 @@ export function RestaurantForm({
             />
           </div>
 
+          {/* Configurações de Pagamento */}
+          <Separator className="my-6" />
+          
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Configurações de Reserva e Pagamento</h3>
+            
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="price">Preço por Reserva (R$)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 50.00"
+                  {...register("price", { 
+                    valueAsNumber: true,
+                    validate: (value) => {
+                      if (value !== undefined && value < 0) {
+                        return "O preço não pode ser negativo";
+                      }
+                      return true;
+                    }
+                  })}
+                />
+                <p className="text-xs text-gray-500">
+                  Deixe em branco se o restaurante não cobra por reserva
+                </p>
+                {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="acceptsOnlinePayment">Aceita Pagamento Online</Label>
+                    <p className="text-xs text-gray-500">
+                      Permite pagamento via Stripe
+                    </p>
+                  </div>
+                  <Switch
+                    id="acceptsOnlinePayment"
+                    checked={watch("acceptsOnlinePayment") || false}
+                    onCheckedChange={(checked) => setValue("acceptsOnlinePayment", checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="requiresUpfrontPayment">Exige Pagamento Antecipado</Label>
+                    <p className="text-xs text-gray-500">
+                      Cobrar no momento da reserva
+                    </p>
+                  </div>
+                  <Switch
+                    id="requiresUpfrontPayment"
+                    checked={watch("requiresUpfrontPayment") || false}
+                    onCheckedChange={(checked) => setValue("requiresUpfrontPayment", checked)}
+                    disabled={!watch("acceptsOnlinePayment")}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {watch("acceptsOnlinePayment") && watch("requiresUpfrontPayment") && !watch("price") && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Atenção</AlertTitle>
+                <AlertDescription>
+                  Para exigir pagamento antecipado, você precisa definir um preço por reserva.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
 
         </TabsContent>
 

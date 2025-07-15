@@ -21,7 +21,7 @@ export function OnboardingRedirect({
   
   const shouldRedirect = useQuery(
     api.domains.users.queries.shouldRedirectToOnboarding,
-    isSignedIn ? undefined : "skip"
+    isSignedIn ? undefined : undefined
   )
 
   useEffect(() => {

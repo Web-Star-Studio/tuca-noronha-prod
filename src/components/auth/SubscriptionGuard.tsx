@@ -19,7 +19,7 @@ export function SubscriptionGuard({ children, redirectTo = "/guia-assinatura" }:
   
   const hasSubscription = useQuery(
     api.domains.subscriptions.queries.hasActiveSubscription,
-    user ? {} : "skip"
+    user ? {} : undefined
   );
 
   useEffect(() => {

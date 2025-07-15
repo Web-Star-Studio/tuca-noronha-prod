@@ -82,7 +82,7 @@ export function PermissionsManager({ employee, open, onOpenChange }: Permissions
     // Skip query if employee is in a failed/temp state or doesn't have a valid ID
     (employee._id && !employee.clerkId?.startsWith("failed_") && !employee.clerkId?.startsWith("temp_")) 
       ? { employeeId: employee._id }
-      : "skip"
+      : undefined
   );
 
   const employeeOrganizationPermissions = useQuery(
@@ -90,7 +90,7 @@ export function PermissionsManager({ employee, open, onOpenChange }: Permissions
     // Skip query if employee is in a failed/temp state or doesn't have a valid ID
     (employee._id && !employee.clerkId?.startsWith("failed_") && !employee.clerkId?.startsWith("temp_")) 
       ? { employeeId: employee._id }
-      : "skip"
+      : undefined
   );
 
   // Get available organizations

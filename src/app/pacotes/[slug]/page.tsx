@@ -35,7 +35,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
     userId && packageData ? {
       itemType: "package",
       itemId: packageData._id,
-    } : "skip"
+    } : undefined
   );
 
   // Verificar se está na comparação
@@ -43,7 +43,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
     api.packageComparison.isInComparison,
     userId && packageData ? {
       packageId: packageData._id as any,
-    } : "skip"
+    } : undefined
   );
 
   // Buscar estatísticas de avaliações
@@ -52,7 +52,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
     packageData ? {
       itemType: "package",
       itemId: packageData._id,
-    } : "skip"
+    } : undefined
   );
 
   // Buscar avaliações
@@ -62,7 +62,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
       itemType: "package",
       itemId: packageData._id,
       limit: 5,
-    } : "skip"
+    } : undefined
   );
 
   // Mutations

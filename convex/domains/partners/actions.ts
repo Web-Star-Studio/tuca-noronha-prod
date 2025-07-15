@@ -2,7 +2,7 @@
 
 import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import Stripe from "stripe";
 
@@ -53,6 +53,9 @@ export const createStripeConnectedAccount = action({
         },
       });
 
+      // Buscar a taxa padrão configurada
+      const defaultFeePercentage = await ctx.runQuery(api.domains.systemSettings.queries.getDefaultPartnerFee);
+
       // Criar partner no banco de dados
       const partnerId = await ctx.runMutation(internal.domains.partners.mutations.createPartner, {
         userId: args.userId,
@@ -60,7 +63,7 @@ export const createStripeConnectedAccount = action({
         country: args.country,
         businessType: args.businessType,
         businessName: args.businessName,
-        defaultFeePercentage: 15, // Taxa padrão de 15%
+        defaultFeePercentage, // Usar taxa configurável
       });
 
       // Gerar link de onboarding

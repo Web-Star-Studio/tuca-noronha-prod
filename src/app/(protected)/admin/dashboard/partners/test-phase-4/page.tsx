@@ -21,7 +21,7 @@ export default function TestPhase4Page() {
     currentPartner ? {
       partnerId: currentPartner._id,
       paginationOpts: { numItems: 5, cursor: null },
-    } : "skip"
+    } : undefined
   );
 
   // Mutations for testing

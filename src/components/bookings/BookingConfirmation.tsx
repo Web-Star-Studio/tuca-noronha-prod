@@ -51,8 +51,8 @@ export function BookingConfirmation({
 
   // Fetch booking details
   const booking = useQuery(
-    searchCode ? api.domains.bookings.queries.getBookingByConfirmationCode : "skip",
-    searchCode ? { confirmationCode: searchCode, type: bookingType } : "skip"
+    searchCode ? api.domains.bookings.queries.getBookingByConfirmationCode : undefined,
+    searchCode ? { confirmationCode: searchCode, type: bookingType } : undefined
   );
 
   const copyToClipboard = async (text: string) => {

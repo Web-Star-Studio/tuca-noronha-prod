@@ -108,7 +108,7 @@ export function useOrganizationAssets(assetType?: string) {
           organizationId: activeOrganization._id,
           ...(assetType && { assetType })
         } 
-      : "skip"
+      : undefined
   )
 
   return {

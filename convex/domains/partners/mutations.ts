@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, internalMutation } from "../../_generated/server";
 import { Id } from "../../_generated/dataModel";
+import { mutationWithRole } from "../rbac/mutation";
 
 // Criar um novo partner (chamado após criação no Stripe)
 export const createPartner = internalMutation({
@@ -106,7 +107,7 @@ export const updateOnboardingStatus = internalMutation({
 });
 
 // Atualizar taxa do partner (apenas admin master)
-export const updatePartnerFee = mutation({
+export const updatePartnerFee = mutationWithRole(["master"])({
   args: {
     partnerId: v.id("partners"),
     feePercentage: v.number(),
@@ -114,12 +115,6 @@ export const updatePartnerFee = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // TODO: Verificar se o usuário é admin master
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Não autorizado");
-    }
-    
     // Validar porcentagem
     if (args.feePercentage < 0 || args.feePercentage > 100) {
       throw new Error("Taxa deve estar entre 0% e 100%");
@@ -128,6 +123,11 @@ export const updatePartnerFee = mutation({
     const partner = await ctx.db.get(args.partnerId);
     if (!partner) {
       throw new Error("Partner não encontrado");
+    }
+    
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autorizado");
     }
     
     const userId = identity.subject as Id<"users">;
@@ -499,5 +499,64 @@ export const notifyPartnerNewTransaction = internalMutation({
     });
 
     return args.transactionId;
+  },
+}); 
+
+// TEMPORÁRIO: Criar partner de teste (apenas para desenvolvimento)
+export const createTestPartner = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+    email: v.string(),
+    feePercentage: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Verificar se o usuário é master
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autorizado");
+    }
+    
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+      
+    if (!currentUser || currentUser.role !== "master") {
+      throw new Error("Apenas masters podem criar partners de teste");
+    }
+    
+    const now = Date.now();
+    
+    // Criar partner de teste
+    const partnerId = await ctx.db.insert("partners", {
+      userId: args.userId,
+      stripeAccountId: `acct_test_${Date.now()}`, // ID fictício para teste
+      onboardingStatus: "completed",
+      feePercentage: args.feePercentage,
+      isActive: true,
+      capabilities: {
+        cardPayments: true,
+        transfers: true,
+      },
+      metadata: {
+        country: "BR",
+        businessType: "individual",
+        businessName: args.name,
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    
+    // Criar registro de taxa
+    await ctx.db.insert("partnerFees", {
+      partnerId,
+      feePercentage: args.feePercentage,
+      effectiveDate: now,
+      createdBy: currentUser._id,
+      reason: "Partner de teste criado para desenvolvimento",
+    });
+    
+    return partnerId;
   },
 }); 

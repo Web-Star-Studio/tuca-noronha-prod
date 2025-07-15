@@ -63,7 +63,7 @@ export function AssetSelectionStep({ data, onComplete }: AssetSelectionStepProps
     selectedAssetType ? { 
       assetType: selectedAssetType,
       searchTerm: debouncedSearchTerm,
-    } : "skip",
+    } : undefined,
     { initialNumItems: 10 }
   );
   

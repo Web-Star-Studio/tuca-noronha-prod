@@ -121,6 +121,7 @@ export const getUserEventBookings = query({
       eventLocation: v.string(),
       quantity: v.number(),
       totalPrice: v.number(),
+      couponCode: v.optional(v.string()),
       discountAmount: v.optional(v.number()),
       finalAmount: v.optional(v.number()),
       status: v.string(),

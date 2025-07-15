@@ -60,13 +60,13 @@ export default function AdminVouchersPage() {
       ? {} // Masters can see all vouchers
       : currentUser?._id 
       ? { partnerId: currentUser._id }
-      : "skip"
+      : undefined
   );
 
   // Get voucher statistics
   const stats = useQuery(
     api.domains.vouchers.queries.getVoucherStats,
-    currentUser?._id ? { partnerId: currentUser._id } : "skip"
+    currentUser?._id ? { partnerId: currentUser._id } : undefined
   );
 
   // Filter vouchers based on search and filters

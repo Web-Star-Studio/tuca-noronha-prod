@@ -241,7 +241,7 @@ export default function OnboardingPage() {
               <div className="space-y-4 pt-4">
                 <Button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

@@ -62,6 +62,9 @@ export const create = mutationWithRole(["partner", "master"])({
     isActive: v.boolean(),
     isFeatured: v.boolean(),
     partnerId: v.id("users"),
+    price: v.optional(v.number()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Verify that the partner creating the restaurant is the logged in user (unless master)
@@ -161,6 +164,9 @@ export const update = mutationWithRole(["partner", "master"])({
     isActive: v.optional(v.boolean()),
     isFeatured: v.optional(v.boolean()),
     partnerId: v.optional(v.id("users")),
+    price: v.optional(v.number()),
+    acceptsOnlinePayment: v.optional(v.boolean()),
+    requiresUpfrontPayment: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);

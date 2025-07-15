@@ -24,20 +24,25 @@ export default function BookingSuccessPage() {
   const maxRetries = 20; // Máximo de 20 tentativas (20 segundos)
 
   // Query to get booking details based on session ID or booking ID
+  const shouldQuerySession = sessionId && bookingType !== 'admin';
+  const shouldQueryConfirmation = bookingId && bookingType !== 'admin';
+  
   const bookingBySession = useQuery(
     api.domains.stripe.queries.getBookingBySessionId,
-    sessionId && bookingType !== 'admin' ? { sessionId } : "skip"
+    shouldQuerySession ? { sessionId } : "skip"
   );
 
   const bookingByConfirmation = useQuery(
     api.domains.stripe.queries.getBookingByConfirmationCode,
-    bookingId && bookingType !== 'admin' ? { confirmationCode: bookingId } : "skip"
+    shouldQueryConfirmation ? { confirmationCode: bookingId } : "skip"
   );
 
   // Add query for admin reservations
+  const shouldQueryAdmin = bookingType === 'admin' && bookingId;
+  
   const adminReservation = useQuery(
     api.domains.adminReservations.queries.getAdminReservationById,
-    bookingType === 'admin' && bookingId ? { id: bookingId as Id<"adminReservations"> } : "skip"
+    shouldQueryAdmin ? { id: bookingId as Id<"adminReservations"> } : "skip"
   );
 
 

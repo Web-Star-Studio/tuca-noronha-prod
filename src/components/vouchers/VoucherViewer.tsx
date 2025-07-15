@@ -35,7 +35,7 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       ? { voucherNumber }
       : confirmationCode
       ? { confirmationCode }
-      : "skip"
+      : undefined
   );
 
   // Log voucher data for debugging

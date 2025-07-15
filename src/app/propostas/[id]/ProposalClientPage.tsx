@@ -38,13 +38,13 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
   // Query to get package request details
   const packageRequest = useQuery(
     api.domains.packageRequests.queries.getPackageRequest,
-    proposalResult?.success && proposalResult.data ? { id: proposalResult.data.packageRequestId } : "skip"
+    proposalResult?.success && proposalResult.data ? { id: proposalResult.data.packageRequestId } : undefined
   );
 
   // Query to get admin details
   const admin = useQuery(
     api.domains.users.queries.getAdminBasicInfo,
-    proposalResult?.success && proposalResult.data ? { userId: proposalResult.data.adminId } : "skip"
+    proposalResult?.success && proposalResult.data ? { userId: proposalResult.data.adminId } : undefined
   );
 
   // Handle auth redirect

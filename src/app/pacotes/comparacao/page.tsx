@@ -20,18 +20,18 @@ export default function PackageComparisonPage() {
   // Buscar dados da comparação
   const comparison = useQuery(
     api.packageComparison.getUserComparison,
-    userId ? {} : "skip"
+    userId ? {} : undefined
   );
 
   // Buscar estatísticas de avaliações para cada pacote
   const reviewStats = useQuery(
     comparison?.packages && comparison.packages.length > 0 
       ? api.reviews.getItemReviewStats 
-      : "skip",
+      : undefined,
     comparison?.packages?.[0] ? {
       itemType: "package",
       itemId: comparison.packages[0]._id,
-    } : "skip"
+    } : undefined
   );
 
   // Mutations

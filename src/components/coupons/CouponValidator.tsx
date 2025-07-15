@@ -33,7 +33,7 @@ export default function CouponValidator({
   onCouponApplied,
   onCouponRemoved,
   disabled = false,
-  placeholder = "Digite o código do cupom",
+  placeholder = "Código",
   showOrderSummary = true,
 }: CouponValidatorProps) {
   const [isApplied, setIsApplied] = useState(false);
@@ -127,7 +127,7 @@ export default function CouponValidator({
                 disabled={disabled || isLoading || !couponCode.trim() || !isValid}
                 className="shrink-0"
               >
-                {isLoading ? "Validando..." : "Aplicar"}
+                {isLoading ? "Validando..." : "Procurar"}
               </Button>
             ) : (
               <Button

@@ -262,6 +262,7 @@ function MasterSidebar() {
     { href: "/admin/dashboard/vouchers", icon: QrCode, label: "Vouchers" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
     { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
+    { href: "/admin/dashboard/configuracoes/taxas", icon: DollarSign, label: "Taxas de Parceiros" },
     { href: "/admin/dashboard/configuracoes/auto-confirmacao", icon: CheckCircle, label: "Auto-Confirmação" },
   ]
 

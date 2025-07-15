@@ -28,15 +28,13 @@ export function PartnerTransactionsList({ partnerId }: PartnerTransactionsListPr
   
   // Get all transactions or filter by partner
   const transactions = useQuery(api.domains.partners.queries.listPartnerTransactions, {});
-  const partners = useQuery(api.domains.partners.queries.listPartners, {
-    paginationOpts: { numItems: 100, cursor: null }
-  });
+  const partners = useQuery(api.domains.partners.queries.listPartners, {});
 
   const filteredTransactions = transactions?.filter(transaction => {
     if (partnerId && transaction.partnerId !== partnerId) return false;
     if (!searchTerm) return true;
     
-    const partner = partners?.page.find(p => p._id === transaction.partnerId);
+    const partner = partners?.find(p => p._id === transaction.partnerId);
     const searchLower = searchTerm.toLowerCase();
     
     return (
@@ -123,7 +121,7 @@ export function PartnerTransactionsList({ partnerId }: PartnerTransactionsListPr
               </TableRow>
             ) : (
               filteredTransactions?.map((transaction) => {
-                const partner = partners.page.find(p => p._id === transaction.partnerId);
+                const partner = partners.find(p => p._id === transaction.partnerId);
                 
                 return (
                   <TableRow key={transaction._id}>

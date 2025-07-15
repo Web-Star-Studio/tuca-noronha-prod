@@ -45,12 +45,12 @@ export default function CardapioMesasPage() {
   
   // Buscar o restaurante pelo ID
   const restaurant = useQuery(api.domains.restaurants.queries.getById, 
-    restaurantId ? { id: restaurantId } : "skip"
+    restaurantId ? { id: restaurantId } : undefined
   )
   
   // Query para mesas
   const tables = useQuery(api.domains.restaurants.queries.getRestaurantTables, 
-    restaurantId ? { restaurantId } : "skip"
+    restaurantId ? { restaurantId } : undefined
   )
 
   // Estados para diálogos e formulários
@@ -70,7 +70,7 @@ export default function CardapioMesasPage() {
   // Query para reservas com informações de mesa
   const reservationsWithTables = useQuery(
     api.domains.restaurants.queries.getRestaurantReservationsWithTables,
-    restaurantId ? { restaurantId } : "skip"
+    restaurantId ? { restaurantId } : undefined
   )
 
   const availableTables = useQuery(
@@ -81,7 +81,7 @@ export default function CardapioMesasPage() {
       time: selectedReservation.time,
       partySize: selectedReservation.partySize,
       excludeReservationId: selectedReservation._id,
-    } : "skip"
+    } : undefined
   )
 
   // Verificação de acesso

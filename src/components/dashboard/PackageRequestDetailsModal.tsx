@@ -63,17 +63,17 @@ export default function PackageRequestDetailsModal({
 
   const requestDetails = useQuery(
     api.packages.getPackageRequestDetails,
-    requestId ? { requestId } : "skip"
+    requestId ? { requestId } : undefined
   );
   
   const requestMessages = useQuery(
     api.packages.getPackageRequestMessages,
-    requestId ? { packageRequestId: requestId } : "skip"
+    requestId ? { packageRequestId: requestId } : undefined
   );
 
   const requestProposals = useQuery(
     api.domains.packageProposals.queries.getProposalsForRequest,
-    requestId ? { packageRequestId: requestId } : "skip"
+    requestId ? { packageRequestId: requestId } : undefined
   );
 
   if (!isOpen) return null;

@@ -118,7 +118,7 @@ export default function GuiaAssinaturaPage() {
   // Check if user already has subscription
   const hasSubscription = useQuery(
     api.domains.subscriptions.queries.hasActiveSubscription,
-    user ? {} : "skip"
+    user ? {} : undefined
   );
 
   // Create checkout session action

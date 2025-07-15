@@ -17,7 +17,7 @@ export function ComparisonBar() {
   // Get user's comparison
   const comparison = useQuery(
     api.packageComparison.getUserComparison,
-    userId ? {} : "skip"
+    userId ? {} : undefined
   )
 
   const removeFromComparison = useMutation(api.packageComparison.removeFromComparison)

@@ -553,3 +553,95 @@ export const initializeMissingSettings = mutation({
     return null;
   },
 }); 
+
+// Mutation específica para configurar a taxa padrão de parceiros
+export const updateDefaultPartnerFee = mutation({
+  args: {
+    feePercentage: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Verificar se o usuário é admin master
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) {
+      throw new Error("Acesso negado: usuário não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", user.subject))
+      .unique();
+
+    if (!currentUser || currentUser.role !== "master") {
+      throw new Error("Acesso negado: apenas administradores master podem atualizar a taxa padrão");
+    }
+
+    // Validar a porcentagem
+    if (args.feePercentage < 0 || args.feePercentage > 100) {
+      throw new Error("A taxa deve estar entre 0% e 100%");
+    }
+
+    // Buscar a configuração existente
+    const existingSetting = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "defaultPartnerFeePercentage"))
+      .unique();
+
+    if (existingSetting) {
+      // Atualizar configuração existente
+      await ctx.db.patch(existingSetting._id, {
+        value: args.feePercentage,
+        type: "number",
+        lastModifiedBy: currentUser._id,
+        lastModifiedAt: Date.now(),
+      });
+    } else {
+      // Criar nova configuração
+      await ctx.db.insert("systemSettings", {
+        key: "defaultPartnerFeePercentage",
+        value: args.feePercentage,
+        type: "number",
+        category: "business",
+        description: "Taxa padrão aplicada a novos parceiros da plataforma",
+        isPublic: false,
+        createdAt: Date.now(),
+        lastModifiedBy: currentUser._id,
+        lastModifiedAt: Date.now(),
+      });
+    }
+
+    // Log da alteração
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUser._id,
+        role: currentUser.role,
+        name: currentUser.name || "Usuário",
+        email: currentUser.email,
+      },
+      event: {
+        type: "system_config_change",
+        action: `Taxa padrão de parceiros ${existingSetting ? "atualizada" : "configurada"} para ${args.feePercentage}%`,
+        category: "system_admin",
+        severity: "medium",
+      },
+      resource: {
+        type: "systemSettings",
+        id: existingSetting?._id || "defaultPartnerFeePercentage",
+        name: "Taxa Padrão de Parceiros",
+      },
+      source: {
+        ipAddress: "127.0.0.1", // TODO: Obter IP real do request
+        platform: "web",
+      },
+      status: "success",
+      metadata: {
+        before: existingSetting?.value,
+        after: args.feePercentage,
+        reason: `Taxa padrão ${existingSetting ? "alterada" : "definida"} via interface administrativa`,
+      },
+      timestamp: Date.now(),
+    });
+
+    return null;
+  },
+}); 

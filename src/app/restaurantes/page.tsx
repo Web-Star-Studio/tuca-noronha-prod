@@ -178,7 +178,7 @@ export default function RestaurantesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredRestaurants && filteredRestaurants.length > 0 ? (
                 filteredRestaurants.map((restaurant: Restaurant) => (
-                  <div key={restaurant.id} className="w-full h-full">
+                  <div key={restaurant._id || restaurant.id} className="w-full h-full">
                     <RestaurantCard restaurant={restaurant} />
                   </div>
                 ))

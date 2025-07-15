@@ -42,12 +42,15 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   const reservationsData = useQuery(api.domains.bookings.queries.getUserReservations);
   const reservation = reservationsData?.find(r => r.id === resolvedParams.id);
   
+  // Skip the query if we don't have a valid reservation yet
+  const skipPartnerQuery = !reservation || !reservation.id || !reservation.type;
+  
   const partnerDetails = useQuery(
     api.domains.bookings.queries.getReservationWithPartnerDetails,
-    reservation ? {
+    skipPartnerQuery ? "skip" : {
       reservationId: reservation.id,
       reservationType: reservation.type as any,
-    } : "skip"
+    }
   );
 
   const handleCopyCode = () => {

@@ -19,7 +19,7 @@ export default function DebugVouchersPage() {
       api.domains.vouchers.queries.getVoucherByBooking,
       reservation.status === "confirmed" || reservation.status === "completed"
         ? { bookingId: reservation.id, bookingType: reservation.type as any }
-        : "skip"
+        : undefined
     );
     return { reservation, voucher };
   }) || [];
