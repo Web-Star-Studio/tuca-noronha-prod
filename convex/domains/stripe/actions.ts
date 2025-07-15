@@ -726,8 +726,9 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
     });
 
     if (booking) {
-      // Get asset name for notification
+      // Get asset name and date for notification
       let assetName = "Serviço";
+      let bookingDate = booking.date || new Date().toISOString();
       try {
         switch (metadata.assetType) {
           case "activity":
@@ -744,6 +745,7 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
                 id: booking.eventId,
               });
               assetName = event?.title || "Evento";
+              bookingDate = event?.date || booking.date || new Date().toISOString();
             }
             break;
           case "restaurant":
@@ -790,13 +792,13 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
         assetName,
         bookingType: metadata.assetType,
         confirmationCode: booking.confirmationCode || "",
-        bookingDate: booking.date,
+        bookingDate: bookingDate,
         totalPrice: booking.totalPrice,
         bookingDetails: {
           bookingId: metadata.bookingId,
           assetId: metadata.assetId,
           participants: booking.participants,
-          date: booking.date,
+          date: bookingDate,
           specialRequests: booking.specialRequests,
         },
       });
@@ -814,13 +816,13 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
             assetName,
             bookingType: metadata.assetType,
             confirmationCode: booking.confirmationCode || "",
-            bookingDate: booking.date,
+            bookingDate: bookingDate,
             totalPrice: booking.totalPrice,
             bookingDetails: {
               bookingId: metadata.bookingId,
               assetId: metadata.assetId,
               participants: booking.participants,
-              date: booking.date,
+              date: bookingDate,
               specialRequests: booking.specialRequests,
             },
           });
@@ -842,7 +844,7 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
             assetName: `[${metadata.assetType.toUpperCase()}] ${assetName}`,
             bookingType: metadata.assetType,
             confirmationCode: booking.confirmationCode || "",
-            bookingDate: booking.date,
+            bookingDate: bookingDate,
             totalPrice: booking.totalPrice,
             bookingDetails: {
               bookingId: metadata.bookingId,
@@ -850,7 +852,7 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
               partnerId: booking.partnerId,
               partnerName: partnerForAdmin?.name,
               participants: booking.participants,
-              date: booking.date,
+              date: bookingDate,
               specialRequests: booking.specialRequests,
             },
           });

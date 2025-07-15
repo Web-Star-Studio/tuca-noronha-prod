@@ -385,6 +385,7 @@ export const createRestaurantReservation = mutation({
   returns: v.object({
     reservationId: v.id("restaurantReservations"),
     confirmationCode: v.string(),
+    totalPrice: v.number(),
   }),
   handler: async (ctx, args) => {
     // Get current user
@@ -440,6 +441,9 @@ export const createRestaurantReservation = mutation({
 
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
 
+    // Get restaurant price for calculating totalPrice
+    const totalPrice = args.finalAmount || restaurant.price || 0;
+
     // Create reservation
     const reservationId = await ctx.db.insert("restaurantReservations", {
       restaurantId: args.restaurantId,
@@ -456,6 +460,8 @@ export const createRestaurantReservation = mutation({
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
       finalAmount: args.finalAmount,
+      totalPrice: totalPrice,
+      paymentStatus: totalPrice > 0 ? PAYMENT_STATUS.PENDING : PAYMENT_STATUS.NOT_REQUIRED,
     });
 
     // Send email confirmation to customer
@@ -466,6 +472,7 @@ export const createRestaurantReservation = mutation({
       bookingType: "restaurant",
       confirmationCode,
       bookingDate: args.date + " às " + args.time,
+      totalPrice: totalPrice,
       bookingDetails: {
         restaurantId: restaurant._id,
         partySize: args.partySize,
@@ -501,6 +508,7 @@ export const createRestaurantReservation = mutation({
     return {
       reservationId,
       confirmationCode,
+      totalPrice,
     };
   },
 });
@@ -2620,7 +2628,7 @@ export const expireIncompletedBookings = mutation({
 async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: any) {
   // Get asset name based on booking type
   let assetName = "Serviço";
-  let bookingDate = booking.date;
+  let bookingDate = booking.date || new Date().toISOString();
   
   // Send confirmation email to customer
   // For restaurants, customer info is stored directly in booking fields
@@ -2664,13 +2672,13 @@ async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: a
       assetName,
       bookingType: booking.assetType,
       confirmationCode: booking.confirmationCode,
-      bookingDate,
+      bookingDate: bookingDate || new Date().toISOString(),
       totalPrice: booking.totalPrice,
       bookingDetails: {
         bookingId: booking._id,
         assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId || booking.accommodationId,
         participants: booking.participants || booking.quantity,
-        date: bookingDate,
+        date: bookingDate || new Date().toISOString(),
         specialRequests: booking.specialRequests,
       },
     });
@@ -2688,7 +2696,7 @@ async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: a
           assetName: assetName,
           bookingType: booking.assetType,
           confirmationCode: booking.confirmationCode,
-          bookingDate: booking.date,
+          bookingDate: bookingDate || new Date().toISOString(),
           totalPrice: booking.totalPrice,
           bookingDetails: {
             bookingId: booking._id,

@@ -147,6 +147,16 @@ export const getBookingForCheckout = internalQuery({
           .unique();
         if (booking) {
           asset = await ctx.db.get(booking.restaurantId);
+          // For restaurant reservations, construct customerInfo from individual fields
+          booking = {
+            ...booking,
+            customerInfo: {
+              name: booking.name,
+              email: booking.email,
+              phone: booking.phone,
+            },
+            totalPrice: booking.totalPrice || booking.finalAmount || 0,
+          };
         }
         break;
       case "accommodation":
