@@ -8,8 +8,27 @@ import Stripe from "stripe";
 
 // Inicializar Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: "2025-06-30.basil" as any,
 });
+
+// Helper function to ensure URL has proper protocol
+function getAbsoluteUrl(path: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+  // Ensure baseUrl has protocol
+  let url = baseUrl;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    // In production, always use https; in dev, use http
+    const protocol = process.env.NODE_ENV === 'production' ? 'https://' : 'http://';
+    url = protocol + url;
+  }
+  // Remove trailing slash from base URL if present
+  url = url.replace(/\/$/, '');
+  // Ensure path starts with /
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  return url + path;
+}
 
 // Criar conta conectada no Stripe
 export const createStripeConnectedAccount = action({
@@ -26,7 +45,7 @@ export const createStripeConnectedAccount = action({
   }),
   handler: async (ctx, args) => {
     try {
-      // Criar conta conectada no Stripe com configuração para Direct Charges
+      // Criar conta conectada no Stripe com configuração para Destination Charges
       const account = await stripe.accounts.create({
         type: "express", // Express account com dashboard limitado
         country: args.country,
@@ -35,18 +54,6 @@ export const createStripeConnectedAccount = action({
         company: args.businessType === "company" && args.businessName ? {
           name: args.businessName,
         } : undefined,
-        controller: {
-          fees: {
-            payer: "application", // Plataforma paga fees do Stripe
-          },
-          losses: {
-            payments: "application", // Plataforma assume riscos
-          },
-          stripe_dashboard: {
-            type: "express", // Partners têm Express Dashboard
-          },
-          requirement_collection: "stripe", // Stripe coleta requisitos
-        },
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
@@ -69,8 +76,8 @@ export const createStripeConnectedAccount = action({
       // Gerar link de onboarding
       const accountLink = await stripe.accountLinks.create({
         account: account.id,
-        refresh_url: `${process.env.NEXT_PUBLIC_URL}/meu-painel/configuracoes/onboarding?refresh=true`,
-        return_url: `${process.env.NEXT_PUBLIC_URL}/meu-painel/configuracoes/onboarding?success=true`,
+        refresh_url: getAbsoluteUrl('/admin/dashboard/pagamentos/onboarding?refresh=true'),
+        return_url: getAbsoluteUrl('/admin/dashboard/pagamentos/onboarding?success=true'),
         type: "account_onboarding",
         collection_options: {
           fields: "eventually_due", // Coletar todas as informações necessárias
@@ -100,8 +107,8 @@ export const refreshOnboardingLink = action({
     try {
       const accountLink = await stripe.accountLinks.create({
         account: args.stripeAccountId,
-        refresh_url: `${process.env.NEXT_PUBLIC_URL}/meu-painel/configuracoes/onboarding?refresh=true`,
-        return_url: `${process.env.NEXT_PUBLIC_URL}/meu-painel/configuracoes/onboarding?success=true`,
+        refresh_url: getAbsoluteUrl('/admin/dashboard/pagamentos/onboarding?refresh=true'),
+        return_url: getAbsoluteUrl('/admin/dashboard/pagamentos/onboarding?success=true'),
         type: "account_onboarding",
         collection_options: {
           fields: "eventually_due",
@@ -208,14 +215,14 @@ export const processStripeConnectWebhook = internalAction({
       }
 
       case "payment_intent.succeeded": {
-        // Pagamento bem-sucedido com Direct Charge
+        // Pagamento bem-sucedido com Destination Charge
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         
-        // Se for um Direct Charge em uma conta conectada
+        // Se for um Destination Charge com conta conectada
         if (event.account) {
           // O webhook está vindo da conta conectada
           // Aqui podemos registrar a transação se necessário
-          console.log("Direct charge succeeded on connected account:", event.account);
+          console.log("Destination charge succeeded for connected account:", event.account);
         }
         break;
       }
@@ -257,6 +264,63 @@ export const createDashboardLink = action({
     } catch (error) {
       console.error("Erro ao criar link do dashboard:", error);
       throw new Error("Falha ao criar link do Express Dashboard");
+    }
+  },
+});
+
+// Sincronizar status do partner com o Stripe (temporário - para corrigir casos onde webhook não funcionou)
+export const syncPartnerStatus = action({
+  args: {
+    stripeAccountId: v.string(),
+  },
+  returns: v.object({
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("rejected")
+    ),
+    chargesEnabled: v.boolean(),
+    payoutsEnabled: v.boolean(),
+    detailsSubmitted: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      // Buscar conta no Stripe
+      const account = await stripe.accounts.retrieve(args.stripeAccountId);
+      
+      // Determinar status baseado no estado da conta
+      let onboardingStatus: 'pending' | 'in_progress' | 'completed' | 'rejected' = 'pending';
+      
+      if (account.charges_enabled && account.payouts_enabled) {
+        onboardingStatus = 'completed';
+      } else if (account.details_submitted) {
+        onboardingStatus = 'in_progress';
+      } else if (account.requirements?.disabled_reason) {
+        onboardingStatus = 'rejected';
+      }
+      
+      // Atualizar status no banco
+      await ctx.runMutation(internal.domains.partners.mutations.updateOnboardingStatus, {
+        stripeAccountId: account.id,
+        status: onboardingStatus,
+        capabilities: {
+          cardPayments: account.capabilities?.card_payments === 'active',
+          transfers: account.capabilities?.transfers === 'active',
+        },
+      });
+      
+      console.log(`Status sincronizado: ${onboardingStatus}`);
+      
+      return {
+        status: onboardingStatus,
+        chargesEnabled: account.charges_enabled || false,
+        payoutsEnabled: account.payouts_enabled || false,
+        detailsSubmitted: account.details_submitted || false,
+      };
+    } catch (error) {
+      console.error("Erro ao sincronizar status:", error);
+      throw new Error("Falha ao sincronizar status com o Stripe");
     }
   },
 }); 

@@ -192,14 +192,11 @@ export default function CouponAssetSelection({
             {Object.entries(ASSET_TYPE_CONFIG).map(([type, config]) => {
               const Icon = config.icon;
               const count = getSelectedCount(type);
-              const isEnabled = globalApplication.isGlobal && 
-                               globalApplication.assetTypes.includes(type);
               
               return (
                 <TabsTrigger
                   key={type}
                   value={type}
-                  disabled={!isEnabled}
                   className="relative"
                 >
                   <Icon className="h-4 w-4 mr-1" />
@@ -230,11 +227,6 @@ export default function CouponAssetSelection({
 
           {/* Lista de assets */}
           {Object.entries(ASSET_TYPE_CONFIG).map(([type, config]) => {
-            const isEnabled = globalApplication.isGlobal && 
-                             globalApplication.assetTypes.includes(type);
-            
-            if (!isEnabled) return null;
-
             return (
               <TabsContent key={type} value={type} className="mt-4">
                 <ScrollArea className="h-[400px] pr-4">

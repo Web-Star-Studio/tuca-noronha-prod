@@ -1,14 +1,11 @@
 import type { Restaurant as RestaurantService } from "@/lib/services/restaurantService";
 import type { Restaurant as RestaurantStore } from "@/lib/store/restaurantsStore";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
 import Image from "next/image";
 import Link from "next/link";
 import React, { forwardRef } from "react";
-import { Utensils, MapPin, Clock, Star } from "lucide-react";
-import { imageEffects } from "@/lib/ui-config";
+import { Utensils, MapPin, Clock, ImageIcon } from "lucide-react";
 
 // Tipo que funciona com ambos os tipos de Restaurant
 type RestaurantType = RestaurantService | RestaurantStore;
@@ -19,53 +16,49 @@ interface RestaurantCardProps {
 
 const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
   ({ restaurant }, ref) => {
-    const getRestaurantId = (r: RestaurantType): string => {
-      if ('_id' in r && r._id) {
-        return r._id;
-      }
-      return r.id || "";
-    }
-    
-    // Get real review stats
+    // Buscar estatísticas de review
+    const restaurantId = 'id' in restaurant ? restaurant.id : restaurant._id;
     const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
-      assetType: "restaurant",
-      assetId: getRestaurantId(restaurant),
+      assetId: restaurantId || '',
+      assetType: 'restaurants'
     });
     
-    // Get open/closed status
+    // Determinar se está aberto
     const getCurrentStatus = () => {
-      // Check if restaurant is open now
+      // Verificar se openingHours existe (apenas RestaurantService tem)
+      if (!('openingHours' in restaurant) || !restaurant.openingHours || restaurant.openingHours.length === 0) {
+        return { isOpen: false, status: "Horário indisponível" };
+      }
+      
+      const openingHours = restaurant.openingHours;
       const now = new Date();
-      const day = now.toLocaleDateString('en-US', { weekday: 'long' });
-      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const currentDay = now.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
+      const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
       
-      // Tipo guarda para acessar hours com segurança
-      const getHoursForDay = (day: string) => {
-        // Verifique se é o formato do restaurantService (com dias específicos)
-        if ('Monday' in restaurant.hours) {
-          // Faça um cast para o tipo específico
-          const typedHours = restaurant.hours as {
-            Monday: string[];
-            Tuesday: string[];
-            Wednesday: string[];
-            Thursday: string[];
-            Friday: string[];
-            Saturday: string[];
-            Sunday: string[];
-          };
-          // Acesse usando indexação com type assertion
-          return typedHours[day as keyof typeof typedHours] || [];
-        } else {
-          // Use o formato do restaurantStore (com índice dinâmico)
-          return (restaurant.hours as {[day: string]: string[]})[day] || [];
-        }
-      };
+      const todayHours = openingHours.find(h => h.day.toLowerCase() === currentDay);
       
-      const hoursForDay = getHoursForDay(day);
-      
-      if (!hoursForDay || hoursForDay.length === 0) {
+      if (!todayHours || !todayHours.open || !todayHours.hours.length) {
         return { isOpen: false, status: "Fechado hoje" };
       }
+      
+      // Caso especial para fechado o dia todo
+      if (todayHours.hours.length === 1 && todayHours.hours[0] === 'Fechado') {
+        return { isOpen: false, status: "Fechado hoje" };
+      }
+      
+      // Verificar se está dentro do horário de funcionamento
+      const hoursForDay = todayHours.hours
+        .filter(h => h !== 'Fechado')
+        .map(h => {
+          const parts = h.split(' - ');
+          if (parts.length === 2) {
+            return parts.join('-');
+          }
+          // Handle multiple periods like "11:30-15:00 e 18:30-23:00"
+          const periods = h.split(' e ');
+          return periods.map(p => p.replace(' - ', '-'));
+        })
+        .flat();
       
       for (const period of hoursForDay) {
         const [openTime, closeTime] = period.split('-');
@@ -80,102 +73,97 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
     const { isOpen, status } = getCurrentStatus();
     
     return (
-      <Link href={`/restaurantes/${restaurant.slug}`}>
-        <Card 
-          ref={ref} 
-          variant="interactive"
-          className="h-full group relative"
-        >
-          <div className="relative h-48 w-full overflow-hidden">
-            <Image
-              src={restaurant.mainImage}
-              alt={restaurant.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={`object-cover ${imageEffects.hover.scale}`}
-            />
-            <div className={imageEffects.overlay.dark}></div>
-            
-            {/* Price badge */}
-            <Badge 
-              className="absolute top-3 right-3 shadow-sm"
-              variant="outline"
-            >
+      <div ref={ref} className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
+        <Link href={`/restaurantes/${restaurant.slug}`} className="flex flex-col h-full w-full">
+          {/* Imagem principal - sem padding no topo */}
+          <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
+            {restaurant.mainImage && restaurant.mainImage.trim() !== '' ? (
+              <Image
+                src={restaurant.mainImage}
+                alt={restaurant.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <Utensils className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
+            {/* Badge de preço */}
+            <div className="absolute bottom-3 right-3 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-sm">
               {restaurant.priceRange}
-            </Badge>
-            
-            {/* Open/closed status */}
-            <Badge 
-              variant={isOpen ? "success" : "secondary"}
-              className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            >
-              <Clock className="mr-1 h-3 w-3" /> {status}
-            </Badge>
+            </div>
+            {/* Badge de categoria - tipo de cozinha */}
+            <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
+              {restaurant.cuisine[0] || 'Restaurante'}
+            </div>
+            {/* Badge de status - aberto/fechado */}
+            {isOpen && (
+              <div className="absolute top-3 right-3 bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Aberto
+              </div>
+            )}
           </div>
           
-          <CardContent>
-            <div className="space-y-3">
-              <div>
-                <h3 className="font-bold text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
-                  {restaurant.name}
-                </h3>
-                <div className="flex items-center mt-1 text-gray-500 text-sm">
-                  <MapPin className="h-3 w-3 mr-1" /> 
-                  <span className="line-clamp-1">
-                    {restaurant.address.neighborhood}, {restaurant.address.city}
+          {/* Conteúdo do card */}
+          <div className="flex flex-col grow p-5">
+            {/* Título e avaliação */}
+            <div className="mb-2 flex justify-between items-start">
+              <h3 className="text-lg font-medium line-clamp-1">{restaurant.name}</h3>
+              
+              {/* Review Stats */}
+              <QuickStats
+                averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : restaurant.rating.overall}
+                totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : Number(restaurant.rating.totalReviews)}
+                className="text-sm"
+              />
+            </div>
+            
+            {/* Localização */}
+            <div className="flex items-center text-gray-500 text-sm mb-2">
+              <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+              <span className="line-clamp-1">
+                {restaurant.address.neighborhood}, {restaurant.address.city}
+              </span>
+            </div>
+            
+            {/* Descrição curta */}
+            <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+              {restaurant.description}
+            </p>
+            
+            {/* Informações adicionais e CTA */}
+            <div className="mt-auto space-y-2">
+              {/* Tags de cozinha */}
+              <div className="flex gap-2 flex-wrap">
+                {restaurant.cuisine.slice(0, 2).map((cuisineType, index) => (
+                  <span 
+                    key={`${cuisineType}-${index}`}
+                    className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full"
+                  >
+                    {cuisineType}
                   </span>
-                </div>
+                ))}
+                {restaurant.cuisine.length > 2 && (
+                  <span className="text-xs bg-gray-50 text-gray-600 px-2 py-1 rounded-full">
+                    +{restaurant.cuisine.length - 2}
+                  </span>
+                )}
               </div>
               
-              <div className="flex items-center justify-between">
-                <QuickStats
-                  averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : restaurant.rating.overall}
-                  totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : Number(restaurant.rating.totalReviews)}
-                  size="sm"
-                />
-                
-                <div className="flex items-center">
-                  <Utensils className="h-3 w-3 mr-1 text-gray-400" />
-                  <span className="text-sm text-gray-500 line-clamp-1">
-                    {restaurant.cuisine.join(', ')}
-                  </span>
-                </div>
+              {/* CTA */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                <span className="text-sm text-gray-500">{status}</span>
+                <span className="text-sm font-medium text-indigo-600 group-hover:text-indigo-700 group-hover:underline transition-colors">
+                  Ver detalhes →
+                </span>
               </div>
-              
-              <p className="text-sm line-clamp-2 text-gray-700">
-                {restaurant.description}
-              </p>
             </div>
-          </CardContent>
-          
-          <CardFooter separator={true}>
-            <div className="flex flex-wrap gap-1">
-              {restaurant.tags.slice(0, 2).map((tag, index) => (
-                <Badge 
-                  key={`${tag}-${index}`} 
-                  variant="outline" 
-                  className="bg-blue-50 text-blue-700 text-xs"
-                >
-                  {tag}
-                </Badge>
-              ))}
-              {restaurant.tags.length > 2 && (
-                <Badge 
-                  key="more-tags"
-                  variant="outline" 
-                  className="bg-gray-50 text-gray-600 text-xs"
-                >
-                  +{restaurant.tags.length - 2}
-                </Badge>
-              )}
-            </div>
-
-            <span className="text-sm font-medium text-blue-600 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-              Ver detalhes <span className="ml-1 group-hover:ml-2 transition-all">→</span>
-            </span>
-          </CardFooter>
-        </Card>
-      </Link>
+          </div>
+        </Link>
+      </div>
     );
   }
 );

@@ -70,11 +70,13 @@ export const create = mutationWithRole(["partner", "master"])({
         eventId,
         args.title,
         {
-          category: args.category,
-          price: args.price,
-          maxParticipants: Number(maxParticipants),
-          isActive: args.isActive,
-          isFeatured: args.isFeatured,
+          amount: args.price,
+          quantity: Number(maxParticipants),
+          after: {
+            category: args.category,
+            isActive: args.isActive,
+            isFeatured: args.isFeatured,
+          }
         }
       );
     } catch (error) {
@@ -229,9 +231,11 @@ export const remove = mutationWithRole(["partner", "master"])({
         args.id,
         event.title,
         {
-          category: event.category,
-          wasActive: event.isActive,
-          wasFeatured: event.isFeatured,
+          before: {
+            category: event.category,
+            isActive: event.isActive,
+            isFeatured: event.isFeatured,
+          }
         }
       );
     } catch (error) {
@@ -275,9 +279,9 @@ export const toggleFeatured = mutationWithRole(["partner", "master"])({
         args.id,
         event.title,
         {
-          previousValue: event.isFeatured,
-          newValue: args.isFeatured,
-          action: args.isFeatured ? "featured" : "unfeatured",
+          before: { isFeatured: event.isFeatured },
+          after: { isFeatured: args.isFeatured },
+          reason: args.isFeatured ? "featured" : "unfeatured",
         }
       );
     } catch (error) {
@@ -324,9 +328,9 @@ export const toggleActive = mutationWithRole(["partner", "master"])({
         args.id,
         event.title,
         {
-          previousValue: event.isActive,
-          newValue: args.isActive,
-          action: args.isActive ? "activated" : "deactivated",
+          before: { isActive: event.isActive },
+          after: { isActive: args.isActive },
+          reason: args.isActive ? "activated" : "deactivated",
         }
       );
     } catch (error) {

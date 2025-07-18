@@ -50,7 +50,8 @@ import {
   QrCode,
   LayoutDashboard,
   Plus,
-  CheckCircle
+  CheckCircle,
+  CreditCard
 } from "lucide-react"
 import { UserButton, useUser } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -403,11 +404,17 @@ function AdminSidebar() {
   }> => {
     const baseLink = "/admin/dashboard"
     const baseLinks = [
-      { href: `${baseLink}/nova-reserva`, icon: PlusCircle, label: "Nova Reserva" },
       { href: `${baseLink}/reservas`, icon: Receipt, label: "Reservas" },
-      { href: `${baseLink}/reservas-admin`, icon: Calendar, label: "Reservas Admin" },
-      { href: `${baseLink}/propostas-pacotes`, icon: FileText, label: "Propostas de Pacotes" }
     ]
+
+    // Apenas masters têm acesso a esses links
+    if (user && user.role === "master") {
+      baseLinks.push(
+        { href: `${baseLink}/nova-reserva`, icon: PlusCircle, label: "Nova Reserva" },
+        { href: `${baseLink}/reservas-admin`, icon: Calendar, label: "Reservas Admin" },
+        { href: `${baseLink}/propostas-pacotes`, icon: FileText, label: "Propostas de Pacotes" }
+      )
+    }
     
     if (!activeOrganization) return baseLinks
 
@@ -483,6 +490,7 @@ function AdminSidebar() {
   }> = [
     { href: "/admin/dashboard/cupons", icon: Tag, label: "Cupons" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Mídias" },
+    { href: "/admin/dashboard/pagamentos", icon: CreditCard, label: "Pagamentos" },
   ]
 
   const businessLinks = getBusinessLinks()

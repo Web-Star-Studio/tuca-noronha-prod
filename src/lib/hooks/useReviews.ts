@@ -81,10 +81,13 @@ interface UseReviewStatsOptions {
 }
 
 export function useReviewStats({ assetId, assetType }: UseReviewStatsOptions) {
-  const stats = useQuery(api.reviews.getItemReviewStats, {
-    itemType: assetType,
-    itemId: assetId
-  });
+  const stats = useQuery(
+    api.reviews.getItemReviewStats, 
+    assetId && assetType ? {
+      itemType: assetType,
+      itemId: assetId
+    } : "skip"
+  );
 
   return {
     data: stats ? {

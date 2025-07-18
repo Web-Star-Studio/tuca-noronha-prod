@@ -254,3 +254,135 @@ export const backfillSingleActivity = internalAction({
     }
   },
 }); 
+
+/**
+ * Validate and clean invalid Stripe price IDs from assets
+ * This helps fix issues when price IDs exist in database but not in Stripe
+ */
+const ASSET_TYPES = ["activity", "event", "restaurant", "accommodation", "vehicle"] as const;
+type AssetType = typeof ASSET_TYPES[number];
+
+export const validateAndCleanStripePriceIds = internalAction({
+  args: {
+    assetType: v.string(),
+    dryRun: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.object({
+    total: v.number(),
+    checked: v.number(),
+    invalid: v.number(),
+    cleaned: v.number(),
+    errors: v.array(v.object({
+      assetId: v.string(),
+      assetName: v.string(),
+      stripePriceId: v.string(),
+      error: v.string(),
+    })),
+  }),
+  handler: async (ctx, args) => {
+    // Validate assetType at runtime
+    if (!ASSET_TYPES.includes(args.assetType as AssetType)) {
+      throw new Error(`Invalid assetType: ${args.assetType}. Must be one of: ${ASSET_TYPES.join(", ")}`);
+    }
+    
+    const dryRun = args.dryRun ?? false;
+    const limit = args.limit ?? 100;
+    const stripe = new (require("stripe"))(process.env.STRIPE_SECRET_KEY);
+    
+    console.log(`🔍 Starting Stripe price ID validation for ${args.assetType}${dryRun ? ' (DRY RUN)' : ''}...`);
+    
+    // Get assets with Stripe price IDs
+    const assets = await ctx.runQuery(internal.domains.stripe.backfillQueries.getAssetsWithStripeInfo, {
+      assetType: args.assetType as AssetType,
+      limit,
+    });
+
+    console.log(`📊 Found ${assets.length} ${args.assetType} assets with Stripe info to check`);
+
+    const results = {
+      total: assets.length,
+      checked: 0,
+      invalid: 0,
+      cleaned: 0,
+      errors: [] as Array<{ assetId: string; assetName: string; stripePriceId: string; error: string }>,
+    };
+
+    for (const asset of assets) {
+      if (!asset.stripePriceId) continue;
+      
+      try {
+        results.checked++;
+        
+        console.log(`🔄 Checking ${args.assetType}: ${asset.name || asset.title} (Price ID: ${asset.stripePriceId})`);
+        
+        // Try to retrieve the price from Stripe
+        try {
+          const price = await stripe.prices.retrieve(asset.stripePriceId);
+          
+          if (!price || !price.active) {
+            console.log(`   ⚠️ Price ID ${asset.stripePriceId} is inactive`);
+            results.invalid++;
+            
+            if (!dryRun) {
+              // Clear invalid price ID
+              await ctx.runMutation(internal.domains.stripe.mutations.clearAssetStripeInfo, {
+                assetId: asset._id,
+                assetType: args.assetType as AssetType,
+              });
+              results.cleaned++;
+              console.log(`   ✅ Cleared invalid Stripe info for ${asset.name || asset.title}`);
+            } else {
+              console.log(`   📝 [DRY RUN] Would clear Stripe info for ${asset.name || asset.title}`);
+            }
+          } else {
+            console.log(`   ✅ Price ID ${asset.stripePriceId} is valid and active`);
+          }
+        } catch (stripeError: any) {
+          if (stripeError.code === 'resource_missing') {
+            console.log(`   ❌ Price ID ${asset.stripePriceId} not found in Stripe`);
+            results.invalid++;
+            
+            if (!dryRun) {
+              // Clear invalid price ID
+              await ctx.runMutation(internal.domains.stripe.mutations.clearAssetStripeInfo, {
+                assetId: asset._id,
+                assetType: args.assetType as AssetType,
+              });
+              results.cleaned++;
+              console.log(`   ✅ Cleared invalid Stripe info for ${asset.name || asset.title}`);
+            } else {
+              console.log(`   📝 [DRY RUN] Would clear Stripe info for ${asset.name || asset.title}`);
+            }
+          } else {
+            throw stripeError;
+          }
+        }
+        
+        // Add a small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+      } catch (error) {
+        console.error(`   ❌ Error checking ${asset.name || asset.title}:`, error);
+        
+        results.errors.push({
+          assetId: asset._id,
+          assetName: asset.name || asset.title || "Unknown",
+          stripePriceId: asset.stripePriceId || "",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }
+
+    console.log(`🎉 Validation completed!`);
+    console.log(`📊 Results:`, {
+      total: results.total,
+      checked: results.checked,
+      invalid: results.invalid,
+      cleaned: results.cleaned,
+      errors: results.errors.length,
+    });
+
+    return results;
+  },
+}); 

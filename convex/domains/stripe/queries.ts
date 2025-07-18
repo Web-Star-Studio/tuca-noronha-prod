@@ -420,6 +420,16 @@ export const getBookingByConfirmationCode = query({
           assetName = (asset as any)?.name || "Unknown Package";
         }
 
+        // For restaurant reservations, construct customerInfo from individual fields
+        let customerInfo = booking.customerInfo;
+        if (config.assetType === "restaurant" && !customerInfo) {
+          customerInfo = {
+            name: booking.name,
+            email: booking.email,
+            phone: booking.phone,
+          };
+        }
+
         return {
           _id: booking._id,
           assetType: config.assetType,
@@ -427,7 +437,7 @@ export const getBookingByConfirmationCode = query({
           status: booking.status,
           paymentStatus: booking.paymentStatus,
           totalPrice: booking.totalPrice || 0,
-          customerInfo: booking.customerInfo,
+          customerInfo,
           stripePaymentIntentId: booking.stripePaymentIntentId,
           stripeCheckoutSessionId: booking.stripeCheckoutSessionId,
           receiptUrl: booking.paymentDetails?.receiptUrl,
@@ -647,6 +657,16 @@ export const getBookingBySessionId = query({
           ((asset as any).description || (asset as any).shortDescription || "") : 
           "";
 
+        // For restaurant reservations, construct customerInfo from individual fields
+        let customerInfo = booking.customerInfo;
+        if (config.assetType === "restaurant" && !customerInfo) {
+          customerInfo = {
+            name: booking.name,
+            email: booking.email,
+            phone: booking.phone,
+          };
+        }
+
         return {
           _id: booking._id,
           assetType: config.assetType,
@@ -656,7 +676,7 @@ export const getBookingBySessionId = query({
           paymentStatus: booking.paymentStatus,
           totalPrice: booking.totalPrice || 0,
           confirmationCode: booking.confirmationCode,
-          customerInfo: booking.customerInfo,
+          customerInfo,
           // Type-specific fields
           date: (booking as any).date,
           checkIn: (booking as any).checkIn,

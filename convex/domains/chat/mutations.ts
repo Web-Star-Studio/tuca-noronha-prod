@@ -212,6 +212,212 @@ export const createChatRoom = mutation({
 });
 
 /**
+ * Cria uma nova sala de chat como partner/employee/master
+ * Usado quando o partner/employee/master inicia uma conversa com o traveler
+ */
+export const createChatRoomAsPartner = mutation({
+  args: {
+    contextType: v.union(
+      v.literal("asset"), 
+      v.literal("booking"), 
+      v.literal("admin_reservation"),
+      v.literal("package_request"),
+      v.literal("package_proposal")
+    ),
+    contextId: v.string(),
+    assetType: v.optional(v.string()),
+    travelerId: v.id("users"), // ID do traveler com quem o partner quer conversar
+    title: v.string(),
+    initialMessage: v.optional(v.string()),
+    reservationId: v.optional(v.string()),
+    reservationType: v.optional(v.union(
+      v.literal("admin_reservation"),
+      v.literal("regular_booking")
+    )),
+    priority: v.optional(v.union(
+      v.literal("low"),
+      v.literal("normal"),
+      v.literal("high"),
+      v.literal("urgent")
+    ))
+  },
+  returns: v.object({
+    _id: v.id("chatRooms"),
+    success: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Apenas partners, employees e masters podem usar esta mutation
+    if (!["partner", "employee", "master"].includes(currentUserRole)) {
+      throw new Error("Apenas partners, employees e masters podem iniciar conversas desta forma");
+    }
+
+    // Verificar se já existe uma sala de chat para este contexto
+    const existingChatRoom = await ctx.db
+      .query("chatRooms")
+      .withIndex("by_context", (q) => 
+        q.eq("contextType", args.contextType).eq("contextId", args.contextId)
+      )
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("travelerId"), args.travelerId),
+          q.eq(q.field("partnerId"), currentUserId)
+        )
+      )
+      .first();
+
+    if (existingChatRoom) {
+      return {
+        _id: existingChatRoom._id,
+        success: true,
+      };
+    }
+
+    const now = Date.now();
+
+    // Criar nova sala de chat
+    const chatRoomId = await ctx.db.insert("chatRooms", {
+      contextType: args.contextType,
+      contextId: args.contextId,
+      assetType: args.assetType,
+      travelerId: args.travelerId,
+      partnerId: currentUserId, // O partner/employee/master atual
+      status: "active",
+      title: args.title,
+      priority: args.priority || "normal",
+      unreadCountTraveler: 0,
+      unreadCountPartner: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Buscar informações do usuário atual e do traveler para as notificações
+    const currentUser = await ctx.db.get(currentUserId);
+    const traveler = await ctx.db.get(args.travelerId);
+    
+    // Buscar informações do contexto para enriquecer a notificação
+    let contextData: any = {};
+    if (args.contextType === "asset" && args.assetType) {
+      // Buscar o asset baseado no tipo usando Id conversion
+      let asset: AssetType = null;
+      try {
+        const assetId = args.contextId as Id<any>;
+        switch (args.assetType) {
+          case "restaurants":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "events":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "activities":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "vehicles":
+            asset = await ctx.db.get(assetId);
+            break;
+          case "accommodations":
+            asset = await ctx.db.get(assetId);
+            break;
+        }
+      } catch (error) {
+        console.warn("Failed to fetch asset:", error);
+      }
+      
+      if (asset) {
+        contextData = {
+          assetName: asset.name || asset.title || "Asset desconhecido",
+          assetType: args.assetType,
+        };
+      }
+    } else if (args.contextType === "booking") {
+      // Para reservas, podemos buscar informações do booking
+      contextData = {
+        bookingCode: args.contextId,
+      };
+    }
+
+    // Criar notificação para o traveler sobre a nova conversa
+    await ctx.db.insert("notifications", {
+      userId: args.travelerId,
+      type: "chat_room_created",
+      title: "Nova Conversa Iniciada",
+      message: `${currentUser?.name || 'Um membro da equipe'} iniciou uma conversa${contextData.assetName ? ` sobre ${contextData.assetName}` : contextData.bookingCode ? ` sobre sua reserva ${contextData.bookingCode}` : ''}`,
+      relatedId: chatRoomId.toString(),
+      relatedType: "chat_room",
+      isRead: false,
+      data: {
+        partnerName: currentUser?.name,
+        contextType: args.contextType,
+        ...contextData,
+      },
+      createdAt: now,
+    });
+
+    // Enviar mensagem de boas-vindas do partner/employee/master
+    await ctx.db.insert("chatMessages", {
+      chatRoomId,
+      senderId: currentUserId!,
+      senderRole: currentUserRole as "traveler" | "partner" | "employee" | "master",
+      content: `Olá! Sou ${currentUser?.name || 'membro da equipe'}. Como posso ajudá-lo com sua reserva?`,
+      messageType: "text",
+      isRead: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Se houver mensagem inicial, enviá-la
+    if (args.initialMessage && args.initialMessage.trim()) {
+      await ctx.db.insert("chatMessages", {
+        chatRoomId,
+        senderId: currentUserId!,
+        senderRole: currentUserRole as "traveler" | "partner" | "employee" | "master",
+        content: args.initialMessage.trim(),
+        messageType: "text",
+        isRead: false,
+        createdAt: now + 1, // +1ms para manter ordem
+        updatedAt: now + 1,
+      });
+
+      // Criar notificação para o traveler sobre a mensagem inicial
+      await ctx.db.insert("notifications", {
+        userId: args.travelerId,
+        type: "chat_message",
+        title: "Nova Mensagem de Chat",
+        message: `${currentUser?.name || 'Membro da equipe'} enviou uma mensagem${contextData.assetName ? ` sobre ${contextData.assetName}` : contextData.bookingCode ? ` sobre sua reserva` : ''}: "${args.initialMessage.trim().substring(0, 50)}${args.initialMessage.trim().length > 50 ? '...' : ''}"`,
+        relatedId: chatRoomId.toString(),
+        relatedType: "chat_room",
+        isRead: false,
+        data: {
+          senderName: currentUser?.name,
+          messagePreview: args.initialMessage.trim().substring(0, 100),
+          contextType: args.contextType,
+          ...contextData,
+        },
+        createdAt: now + 1,
+      });
+
+      // Atualizar sala de chat com última mensagem
+      await ctx.db.patch(chatRoomId, {
+        lastMessageAt: now + 1,
+        lastMessagePreview: args.initialMessage.trim().substring(0, 100),
+        updatedAt: now + 1,
+      });
+    }
+
+    return {
+      _id: chatRoomId,
+      success: true,
+    };
+  },
+});
+
+/**
  * Envia uma mensagem em uma sala de chat
  */
 export const sendMessage = mutation({

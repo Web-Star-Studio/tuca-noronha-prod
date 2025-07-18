@@ -131,6 +131,7 @@ import type * as domains_stripe_backfill from "../domains/stripe/backfill.js";
 import type * as domains_stripe_backfillQueries from "../domains/stripe/backfillQueries.js";
 import type * as domains_stripe_bookingActions from "../domains/stripe/bookingActions.js";
 import type * as domains_stripe_bookingQueries from "../domains/stripe/bookingQueries.js";
+import type * as domains_stripe_constants from "../domains/stripe/constants.js";
 import type * as domains_stripe_mutations from "../domains/stripe/mutations.js";
 import type * as domains_stripe_queries from "../domains/stripe/queries.js";
 import type * as domains_stripe_types from "../domains/stripe/types.js";
@@ -308,6 +309,7 @@ declare const fullApi: ApiFromModules<{
   "domains/stripe/backfillQueries": typeof domains_stripe_backfillQueries;
   "domains/stripe/bookingActions": typeof domains_stripe_bookingActions;
   "domains/stripe/bookingQueries": typeof domains_stripe_bookingQueries;
+  "domains/stripe/constants": typeof domains_stripe_constants;
   "domains/stripe/mutations": typeof domains_stripe_mutations;
   "domains/stripe/queries": typeof domains_stripe_queries;
   "domains/stripe/types": typeof domains_stripe_types;

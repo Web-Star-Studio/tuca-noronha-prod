@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
+import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface RestaurantReservationFormProps {
@@ -389,55 +390,23 @@ export function RestaurantReservationForm({
           </div>
 
           {/* Coupon Validation */}
-          <div className="pt-4 border-t">
+          {restaurant.price && restaurant.price > 0 && (
             <CouponValidator
-              userId={user?._id}
-              assetType="restaurants"
+              assetType="restaurant"
               assetId={restaurantId}
-              orderValue={getPrice()}
+              baseAmount={getPrice()}
               onCouponApplied={handleCouponApplied}
               onCouponRemoved={handleCouponRemoved}
-              showOrderSummary={false}
-              placeholder="Digite o código do cupom"
             />
-          </div>
+          )}
 
-          {/* Price Summary */}
-          {restaurant.price && restaurant.price > 0 ? (
-            <div className="bg-gray-50 p-4 rounded-md space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>
-                  Mesa para {partySize} {partySize === 1 ? "pessoa" : "pessoas"}
-                </span>
-                <span>{formatCurrency(getPrice())}</span>
-              </div>
-              
-              {appliedCoupon && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Desconto ({appliedCoupon.code}):</span>
-                  <span>- {formatCurrency(getDiscountAmount())}</span>
-                </div>
-              )}
-              
-              <div className="border-t pt-2">
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>{formatCurrency(getFinalPrice())}</span>
-                </div>
-              </div>
-              
-              {appliedCoupon && getDiscountAmount() > 0 && (
-                <div className="text-center text-sm text-green-600 font-medium">
-                  Você está economizando {formatCurrency(getDiscountAmount())}!
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-gray-50 p-4 rounded-md">
-              <p className="text-sm text-gray-600 text-center">
-                Reserva gratuita - Não há cobrança para esta reserva
-              </p>
-            </div>
+          {/* Price summary with Stripe fees */}
+          {restaurant.price && restaurant.price > 0 && (
+            <StripeFeesDisplay 
+              baseAmount={getPrice()}
+              discountAmount={getDiscountAmount()}
+              className="mt-4"
+            />
           )}
 
           {/* Payment Info - show if requires payment */}

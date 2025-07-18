@@ -130,7 +130,11 @@ export const updatePartnerFee = mutationWithRole(["master"])({
       throw new Error("Não autorizado");
     }
     
-    const userId = identity.subject as Id<"users">;
+    const user = await ctx.db.query("users").withIndex("clerkId", (q) => q.eq("clerkId", identity.subject)).first();
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+    
     const now = Date.now();
     
     // Criar registro de alteração de taxa
@@ -138,7 +142,7 @@ export const updatePartnerFee = mutationWithRole(["master"])({
       partnerId: args.partnerId,
       feePercentage: args.feePercentage,
       effectiveDate: now,
-      createdBy: userId,
+      createdBy: user._id,
       reason: args.reason || "Alteração manual",
       previousFee: partner.feePercentage,
     });

@@ -5,7 +5,12 @@ import { useUser } from "@clerk/nextjs";
 
 export function usePartner() {
   const { user } = useUser();
-  const userId = user?.publicMetadata?.userId as Id<"users"> | undefined;
+  
+  // Get current user from Convex (with role)
+  const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
+  
+  // Use the user ID from Convex if available, fallback to publicMetadata
+  const userId = (currentUser?._id || user?.publicMetadata?.userId) as Id<"users"> | undefined;
 
   // Query partner data
   const partner = useQuery(
@@ -22,8 +27,8 @@ export function usePartner() {
   const updatePartnerFee = useMutation(api.domains.partners.mutations.updatePartnerFee);
   const togglePartnerActive = useMutation(api.domains.partners.mutations.togglePartnerActive);
 
-  // Helper to check if user can be partner
-  const canBePartner = user?.publicMetadata?.role === "partner" || user?.publicMetadata?.role === "admin";
+  // Helper to check if user can be partner - using role from Convex
+  const canBePartner = currentUser?.role === "partner" || currentUser?.role === "admin" || currentUser?.role === "master";
 
   // Helper to check onboarding status
   const isOnboardingComplete = partner?.onboardingStatus === "completed";
@@ -41,6 +46,7 @@ export function usePartner() {
     createDashboardLink,
     updatePartnerFee,
     togglePartnerActive,
+    currentUser, // Expor também o usuário atual para debug
   };
 }
 

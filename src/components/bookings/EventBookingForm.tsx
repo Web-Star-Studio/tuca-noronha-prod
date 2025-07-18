@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
+import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface EventBookingFormProps {
@@ -343,52 +344,24 @@ export function EventBookingForm({
           </div>
 
           {/* Coupon Validation */}
-          <div className="pt-4 border-t">
+          {!isEventPast && getPrice() > 0 && (
             <CouponValidator
-              userId={user?._id}
-              assetType="events"
+              assetType="event"
               assetId={eventId}
-              orderValue={getPrice()}
+              baseAmount={getPrice()}
               onCouponApplied={handleCouponApplied}
               onCouponRemoved={handleCouponRemoved}
-              showOrderSummary={false}
-              placeholder="Digite o código do cupom"
             />
-          </div>
+          )}
 
-          {/* Price Summary */}
-          <div className="bg-gray-50 p-4 rounded-md space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>
-                {quantity} {quantity === 1 ? "ingresso" : "ingressos"}
-              </span>
-              <span>R$ {getPrice().toFixed(2)}</span>
-            </div>
-            
-            {appliedCoupon && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>Desconto ({appliedCoupon.code}):</span>
-                <span>- R$ {getDiscountAmount().toFixed(2)}</span>
-              </div>
-            )}
-            
-            <div className="border-t pt-2">
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span>R$ {getFinalPrice().toFixed(2)}</span>
-              </div>
-            </div>
-            
-            {appliedCoupon && getDiscountAmount() > 0 && (
-              <div className="text-center text-sm text-green-600 font-medium">
-                Você está economizando R$ {getDiscountAmount().toFixed(2)}!
-              </div>
-            )}
-            
-            <p className="text-xs text-gray-500">
-              *Taxas de processamento podem ser aplicadas
-            </p>
-          </div>
+          {/* Price summary with Stripe fees */}
+          {!isEventPast && getPrice() > 0 && (
+            <StripeFeesDisplay 
+              baseAmount={getPrice()}
+              discountAmount={getDiscountAmount()}
+              className="mt-4"
+            />
+          )}
 
           {/* Payment Info - show if requires payment */}
           {event.acceptsOnlinePayment && event.requiresUpfrontPayment && getPrice() > 0 && (

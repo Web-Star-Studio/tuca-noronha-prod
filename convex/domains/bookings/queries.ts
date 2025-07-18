@@ -311,6 +311,7 @@ export const getUserVehicleBookings = query({
       _id: v.id("vehicleBookings"),
       _creationTime: v.number(),
       vehicleId: v.id("vehicles"),
+      userId: v.id("users"),
       vehicleName: v.string(),
       vehicleBrand: v.string(),
       vehicleModel: v.string(),
@@ -323,11 +324,36 @@ export const getUserVehicleBookings = query({
       pickupLocation: v.optional(v.string()),
       returnLocation: v.optional(v.string()),
       notes: v.optional(v.string()),
+      confirmationCode: v.string(),
+      customerInfo: v.optional(v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+      })),
+      additionalDrivers: v.optional(v.number()),
+      additionalOptions: v.optional(v.array(v.string())),
+      partnerNotes: v.optional(v.string()),
+      paymentMethod: v.optional(v.string()),
+      // Coupon fields
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
+      refunds: v.optional(v.array(v.object({
+        refundId: v.string(),
+        amount: v.number(),
+        reason: v.string(),
+        status: v.string(),
+        createdAt: v.number(),
+        processedAt: v.optional(v.number()),
+      }))),
       createdAt: v.optional(v.number()),
       updatedAt: v.optional(v.number()),
     })),
@@ -2261,11 +2287,19 @@ export const getVehicleBookings = query({
         
         const bookingsWithDetails = await Promise.all(
           bookings.map(async (booking) => {
+            const user = await ctx.db.get(booking.userId);
             return {
               ...booking,
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               vehicleName: vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado",
+              vehicleBrand: vehicle?.brand || "",
+              vehicleModel: vehicle?.model || "",
+              customerInfo: {
+                name: booking.customerInfo?.name || user?.name || "Nome não disponível",
+                email: booking.customerInfo?.email || user?.email || "Email não disponível",
+                phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
+              },
             };
           })
         );
@@ -2296,11 +2330,19 @@ export const getVehicleBookings = query({
             
             const bookingsWithDetails = await Promise.all(
               bookings.map(async (booking) => {
+                const user = await ctx.db.get(booking.userId);
                 return {
                   ...booking,
                   createdAt: booking.createdAt ?? booking._creationTime,
                   updatedAt: booking.updatedAt ?? booking._creationTime,
                   vehicleName: `${vehicle.brand} ${vehicle.model}` || "Veículo não encontrado",
+                  vehicleBrand: vehicle?.brand || "",
+                  vehicleModel: vehicle?.model || "",
+                  customerInfo: {
+                    name: booking.customerInfo?.name || user?.name || "Nome não disponível",
+                    email: booking.customerInfo?.email || user?.email || "Email não disponível",
+                    phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
+                  },
                 };
               })
             );
@@ -2331,11 +2373,19 @@ export const getVehicleBookings = query({
       const bookingsWithDetails = await Promise.all(
         result.page.map(async (booking) => {
           const vehicle = await ctx.db.get(booking.vehicleId);
+          const user = await ctx.db.get(booking.userId);
           return {
             ...booking,
             createdAt: booking.createdAt ?? booking._creationTime,
             updatedAt: booking.updatedAt ?? booking._creationTime,
             vehicleName: vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo não encontrado",
+            vehicleBrand: vehicle?.brand || "",
+            vehicleModel: vehicle?.model || "",
+            customerInfo: {
+              name: booking.customerInfo?.name || user?.name || "Nome não disponível",
+              email: booking.customerInfo?.email || user?.email || "Email não disponível",
+              phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
+            },
           };
         })
       );
@@ -2365,24 +2415,24 @@ export const getVehicleBookings = query({
         }
 
         const bookings = await vehicleQuery.collect();
-        const bookingsWithDetails = await Promise.all(
-          bookings.map(async (booking) => {
-            const user = await ctx.db.get(booking.userId);
-            return {
-              ...booking,
-              createdAt: booking.createdAt ?? booking._creationTime,
-              updatedAt: booking.updatedAt ?? booking._creationTime,
-              vehicleName: vehicle.name,
-              vehicleBrand: vehicle.brand,
-              vehicleModel: vehicle.model,
-              customerInfo: {
-                name: user?.name || "Nome não disponível",
-                email: user?.email || "Email não disponível", 
-                phone: user?.phone || "Telefone não disponível",
-              },
-            };
-          })
-        );
+                  const bookingsWithDetails = await Promise.all(
+            bookings.map(async (booking) => {
+              const user = await ctx.db.get(booking.userId);
+              return {
+                ...booking,
+                createdAt: booking.createdAt ?? booking._creationTime,
+                updatedAt: booking.updatedAt ?? booking._creationTime,
+                vehicleName: vehicle.name,
+                vehicleBrand: vehicle.brand,
+                vehicleModel: vehicle.model,
+                customerInfo: {
+                  name: booking.customerInfo?.name || user?.name || "Nome não disponível",
+                  email: booking.customerInfo?.email || user?.email || "Email não disponível", 
+                  phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
+                },
+              };
+            })
+          );
 
         return {
           page: bookingsWithDetails,
@@ -2647,9 +2697,9 @@ export const getVehicleBookings = query({
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
             customerInfo: {
-              name: user?.name || "Nome não disponível",
-              email: user?.email || "Email não disponível", 
-              phone: user?.phone || "Telefone não disponível",
+              name: booking.customerInfo?.name || user?.name || "Nome não disponível",
+              email: booking.customerInfo?.email || user?.email || "Email não disponível",
+              phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
             },
           };
         })
@@ -2688,9 +2738,9 @@ export const getVehicleBookings = query({
             vehicleBrand: vehicle?.brand || "",
             vehicleModel: vehicle?.model || "",
             customerInfo: {
-              name: user?.name || "Nome não disponível",
-              email: user?.email || "Email não disponível", 
-              phone: user?.phone || "Telefone não disponível",
+              name: booking.customerInfo?.name || user?.name || "Nome não disponível",
+              email: booking.customerInfo?.email || user?.email || "Email não disponível", 
+              phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
             },
           };
         })

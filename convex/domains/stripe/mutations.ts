@@ -523,6 +523,44 @@ export const updateAssetStripeInfo = internalMutation({
 });
 
 /**
+ * Clear Stripe information from an asset
+ * Used when Stripe price/product IDs are invalid
+ */
+export const clearAssetStripeInfo = internalMutation({
+  args: {
+    assetId: v.string(),
+    assetType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("accommodation"),
+      v.literal("vehicle")
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const tableName = args.assetType === "accommodation" ? "accommodations" : 
+                     args.assetType === "activity" ? "activities" :
+                     args.assetType === "event" ? "events" :
+                     args.assetType === "restaurant" ? "restaurants" : "vehicles";
+    
+    const assetIdTyped = args.assetId as any;
+    
+    await ctx.db.patch(assetIdTyped, {
+      stripeProductId: undefined,
+      stripePriceId: undefined,
+      stripePaymentLinkId: undefined,
+      acceptsOnlinePayment: false,
+      requiresUpfrontPayment: false,
+      updatedAt: Date.now(),
+    });
+    
+    console.log(`🧹 Cleared Stripe info for ${args.assetType} ${args.assetId}`);
+    return null;
+  },
+});
+
+/**
  * Update booking status (public mutation for partners/employees)
  */
 export const updateBookingStatus = mutation({

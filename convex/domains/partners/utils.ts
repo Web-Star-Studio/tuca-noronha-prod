@@ -128,7 +128,7 @@ export const STRIPE_CONNECT_WEBHOOK_EVENTS = [
   "account.updated",
   "account.application.deauthorized",
   "account.application.authorized",
-  "payment_intent.succeeded", // Para Direct Charges
+      "payment_intent.succeeded", // Para Destination Charges
   "application_fee.created",
   "application_fee.refunded",
   "transfer.created",

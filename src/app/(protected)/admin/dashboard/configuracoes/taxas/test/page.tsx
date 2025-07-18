@@ -43,15 +43,15 @@ export default function TestDirectChargesPage() {
     <div className="container mx-auto p-6 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>Teste de Direct Charges</CardTitle>
+          <CardTitle>Teste de Destination Charges</CardTitle>
           <CardDescription>
-            Página de teste para verificar o funcionamento do sistema de Direct Charges com Stripe Connect
+            Página de teste para verificar o funcionamento do sistema de Destination Charges com Stripe Connect
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
             <p className="font-semibold mb-2">⚠️ Ambiente de Teste</p>
-            <p>Esta página é apenas para testes internos do sistema de Direct Charges.</p>
+            <p>Esta página é apenas para testes internos do sistema de Destination Charges.</p>
             <p>Use cartões de teste do Stripe para simular pagamentos.</p>
           </div>
 
@@ -78,7 +78,7 @@ export default function TestDirectChargesPage() {
             disabled={loading}
             className="w-full"
           >
-            {loading ? "Criando checkout..." : "Testar Direct Charge"}
+                            {loading ? "Criando checkout..." : "Testar Destination Charge"}
           </Button>
         </CardContent>
       </Card>

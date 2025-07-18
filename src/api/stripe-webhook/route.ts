@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-05-28.basil',
+  apiVersion: '2025-06-30.basil' as any,
 });
 
 // Create a Convex client for server-side API calls
@@ -77,6 +77,15 @@ export async function POST(request: NextRequest) {
         await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
         
+      // Stripe Connect events
+      case 'account.updated':
+        await handleAccountUpdated(event.data.object as Stripe.Account);
+        break;
+        
+      case 'account.external_account.created':
+        await handleExternalAccountCreated(event.data.object as Stripe.BankAccount | Stripe.Card);
+        break;
+        
       // Subscription events
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
@@ -119,9 +128,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   }
   
   try {
-    // Create partner transaction record if this is a Direct Charge
+    // Create partner transaction record if this is a Destination Charge
     if (metadata.partnerId && metadata.partnerStripeAccountId && session.payment_intent) {
-      console.log('🔄 Creating partner transaction record for Direct Charge');
+      console.log('🔄 Creating partner transaction record for Destination Charge');
       
       // Get payment intent details to calculate amounts
       const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
@@ -300,4 +309,50 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
     console.error('Error handling payment intent failed:', error);
     throw error;
   }
+}
+
+/**
+ * Handle account.updated event for Stripe Connect
+ */
+async function handleAccountUpdated(account: Stripe.Account) {
+  console.log('🔄 Stripe Connect account updated:', account.id);
+  
+  try {
+    // Determine onboarding status based on account state
+    let onboardingStatus: 'pending' | 'in_progress' | 'completed' | 'rejected' = 'pending';
+    
+    if (account.charges_enabled && account.payouts_enabled) {
+      onboardingStatus = 'completed';
+    } else if (account.details_submitted) {
+      onboardingStatus = 'in_progress';
+    } else if (account.requirements?.disabled_reason) {
+      onboardingStatus = 'rejected';
+    }
+    
+    // Update partner status
+    await convex.mutation(internal.domains.partners.mutations.updateOnboardingStatus, {
+      stripeAccountId: account.id,
+      status: onboardingStatus,
+      capabilities: {
+        cardPayments: account.capabilities?.card_payments === 'active',
+        transfers: account.capabilities?.transfers === 'active',
+      },
+    });
+    
+    console.log(`✅ Partner onboarding status updated to: ${onboardingStatus}`);
+  } catch (error) {
+    console.error('Error updating partner onboarding status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle account.external_account.created event for Stripe Connect
+ */
+async function handleExternalAccountCreated(externalAccount: Stripe.BankAccount | Stripe.Card) {
+  console.log('💳 External account created for connected account:', externalAccount.account);
+  
+  // This event confirms that the partner has added a bank account
+  // The account.updated event will handle the actual status update
+  console.log('✅ External account creation acknowledged');
 } 

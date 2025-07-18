@@ -2635,7 +2635,7 @@ function GuiaPageContent() {
 
   const searchResults = useQuery(
     api.guide.search,
-    debouncedSearchTerm ? { query: debouncedSearchTerm } : undefined
+    debouncedSearchTerm && debouncedSearchTerm.trim() ? { query: debouncedSearchTerm } : "skip"
   );
   const [sectionProgress, setSectionProgress] = useState<Record<string, number>>({});
   const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');

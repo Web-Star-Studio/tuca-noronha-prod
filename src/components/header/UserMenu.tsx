@@ -19,8 +19,8 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
   // Verifica se o usuário tem permissão para acessar o dashboard
   const canAccessDashboard = user && (user.role === "partner" || user.role === "employee" || user.role === "master");
   
-  // Verifica se o usuário é partner
-  const isPartner = user && user.role === "partner";
+  // Verifica se o usuário é partner ou employee (não deve ver Financeiro e Configurações)
+  const isPartnerOrEmployee = user && (user.role === "partner" || user.role === "employee");
   
   return (
     <>
@@ -58,8 +58,8 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
             </Link>
           )}
           
-          {/* Financial Dashboard Button - apenas para partners */}
-          {!isLoading && isPartner && (
+          {/* Financial Dashboard Button - NÃO mostrar para partners e employees */}
+          {!isLoading && !isPartnerOrEmployee && (
             <Link href="/meu-painel/financeiro">
               <Button
                 variant="ghost"
@@ -76,8 +76,8 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
             </Link>
           )}
           
-          {/* Configurações Button - apenas para partners */}
-          {!isLoading && isPartner && (
+          {/* Configurações Button - NÃO mostrar para partners e employees */}
+          {!isLoading && !isPartnerOrEmployee && (
             <Link href="/meu-painel/configuracoes">
               <Button
                 variant="ghost"

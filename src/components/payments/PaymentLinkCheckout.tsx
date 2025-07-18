@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { ExternalLink, CreditCard, Check } from "lucide-react";
+import { ExternalLink, CreditCard, Check, Info } from "lucide-react";
+import { 
+  calculateStripeFee, 
+  calculateTotalWithStripeFee 
+} from "@/lib/constants/stripe";
 
 export interface PaymentLinkCheckoutProps {
   bookingId: Id<"activityBookings" | "eventBookings" | "restaurantReservations" | "accommodationBookings" | "vehicleBookings">;
@@ -70,14 +74,45 @@ export default function PaymentLinkCheckout({
     }).format(value);
   };
 
+  // Calculate Stripe fee
+  const stripeFee = calculateStripeFee(totalAmount);
+  const totalWithFees = calculateTotalWithStripeFee(totalAmount);
+
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Total a pagar:</span>
-          <span className="text-lg font-semibold text-gray-900">
-            {formatCurrency(totalAmount)}
-          </span>
+      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+        {/* Amount breakdown */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Valor da reserva:</span>
+            <span className="text-base font-medium text-gray-900">
+              {formatCurrency(totalAmount)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Taxa de processamento:</span>
+            <span className="text-base font-medium text-gray-900">
+              {formatCurrency(stripeFee)}
+            </span>
+          </div>
+          <div className="border-t pt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-base font-semibold text-gray-900">Total a pagar:</span>
+              <span className="text-lg font-bold text-gray-900">
+                {formatCurrency(totalWithFees)}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Fee explanation */}
+        <div className="bg-blue-50 rounded-md p-3">
+          <div className="flex items-start gap-2">
+            <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-blue-800">
+              A taxa de processamento de 3,99% + R$ 0,39 cobre os custos de transação segura e proteção contra fraudes.
+            </p>
+          </div>
         </div>
       </div>
 

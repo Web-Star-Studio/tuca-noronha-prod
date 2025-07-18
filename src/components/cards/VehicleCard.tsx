@@ -1,12 +1,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Star, Users, Fuel, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { WishlistButton } from "@/components/ui/wishlist-button";
-import { cn } from "@/lib/utils";
+import { Users, Fuel, Calendar, Car } from "lucide-react";
+import { QuickStats } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
 
 interface VehicleCardProps {
   vehicle: {
@@ -26,84 +23,99 @@ interface VehicleCardProps {
 }
 
 export default function VehicleCard({ vehicle }: VehicleCardProps) {
+  // Buscar estatísticas de review
+  const { data: reviewStats } = useReviewStats({
+    assetId: vehicle._id,
+    assetType: 'vehicles'
+  });
 
   return (
-    <Card className="overflow-hidden h-full transition-all hover:shadow-md">
-      <Link href={`/veiculos/${vehicle._id}`} className="block h-full">
-        <div className="relative aspect-[4/3]">
-          <Image
-            src={
-              vehicle.imageUrl ||
-              "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-            }
-            alt={`${vehicle.brand} ${vehicle.model}`}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute top-3 right-3">
-            <div onClick={(e) => e.preventDefault()}>
-              <WishlistButton
-                itemType="vehicle"
-                itemId={vehicle._id}
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
-                showText={false}
-              />
+    <div className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
+      <Link href={`/veiculos/${vehicle._id}`} className="flex flex-col h-full">
+        {/* Imagem */}
+        <div className="relative w-full aspect-[4/3] overflow-hidden">
+          {vehicle.imageUrl ? (
+            <Image
+              src={vehicle.imageUrl}
+              alt={`${vehicle.brand} ${vehicle.model}`}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+              <Car className="w-16 h-16 text-gray-300" />
             </div>
+          )}
+          
+          {/* Badge de categoria */}
+          <div className="absolute top-3 left-3">
+            <span className="bg-white/90 backdrop-blur-sm text-xs font-medium px-3 py-1.5 rounded-full shadow-md">
+              {vehicle.category}
+            </span>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-            <div className="flex justify-between items-end">
-              <div>
-                <Badge
-                  variant="secondary"
-                  className="mb-1 bg-white/20 backdrop-blur-sm text-white"
-                >
-                  {vehicle.category}
-                </Badge>
-                <h3 className="text-lg font-bold text-white">
-                  {vehicle.brand} {vehicle.model}
-                </h3>
-              </div>
-              <div className="flex items-center gap-1 text-yellow-400">
-                <Star className="h-4 w-4 fill-yellow-400" />
-                <span className="text-sm font-medium">4.8</span>
-              </div>
-            </div>
+          
+          {/* Preço */}
+          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
+            <p className="text-lg font-bold">R$ {vehicle.pricePerDay}/dia</p>
           </div>
         </div>
 
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex gap-2 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span>{vehicle.seats}</span>
+        {/* Conteúdo */}
+        <div className="p-4 flex-1 flex flex-col">
+          {/* Nome e avaliação */}
+          <div className="mb-2 flex justify-between items-start">
+            <h3 className="text-lg font-medium line-clamp-1">
+              {vehicle.brand} {vehicle.model}
+            </h3>
+            
+            {/* Review Stats - usando dados reais */}
+            {reviewStats && (
+              <QuickStats
+                averageRating={reviewStats.averageRating}
+                totalReviews={reviewStats.totalReviews}
+                className="text-sm"
+              />
+            )}
+          </div>
+          
+          {/* Ano e cor */}
+          <p className="text-gray-500 text-sm mb-2">
+            {vehicle.year} • {vehicle.color}
+          </p>
+          
+          {/* Descrição do veículo */}
+          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+            {vehicle.name || `${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
+          </p>
+          
+          {/* Informações adicionais */}
+          <div className="mt-auto space-y-2">
+            <div className="flex gap-4 text-sm text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-gray-400" />
+                <span>{vehicle.seats} lugares</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Fuel className="h-4 w-4" />
+              <div className="flex items-center gap-1.5">
+                <Fuel className="h-4 w-4 text-gray-400" />
                 <span>{vehicle.fuelType}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-gray-400" />
                 <span>{vehicle.year}</span>
               </div>
             </div>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-lg font-bold">
-                R$ {(vehicle.pricePerDay || 0).toFixed(2)}
+            
+            {/* CTA */}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+              <span className="text-sm text-gray-500">Disponível</span>
+              <span className="text-sm font-medium text-indigo-600 group-hover:text-indigo-700 group-hover:underline transition-colors">
+                Ver detalhes →
               </span>
-              <span className="text-sm text-gray-500"> /dia</span>
             </div>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
-              {vehicle.transmission}
-            </Badge>
           </div>
-        </CardContent>
+        </div>
       </Link>
-    </Card>
+    </div>
   );
 } 

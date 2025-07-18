@@ -285,31 +285,6 @@ export default function ChatsPage() {
             </Tabs>
           </CardContent>
         </Card>
-
-        {/* Help Section */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-blue-600" />
-              Precisa de Ajuda?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Nossa equipe de suporte está sempre disponível para ajudá-lo com suas dúvidas sobre reservas, 
-              pagamentos, atividades e qualquer outra questão relacionada à sua viagem.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="flex items-center gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Iniciar Chat com Suporte
-              </Button>
-              <Button variant="outline">
-                Ver Perguntas Frequentes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Chat Window Dialog */}

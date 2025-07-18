@@ -2,18 +2,28 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PartnerOnboarding } from "@/components/partners/PartnerOnboarding";
 import { usePartner } from "@/lib/hooks/usePartner";
 import { 
-  CreditCard, 
   BarChart3, 
   Settings,
   Receipt,
-  FileText
 } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
 
 export default function ConfiguracoesPage() {
-  const { partner, canBePartner } = usePartner();
+  const { user } = useUser();
+  const { partner, canBePartner, currentUser } = usePartner();
+
+  // Debug logs
+  useEffect(() => {
+    console.log("DEBUG - ConfiguracoesPage:");
+    console.log("clerk user:", user);
+    console.log("convex user:", currentUser);
+    console.log("role from convex:", currentUser?.role);
+    console.log("canBePartner:", canBePartner);
+    console.log("partner:", partner);
+  }, [user, currentUser, canBePartner, partner]);
 
   // Se não é partner, mostrar apenas configurações gerais
   if (!canBePartner) {
@@ -52,12 +62,8 @@ export default function ConfiguracoesPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="payments" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline">Pagamentos</span>
-          </TabsTrigger>
+      <Tabs defaultValue="reports" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Relatórios</span>
@@ -71,10 +77,6 @@ export default function ConfiguracoesPage() {
             <span className="hidden sm:inline">Geral</span>
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="payments" className="space-y-4">
-          <PartnerOnboarding />
-        </TabsContent>
 
         <TabsContent value="reports" className="space-y-4">
           <Card>

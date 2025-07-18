@@ -12,10 +12,13 @@ import {
   XCircle, 
   ExternalLink,
   RefreshCw,
-  Loader2
+  Loader2,
+  RotateCw
 } from "lucide-react";
 import { useState } from "react";
 import { usePartner } from "@/lib/hooks/usePartner";
+import { useAction } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 
 type OnboardingStatus = "pending" | "in_progress" | "completed" | "rejected";
@@ -59,8 +62,11 @@ export function OnboardingStatus() {
     createDashboardLink 
   } = usePartner();
   
+  const syncPartnerStatus = useAction(api.domains.partners.actions.syncPartnerStatus);
+  
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCreatingDashboard, setIsCreatingDashboard] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   if (!partner) {
     return null;
@@ -93,16 +99,39 @@ export function OnboardingStatus() {
     
     setIsCreatingDashboard(true);
     try {
-      const { url } = await createDashboardLink({
+      const { dashboardUrl } = await createDashboardLink({
         stripeAccountId: partner.stripeAccountId,
       });
       
-      window.open(url, "_blank");
+      window.open(dashboardUrl, "_blank");
     } catch (error) {
       toast.error("Erro ao abrir dashboard");
       console.error(error);
     } finally {
       setIsCreatingDashboard(false);
+    }
+  };
+
+  const handleSyncStatus = async () => {
+    if (!partner.stripeAccountId) return;
+    
+    setIsSyncing(true);
+    try {
+      const result = await syncPartnerStatus({
+        stripeAccountId: partner.stripeAccountId,
+      });
+      
+      toast.success(`Status sincronizado: ${statusConfig[result.status].label}`);
+      
+      // Aguardar um momento para o estado atualizar
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      toast.error("Erro ao sincronizar status");
+      console.error(error);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -200,13 +229,12 @@ export function OnboardingStatus() {
             <Button 
               onClick={handleOpenDashboard}
               disabled={isCreatingDashboard}
-              variant="outline"
               className="flex-1"
             >
               {isCreatingDashboard ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Abrindo...
+                  Abrindo dashboard...
                 </>
               ) : (
                 <>
@@ -216,6 +244,21 @@ export function OnboardingStatus() {
               )}
             </Button>
           )}
+          
+          {/* Botão de sincronização */}
+          <Button
+            onClick={handleSyncStatus}
+            disabled={isSyncing}
+            variant="outline"
+            size="icon"
+            title="Sincronizar status com o Stripe"
+          >
+            {isSyncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCw className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
         {/* Capabilities Status */}

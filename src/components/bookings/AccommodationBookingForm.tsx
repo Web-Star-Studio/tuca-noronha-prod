@@ -19,6 +19,7 @@ import { useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import PaymentLinkCheckout from "@/components/payments/PaymentLinkCheckout"
 import CouponValidator from "@/components/coupons/CouponValidator"
+import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import {
   Dialog,
@@ -270,72 +271,46 @@ export function AccommodationBookingForm({
           </div>
         </div>
         
-        {/* Coupon Validation */}
-        {nights > 0 && totalPrice > 0 && (
-          <div className="pt-4 border-t">
-            <CouponValidator
-              userId={user?._id}
-              assetType="accommodations"
-              assetId={accommodationId}
-              orderValue={totalPrice}
-              onCouponApplied={handleCouponApplied}
-              onCouponRemoved={handleCouponRemoved}
-              showOrderSummary={false}
-              placeholder="Digite o código do cupom"
-            />
-          </div>
-        )}
-        
-        {/* Price summary */}
+        {/* Coupon validator */}
         {nights > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{formatCurrency(pricePerNight)} x {nights} {nights === 1 ? "noite" : "noites"}</span>
-                <span>{formatCurrency(totalPrice)}</span>
-              </div>
-              
-              {appliedCoupon && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Desconto ({appliedCoupon.code}):</span>
-                  <span>- {formatCurrency(getDiscountAmount())}</span>
-                </div>
-              )}
-              
-              <div className="border-t pt-2">
-                <div className="flex justify-between font-semibold">
-                  <span>Total</span>
-                  <span>{formatCurrency(getFinalPrice())}</span>
-                </div>
-              </div>
-              
-              {appliedCoupon && getDiscountAmount() > 0 && (
-                <div className="text-center text-sm text-green-600 font-medium">
-                  Você está economizando {formatCurrency(getDiscountAmount())}!
-                </div>
-              )}
-            </div>
-          </div>
+          <CouponValidator
+            assetType="accommodation"
+            assetId={accommodationId}
+            baseAmount={totalPrice}
+            onCouponApplied={handleCouponApplied}
+            onCouponRemoved={handleCouponRemoved}
+          />
         )}
-        
+
+        {/* Price summary with Stripe fees */}
+        {nights > 0 && (
+          <StripeFeesDisplay 
+            baseAmount={totalPrice}
+            discountAmount={getDiscountAmount()}
+            className="mt-4"
+          />
+        )}
+
         {/* Submit button */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!isFormValid || isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-medium"
-        >
-          {isSubmitting ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-              Criando reserva...
-            </>
-          ) : (
-            <>
-              <Check className="mr-2 h-5 w-5" />
-              Criar reserva e pagar
-            </>
-          )}
-        </Button>
+        <div className="pt-4">
+          <Button
+            onClick={handleSubmit}
+            disabled={!isFormValid || isSubmitting}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-medium"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                Criando reserva...
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-5 w-5" />
+                Criar reserva e pagar
+              </>
+            )}
+          </Button>
+        </div>
         
         {!isFormValid && (dateRange?.from || dateRange?.to || guests !== 2) && (
           <p className="text-sm text-red-600 text-center">

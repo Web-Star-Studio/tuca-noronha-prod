@@ -13,17 +13,58 @@ export const listChatRooms = query({
   returns: v.array(v.object({
     _id: v.id("chatRooms"),
     _creationTime: v.number(),
-    contextType: v.union(v.literal("asset"), v.literal("booking")),
+    contextType: v.union(
+      v.literal("asset"), 
+      v.literal("booking"),
+      v.literal("admin_reservation"),
+      v.literal("package_request"),
+      v.literal("package_proposal")
+    ),
     contextId: v.string(),
     assetType: v.optional(v.string()),
     travelerId: v.id("users"),
     partnerId: v.id("users"),
-    status: v.union(v.literal("active"), v.literal("closed"), v.literal("archived")),
+    // Reservation-specific fields
+    reservationId: v.optional(v.string()),
+    reservationType: v.optional(v.union(
+      v.literal("admin_reservation"),
+      v.literal("regular_booking")
+    )),
+    status: v.union(
+      v.literal("active"), 
+      v.literal("closed"), 
+      v.literal("archived"),
+      v.literal("escalated"),
+      v.literal("pending_response")
+    ),
     title: v.string(),
+    description: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("normal"),
+      v.literal("high"),
+      v.literal("urgent")
+    ),
+    // Assignment and delegation
+    assignedTo: v.optional(v.id("users")),
+    assignedBy: v.optional(v.id("users")),
+    assignedAt: v.optional(v.number()),
     lastMessageAt: v.optional(v.number()),
     lastMessagePreview: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    // Contadores de mensagens não lidas
+    unreadCount: v.number(),
+    unreadCountTraveler: v.number(),
+    unreadCountPartner: v.number(),
+    // Auto-close settings
+    autoCloseAfter: v.optional(v.number()),
+    autoCloseNotified: v.optional(v.boolean()),
+    // SLA and response tracking
+    firstResponseTime: v.optional(v.number()),
+    averageResponseTime: v.optional(v.number()),
+    lastResponseTime: v.optional(v.number()),
     // Dados do outro participante
     otherParticipant: v.object({
       _id: v.id("users"),
@@ -33,8 +74,6 @@ export const listChatRooms = query({
     }),
     // Dados do contexto (asset ou booking)
     contextData: v.optional(v.any()),
-    // Contador de mensagens não lidas
-    unreadCount: v.number(),
   })),
   handler: async (ctx, args) => {
     // Verificação de autenticação mais robusta
@@ -165,6 +204,23 @@ export const getChatRoom = query({
       assetType: v.optional(v.string()),
       travelerId: v.id("users"),
       partnerId: v.id("users"),
+      // Reservation-specific fields
+      reservationId: v.optional(v.string()),
+      reservationType: v.optional(v.union(
+        v.literal("admin_reservation"),
+        v.literal("regular_booking")
+      )),
+      // Priority field
+      priority: v.union(
+        v.literal("low"),
+        v.literal("normal"),
+        v.literal("high"),
+        v.literal("urgent")
+      ),
+      // Assignment and delegation
+      assignedTo: v.optional(v.id("users")),
+      assignedBy: v.optional(v.id("users")),
+      assignedAt: v.optional(v.number()),
       status: v.union(
         v.literal("active"), 
         v.literal("closed"), 
@@ -173,8 +229,21 @@ export const getChatRoom = query({
         v.literal("pending_response")
       ),
       title: v.string(),
+      description: v.optional(v.string()),
+      tags: v.optional(v.array(v.string())),
       lastMessageAt: v.optional(v.number()),
       lastMessagePreview: v.optional(v.string()),
+      // Unread counts
+      unreadCountTraveler: v.number(),
+      unreadCountPartner: v.number(),
+      // Auto-close settings
+      autoCloseAfter: v.optional(v.number()),
+      autoCloseNotified: v.optional(v.boolean()),
+      // SLA and response tracking
+      firstResponseTime: v.optional(v.number()),
+      averageResponseTime: v.optional(v.number()),
+      lastResponseTime: v.optional(v.number()),
+      // Timestamps
       createdAt: v.number(),
       updatedAt: v.number(),
       // Dados dos participantes

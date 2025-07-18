@@ -159,3 +159,47 @@ export const getSingleActivityForBackfill = internalQuery({
     };
   },
 }); 
+
+/**
+ * Get assets with Stripe info for validation
+ */
+export const getAssetsWithStripeInfo = internalQuery({
+  args: {
+    assetType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("accommodation"),
+      v.literal("vehicle")
+    ),
+    limit: v.number(),
+  },
+  returns: v.array(v.object({
+    _id: v.string(),
+    name: v.optional(v.string()),
+    title: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    stripeProductId: v.optional(v.string()),
+    stripePaymentLinkId: v.optional(v.string()),
+  })),
+  handler: async (ctx, args) => {
+    const tableName = args.assetType === "accommodation" ? "accommodations" : 
+                     args.assetType === "activity" ? "activities" :
+                     args.assetType === "event" ? "events" :
+                     args.assetType === "restaurant" ? "restaurants" : "vehicles";
+    
+    const assets = await ctx.db
+      .query(tableName as any)
+      .filter((q) => q.neq(q.field("stripePriceId"), undefined))
+      .take(args.limit);
+
+    return assets.map(asset => ({
+      _id: asset._id,
+      name: (asset as any).name,
+      title: (asset as any).title,
+      stripePriceId: (asset as any).stripePriceId,
+      stripeProductId: (asset as any).stripeProductId,
+      stripePaymentLinkId: (asset as any).stripePaymentLinkId,
+    }));
+  },
+}); 

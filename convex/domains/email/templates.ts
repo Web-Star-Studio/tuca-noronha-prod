@@ -268,6 +268,12 @@ export const getBookingConfirmationTemplate = (data: any): string => {
                 </a>
             </div>
             
+            <div style="text-align: center; margin: 1rem 0;">
+                <a href="https://tuca-noronha.vercel.app/voucher/${data.confirmationCode}" class="button" style="background-color: #10b981; margin-left: 10px;">
+                    📄 Acessar Voucher
+                </a>
+            </div>
+            
             <p>Se você tiver alguma dúvida, entre em contato conosco através do nosso suporte.</p>
             
             <p>Obrigado por escolher o Tuca Noronha! ✈️🏝️</p>
@@ -333,7 +339,7 @@ export const getBookingCancelledTemplate = (data: any): string => {
             <p>Lamentamos qualquer inconveniente causado. Nossa equipe está sempre disponível para ajudá-lo a encontrar outras opções incríveis em Fernando de Noronha.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tucanoronha.com" class="button">
+                <a href="https://tuca-noronha.vercel.app" class="button">
                     Explorar Outras Opções
                 </a>
             </div>

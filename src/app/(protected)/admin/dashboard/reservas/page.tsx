@@ -54,6 +54,7 @@ import { motion } from "framer-motion";
 import { DashboardPageHeader } from "../components";
 import { BookingDetailsModal } from "@/components/dashboard/bookings/BookingManagement";
 import { VoucherDownloadButton } from "@/components/vouchers";
+import { BookingChatButton } from "@/components/chat";
 
 // Helper function to safely format dates
 const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string => {
@@ -858,6 +859,22 @@ export default function AdminBookingsPage() {
                                 <Eye className="w-4 h-4" />
                               </Button>
                             }
+                          />
+
+                          {/* Chat button */}
+                          <BookingChatButton
+                            bookingId={booking._id}
+                            userId={booking.userId}
+                            assetType={booking.assetType || selectedAsset?.assetType || "activity"}
+                            assetName={
+                              booking.assetType === "restaurants" || selectedAsset?.assetType === "restaurants"
+                                ? `Mesa para ${booking.partySize || booking.participants} pessoas`
+                                : booking.activityTitle || booking.eventTitle || booking.vehicleName || "Reserva"
+                            }
+                            variant="outline"
+                            size="sm"
+                            showLabel={false}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           />
                           
                           {/* Voucher button - component handles voucher existence check */}

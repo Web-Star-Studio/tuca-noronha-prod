@@ -332,7 +332,7 @@ export function MultipleCouponValidator({
               id="coupon-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value.toUpperCase())}
-              placeholder="Digite o código do cupom"
+              placeholder="Código do cupom"
               disabled={disabled || couponCodes.length >= maxCoupons}
               className="uppercase"
               onKeyPress={(e) => e.key === "Enter" && handleAddCoupon()}

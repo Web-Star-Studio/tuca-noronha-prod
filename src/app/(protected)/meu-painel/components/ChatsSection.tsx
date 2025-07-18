@@ -299,52 +299,7 @@ const ChatsSection: React.FC = () => {
           </Card>
         </div>
 
-        {/* Sidebar - Help Section */}
-        <div className="lg:col-span-1">
-          <Card className="bg-white shadow-sm border border-gray-200 sticky top-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <MessageCircle className="w-5 h-5 text-blue-600" />
-                Precisa de Ajuda?
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-600 text-sm">
-                Nossa equipe de suporte está sempre disponível para ajudá-lo com suas dúvidas sobre reservas, 
-                pagamentos, atividades e qualquer outra questão relacionada à sua viagem.
-              </p>
-              
-              <div className="space-y-3">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat com Suporte
-                </Button>
-                <Button variant="outline" className="w-full border-gray-200 text-gray-700 hover:bg-gray-50">
-                  Ver FAQ
-                </Button>
-              </div>
 
-              {/* Quick Actions */}
-              <div className="pt-4 border-t border-gray-100">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Ações Rápidas</h4>
-                <div className="space-y-2">
-                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                    💬 Conversar sobre reserva
-                  </button>
-                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                    💳 Questões de pagamento
-                  </button>
-                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                    📍 Dúvidas sobre destino
-                  </button>
-                  <button className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                    🎯 Sugestões de atividades
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Chat Window Dialog */}

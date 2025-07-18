@@ -28,7 +28,8 @@ export function PartnerOnboarding() {
     partner, 
     canBePartner, 
     needsOnboarding,
-    createStripeAccount 
+    createStripeAccount,
+    currentUser 
   } = usePartner();
   
   const [isCreating, setIsCreating] = useState(false);
@@ -55,7 +56,7 @@ export function PartnerOnboarding() {
   }
 
   const handleCreateAccount = async () => {
-    if (!user?.emailAddresses?.[0]?.emailAddress || !user.publicMetadata?.userId) {
+    if (!user?.emailAddresses?.[0]?.emailAddress || !currentUser?._id) {
       toast.error("Informações do usuário não encontradas");
       return;
     }
@@ -68,7 +69,7 @@ export function PartnerOnboarding() {
     setIsCreating(true);
     try {
       const { stripeAccountId, onboardingUrl } = await createStripeAccount({
-        userId: user.publicMetadata.userId as Id<"users">,
+        userId: currentUser._id, // Usar ID do Convex
         email: user.emailAddresses[0].emailAddress,
         country: "BR", // Brasil como padrão
         businessType,
