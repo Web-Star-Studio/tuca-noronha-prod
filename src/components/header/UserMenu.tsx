@@ -3,11 +3,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { NotificationCenter } from "@/components/ui/notification-center";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import Link from "next/link";
-import { LayoutDashboard, Settings, DollarSign } from "lucide-react";
-import { ui } from "@/lib/ui-config";
+import { LayoutDashboard } from "lucide-react";
 
 interface UserMenuProps {
   isTransparent?: boolean;
@@ -18,9 +16,6 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
   
   // Verifica se o usuário tem permissão para acessar o dashboard
   const canAccessDashboard = user && (user.role === "partner" || user.role === "employee" || user.role === "master");
-  
-  // Verifica se o usuário é partner ou employee (não deve ver Financeiro e Configurações)
-  const isPartnerOrEmployee = user && (user.role === "partner" || user.role === "employee");
   
   return (
     <>
@@ -57,51 +52,6 @@ const UserMenu = ({ isTransparent = true }: UserMenuProps) => {
               </Button>
             </Link>
           )}
-          
-          {/* Financial Dashboard Button - NÃO mostrar para partners e employees */}
-          {!isLoading && !isPartnerOrEmployee && (
-            <Link href="/meu-painel/financeiro">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`gap-2 transition-all duration-200 ${
-                  isTransparent
-                    ? "text-white hover:bg-white/10 hover:text-white"
-                    : "text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                <DollarSign className="h-4 w-4" />
-                <span className="hidden sm:inline">Financeiro</span>
-              </Button>
-            </Link>
-          )}
-          
-          {/* Configurações Button - NÃO mostrar para partners e employees */}
-          {!isLoading && !isPartnerOrEmployee && (
-            <Link href="/meu-painel/configuracoes">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`gap-2 transition-all duration-200 ${
-                  isTransparent
-                    ? "text-white hover:bg-white/10 hover:text-white"
-                    : "text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Configurações</span>
-              </Button>
-            </Link>
-          )}
-          
-          {/* Notification Center */}
-          <NotificationCenter 
-            className={`${
-              isTransparent
-                ? "text-white hover:bg-white/10"
-                : "text-gray-900 hover:bg-gray-100"
-            }`}
-          />
           
           {/* User Button */}
           <UserButton appearance={{

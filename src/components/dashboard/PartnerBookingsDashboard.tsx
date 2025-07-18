@@ -429,7 +429,7 @@ function BookingCard({
               <Button
                 size="sm"
                 onClick={() => onConfirm(booking._id)}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
                 Confirmar

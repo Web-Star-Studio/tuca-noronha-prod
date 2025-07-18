@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Car, CalendarDays, Eye } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Car, CalendarDays, Eye, Lock } from "lucide-react";
 import { ChatButton } from "@/components/chat/ChatButton";
 import { toast } from "sonner";
 
@@ -35,6 +35,85 @@ const statusConfig = {
   no_show: { label: "Não Compareceu", color: "bg-red-100 text-red-800", icon: XCircle },
   expired: { label: "Expirada", color: "bg-gray-100 text-gray-800", icon: XCircle },
 };
+
+// Função para verificar se as informações do cliente devem ser exibidas
+function shouldShowCustomerInfo(status: BookingStatus): boolean {
+  // Apenas exibe informações do cliente após confirmação
+  return status === "confirmed" || status === "completed" || status === "in_progress";
+}
+
+// Componente para seção de informações do cliente protegida
+function CustomerInfoSection({ 
+  customerInfo, 
+  status, 
+  specialRequests, 
+  partnerNotes,
+  pickupLocation,
+  notes
+}: {
+  customerInfo: { name: string; email: string; phone: string } | { name: string; email: string; phone: string };
+  status: BookingStatus;
+  specialRequests?: string;
+  partnerNotes?: string;
+  pickupLocation?: string;
+  notes?: string;
+}) {
+  const showInfo = shouldShowCustomerInfo(status);
+  
+  if (!showInfo) {
+    return (
+      <div className="mt-4 pt-4 border-t">
+        <div className="flex items-center justify-center py-6 bg-gray-50 rounded-lg">
+          <div className="text-center">
+            <Lock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <h4 className="font-medium text-gray-700 mb-1">Informações do Cliente Protegidas</h4>
+            <p className="text-sm text-gray-500">
+              As informações do cliente serão liberadas após a confirmação da reserva
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t">
+      <h4 className="font-medium mb-2">Informações do Cliente</h4>
+      <div className="grid grid-cols-1 gap-2 text-sm">
+        <div className="flex items-center">
+          <span className="font-medium mr-2">Nome:</span>
+          <span>{customerInfo.name}</span>
+        </div>
+        <div className="flex items-center">
+          <Mail className="h-4 w-4 mr-2 text-gray-500" />
+          <span>{customerInfo.email}</span>
+        </div>
+        <div className="flex items-center">
+          <Phone className="h-4 w-4 mr-2 text-gray-500" />
+          <span>{customerInfo.phone}</span>
+        </div>
+      </div>
+      {pickupLocation && (
+        <div className="mt-3">
+          <span className="font-medium">Local de retirada:</span>
+          <p className="text-gray-600 mt-1">{pickupLocation}</p>
+        </div>
+      )}
+      {(specialRequests || notes) && (
+        <div className="mt-3">
+          <span className="font-medium">Solicitações especiais:</span>
+          <p className="text-gray-600 mt-1">{specialRequests || notes}</p>
+        </div>
+      )}
+      {partnerNotes && (
+        <div className="mt-3">
+          <span className="font-medium">Observações do parceiro:</span>
+          <p className="text-gray-600 mt-1">{partnerNotes}</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface ConfirmBookingDialogProps {
   bookingId: string;
@@ -94,7 +173,7 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
           <CheckCircle className="h-4 w-4 mr-1" />
           Confirmar
         </Button>
@@ -118,7 +197,7 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirm} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white">
               Confirmar Reserva
             </Button>
           </div>
@@ -317,35 +396,12 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
             R$ {booking.totalPrice.toFixed(2)}
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t">
-          <h4 className="font-medium mb-2">Informações do Cliente</h4>
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex items-center">
-              <span className="font-medium mr-2">Nome:</span>
-              <span>{booking.customerInfo.name}</span>
-            </div>
-            <div className="flex items-center">
-              <Mail className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{booking.customerInfo.email}</span>
-            </div>
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{booking.customerInfo.phone}</span>
-            </div>
-          </div>
-          {booking.specialRequests && (
-            <div className="mt-3">
-              <span className="font-medium">Solicitações especiais:</span>
-              <p className="text-gray-600 mt-1">{booking.specialRequests}</p>
-            </div>
-          )}
-          {booking.partnerNotes && (
-            <div className="mt-3">
-              <span className="font-medium">Observações do parceiro:</span>
-              <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
-            </div>
-          )}
-        </div>
+        <CustomerInfoSection 
+          customerInfo={booking.customerInfo}
+          status={booking.status}
+          specialRequests={booking.specialRequests}
+          partnerNotes={booking.partnerNotes}
+        />
       </CardContent>
     </Card>
   );
@@ -438,35 +494,12 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
             <span>{reservation.partySize} pessoas</span>
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t">
-          <h4 className="font-medium mb-2">Informações do Cliente</h4>
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex items-center">
-              <span className="font-medium mr-2">Nome:</span>
-              <span>{reservation.name}</span>
-            </div>
-            <div className="flex items-center">
-              <Mail className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{reservation.email}</span>
-            </div>
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{reservation.phone}</span>
-            </div>
-          </div>
-          {reservation.specialRequests && (
-            <div className="mt-3">
-              <span className="font-medium">Solicitações especiais:</span>
-              <p className="text-gray-600 mt-1">{reservation.specialRequests}</p>
-            </div>
-          )}
-          {reservation.partnerNotes && (
-            <div className="mt-3">
-              <span className="font-medium">Observações do parceiro:</span>
-              <p className="text-gray-600 mt-1">{reservation.partnerNotes}</p>
-            </div>
-          )}
-        </div>
+        <CustomerInfoSection 
+          customerInfo={{ name: reservation.name, email: reservation.email, phone: reservation.phone }}
+          status={reservation.status}
+          specialRequests={reservation.specialRequests}
+          partnerNotes={reservation.partnerNotes}
+        />
       </CardContent>
     </Card>
   );
@@ -562,41 +595,13 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
             Total: R$ {booking.totalPrice.toFixed(2)}
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t">
-          <h4 className="font-medium mb-2">Informações do Cliente</h4>
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex items-center">
-              <span className="font-medium mr-2">Nome:</span>
-              <span>{booking.customerInfo.name}</span>
-            </div>
-            <div className="flex items-center">
-              <Mail className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{booking.customerInfo.email}</span>
-            </div>
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{booking.customerInfo.phone}</span>
-            </div>
-          </div>
-          {booking.pickupLocation && (
-            <div className="mt-3">
-              <span className="font-medium">Local de retirada:</span>
-              <p className="text-gray-600 mt-1">{booking.pickupLocation}</p>
-            </div>
-          )}
-          {booking.notes && (
-            <div className="mt-3">
-              <span className="font-medium">Observações do cliente:</span>
-              <p className="text-gray-600 mt-1">{booking.notes}</p>
-            </div>
-          )}
-          {booking.partnerNotes && (
-            <div className="mt-3">
-              <span className="font-medium">Observações do parceiro:</span>
-              <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
-            </div>
-          )}
-        </div>
+        <CustomerInfoSection 
+          customerInfo={booking.customerInfo}
+          status={booking.status}
+          specialRequests={booking.notes}
+          partnerNotes={booking.partnerNotes}
+          pickupLocation={booking.pickupLocation}
+        />
       </CardContent>
     </Card>
   );
@@ -738,20 +743,31 @@ export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps)
                 <Users className="h-4 w-4 mr-2 text-gray-500" />
                 Informações do Cliente
               </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center">
-                  <span className="text-gray-600 w-20">Nome:</span>
-                  <span className="font-medium">{data.customerInfo?.name || data.name}</span>
+              {shouldShowCustomerInfo(data.status) ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center">
+                    <span className="text-gray-600 w-20">Nome:</span>
+                    <span className="font-medium">{data.customerInfo?.name || data.name}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{data.customerInfo?.email || data.email}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{data.customerInfo?.phone || data.phone}</span>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{data.customerInfo?.email || data.email}</span>
+              ) : (
+                <div className="flex items-center justify-center py-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <Lock className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">
+                      Informações liberadas após confirmação
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{data.customerInfo?.phone || data.phone}</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Localização (para veículos) */}
@@ -953,35 +969,12 @@ function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
             R$ {booking.totalPrice.toFixed(2)}
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t">
-          <h4 className="font-medium mb-2">Informações do Cliente</h4>
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex items-center">
-              <span className="font-medium mr-2">Nome:</span>
-              <span>{booking.customerInfo.name}</span>
-            </div>
-            <div className="flex items-center">
-              <Mail className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{booking.customerInfo.email}</span>
-            </div>
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 mr-2 text-gray-500" />
-              <span>{booking.customerInfo.phone}</span>
-            </div>
-          </div>
-          {booking.specialRequests && (
-            <div className="mt-3">
-              <span className="font-medium">Solicitações especiais:</span>
-              <p className="text-gray-600 mt-1">{booking.specialRequests}</p>
-            </div>
-          )}
-          {booking.partnerNotes && (
-            <div className="mt-3">
-              <span className="font-medium">Observações do parceiro:</span>
-              <p className="text-gray-600 mt-1">{booking.partnerNotes}</p>
-            </div>
-          )}
-        </div>
+        <CustomerInfoSection 
+          customerInfo={booking.customerInfo}
+          status={booking.status}
+          specialRequests={booking.specialRequests}
+          partnerNotes={booking.partnerNotes}
+        />
       </CardContent>
     </Card>
   );

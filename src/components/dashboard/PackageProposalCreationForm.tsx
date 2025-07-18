@@ -462,7 +462,7 @@ export function PackageProposalCreationForm({
             <Button 
               onClick={handleSubmit} 
               disabled={isSubmitting}
-              className="bg-green-600 hover:bg-green-700 group"
+              className="bg-green-600 hover:bg-green-700 text-white group"
             >
               {isSubmitting ? (
                 <>

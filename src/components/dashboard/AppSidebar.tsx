@@ -20,28 +20,11 @@ import {
   CreditCard,
   Settings
 } from "lucide-react"
-import { TeamSwitcher } from "./TeamSwitcher"
 import { Sidebar, SidebarContent, SidebarHeader, SidebarRail, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator, SidebarGroup, SidebarGroupLabel } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-
-// This is sample data.
-const data = {
-  teams: [
-    {
-      name: "TN Next",
-      logo: Command,
-      plan: "Admin",
-    },
-    {
-      name: "TN Turismo",
-      logo: AudioWaveform,
-      plan: "Operador",
-    },
-  ],
-}
+import { api } from "../../../convex/_generated/api"
 
 // Base navigation items
 const baseNavItems = [
@@ -151,7 +134,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             TN Next Admin
           </div>
         </div>
-        <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       
       <SidebarContent className="px-3">

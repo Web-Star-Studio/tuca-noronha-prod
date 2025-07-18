@@ -137,10 +137,6 @@ export default function SignInPage() {
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.7, duration: 0.4 }}
                         >
-                          {/* CAPTCHA widget for bot protection */}
-                          <SignIn.Captcha />
-                          <div id="clerk-captcha" />
-                          
                           <SignIn.Action submit asChild>
                             <Button
                               disabled={isGlobalLoading}

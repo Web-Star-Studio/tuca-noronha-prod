@@ -425,7 +425,7 @@ export function PermissionsManager({ employee, open, onOpenChange }: Permissions
                     <Button
                       onClick={handleGrantOrganizationAccess}
                       disabled={isSubmitting || !selectedOrganizationId}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
                       {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                       <Home className="h-4 w-4 mr-2" />

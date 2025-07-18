@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { format } from "date-fns";
@@ -38,6 +38,43 @@ interface NotificationCenterProps {
 
 export function NotificationCenter({ children, className }: NotificationCenterProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFocusActionRef = useRef<string | null>(null);
+
+  // Protected focus handlers to prevent infinite recursion
+  const safeFocusHandler = useCallback((action: string, callback: () => void) => {
+    const now = Date.now().toString();
+    
+    // Prevent rapid successive focus actions
+    if (lastFocusActionRef.current === action) {
+      return;
+    }
+    
+    lastFocusActionRef.current = action;
+    
+    // Clear any existing timeout
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+    }
+    
+    // Execute the callback safely
+    try {
+      callback();
+    } catch (error) {
+      console.error('Focus handler error:', error);
+    }
+    
+    // Reset the action tracker after a short delay
+    focusTimeoutRef.current = setTimeout(() => {
+      lastFocusActionRef.current = null;
+    }, 100);
+  }, []);
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    safeFocusHandler(`openChange:${open}`, () => {
+      setIsOpen(open);
+    });
+  }, [safeFocusHandler]);
 
   // Fetch notifications from Convex
   const notifications = useQuery(api.domains.notifications.queries.getUserNotifications, {
@@ -52,14 +89,25 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
   const markAllAsRead = useMutation(api.domains.notifications.mutations.markAllAsRead);
   const deleteNotification = useMutation(api.domains.notifications.mutations.deleteNotification);
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      await markAsRead({ notificationId });
-    } catch (error) {
-      toast.error("Erro ao marcar notificação como lida");
-      console.error(error);
-    }
-  };
+  const handleMarkAsRead = useCallback(async (notificationId: string) => {
+    safeFocusHandler(`markAsRead:${notificationId}`, async () => {
+      try {
+        await markAsRead({ notificationId });
+      } catch (error) {
+        toast.error("Erro ao marcar notificação como lida");
+        console.error(error);
+      }
+    });
+  }, [safeFocusHandler, markAsRead]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -123,7 +171,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
         {children || (
           <Button 
@@ -195,7 +243,9 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        !notification.isRead && handleMarkAsRead(notification._id);
+                        if (!notification.isRead) {
+                          handleMarkAsRead(notification._id);
+                        }
                       }
                     }}
                     aria-label={`Notificação: ${notification.title}`}

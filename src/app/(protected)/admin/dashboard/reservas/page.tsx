@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
+
+// Função para verificar se as informações do cliente devem ser exibidas
+function shouldShowCustomerInfo(status: string): boolean {
+  // Apenas exibe informações do cliente após confirmação
+  return status === "confirmed" || status === "completed" || status === "in_progress";
+}
 import { useQuery, useMutation, useConvex, useAction } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
   Calendar,
+  Lock,
   Users,
   Search,
   CheckCircle,
@@ -825,15 +832,24 @@ export default function AdminBookingsPage() {
                               {formatBookingDate(booking, booking.assetType || selectedAsset?.assetType || "activity")}
                             </div>
                             
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Users className="w-4 h-4" />
-                              {booking.customerInfo?.name || booking.name || "Cliente"}
-                            </div>
-                            
-                            {booking.customerInfo?.email && (
+                            {shouldShowCustomerInfo(booking.status) ? (
+                              <>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Users className="w-4 h-4" />
+                                  {booking.customerInfo?.name || booking.name || "Cliente"}
+                                </div>
+                                
+                                {booking.customerInfo?.email && (
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Mail className="w-4 h-4" />
+                                    {booking.customerInfo.email}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
                               <div className="flex items-center gap-2 text-muted-foreground">
-                                <Mail className="w-4 h-4" />
-                                {booking.customerInfo.email}
+                                <Lock className="w-4 h-4" />
+                                <span className="text-sm">Informações protegidas até confirmação</span>
                               </div>
                             )}
                             
@@ -956,7 +972,7 @@ export default function AdminBookingsPage() {
             <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => handleConfirmBooking(selectedBooking)} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => handleConfirmBooking(selectedBooking)} className="bg-green-600 hover:bg-green-700 text-white">
               <CheckCircle className="w-4 h-4 mr-1" />
               Confirmar Reserva
             </Button>

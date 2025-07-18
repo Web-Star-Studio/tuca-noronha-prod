@@ -264,7 +264,6 @@ function MasterSidebar() {
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
     { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
     { href: "/admin/dashboard/configuracoes/taxas", icon: DollarSign, label: "Taxas de Parceiros" },
-    { href: "/admin/dashboard/configuracoes/auto-confirmacao", icon: CheckCircle, label: "Auto-Confirmação" },
   ]
 
   return (
@@ -475,7 +474,7 @@ function AdminSidebar() {
     }
 
     // Usuários - para partners, employees e masters
-    if (user && (user.role === "partner" || user.role === "employee" || user.role === "master")) {
+    if (user.role === "master") {
       links.push({ href: "/admin/dashboard/usuarios", icon: Users, label: "Usuários" })
     }
 

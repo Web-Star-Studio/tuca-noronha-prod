@@ -203,7 +203,7 @@ export default function CouponValidator({
               <Button
                 onClick={handleApplyCoupon}
                 disabled={disabled}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
                 Aplicar Desconto de R$ {coupon.discountAmount.toFixed(2)}
               </Button>

@@ -47,7 +47,7 @@ export default function AccommodationsPage() {
             </Link>
 
             <Link href="/admin/dashboard/eventos">
-              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200">
+              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-white">
                 <Calendar className="h-6 w-6" />
                 <span className="text-sm font-medium">Eventos</span>
               </Button>

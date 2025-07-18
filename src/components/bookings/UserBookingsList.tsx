@@ -55,7 +55,7 @@ function BookingCard({ booking }: { booking: any }) {
 
   const getBookingDetails = () => {
     let details: { icon: React.ElementType; text: string | undefined }[] = [];
-    let assetName = booking.assetName; // Use the assetName from the query
+    const assetName = booking.assetName; // Use the assetName from the query
 
     // Format date if available
     const formatDate = (dateString: string) => {
