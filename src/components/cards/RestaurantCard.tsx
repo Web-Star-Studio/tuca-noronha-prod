@@ -20,7 +20,7 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
     const restaurantId = 'id' in restaurant ? restaurant.id : restaurant._id;
     const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
       assetId: restaurantId || '',
-      assetType: 'restaurants'
+      assetType: 'restaurant'
     });
     
     // Determinar se está aberto
@@ -114,11 +114,25 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
               <h3 className="text-lg font-medium line-clamp-1">{restaurant.name}</h3>
               
               {/* Review Stats */}
-              <QuickStats
-                averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : restaurant.rating.overall}
-                totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : Number(restaurant.rating.totalReviews)}
-                className="text-sm"
-              />
+              {(() => {
+                // Get rating from reviews system or fallback to restaurant static data
+                const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
+                const finalRating = hasReviewData ? reviewStats.averageRating : (restaurant.rating?.overall || 0);
+                const finalReviews = hasReviewData ? reviewStats.totalReviews : Number(restaurant.rating?.totalReviews || 0);
+                
+                // Ensure rating is valid
+                const validRating = typeof finalRating === 'number' && !isNaN(finalRating) && isFinite(finalRating) ? finalRating : 0;
+                const validReviews = typeof finalReviews === 'number' && !isNaN(finalReviews) && isFinite(finalReviews) ? finalReviews : 0;
+                
+                return (
+                  <QuickStats
+                    averageRating={validRating}
+                    totalReviews={validReviews}
+                    recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
+                    className="text-sm"
+                  />
+                );
+              })()}
             </div>
             
             {/* Localização */}

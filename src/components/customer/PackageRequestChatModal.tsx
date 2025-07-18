@@ -44,12 +44,12 @@ export default function PackageRequestChatModal({
   // Queries
   const requestDetails = useQuery(
     api.packages.getPackageRequestDetails,
-    requestId ? { requestId } : undefined
+    requestId ? { requestId } : "skip"
   );
   
   const requestMessages = useQuery(
     api.packages.getPackageRequestMessages,
-    requestId ? { packageRequestId: requestId } : undefined
+    requestId ? { packageRequestId: requestId } : "skip"
   );
 
   // Mutations

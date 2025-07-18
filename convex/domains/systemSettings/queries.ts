@@ -105,17 +105,17 @@ export const getPublicSettings = query({
     // Organizar as configurações em um objeto estruturado
     const result = {
       whatsapp: {
-        adminNumber: "+5581999999999",
-        businessName: "Turismo Noronha",
+        adminNumber: "+5581979097547",
+        businessName: "Tuca Noronha Turismo",
       },
       support: {
-        email: "contato@turismonoronha.com.br",
-        phone: "+5581987654321",
+        email: "atendimentotucanoronha@gmail.com",
+        phone: "+5581979097547",
       },
       business: {
-        companyName: "Turismo Noronha",
+        companyName: "Tuca Noronha Turismo",
         address: {
-          street: "Fernando de Noronha",
+          street: "Rua das Flores",
           city: "Fernando de Noronha",
           state: "PE",
           zipCode: "53990-000",
@@ -123,7 +123,7 @@ export const getPublicSettings = query({
       },
       ui: {
         primaryColor: "#0066CC",
-        footerText: "© 2024 Turismo Noronha. Todos os direitos reservados.",
+        footerText: "© 2025 Tuca Noronha Turismo. Todos os direitos reservados.",
       },
     };
 

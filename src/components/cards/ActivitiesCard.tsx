@@ -3,8 +3,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { Clock, Star, Users, ImageIcon } from "lucide-react";
 import { QuickStats } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
 
 export default function ActivitiesCard({activity}: {activity: Activity}) {
+    // Get real review stats
+    const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
+      assetId: activity.id,
+      assetType: 'activity'
+    });
+    
     return (
         <div className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
             <Link href={`/atividades/${activity.id}`} className="flex flex-col h-full w-full">
@@ -40,10 +47,34 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                         <h3 className="text-lg font-medium line-clamp-1">{activity.title || 'Título da Atividade'}</h3>
                         
                         {/* Review Stats - com fallback para dados estáticos */}
-                        <QuickStats
-                            averageRating={activity.rating || 0}
-                            className="text-sm"
-                        />
+                        {(() => {
+                            // Get rating from reviews system or fallback to activity static data
+                            const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
+                            const finalRating = hasReviewData ? reviewStats.averageRating : (activity.rating || 0);
+                            const finalReviews = hasReviewData ? reviewStats.totalReviews : undefined;
+                            
+                            // Ensure rating is valid
+                            const validRating = typeof finalRating === 'number' && !isNaN(finalRating) && isFinite(finalRating) ? finalRating : 0;
+                            const validReviews = typeof finalReviews === 'number' && !isNaN(finalReviews) && isFinite(finalReviews) ? finalReviews : undefined;
+                            
+                            return (
+                                <QuickStats
+                                    averageRating={validRating}
+                                    totalReviews={validReviews}
+                                    recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
+                                    className="text-sm"
+                                />
+                            );
+                        })()}
+                        {/* Debug logging */}
+                        {console.log("🎯 ActivitiesCard Debug:", {
+                            activityId: activity.id,
+                            activityRating: activity.rating,
+                            isLoadingReviewStats,
+                            reviewStats,
+                            finalRating: !isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : (activity.rating || 0),
+                            finalTotalReviews: !isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : undefined
+                        })}
                     </div>
                     
                     {/* Descrição curta */}

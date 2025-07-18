@@ -149,7 +149,7 @@ export default function AccommodationDetailPage(props: { params: Promise<{ slug:
   // Get review stats for this accommodation
   const { data: reviewStats } = useReviewStats({
     assetId: accommodation?.id || '',
-    assetType: 'accommodations'
+    assetType: 'accommodation'
   });
 
   if (!accommodation) {

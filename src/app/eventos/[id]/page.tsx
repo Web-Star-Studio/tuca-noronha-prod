@@ -18,7 +18,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
   // Get review stats for this event
   const { data: reviewStats } = useReviewStats({
     assetId: params.id,
-    assetType: 'events'
+    assetType: 'event'
   });
 
   // Lidar com caso 404

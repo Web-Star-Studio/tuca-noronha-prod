@@ -21,28 +21,28 @@ export interface SystemSetting {
 export const DEFAULT_SETTINGS = {
   // Comunicação
   "whatsapp.admin_number": {
-    value: "+5581999999999",
+    value: "+5581979097547",
     type: "string" as const,
     category: "communication" as const,
     description: "Número do WhatsApp do administrador master para contato direto",
     isPublic: true,
   },
   "whatsapp.business_name": {
-    value: "Turismo Noronha",
+    value: "Tuca Noronha Turismo",
     type: "string" as const,
     category: "communication" as const,
     description: "Nome do negócio para mensagens de WhatsApp",
     isPublic: true,
   },
   "support.email": {
-    value: "contato@turismonoronha.com.br",
+    value: "atendimentotucanoronha@gmail.com",
     type: "string" as const,
     category: "communication" as const,
     description: "Email de suporte principal",
     isPublic: true,
   },
   "support.phone": {
-    value: "+5581987654321",
+    value: "+558197909754",
     type: "string" as const,
     category: "communication" as const,
     description: "Telefone de suporte principal",
@@ -51,7 +51,7 @@ export const DEFAULT_SETTINGS = {
 
   // Negócio
   "business.company_name": {
-    value: "Turismo Noronha",
+    value: "Tuca Noronha Turismo",
     type: "string" as const,
     category: "business" as const,
     description: "Nome da empresa",
@@ -66,7 +66,7 @@ export const DEFAULT_SETTINGS = {
   },
   "business.address": {
     value: {
-      street: "Fernando de Noronha",
+      street: "Rua das Flores",
       city: "Fernando de Noronha",
       state: "PE",
       zipCode: "53990-000",
@@ -102,7 +102,7 @@ export const DEFAULT_SETTINGS = {
     isPublic: true,
   },
   "ui.footer_text": {
-    value: "© 2024 Turismo Noronha. Todos os direitos reservados.",
+    value: "© 2025 Tuca Noronha Turismo. Todos os direitos reservados.",
     type: "string" as const,
     category: "ui" as const,
     description: "Texto do rodapé",

@@ -89,6 +89,21 @@ export function useReviewStats({ assetId, assetType }: UseReviewStatsOptions) {
     } : "skip"
   );
 
+  // Debug logging
+  console.log("📊 useReviewStats Debug:", {
+    assetId,
+    assetType,
+    rawStats: stats,
+    isLoading: stats === undefined,
+    processedData: stats ? {
+      totalReviews: stats.totalReviews || 0,
+      averageRating: stats.averageRating || 0,
+      ratingDistribution: stats.ratingDistribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      recommendationPercentage: stats.recommendationPercentage || 0,
+      detailedAverages: stats.detailedAverages || {},
+    } : null
+  });
+
   return {
     data: stats ? {
       totalReviews: stats.totalReviews || 0,

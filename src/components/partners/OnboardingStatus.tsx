@@ -99,11 +99,11 @@ export function OnboardingStatus() {
     
     setIsCreatingDashboard(true);
     try {
-      const { dashboardUrl } = await createDashboardLink({
+      const { url } = await createDashboardLink({
         stripeAccountId: partner.stripeAccountId,
       });
       
-      window.open(dashboardUrl, "_blank");
+      window.open(url, "_blank");
     } catch (error) {
       toast.error("Erro ao abrir dashboard");
       console.error(error);

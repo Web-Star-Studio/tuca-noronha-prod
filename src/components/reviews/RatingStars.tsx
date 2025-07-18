@@ -34,7 +34,9 @@ export function RatingStars({
     lg: "h-5 w-5"
   };
 
-  const displayRating = interactive ? (hoverRating || tempRating) : rating;
+  // Ensure rating is a valid number
+  const validRating = typeof rating === 'number' && !isNaN(rating) && isFinite(rating) ? rating : 0;
+  const displayRating = interactive ? (hoverRating || tempRating) : validRating;
 
   const handleStarClick = (starRating: number) => {
     if (!interactive) return;
@@ -103,7 +105,7 @@ export function RatingStars({
       
       {showValue && (
         <span className="text-sm font-medium text-gray-700 ml-1">
-          {displayRating.toFixed(1)}
+          {displayRating > 0 ? displayRating.toFixed(1) : "0.0"}
         </span>
       )}
     </div>
@@ -125,10 +127,13 @@ export function RatingDisplay({
   className,
   showCount = true
 }: RatingDisplayProps) {
+  // Ensure rating is a valid number
+  const validRating = typeof rating === 'number' && !isNaN(rating) && isFinite(rating) ? rating : 0;
+  
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <RatingStars 
-        rating={rating} 
+        rating={validRating} 
         size={size} 
         showValue 
         precision="half"

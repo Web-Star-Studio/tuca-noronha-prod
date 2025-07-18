@@ -84,8 +84,8 @@ const PackageRequestsSection: React.FC = () => {
   }, [allPackageRequests]);
 
   const getPackageRequestByNumber = useQuery(
-    trackingNumber.trim() ? api.packages.getPackageRequestByNumber : undefined,
-    trackingNumber.trim() ? { requestNumber: trackingNumber.trim() } : undefined
+    api.packages.getPackageRequestByNumber,
+    trackingNumber.trim() ? { requestNumber: trackingNumber.trim() } : "skip"
   );
 
   const searchPackageRequest = async () => {
@@ -96,17 +96,14 @@ const PackageRequestsSection: React.FC = () => {
 
     setIsSearching(true);
     try {
-      if (getPackageRequestByNumber) {
-        setSearchResults(getPackageRequestByNumber);
-        toast.success("Solicitação encontrada!");
-      } else {
-        toast.error("Solicitação não encontrada");
-        setSearchResults(null);
-      }
+      // The query will automatically update when trackingNumber changes
+      // Just trigger a state update to show the search is happening
+      setTimeout(() => {
+        setIsSearching(false);
+      }, 100);
     } catch (error) {
       toast.error("Erro ao buscar solicitação");
       setSearchResults(null);
-    } finally {
       setIsSearching(false);
     }
   };
@@ -118,7 +115,7 @@ const PackageRequestsSection: React.FC = () => {
       { packageRequestId: requestId as any }
     );
 
-    if (!proposals || proposals.length === 0) {
+    if (!proposals || !Array.isArray(proposals) || proposals.length === 0) {
       return null;
     }
 
@@ -142,6 +139,13 @@ const PackageRequestsSection: React.FC = () => {
     if (getPackageRequestByNumber && trackingNumber.trim()) {
       setSearchResults(getPackageRequestByNumber);
       setIsSearching(false);
+      if (getPackageRequestByNumber) {
+        toast.success("Solicitação encontrada!");
+      }
+    } else if (trackingNumber.trim() && getPackageRequestByNumber === null) {
+      toast.error("Solicitação não encontrada");
+      setSearchResults(null);
+      setIsSearching(false);
     }
   }, [getPackageRequestByNumber, trackingNumber]);
 
@@ -156,6 +160,8 @@ const PackageRequestsSection: React.FC = () => {
   const closeChatModal = () => {
     setChatModal({
       isOpen: false,
+      requestId: undefined,
+      requestNumber: undefined,
     });
   };
 
@@ -525,7 +531,7 @@ const PackageRequestsSection: React.FC = () => {
       <PackageRequestChatModal
         isOpen={chatModal.isOpen}
         onClose={closeChatModal}
-        requestId={chatModal.requestId as any}
+        requestId={chatModal.requestId ? (chatModal.requestId as any) : null}
         requestNumber={chatModal.requestNumber || ""}
       />
     </div>

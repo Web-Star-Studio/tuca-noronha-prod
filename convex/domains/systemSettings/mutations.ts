@@ -1,4 +1,4 @@
-import { mutation } from "../../_generated/server";
+import { mutation, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { settingValidators, DEFAULT_SETTINGS } from "./types";
 
@@ -641,6 +641,67 @@ export const updateDefaultPartnerFee = mutation({
       },
       timestamp: Date.now(),
     });
+
+    return null;
+  },
+}); 
+
+// Mutation interna para atualizar configurações (sem autenticação - para setup inicial)
+export const internalUpdateSetting = internalMutation({
+  args: {
+    key: v.string(),
+    value: v.any(),
+    type: v.union(
+      v.literal("string"),
+      v.literal("number"),
+      v.literal("boolean"),
+      v.literal("object"),
+      v.literal("array")
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, { key, value, type }) => {
+    console.log(`🔄 Atualizando configuração interna: ${key} = ${value}`);
+    
+    // Buscar a configuração existente
+    const existingSetting = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+
+    const now = Date.now();
+    
+    if (existingSetting) {
+      // Atualizar configuração existente
+      await ctx.db.patch(existingSetting._id, {
+        value,
+        type,
+        lastModifiedAt: now,
+      });
+      console.log(`✅ Configuração '${key}' atualizada`);
+    } else {
+      // Criar nova configuração usando valores padrão se disponível
+      const defaultSetting = DEFAULT_SETTINGS[key as keyof typeof DEFAULT_SETTINGS];
+      
+      // Buscar um usuário master como fallback para lastModifiedBy
+      const masterUser = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("role"), "master"))
+        .first();
+      
+      await ctx.db.insert("systemSettings", {
+        key,
+        value,
+        type,
+        category: defaultSetting?.category || "system",
+        description: defaultSetting?.description || `Configuração ${key}`,
+        isPublic: defaultSetting?.isPublic ?? true,
+        lastModifiedBy: masterUser?._id || "system" as any,
+        lastModifiedAt: now,
+        createdAt: now,
+      });
+      console.log(`✅ Configuração '${key}' criada`);
+    }
 
     return null;
   },

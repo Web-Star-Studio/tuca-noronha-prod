@@ -143,6 +143,7 @@ import type * as domains_subscriptions_mutations from "../domains/subscriptions/
 import type * as domains_subscriptions_queries from "../domains/subscriptions/queries.js";
 import type * as domains_support_mutations from "../domains/support/mutations.js";
 import type * as domains_support_queries from "../domains/support/queries.js";
+import type * as domains_systemSettings_actions from "../domains/systemSettings/actions.js";
 import type * as domains_systemSettings_index from "../domains/systemSettings/index.js";
 import type * as domains_systemSettings_mutations from "../domains/systemSettings/mutations.js";
 import type * as domains_systemSettings_queries from "../domains/systemSettings/queries.js";
@@ -321,6 +322,7 @@ declare const fullApi: ApiFromModules<{
   "domains/subscriptions/queries": typeof domains_subscriptions_queries;
   "domains/support/mutations": typeof domains_support_mutations;
   "domains/support/queries": typeof domains_support_queries;
+  "domains/systemSettings/actions": typeof domains_systemSettings_actions;
   "domains/systemSettings/index": typeof domains_systemSettings_index;
   "domains/systemSettings/mutations": typeof domains_systemSettings_mutations;
   "domains/systemSettings/queries": typeof domains_systemSettings_queries;

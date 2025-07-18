@@ -50,7 +50,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
   // Get review stats for this activity
   const { data: reviewStats } = useReviewStats({
     assetId: params.id,
-    assetType: 'activities'
+    assetType: 'activity'
   });
 
   // Handle 404 case

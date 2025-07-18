@@ -227,11 +227,8 @@ export default function WishlistPage() {
             Explore nossos pacotes, hospedagens e atividades para adicionar aos seus favoritos.
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href="/pacotes">
-              <Button>Explorar Pacotes</Button>
-            </Link>
-            <Link href="/hospedagens">
-              <Button variant="outline">Ver Hospedagens</Button>
+            <Link href="/">
+              <Button>Voltar para a home</Button>
             </Link>
           </div>
         </div>

@@ -5,11 +5,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
-  Calendar, 
   Package, 
-  Sparkles, 
-  MessageCircle,
-  Bell
+  MessageCircle
 } from "lucide-react";
 
 interface ProfileHeroNavigationProps {
@@ -23,11 +20,8 @@ const ProfileHeroNavigation: React.FC<ProfileHeroNavigationProps> = ({
 }) => {
   const navigationItems = [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-    { id: 'reservas', label: 'Reservas', icon: Calendar },
-    { id: 'notificacoes', label: 'Notificações', icon: Bell },
     { id: 'chats', label: 'Conversas', icon: MessageCircle },
     { id: 'pacotes', label: 'Solicitações', icon: Package },
-    { id: 'recomendacoes', label: 'Recomendações', icon: Sparkles },
   ];
 
   return (

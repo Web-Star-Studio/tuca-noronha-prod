@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 import { 
   CalendarDays, 
   Bell
@@ -33,6 +34,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
   onSectionChange,
   stats
 }) => {
+  const router = useRouter();
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
@@ -63,7 +65,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
               variant="ghost" 
               size="sm" 
               className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              onClick={() => onSectionChange('reservas')}
+              onClick={() => router.push('/reservas/')}
             >
               Ver Todas
             </Button>
@@ -98,7 +100,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
                   variant="outline" 
                   size="sm"
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                  onClick={() => onSectionChange('reservas')}
+                  onClick={() => router.push('/reservas/')}
                 >
                   Explorar opções
                 </Button>

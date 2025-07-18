@@ -24,9 +24,9 @@ interface VehicleCardProps {
 
 export default function VehicleCard({ vehicle }: VehicleCardProps) {
   // Buscar estatísticas de review
-  const { data: reviewStats } = useReviewStats({
+  const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
     assetId: vehicle._id,
-    assetType: 'vehicles'
+    assetType: 'vehicle'
   });
 
   return (
@@ -70,13 +70,12 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
             </h3>
             
             {/* Review Stats - usando dados reais */}
-            {reviewStats && (
-              <QuickStats
-                averageRating={reviewStats.averageRating}
-                totalReviews={reviewStats.totalReviews}
-                className="text-sm"
-              />
-            )}
+            <QuickStats
+              averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : 0}
+              totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : undefined}
+              recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
+              className="text-sm"
+            />
           </div>
           
           {/* Ano e cor */}

@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { forwardRef } from "react";
 import { BedDouble, Users } from "lucide-react";
+import { QuickStats } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
 
 interface HostingCardProps {
   hosting: Hosting;
@@ -11,6 +13,12 @@ interface HostingCardProps {
 
 const HostingCard = forwardRef<HTMLDivElement, HostingCardProps>(
   ({ hosting }, ref) => {
+    // Get real review stats
+    const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
+      assetId: hosting.slug, // Using slug as ID since no _id is available
+      assetType: 'accommodation'
+    });
+    
     // Formatar o preço com a moeda
     const formattedPrice = new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -71,11 +79,12 @@ const HostingCard = forwardRef<HTMLDivElement, HostingCardProps>(
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between items-center">
             <div>
-              <div className="flex items-center gap-1">
-                <div className="text-yellow-500">⭐</div>
-                <span className="text-sm font-medium">{hosting.rating.overall.toFixed(1)}</span>
-                <span className="text-sm text-gray-500">({hosting.rating.totalReviews})</span>
-              </div>
+              <QuickStats
+                averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : hosting.rating.overall}
+                totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : hosting.rating.totalReviews}
+                recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
+                className="text-sm mb-2"
+              />
               <div className="text-base font-semibold text-blue-700">
                 {formattedPrice} <span className="text-xs text-gray-500">/ noite</span>
               </div>

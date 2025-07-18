@@ -5,12 +5,19 @@ import { Calendar, Clock, MapPin, Users, ExternalLink, RefreshCw } from "lucide-
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { QuickStats } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
 
 export default function EventCard({ event }: { event: Event }) {
   // Format date for display
   const eventDate = new Date(event.date);
   const formattedDate = formatDate(eventDate);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  
+  // Get real review stats
+  const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
+    assetId: event.id,
+    assetType: 'event'
+  });
   
   // Check if event was synced from Sympla
   const isSyncedFromSympla = Boolean(event.symplaId || event.external_id);
@@ -94,7 +101,9 @@ export default function EventCard({ event }: { event: Event }) {
             
             {/* Review Stats - com fallback para dados estáticos */}
             <QuickStats
-              averageRating={4.8}
+              averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : 0}
+              totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : undefined}
+              recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
               className="text-sm flex-shrink-0"
             />
           </div>

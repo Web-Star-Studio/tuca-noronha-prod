@@ -5,11 +5,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
-  Calendar, 
   Package, 
-  Sparkles, 
-  MessageCircle,
-  Bell
+  MessageCircle
 } from "lucide-react";
 
 interface MobileBottomNavigationProps {
@@ -23,8 +20,6 @@ const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
 }) => {
   const navigationItems = [
     { id: 'overview', label: 'Início', icon: LayoutDashboard },
-    { id: 'reservas', label: 'Reservas', icon: Calendar },
-    { id: 'notificacoes', label: 'Avisos', icon: Bell },
     { id: 'chats', label: 'Chats', icon: MessageCircle },
     { id: 'pacotes', label: 'Solicitações', icon: Package },
   ];

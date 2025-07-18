@@ -102,11 +102,8 @@ export default function FavoritesSection({
               Explore nossos pacotes, hospedagens e atividades para adicionar aos seus favoritos.
             </p>
             <div className="flex gap-2 justify-center">
-              <Link href="/pacotes">
-                <Button size="sm">Explorar Pacotes</Button>
-              </Link>
-              <Link href="/hospedagens">
-                <Button variant="outline" size="sm">Ver Hospedagens</Button>
+              <Link href="/">
+                <Button size="sm">Voltar para a home</Button>
               </Link>
             </div>
           </CardContent>

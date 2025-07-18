@@ -188,6 +188,18 @@ export const getItemReviewStats = query({
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = totalRating / reviews.length;
 
+    // Debug logging
+    console.log("🔢 Backend Rating Calculation Debug:", {
+      itemType: args.itemType,
+      itemId: args.itemId,
+      totalReviews: reviews.length,
+      individualRatings: reviews.map(r => r.rating),
+      totalRating,
+      averageRating,
+      averageRatingRounded: Math.round(averageRating * 10) / 10,
+      averageRatingFixed: averageRating.toFixed(1)
+    });
+
     // Rating distribution
     const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     reviews.forEach(review => {
@@ -218,13 +230,17 @@ export const getItemReviewStats = query({
       detailedAverages[key] = detailedAverages[key] / detailedCounts[key];
     });
 
-    return {
+    const result = {
       totalReviews: reviews.length,
       averageRating: Math.round(averageRating * 10) / 10,
       ratingDistribution,
       recommendationPercentage: Math.round(recommendationPercentage),
       detailedAverages,
     };
+
+    console.log("📤 Backend Final Result:", result);
+    
+    return result;
   },
 });
 
