@@ -6,15 +6,6 @@
       "env": {},
       "disabled": true,
       "autoApprove": []
-    },
-    "awslabs.aws-api-mcp-server": {
-      "command": "uvx awslabs.aws-api-mcp-server@latest",
-      "env": {
-        "AWS_REGION": "us-west-2",
-        "AWS_API_MCP_WORKING_DIR": "/home/araujodg/mcp/aws"
-      },
-      "disabled": false,
-      "autoApprove": []
     }
   }
 }
