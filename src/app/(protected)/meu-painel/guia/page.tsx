@@ -857,15 +857,6 @@ function SectionContent({
           transition={{ duration: 0.6 }}
           className="text-center space-y-4"
         >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
-              <Home className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">Hospedagem</h3>
-              <p className="text-gray-600">Encontre o lugar perfeito para sua estadia</p>
-            </div>
-          </div>
 
           {/* Video Section */}
           <motion.div
@@ -1249,15 +1240,6 @@ function SectionContent({
           transition={{ duration: 0.6 }}
           className="text-center space-y-4"
         >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
-              <Car className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">Transporte</h3>
-              <p className="text-gray-600">Como se locomover pela ilha</p>
-            </div>
-          </div>
         </motion.div>
 
         {/* Transportation Options */}
@@ -1693,15 +1675,6 @@ function SectionContent({
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center space-y-6"
         >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="p-3 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl">
-              <Waves className="w-6 h-6 text-cyan-600" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">As Joias do Atlântico</h2>
-              <p className="text-gray-600">Um roteiro pelas praias mais belas do mundo</p>
-            </div>
-          </div>
           
           <div className="max-w-3xl mx-auto">
             <p className="text-lg text-gray-600 leading-relaxed">
@@ -2654,9 +2627,10 @@ function GuiaPageContent() {
   const isMobile = useIsMobile();
 
   const { scrollY } = useScroll();
-  const heroParallax = useTransform(scrollY, [0, 500], [0, 150]);
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
-  const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
+  // Remover parallax problemático que interfere na interação do hero
+  // const heroParallax = useTransform(scrollY, [0, 500], [0, 150]);
+  // const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  // const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -2666,10 +2640,10 @@ function GuiaPageContent() {
       if (isMobile && (Math.abs(mx) > 100 || Math.abs(vx) > 1)) {
         const currentIndex = guideSections.findIndex(s => s.id === activeSection);
         if (dx > 0 && currentIndex > 0) {
-          setActiveSection(guideSections[currentIndex - 1].id);
+          scrollToSection(guideSections[currentIndex - 1].id);
           cancel();
         } else if (dx < 0 && currentIndex < guideSections.length - 1) {
-          setActiveSection(guideSections[currentIndex + 1].id);
+          scrollToSection(guideSections[currentIndex + 1].id);
           cancel();
         }
       }
@@ -2728,8 +2702,11 @@ function GuiaPageContent() {
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         const currentIndex = guideSections.findIndex(s => s.id === activeSection);
-        if (e.key === 'ArrowLeft' && currentIndex > 0) setActiveSection(guideSections[currentIndex - 1].id);
-        else if (e.key === 'ArrowRight' && currentIndex < guideSections.length - 1) setActiveSection(guideSections[currentIndex + 1].id);
+        if (e.key === 'ArrowLeft' && currentIndex > 0) {
+          scrollToSection(guideSections[currentIndex - 1].id);
+        } else if (e.key === 'ArrowRight' && currentIndex < guideSections.length - 1) {
+          scrollToSection(guideSections[currentIndex + 1].id);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -2738,10 +2715,20 @@ function GuiaPageContent() {
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    
+    // Usar requestAnimationFrame para garantir que o DOM seja atualizado com a nova seção
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const heroElement = document.getElementById(`hero-${sectionId}`);
+        if (heroElement) {
+          heroElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      });
+    });
   };
 
   const toggleFavorite = (item: string) => {
@@ -2768,42 +2755,9 @@ function GuiaPageContent() {
           />
         </div>
 
-        {/* Hero Section */}
-        <motion.div
-          ref={heroRef}
-          style={{
-            y: heroParallax,
-            opacity: heroOpacity,
-            scale: heroScale,
-            backgroundImage: `url(${getHeroImage(activeSection)})`,
-          }}
-          className={cn(
-            "relative h-[40vh] md:h-[50vh] lg:h-[60vh] bg-cover bg-center flex items-center justify-center text-white shadow-lg",
-            "before:absolute before:inset-0 before:bg-black/40 before:z-10"
-          )}
-        >
-          <div className="relative z-20 text-center p-4">
-            <motion.h1
-              className="text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              {currentSectionData?.title}
-            </motion.h1>
-            <motion.p
-              className="mt-2 text-lg md:text-xl opacity-90 max-w-2xl mx-auto drop-shadow-md"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              {currentSectionData?.description}
-            </motion.p>
-          </div>
-        </motion.div>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex min-h-screen overflow-hidden">
           {!isMobile && (
-            <aside className="w-80 h-full sticky top-0 overflow-y-auto p-6 space-y-6 bg-white/60 backdrop-blur-lg border-r border-gray-200/80">
+            <aside className="fixed left-0 top-0 w-80 h-full overflow-y-auto p-6 space-y-6 bg-white/60 backdrop-blur-lg border-r border-gray-200/80 z-40">
               <h2 className="text-2xl font-bold text-gray-800">Navegue pelo Guia</h2>
               <ul className="space-y-2">
                 {guideSections.map(section => {
@@ -2835,8 +2789,45 @@ function GuiaPageContent() {
             </aside>
           )}
 
-          <main {...bind()} className="flex-1 overflow-y-auto" ref={contentRef} id="main-content">
-            <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12">
+          <main {...bind()} className={cn("flex-1 overflow-y-auto", !isMobile && "ml-80")} ref={contentRef} id="main-content">
+            {/* Hero Section - agora dentro do container de scroll */}
+            <motion.div
+              key={`hero-${activeSection}`}
+              ref={heroRef}
+              id={`hero-${activeSection}`}
+              style={{
+                backgroundImage: `url(${getHeroImage(activeSection)})`,
+              }}
+              className={cn(
+                "relative h-[40vh] md:h-[50vh] lg:h-[60vh] bg-cover bg-center flex items-center justify-center text-white shadow-lg",
+                "before:absolute before:inset-0 before:bg-black/40 before:z-10"
+              )}
+            >
+              <div className="relative z-20 text-center p-4">
+                <motion.h1
+                  className="text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                >
+                  {currentSectionData?.title}
+                </motion.h1>
+                <motion.p
+                  className="mt-2 text-lg md:text-xl opacity-90 max-w-2xl mx-auto drop-shadow-md"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                  {currentSectionData?.description}
+                </motion.p>
+              </div>
+            </motion.div>
+            
+            <div className={cn(
+              "max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12",
+              // Adicionar padding bottom no mobile para evitar sobreposição do menu flutuante
+              isMobile && "pb-24"
+            )}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeSection}
@@ -2845,7 +2836,11 @@ function GuiaPageContent() {
                   exit={{ opacity: 0, y: -30 }}
                   transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <div id={activeSection} className="pt-4">
+                  <div id={activeSection} className={cn(
+                    "pt-4",
+                    // Padding bottom adicional no mobile para o menu flutuante
+                    isMobile && "pb-8"
+                  )}>
                     <SectionContent
                       sectionId={activeSection}
                       preferences={preferences}
@@ -2926,7 +2921,16 @@ function GuiaPageContent() {
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
-            onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => {
+              const heroElement = document.getElementById(`hero-${activeSection}`);
+              if (heroElement) {
+                heroElement.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'start',
+                  inline: 'nearest'
+                });
+              }
+            }}
             className="fixed bottom-28 right-4 z-50 p-3 bg-white/80 backdrop-blur-md rounded-full shadow-lg"
           >
             <ArrowUp className="w-6 h-6" />

@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import PackageRequestChatModal from "@/components/customer/PackageRequestChatModal";
+import { Id } from "convex/_generated/dataModel";
 
 const PackageRequestsSection: React.FC = () => {
   const { user } = useUser();
@@ -112,7 +113,7 @@ const PackageRequestsSection: React.FC = () => {
   const ProposalButton: React.FC<{ requestId: string }> = ({ requestId }) => {
     const proposals = useQuery(
       api.domains.packageProposals.queries.getProposalsForRequest,
-      { packageRequestId: requestId as any }
+      requestId && requestId.trim() && requestId !== "" ? { packageRequestId: requestId as Id<"packageRequests"> } : "skip"
     );
 
     if (!proposals || !Array.isArray(proposals) || proposals.length === 0) {

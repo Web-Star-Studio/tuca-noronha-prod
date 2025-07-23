@@ -117,6 +117,33 @@
   [data-overlay-container] {
     z-index: 60 !important;
   }
+  
+  /* Dialog overlay fixes para prevenir overlay "fantasma" */
+  [data-radix-dialog-overlay] {
+    pointer-events: auto !important;
+  }
+  
+  [data-radix-dialog-overlay][data-state="closed"] {
+    pointer-events: none !important;
+    opacity: 0 !important;
+    animation-fill-mode: forwards !important;
+  }
+  
+  /* Garantir que portals vazios não interfiram */
+  [data-radix-portal]:empty {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  
+  /* Prevenir problemas de z-index */
+  .fixed.inset-0.z-50.bg-black {
+    pointer-events: auto;
+  }
+  
+  .fixed.inset-0.z-50.bg-black:not([data-state="open"]) {
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
 }
 
 @layer base {

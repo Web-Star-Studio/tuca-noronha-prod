@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
+import { usePackageRequestQueries } from "@/hooks/usePackageRequestQueries";
 
 interface PackageRequestChatModalProps {
   isOpen: boolean;
@@ -41,19 +42,24 @@ export default function PackageRequestChatModal({
   const [messagePriority, setMessagePriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
   const [isSending, setIsSending] = useState(false);
 
-  // Queries
-  const requestDetails = useQuery(
-    api.packages.getPackageRequestDetails,
-    requestId ? { requestId } : "skip"
-  );
-  
-  const requestMessages = useQuery(
-    api.packages.getPackageRequestMessages,
-    requestId ? { packageRequestId: requestId } : "skip"
-  );
+  // Usar o hook personalizado para queries
+  const {
+    requestDetails,
+    requestMessages,
+    isLoading,
+    hasValidId,
+  } = usePackageRequestQueries({
+    requestId,
+    enabled: isOpen,
+  });
 
   // Mutations
   const sendMessage = useMutation(api.packages.createPackageRequestMessage);
+
+  // Não renderizar se não há requestId válido
+  if (isOpen && !hasValidId) {
+    return null;
+  }
 
   const formatDateTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleString('pt-BR', {
@@ -131,6 +137,27 @@ export default function PackageRequestChatModal({
       }, 100);
     }
   }, [requestMessages]);
+
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="bg-white max-w-4xl max-h-[85vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Carregando Chat</DialogTitle>
+            <DialogDescription>
+              Aguarde enquanto carregamos sua conversa...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Carregando conversa...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (!requestDetails) {
     return (

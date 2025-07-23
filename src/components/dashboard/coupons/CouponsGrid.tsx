@@ -15,6 +15,8 @@ import { api } from "../../../../convex/_generated/api";
 import { Plus, Search, Filter } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useModalCleanup } from "@/hooks/use-modal-cleanup";
+import { EmergencyModalCleanupButton } from "@/components/ui/modal-cleanup-button";
 
 interface CouponsGridProps {
   partnerId?: string;
@@ -36,6 +38,10 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
   const [showFilters, setShowFilters] = useState(false);
 
   const itemsPerPage = 12;
+
+  // Hooks para limpeza adequada dos modais
+  useModalCleanup(isCreateDialogOpen);
+  useModalCleanup(isEditDialogOpen);
 
   // Queries
   const couponsData = useQuery(api.domains.coupons.queries.listCoupons, {
@@ -71,6 +77,8 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
   const handleCreateCoupon = async (data: any) => {
     try {
       await createCoupon(data);
+      // Aguardar um frame antes de fechar para garantir que o estado seja atualizado
+      await new Promise(resolve => requestAnimationFrame(resolve));
       setIsCreateDialogOpen(false);
       toast({
         title: "Cupom criado",
@@ -98,6 +106,8 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         ...updateData,
       });
       
+      // Aguardar um frame antes de fechar para garantir que o estado seja atualizado
+      await new Promise(resolve => requestAnimationFrame(resolve));
       setIsEditDialogOpen(false);
       setSelectedCoupon(null);
       toast({
@@ -200,6 +210,11 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
             <Plus className="h-4 w-4" />
             Novo Cupom
           </Button>
+          
+          {/* Botão de emergência para desenvolvimento - remover em produção */}
+          {process.env.NODE_ENV === 'development' && (
+            <EmergencyModalCleanupButton className="ml-2" />
+          )}
         </div>
       </div>
 
@@ -305,7 +320,10 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
           </DialogHeader>
           <CouponForm
             onSubmit={handleCreateCoupon}
-            onCancel={() => setIsCreateDialogOpen(false)}
+            onCancel={() => {
+              // Aguardar um frame antes de fechar
+              requestAnimationFrame(() => setIsCreateDialogOpen(false));
+            }}
             title="Criar Cupom"
             description="Configure os detalhes do novo cupom de desconto"
           />
@@ -346,8 +364,11 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
               }}
               onSubmit={handleUpdateCoupon}
               onCancel={() => {
-                setIsEditDialogOpen(false);
-                setSelectedCoupon(null);
+                // Aguardar um frame antes de fechar
+                requestAnimationFrame(() => {
+                  setIsEditDialogOpen(false);
+                  setSelectedCoupon(null);
+                });
               }}
               title="Editar Cupom"
               description="Atualize os detalhes do cupom de desconto"

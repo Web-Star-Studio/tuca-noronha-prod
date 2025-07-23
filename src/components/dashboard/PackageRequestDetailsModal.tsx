@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +23,7 @@ import {
   STATUS_COLORS
 } from "../../../convex/domains/packages/types";
 import { Id } from "@/../convex/_generated/dataModel";
+import { usePackageRequestQueries } from "@/hooks/usePackageRequestQueries";
 
 import { RequestDetailsContent } from "./package-request-details/RequestDetailsContent";
 import { ProposalsTab } from "./package-request-details/ProposalsTab";
@@ -38,17 +37,17 @@ interface PackageRequestDetailsModalProps {
 }
 
 const LoadingState = () => (
-  <DialogContent className="bg-white max-w-2xl">
+  <DialogContent className="bg-white max-w-6xl max-h-[90vh] flex flex-col">
     <DialogHeader>
-      <DialogTitle>Carregando Solicitação</DialogTitle>
+      <DialogTitle>Carregando...</DialogTitle>
       <DialogDescription>
-        Aguarde enquanto carregamos os detalhes...
+        Aguarde enquanto carregamos os detalhes da solicitação.
       </DialogDescription>
     </DialogHeader>
     <div className="flex items-center justify-center h-64">
       <div className="text-center">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-        <p className="text-gray-600">Buscando informações...</p>
+        <p className="text-gray-600">Carregando detalhes...</p>
       </div>
     </div>
   </DialogContent>
@@ -61,24 +60,25 @@ export default function PackageRequestDetailsModal({
 }: PackageRequestDetailsModalProps) {
   const [activeTab, setActiveTab] = useState("details");
 
-  const requestDetails = useQuery(
-    api.packages.getPackageRequestDetails,
-    requestId ? { requestId } : undefined
-  );
-  
-  const requestMessages = useQuery(
-    api.packages.getPackageRequestMessages,
-    requestId ? { packageRequestId: requestId } : undefined
-  );
-
-  const requestProposals = useQuery(
-    api.domains.packageProposals.queries.getProposalsForRequest,
-    requestId ? { packageRequestId: requestId } : undefined
-  );
+  const {
+    requestDetails,
+    requestMessages,
+    requestProposals,
+    isLoading,
+    hasValidId,
+  } = usePackageRequestQueries({
+    requestId,
+    enabled: isOpen,
+  });
 
   if (!isOpen) return null;
 
-  if (!requestDetails) {
+  // Não renderizar nada se não temos um requestId válido
+  if (!hasValidId) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <LoadingState />

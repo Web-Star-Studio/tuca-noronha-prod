@@ -226,6 +226,7 @@ export const getUserRestaurantReservations = query({
       status: v.string(),
       confirmationCode: v.string(),
       specialRequests: v.optional(v.string()),
+      partnerNotes: v.optional(v.string()),
       // Coupon fields
       couponCode: v.optional(v.string()),
       discountAmount: v.optional(v.number()),
@@ -2239,11 +2240,16 @@ export const getVehicleBookings = query({
       partnerNotes: v.optional(v.string()),
       additionalDrivers: v.optional(v.number()),
       additionalOptions: v.optional(v.array(v.string())),
+      confirmationCode: v.string(),
       customerInfo: v.object({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
       }),
+      // Coupon fields
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
