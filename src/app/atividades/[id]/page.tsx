@@ -202,12 +202,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                       Ingressos
                     </TabsTrigger>
                   )}
-                  <TabsTrigger
-                    value="reviews"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
-                  >
-                    Avaliações
-                  </TabsTrigger>
+
                   <TabsTrigger
                     value="policies"
                     className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
@@ -317,6 +312,30 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                       </div>
                     </div>
                   )}
+
+                  {/* Avaliações Section */}
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Avaliações</h3>
+                    
+                    {/* Review Stats */}
+                    <div className="mb-8">
+                      <ReviewStats
+                        totalReviews={reviewStats?.totalReviews || 0}
+                        averageRating={reviewStats?.averageRating || 0}
+                        ratingDistribution={reviewStats?.ratingDistribution || {}}
+                        recommendationPercentage={reviewStats?.recommendationPercentage || 0}
+                        detailedAverages={reviewStats?.detailedAverages}
+                        className="bg-white border border-gray-200 rounded-lg p-6"
+                      />
+                    </div>
+
+                    {/* Reviews List */}
+                    <ReviewsList
+                      itemType="activities"
+                      itemId={params.id}
+                      className="space-y-4"
+                    />
+                  </div>
                 </TabsContent>
 
                 {/* Itinerary tab */}
@@ -382,31 +401,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                   </TabsContent>
                 )}
 
-                {/* Reviews tab */}
-                <TabsContent value="reviews" className="space-y-6 mt-2">
-                  <div>
-                    <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
-                    
-                    {/* Review Stats */}
-                    <div className="mb-8">
-                      <ReviewStats
-                        totalReviews={reviewStats?.totalReviews || 0}
-                        averageRating={reviewStats?.averageRating || 0}
-                        ratingDistribution={reviewStats?.ratingDistribution || {}}
-                        recommendationPercentage={reviewStats?.recommendationPercentage || 0}
-                        detailedAverages={reviewStats?.detailedAverages}
-                        className="bg-white border border-gray-200 rounded-lg p-6"
-                      />
-                    </div>
 
-                    {/* Reviews List */}
-                    <ReviewsList
-                      itemType="activities"
-                      itemId={params.id}
-                      className="space-y-4"
-                    />
-                  </div>
-                </TabsContent>
 
                 {/* Policies tab */}
                 <TabsContent value="policies" className="space-y-6 mt-2">
@@ -486,36 +481,38 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                 {/* Pricing card */}
                 <Card className="border-gray-200 shadow-sm">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="mb-4">
                       <div>
                         <span className="text-2xl font-bold text-gray-900">
                           {formatCurrency(activity.price)}
                         </span>
                         <span className="text-gray-500 text-sm ml-1">por pessoa</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <WishlistButton
-                          itemId={params.id}
-                          itemType="activities"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleShare}
-                          className="h-10 w-10 p-0"
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
 
                     <Button
                       onClick={handleBookingClick}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 mb-4"
                     >
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       Reservar agora
                     </Button>
+
+                    <div className="flex items-center gap-2">
+                      <WishlistButton
+                        itemId={params.id}
+                        itemType="activities"
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={handleShare}
+                        className="flex-1"
+                      >
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Compartilhar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -557,23 +554,22 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
       {showBookingForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">Reservar atividade</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowBookingForm(false)}
-                  className="h-8 w-8 p-0"
-                >
-                  ×
-                </Button>
-              </div>
-              <ActivityBookingForm
-                activityId={params.id as Id<"activities">}
-                activity={activity}
-              />
+            <div className="flex items-center justify-between p-6 pb-4 border-b">
+              <h3 className="text-xl font-semibold">Reservar atividade</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowBookingForm(false)}
+                className="h-8 w-8 p-0"
+              >
+                ×
+              </Button>
             </div>
+            <ActivityBookingForm
+              activityId={params.id as Id<"activities">}
+              activity={activity}
+              className="border-0 shadow-none rounded-none"
+            />
           </div>
         </div>
       )}

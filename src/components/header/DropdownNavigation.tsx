@@ -58,6 +58,7 @@ const navigationItems: NavigationItem[] = [
   { path: '/meu-painel/guia', label: 'Guia Interativo', icon: Compass, category: 'user' },
   { path: '/reservas', label: 'Minhas Reservas', icon: Calendar, category: 'user', badge: '3' },
   { path: '/wishlist', label: 'Lista de Desejos', icon: Heart, category: 'user' },
+  { path: '/meu-painel?tab=pacotes', label: 'Solicitações', icon: Package, category: 'user' },
   { path: '/personalizacao', label: 'Preferências', icon: Settings, category: 'user' },
   
   // Suporte

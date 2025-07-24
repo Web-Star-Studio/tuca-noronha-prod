@@ -425,36 +425,36 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
           <div className="lg:sticky lg:top-24 h-fit space-y-6">
             {/* Event Booking Form - Only show if no Sympla URL */}
             {!event.symplaUrl && (
-              <Card className="border-gray-200 shadow-sm">
-                <CardContent className="p-6">
-                  {isAuthenticated ? (
-                    <EventBookingForm
-                      eventId={event.id as any}
-                      event={{
-                        title: event.title,
-                        date: event.date,
-                        time: event.time,
-                        location: event.location,
-                        price: event.price,
-                        hasMultipleTickets: event.hasMultipleTickets,
-                        acceptsOnlinePayment: event.acceptsOnlinePayment,
-                        requiresUpfrontPayment: event.requiresUpfrontPayment,
-                      }}
-                      onBookingSuccess={(booking) => {
-                        // Redirect to booking details page using booking ID
-                        window.location.href = `/reservas/${booking.bookingId}`;
-                      }}
-                    />
-                  ) : (
+              isAuthenticated ? (
+                <EventBookingForm
+                  eventId={event.id as any}
+                  event={{
+                    title: event.title,
+                    date: event.date,
+                    time: event.time,
+                    location: event.location,
+                    price: event.price,
+                    hasMultipleTickets: event.hasMultipleTickets,
+                    acceptsOnlinePayment: event.acceptsOnlinePayment,
+                    requiresUpfrontPayment: event.requiresUpfrontPayment,
+                  }}
+                  onBookingSuccess={(booking) => {
+                    // Redirect to booking details page using booking ID
+                    window.location.href = `/reservas/${booking.bookingId}`;
+                  }}
+                />
+              ) : (
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-6">
                     <Button
                       onClick={() => router.push("/sign-in")}
                       className="w-full"
                     >
                       Fazer login para reservar
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )
             )}
 
             {/* Event Summary Card */}

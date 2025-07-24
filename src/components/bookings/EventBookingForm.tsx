@@ -203,13 +203,15 @@ export function EventBookingForm({
   const isEventPast = eventDate < new Date();
 
   return (
-    <div className={cn(cardStyles.base, cardStyles.hover.default, className)}>
-      <form onSubmit={handleSubmit} className={cardStyles.content.default}>
-        <div className="space-y-4">
+    <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
+      <div className="p-6">
+        <div className="space-y-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Reserve seu ingresso</h3>
             <p className="text-sm text-gray-500 mt-1">{event.title}</p>
           </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Event Details */}
           <div className="bg-blue-50 p-4 rounded-md space-y-3">
@@ -388,13 +390,14 @@ export function EventBookingForm({
             )}
           </Button>
 
-          {isEventPast && (
-            <p className="text-xs text-center text-gray-500">
-              Este evento já aconteceu e não aceita mais reservas
-            </p>
-          )}
+            {isEventPast && (
+              <p className="text-xs text-center text-gray-500">
+                Este evento já aconteceu e não aceita mais reservas
+              </p>
+            )}
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

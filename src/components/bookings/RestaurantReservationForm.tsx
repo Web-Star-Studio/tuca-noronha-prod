@@ -231,9 +231,9 @@ export function RestaurantReservationForm({
   };
 
   return (
-    <div className={cn(cardStyles.base, cardStyles.hover.default, className)}>
-      <form onSubmit={handleSubmit} className={cardStyles.content.default}>
-        <div className="space-y-4">
+    <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
+      <div className="p-6">
+        <div className="space-y-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Faça sua reserva</h3>
             <p className="text-sm text-gray-500 mt-1">{restaurant.name}</p>
@@ -242,6 +242,8 @@ export function RestaurantReservationForm({
               {restaurant.address.neighborhood}, {restaurant.address.city}
             </div>
           </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Date Selection */}
           <div className="space-y-2">
@@ -435,13 +437,14 @@ export function RestaurantReservationForm({
             )}
           </Button>
 
-          {!restaurant.acceptsReservations && (
-            <p className="text-sm text-amber-600 text-center">
-              Este restaurante não está aceitando reservas online no momento.
-            </p>
-          )}
+            {!restaurant.acceptsReservations && (
+              <p className="text-sm text-amber-600 text-center">
+                Este restaurante não está aceitando reservas online no momento.
+              </p>
+            )}
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

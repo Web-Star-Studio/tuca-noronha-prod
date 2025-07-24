@@ -35,7 +35,7 @@ interface VehicleBookingFormProps {
   };
 }
 
-export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleBookingFormProps) {
+export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className }: VehicleBookingFormProps & { className?: string }) {
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 3));
   const [isLoading, setIsLoading] = useState(false);
@@ -190,7 +190,17 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
   };
 
   return (
-    <div className="space-y-4">
+    <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
+      <div className="p-6">
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Reserve este veículo</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              R$ {pricePerDay.toFixed(2)} por diária
+            </p>
+          </div>
+
+          <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="pickup-date">Data de retirada</Label>
         <Popover>
@@ -347,20 +357,27 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle }: VehicleB
 
 
 
-      <Button 
-        className="w-full mt-4" 
-        onClick={handleBooking}
-        disabled={
-          isLoading || 
-          !startDate || 
-          !endDate || 
-          !customerInfo.name.trim() || 
-          !customerInfo.email.trim() || 
-          !customerInfo.phone.trim()
-        }
-      >
-        {isLoading ? "Processando..." : "Reservar agora"}
-      </Button>
+            <Button 
+              className="w-full mt-4" 
+              onClick={handleBooking}
+              disabled={
+                isLoading || 
+                !startDate || 
+                !endDate || 
+                !customerInfo.name.trim() || 
+                !customerInfo.email.trim() || 
+                !customerInfo.phone.trim()
+              }
+            >
+              {isLoading ? "Processando..." : "Reservar agora"}
+            </Button>
+
+            <p className="text-xs text-gray-500 mt-4 text-center">
+              Você não será cobrado ainda. O pagamento será realizado na retirada do veículo.
+            </p>
+          </div>
+        </div>
+      </div>
       <Toaster />
     </div>
   );

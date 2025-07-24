@@ -4,9 +4,8 @@ import React, { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Download, Printer, Share2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
+import { Printer, Share2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { VoucherTemplate } from "./VoucherTemplate";
-import { generateVoucherPDF } from "@/lib/pdf/generateVoucherPDF";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,7 +19,6 @@ interface VoucherViewerProps {
 }
 
 export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: VoucherViewerProps) {
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Query voucher based on ID, confirmation code, or voucher number
   const voucher = useQuery(
@@ -166,34 +164,7 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
   // Log processed data for debugging
   console.log("Processed voucher data:", voucherData);
 
-  const handleDownloadPDF = async () => {
-    try {
-      setIsGeneratingPDF(true);
-      const element = document.getElementById("voucher-content");
-      if (!element) {
-        throw new Error("Elemento do voucher não encontrado");
-      }
 
-      const pdfBlob = await generateVoucherPDF(element);
-      
-      // Create download link
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `voucher-${voucherData.voucher.voucherNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success("Voucher baixado com sucesso!");
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      toast.error("Erro ao gerar o PDF do voucher");
-    } finally {
-      setIsGeneratingPDF(false);
-    }
-  };
 
   const handlePrint = () => {
     window.print();
@@ -249,15 +220,6 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
           >
             <Printer className="w-4 h-4" />
             Imprimir
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPDF}
-            className="flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            {isGeneratingPDF ? "Gerando PDF..." : "Baixar PDF"}
           </Button>
         </div>
       </div>

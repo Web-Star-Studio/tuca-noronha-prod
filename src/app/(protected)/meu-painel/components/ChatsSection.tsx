@@ -14,11 +14,13 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useChatRooms, formatMessageTime, getChatStatusColor, getChatStatusText } from "@/lib/services/chatService";
 import { Id } from "@/../convex/_generated/dataModel";
 import { motion } from "framer-motion";
+import { SupportModal } from "./SupportModal";
 
 const ChatsSection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedChatId, setSelectedChatId] = useState<Id<"chatRooms"> | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   
   // Fetch chat rooms based on status
   const allChats = useChatRooms();
@@ -143,7 +145,10 @@ const ChatsSection: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-900">Minhas Conversas</h2>
           <p className="text-gray-600 text-sm mt-1">Converse com parceiros, fornecedores e nossa equipe de suporte</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0 w-full sm:w-auto">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700 text-white border-0 w-full sm:w-auto"
+          onClick={() => setIsSupportModalOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Chat
         </Button>
@@ -261,7 +266,10 @@ const ChatsSection: React.FC = () => {
                           : "Suas conversas aparecerão aqui quando você começar a conversar com parceiros ou nossa equipe"
                         }
                       </p>
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                        onClick={() => setIsSupportModalOpen(true)}
+                      >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Iniciar Conversa com Suporte
                       </Button>
@@ -287,7 +295,10 @@ const ChatsSection: React.FC = () => {
                       <p className="text-gray-500 mb-4">
                         Suas conversas ativas aparecerão aqui
                       </p>
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                        onClick={() => setIsSupportModalOpen(true)}
+                      >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Iniciar Conversa com Suporte
                       </Button>
@@ -317,6 +328,12 @@ const ChatsSection: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Support Modal */}
+      <SupportModal 
+        isOpen={isSupportModalOpen} 
+        onClose={() => setIsSupportModalOpen(false)} 
+      />
     </div>
   );
 };

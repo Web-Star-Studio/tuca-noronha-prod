@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, X, MessageCircle, Phone, Video, MoreVertical } from "lucide-react";
+import { Send, X, MessageCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -221,14 +221,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" disabled>
-            <Phone className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" disabled>
-            <Video className="w-4 h-4" />
-          </Button>
-          
+        <div className="flex items-center space-x-2 mr-12">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">

@@ -219,13 +219,15 @@ export function ActivityBookingForm({
   };
 
   return (
-    <div className={cn(cardStyles.base, cardStyles.hover.default, className)}>
-      <form onSubmit={handleSubmit} className={cardStyles.content.default}>
-        <div className="space-y-4">
+    <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
+      <div className="p-6">
+        <div className="space-y-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Reserve sua atividade</h3>
             <p className="text-sm text-gray-500 mt-1">{activity.title}</p>
           </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Date Selection */}
           <div className="space-y-2">
@@ -412,16 +414,17 @@ export function ActivityBookingForm({
             💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
           </div>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className={cn(buttonStyles.variant.default, "w-full")}
-            disabled={isSubmitting || !date}
-          >
-            {isSubmitting ? "Processando..." : "Reservar atividade"}
-          </Button>
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className={cn(buttonStyles.variant.default, "w-full")}
+              disabled={isSubmitting || !date}
+            >
+              {isSubmitting ? "Processando..." : "Reservar atividade"}
+            </Button>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

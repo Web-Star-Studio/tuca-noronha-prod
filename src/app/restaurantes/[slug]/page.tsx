@@ -168,12 +168,6 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                     Detalhes
                   </TabsTrigger>
                   <TabsTrigger
-                    value="menu"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
-                  >
-                    Cardápio
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="photos"
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
                   >
@@ -258,27 +252,7 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                   </div>
                 </TabsContent>
 
-                <TabsContent value="menu">
-                  <h2 className="text-2xl font-semibold mb-4">Cardápio</h2>
-                  {restaurant.menuImages && restaurant.menuImages.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {restaurant.menuImages.map((src, index) => (
-                        <div key={`${restaurant.id}-menu-${index}`} className="relative aspect-[3/4] rounded-lg overflow-hidden">
-                          <Image
-                            src={src}
-                            alt={`Menu ${index + 1}`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">
-                      O cardápio deste restaurante ainda não está disponível online.
-                    </p>
-                  )}
-                </TabsContent>
+
 
                 <TabsContent value="photos">
                   <h2 className="text-2xl font-semibold mb-4">Fotos do local</h2>
@@ -321,31 +295,31 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
             {/* Sticky sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-8 space-y-6">
-                <Card className="shadow-lg">
-                  <CardContent className="p-6">
-                    {isAuthenticated ? (
-                      <RestaurantReservationForm
-                        restaurantId={restaurant._id as Id<"restaurants">}
-                        restaurant={{
-                          name: restaurant.name,
-                          address: restaurant.address,
-                          maximumPartySize: restaurant.maximumPartySize,
-                          acceptsReservations: restaurant.acceptsReservations,
-                          price: restaurant.price,
-                          acceptsOnlinePayment: restaurant.acceptsOnlinePayment,
-                          requiresUpfrontPayment: restaurant.requiresUpfrontPayment,
-                        }}
-                      />
-                    ) : (
+                {isAuthenticated ? (
+                  <RestaurantReservationForm
+                    restaurantId={restaurant._id as Id<"restaurants">}
+                    restaurant={{
+                      name: restaurant.name,
+                      address: restaurant.address,
+                      maximumPartySize: restaurant.maximumPartySize,
+                      acceptsReservations: restaurant.acceptsReservations,
+                      price: restaurant.price,
+                      acceptsOnlinePayment: restaurant.acceptsOnlinePayment,
+                      requiresUpfrontPayment: restaurant.requiresUpfrontPayment,
+                    }}
+                  />
+                ) : (
+                  <Card className="shadow-lg">
+                    <CardContent className="p-6">
                       <Button
                         onClick={() => router.push("/sign-in")}
                         className="w-full"
                       >
                         Fazer login para reservar
                       </Button>
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 <Card>
                   <CardContent className="p-4 flex flex-col gap-3">

@@ -274,69 +274,66 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
 
             {/* Sticky Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                <Card className="border-2 border-gray-100 shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <span className="text-2xl font-bold text-gray-800">R$ {vehicle.pricePerDay.toFixed(2)}</span>
-                        <span className="text-gray-500 text-sm"> / diária</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="rounded-full h-8 w-8"
-                          onClick={() => setIsFavorite(!isFavorite)}
-                        >
-                          <Heart
-                            className={cn(
-                              "h-4 w-4",
-                              isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-500"
-                            )}
-                          />
-                          <span className="sr-only">Adicionar aos favoritos</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="rounded-full h-8 w-8"
-                        >
-                          <Share2 className="h-4 w-4 text-gray-500" />
-                          <span className="sr-only">Compartilhar</span>
-                        </Button>
-                      </div>
+              <div className="sticky top-24 space-y-6">
+                <div className="bg-white border border-gray-100 rounded-lg shadow-sm p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <span className="text-2xl font-bold text-gray-800">R$ {vehicle.pricePerDay.toFixed(2)}</span>
+                      <span className="text-gray-500 text-sm"> / diária</span>
                     </div>
-                    
-                    <div className="border-t border-gray-100 pt-6 mt-4">
-                      <h3 className="font-semibold text-lg mb-4">Reserve este veículo</h3>
-                      
-                      {/* Booking form */}
-                      {isAuthenticated ? (
-                        <VehicleBookingForm vehicleId={vehicle._id} pricePerDay={vehicle.pricePerDay} />
-                      ) : (
-                        <Button
-                          onClick={() => router.push("/sign-in")}
-                          className="w-full"
-                        >
-                          Fazer login para reservar
-                        </Button>
-                      )}
-                      
-                      <p className="text-xs text-gray-500 mt-4">
-                        Você não será cobrado ainda. O pagamento será realizado na retirada do veículo.
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full h-8 w-8"
+                        onClick={() => setIsFavorite(!isFavorite)}
+                      >
+                        <Heart
+                          className={cn(
+                            "h-4 w-4",
+                            isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-500"
+                          )}
+                        />
+                        <span className="sr-only">Adicionar aos favoritos</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full h-8 w-8"
+                      >
+                        <Share2 className="h-4 w-4 text-gray-500" />
+                        <span className="sr-only">Compartilhar</span>
+                      </Button>
                     </div>
-                    
-                    <Alert className="mt-6 bg-blue-50 text-blue-800 border-blue-100">
-                      <Info className="h-4 w-4" />
-                      <AlertTitle>Política de cancelamento</AlertTitle>
-                      <AlertDescription className="text-sm">
-                        Cancelamento gratuito até 24 horas antes da retirada do veículo. Após esse período, será cobrada uma taxa de 30%.
-                      </AlertDescription>
-                    </Alert>
-                  </CardContent>
-                </Card>
+                  </div>
+                  
+                  <Alert className="bg-blue-50 text-blue-800 border-blue-100">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Política de cancelamento</AlertTitle>
+                    <AlertDescription className="text-sm">
+                      Cancelamento gratuito até 24 horas antes da retirada do veículo. Após esse período, será cobrada uma taxa de 30%.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+
+                {isAuthenticated ? (
+                  <VehicleBookingForm 
+                    vehicleId={vehicle._id} 
+                    pricePerDay={vehicle.pricePerDay} 
+                    className="shadow-sm"
+                  />
+                ) : (
+                  <Card className="shadow-sm">
+                    <CardContent className="p-6">
+                      <Button
+                        onClick={() => router.push("/sign-in")}
+                        className="w-full"
+                      >
+                        Fazer login para reservar
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 <HelpSection 
                   className="mt-4"

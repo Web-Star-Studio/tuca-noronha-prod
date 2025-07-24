@@ -62,6 +62,7 @@ import { DashboardPageHeader } from "../components";
 import { BookingDetailsModal } from "@/components/dashboard/bookings/BookingManagement";
 import { VoucherDownloadButton } from "@/components/vouchers";
 import { BookingChatButton } from "@/components/chat";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 // Helper function to safely format dates
 const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string => {
@@ -130,6 +131,10 @@ export default function AdminBookingsPage() {
   // Get convex client for imperative calls
   const convex = useConvex();
 
+  // Get current user to check if master
+  const { user } = useCurrentUser();
+  const isMaster = user?.role === "master";
+
   // Asset context
   const { selectedAsset } = useAsset();
 
@@ -147,8 +152,9 @@ export default function AdminBookingsPage() {
   const cancelRestaurantReservation = useMutation(api.domains.bookings.mutations.cancelRestaurantReservation);
   const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
 
-  // Fetch bookings for ALL asset types when typeFilter is "all"
-  const shouldFetchAllActivities = (typeFilter === "all" || typeFilter === "activities") && !selectedAsset;
+  // Para usuários master, sempre buscar todas as reservas independente do asset selecionado
+  // Para outros usuários, buscar todas apenas quando não há asset selecionado
+  const shouldFetchAllActivities = (typeFilter === "all" || typeFilter === "activities") && (isMaster || !selectedAsset);
   const allActivityBookings = useQuery(
     api.domains.bookings.queries.getActivityBookings,
     shouldFetchAllActivities
@@ -159,7 +165,7 @@ export default function AdminBookingsPage() {
       : "skip"
   );
   
-  const shouldFetchAllEvents = (typeFilter === "all" || typeFilter === "events") && !selectedAsset;
+  const shouldFetchAllEvents = (typeFilter === "all" || typeFilter === "events") && (isMaster || !selectedAsset);
   const allEventBookings = useQuery(
     api.domains.bookings.queries.getEventBookings,
     shouldFetchAllEvents
@@ -170,7 +176,7 @@ export default function AdminBookingsPage() {
       : "skip"
   );
   
-  const shouldFetchAllRestaurants = (typeFilter === "all" || typeFilter === "restaurants") && !selectedAsset;
+  const shouldFetchAllRestaurants = (typeFilter === "all" || typeFilter === "restaurants") && (isMaster || !selectedAsset);
   const allRestaurantReservations = useQuery(
     api.domains.bookings.queries.getRestaurantReservations,
     shouldFetchAllRestaurants
@@ -181,7 +187,7 @@ export default function AdminBookingsPage() {
       : "skip"
   );
   
-  const shouldFetchAllVehicles = (typeFilter === "all" || typeFilter === "vehicles") && !selectedAsset;
+  const shouldFetchAllVehicles = (typeFilter === "all" || typeFilter === "vehicles") && (isMaster || !selectedAsset);
   const allVehicleBookings = useQuery(
     api.domains.bookings.queries.getVehicleBookings,
     shouldFetchAllVehicles
@@ -235,6 +241,27 @@ export default function AdminBookingsPage() {
 
   // Get current bookings based on asset type or all types
   const currentBookings = useMemo(() => {
+    // Para usuários master, sempre mostrar todas as reservas independente do asset selecionado
+    if (isMaster) {
+      let allBookings: any[] = [];
+      
+      if (typeFilter === "all" || typeFilter === "activities") {
+        allBookings = [...allBookings, ...(allActivityBookings?.page || []).map(b => ({...b, assetType: "activities"}))];
+      }
+      if (typeFilter === "all" || typeFilter === "events") {
+        allBookings = [...allBookings, ...(allEventBookings?.page || []).map(b => ({...b, assetType: "events"}))];
+      }
+      if (typeFilter === "all" || typeFilter === "restaurants") {
+        allBookings = [...allBookings, ...(allRestaurantReservations?.page || []).map(b => ({...b, assetType: "restaurants"}))];
+      }
+      if (typeFilter === "all" || typeFilter === "vehicles") {
+        allBookings = [...allBookings, ...(allVehicleBookings?.page || []).map(b => ({...b, assetType: "vehicles"}))];
+      }
+      
+      return allBookings;
+    }
+    
+    // Para outros usuários, aplicar a lógica normal de filtro por asset
     if (selectedAsset) {
       // If asset is selected, show only bookings for that asset
       switch (selectedAsset.assetType) {
@@ -268,7 +295,7 @@ export default function AdminBookingsPage() {
       
       return allBookings;
     }
-  }, [selectedAsset, typeFilter, activityBookings, eventBookings, restaurantReservations, vehicleBookings, allActivityBookings, allEventBookings, allRestaurantReservations, allVehicleBookings]);
+  }, [isMaster, selectedAsset, typeFilter, activityBookings, eventBookings, restaurantReservations, vehicleBookings, allActivityBookings, allEventBookings, allRestaurantReservations, allVehicleBookings]);
 
   // Filter bookings based on search term
   const filteredBookings = useMemo(() => {
@@ -572,9 +599,11 @@ export default function AdminBookingsPage() {
       <DashboardPageHeader
         title="Gerenciamento de Reservas"
         description={
-          selectedAsset 
-            ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
-            : "Visualize e gerencie todas as reservas do sistema"
+          isMaster 
+            ? "Como master, você visualiza TODAS as reservas do sistema independente do asset selecionado" 
+            : selectedAsset 
+              ? `Visualize e gerencie as reservas do ${selectedAsset.name}` 
+              : "Visualize e gerencie todas as reservas do sistema"
         }
         icon={Calendar}
       >
@@ -589,6 +618,13 @@ export default function AdminBookingsPage() {
       {/* Asset Selector */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
+          {isMaster && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 font-medium">
+                ⚡ Como usuário <strong>Master</strong>, você sempre vê TODAS as reservas do sistema, independente do asset selecionado abaixo.
+              </p>
+            </div>
+          )}
           <AssetSelector compact={true} showDetails={false} />
         </CardContent>
       </Card>
@@ -766,7 +802,21 @@ export default function AdminBookingsPage() {
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3">
               <Calendar className="h-5 w-5" />
-              {selectedAsset ? (
+              {isMaster ? (
+                <>
+                  Todas as Reservas do Sistema (Master)
+                  <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
+                    🔥 Acesso Master
+                  </Badge>
+                  {typeFilter !== "all" && (
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                      {typeFilter === "activities" ? "Atividades" : 
+                       typeFilter === "restaurants" ? "Restaurantes" :
+                       typeFilter === "vehicles" ? "Veículos" : "Eventos"}
+                    </Badge>
+                  )}
+                </>
+              ) : selectedAsset ? (
                 <>
                   Reservas - {selectedAsset.name}
                   {getAssetIcon(selectedAsset.assetType)}

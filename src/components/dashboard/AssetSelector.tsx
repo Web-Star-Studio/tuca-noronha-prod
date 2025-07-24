@@ -157,21 +157,38 @@ export function AssetSelector({ showDetails = true, compact = false }: AssetSele
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Selecionar Asset
+            Filtrar por Asset (Opcional)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Select 
-            value={selectedAsset?._id || ""} 
+            value={selectedAsset?._id || "all"} 
             onValueChange={(value) => {
-              const asset = availableAssets.find(a => a._id === value);
-              if (asset) setSelectedAsset(asset);
+              if (value === "all") {
+                setSelectedAsset(null);
+              } else {
+                const asset = availableAssets.find(a => a._id === value);
+                if (asset) setSelectedAsset(asset);
+              }
             }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione um asset para visualizar suas reservas" />
+              <SelectValue placeholder="Todas as reservas (clique para filtrar por asset específico)" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">
+                <div className="flex items-center gap-3 py-2">
+                  <div className="h-4 w-4 bg-blue-100 rounded flex items-center justify-center">
+                    <Building2 className="h-3 w-3 text-blue-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-medium">Todas as Reservas</span>
+                    <span className="text-xs text-gray-500">
+                      Ver reservas de todos os assets
+                    </span>
+                  </div>
+                </div>
+              </SelectItem>
               {availableAssets.map((asset) => {
                 const Icon = assetTypeIcons[asset.assetType] || Building2;
                 return (
