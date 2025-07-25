@@ -185,14 +185,6 @@ export function RestaurantCard({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-7 text-xs text-blue-700 hover:bg-blue-50 border-blue-200"
-                onClick={() => window.location.href = `/admin/dashboard/restaurantes/${restaurant._id}/cardapio-mesas`}
-              >
-                Mesas
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
                 className="h-7 text-xs text-gray-700 hover:bg-gray-50"
                 onClick={() => onEdit(restaurant)}
               >

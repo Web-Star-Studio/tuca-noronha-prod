@@ -51,7 +51,8 @@ import {
   LayoutDashboard,
   Plus,
   CheckCircle,
-  CreditCard
+  CreditCard,
+  Star
 } from "lucide-react"
 import { UserButton, useUser } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -237,6 +238,8 @@ function MasterSidebar() {
   const masterSystemLinks = [
     { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard Principal" },
     { href: "/admin/dashboard/usuarios", icon: Users, label: "Gestão de Usuários" },
+    { href: "/admin/reviews", icon: Star, label: "Gerenciar Reviews" },
+    { href: "/admin/reviews/configuracoes", icon: Settings, label: "Configurações de Reviews" },
     { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte", badge: 3 },
     { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria" },
   ]

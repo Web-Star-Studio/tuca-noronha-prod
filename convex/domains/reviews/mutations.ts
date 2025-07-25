@@ -1,6 +1,9 @@
 import { mutation, internalMutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { Id } from "../../_generated/dataModel";
+import { mutationWithRole } from "../rbac";
+import { internal } from "../../_generated/api";
+import { getCurrentUserConvexId } from "../rbac/utils";
 
 /**
  * Atualiza o rating de um asset baseado nas reviews existentes
@@ -206,4 +209,366 @@ async function updateVehicleRating(ctx: any, vehicleId: string, ratingData: any)
       rating: Number(ratingData.overall.toFixed(1))
     });
   }
-} 
+}
+
+/**
+ * Aprovar ou rejeitar uma review (apenas para masters)
+ */
+export const moderateReview = mutationWithRole(["master"])({
+  args: {
+    reviewId: v.id("reviews"),
+    action: v.union(v.literal("approve"), v.literal("reject")),
+    reason: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUser = currentUserId ? await ctx.db.get(currentUserId) : null;
+    
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) {
+      throw new Error("Review não encontrada");
+    }
+
+    // Atualizar status da review
+    await ctx.db.patch(args.reviewId, {
+      isApproved: args.action === "approve",
+      updatedAt: Date.now()
+    });
+
+    // Log de auditoria
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUserId!,
+        role: "master",
+        name: currentUser?.name || "Master Admin",
+        email: currentUser?.email
+      },
+      event: {
+        type: "update",
+        action: `Review ${args.action}d`,
+        category: "data_modification",
+        severity: "medium"
+      },
+      resource: {
+        type: "reviews",
+        id: args.reviewId,
+        name: review.title
+      },
+      source: {
+        ipAddress: "system",
+        platform: "web"
+      },
+      status: "success",
+      metadata: {
+        reason: args.reason,
+        oldStatus: review.isApproved ? "approved" : "pending",
+        newStatus: args.action === "approve" ? "approved" : "rejected"
+      },
+      timestamp: Date.now()
+    });
+
+    // Reenviar para atualizar rating do asset se aprovado
+    if (args.action === "approve") {
+      await ctx.scheduler.runAfter(0, internal.domains.reviews.mutations.updateAssetRating, {
+        itemType: review.itemType,
+        itemId: review.itemId
+      });
+    }
+
+    return { success: true };
+  }
+});
+
+/**
+ * Deletar uma review (apenas para masters) - soft delete
+ */
+export const deleteReview = mutationWithRole(["master"])({
+  args: {
+    reviewId: v.id("reviews"),
+    reason: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUser = currentUserId ? await ctx.db.get(currentUserId) : null;
+    
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) {
+      throw new Error("Review não encontrada");
+    }
+
+    // Soft delete - marcar como não aprovada e adicionar metadata
+    await ctx.db.patch(args.reviewId, {
+      isApproved: false,
+      updatedAt: Date.now()
+    });
+
+    // Log de auditoria
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUserId!,
+        role: "master",
+        name: currentUser?.name || "Master Admin",
+        email: currentUser?.email
+      },
+      event: {
+        type: "delete",
+        action: "Review deleted",
+        category: "data_modification",
+        severity: "high"
+      },
+      resource: {
+        type: "reviews",
+        id: args.reviewId,
+        name: review.title
+      },
+      source: {
+        ipAddress: "system",
+        platform: "web"
+      },
+      status: "success",
+      metadata: {
+        reason: args.reason,
+        deletedReviewData: {
+          rating: review.rating,
+          title: review.title,
+          itemType: review.itemType,
+          itemId: review.itemId
+        }
+      },
+      timestamp: Date.now()
+    });
+
+    // Atualizar rating do asset após remoção
+    await ctx.scheduler.runAfter(0, internal.domains.reviews.mutations.updateAssetRating, {
+      itemType: review.itemType,
+      itemId: review.itemId
+    });
+
+    return { success: true };
+  }
+});
+
+/**
+ * Resposta administrativa a uma review (apenas para masters)
+ */
+export const respondToReview = mutationWithRole(["master"])({
+  args: {
+    reviewId: v.id("reviews"),
+    response: v.string(),
+    isPublic: v.boolean()
+  },
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUser = currentUserId ? await ctx.db.get(currentUserId) : null;
+    
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) {
+      throw new Error("Review não encontrada");
+    }
+
+    // Criar resposta administrativa
+    const responseId = await ctx.db.insert("reviewResponses", {
+      reviewId: args.reviewId,
+      responderId: currentUserId!,
+      responderRole: "master",
+      response: args.response,
+      isPublic: args.isPublic,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+
+    // Log de auditoria
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUserId!,
+        role: "master",
+        name: currentUser?.name || "Master Admin",
+        email: currentUser?.email
+      },
+      event: {
+        type: "create",
+        action: "Review response created",
+        category: "communication",
+        severity: "low"
+      },
+      resource: {
+        type: "reviewResponses",
+        id: responseId,
+        name: `Response to: ${review.title}`
+      },
+      source: {
+        ipAddress: "system",
+        platform: "web"
+      },
+      status: "success",
+      metadata: {
+        reviewId: args.reviewId,
+        isPublic: args.isPublic,
+        responseLength: args.response.length
+      },
+      timestamp: Date.now()
+    });
+
+    return { success: true, responseId };
+  }
+});
+
+/**
+ * Atualizar configurações de moderação (apenas para masters)
+ */
+export const updateModerationSettings = mutationWithRole(["master"])({
+  args: {
+    autoApprove: v.boolean(),
+    minimumRating: v.optional(v.number()),
+    bannedWords: v.array(v.string()),
+    requireVerification: v.boolean()
+  },
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUser = currentUserId ? await ctx.db.get(currentUserId) : null;
+
+    // Atualizar ou criar configurações de moderação
+    const existingSettings = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "review_moderation"))
+      .first();
+
+    const settingsData = {
+      autoApprove: args.autoApprove,
+      minimumRating: args.minimumRating,
+      bannedWords: args.bannedWords,
+      requireVerification: args.requireVerification,
+      updatedAt: Date.now()
+    };
+
+    if (existingSettings) {
+      await ctx.db.patch(existingSettings._id, {
+        value: settingsData,
+        lastModifiedBy: currentUserId!,
+        lastModifiedAt: Date.now()
+      });
+    } else {
+      await ctx.db.insert("systemSettings", {
+        key: "review_moderation",
+        value: settingsData,
+        type: "object",
+        category: "business",
+        description: "Configurações de moderação de reviews",
+        isPublic: false,
+        lastModifiedBy: currentUserId!,
+        lastModifiedAt: Date.now(),
+        createdAt: Date.now()
+      });
+    }
+
+    // Log de auditoria
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUserId!,
+        role: "master",
+        name: currentUser?.name || "Master Admin",
+        email: currentUser?.email
+      },
+      event: {
+        type: "update",
+        action: "Moderation settings updated",
+        category: "system_admin",
+        severity: "medium"
+      },
+      resource: {
+        type: "systemSettings",
+        id: existingSettings?._id || "new",
+        name: "Review Moderation Settings"
+      },
+      source: {
+        ipAddress: "system",
+        platform: "web"
+      },
+      status: "success",
+      metadata: {
+        newSettings: settingsData
+      },
+      timestamp: Date.now()
+    });
+
+    return { success: true };
+  }
+});
+
+/**
+ * Inicializar configurações padrão de moderação (sistema interno)
+ */
+export const initializeDefaultModerationSettings = mutationWithRole(["master"])({
+  args: {},
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    // Verificar se já existem configurações
+    const existingSettings = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "review_moderation"))
+      .first();
+
+    if (existingSettings) {
+      return { success: true, message: "Configurações já existem" };
+    }
+
+    // Criar configurações padrão
+    const defaultSettings = {
+      autoApprove: false, // Moderação manual por padrão para garantir qualidade
+      minimumRating: undefined, // Sem restrição de rating mínimo
+      bannedWords: [
+        "spam", "lixo", "horrível", "terrível", "péssimo", 
+        "fraude", "golpe", "enganação", "não recomendo"
+      ], // Algumas palavras que podem indicar reviews problemáticas
+      requireVerification: false, // Não exigir verificação por padrão
+      updatedAt: Date.now()
+    };
+
+    await ctx.db.insert("systemSettings", {
+      key: "review_moderation",
+      value: defaultSettings,
+      type: "object",
+      category: "business",
+      description: "Configurações de moderação de reviews",
+      isPublic: false,
+      lastModifiedBy: currentUserId!,
+      lastModifiedAt: Date.now(),
+      createdAt: Date.now()
+    });
+
+    // Log de auditoria
+    await ctx.db.insert("auditLogs", {
+      actor: {
+        userId: currentUserId!,
+        role: "master",
+        name: "Sistema",
+        email: "system@tournefy.com"
+      },
+      event: {
+        type: "create",
+        action: "Default moderation settings initialized",
+        category: "system_admin",
+        severity: "low"
+      },
+      resource: {
+        type: "systemSettings",
+        id: "new",
+        name: "Review Moderation Settings"
+      },
+      source: {
+        ipAddress: "system",
+        platform: "system"
+      },
+      status: "success",
+      metadata: {
+        defaultSettings
+      },
+      timestamp: Date.now()
+    });
+
+    return { success: true, message: "Configurações padrão criadas" };
+  }
+});
+
+ 

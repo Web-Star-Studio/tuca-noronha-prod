@@ -1453,6 +1453,20 @@ export default defineSchema({
     .index("by_review", ["reviewId"])
     .index("by_user_review", ["userId", "reviewId"]),
 
+  // Review responses from admins/partners
+  reviewResponses: defineTable({
+    reviewId: v.id("reviews"),
+    responderId: v.id("users"),
+    responderRole: v.string(), // "master", "partner", "employee"
+    response: v.string(),
+    isPublic: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_review", ["reviewId"])
+    .index("by_responder", ["responderId"])
+    .index("by_review_public", ["reviewId", "isPublic"]),
+
   // Organizações/Empreendimentos de Partners
   partnerOrganizations: defineTable({
     name: v.string(),                        // Nome do empreendimento
@@ -1693,6 +1707,17 @@ export default defineSchema({
       bookingId: v.optional(v.string()),       // ID da reserva
       paymentMethod: v.optional(v.string()),   // Método de pagamento
       notes: v.optional(v.string()),           // Notas gerais
+      
+      // Review data (for review moderation operations)
+      deletedReviewData: v.optional(v.object({
+        rating: v.number(),
+        title: v.string(),
+        itemType: v.string(),
+        itemId: v.string()
+      })),
+      responseLength: v.optional(v.number()),     // Length of review response
+      newSettings: v.optional(v.any()),           // New configuration settings
+      defaultSettings: v.optional(v.any()),       // Default configuration settings
       
       // Arquivamento
       archived: v.optional(v.boolean()),       // Se o log foi arquivado

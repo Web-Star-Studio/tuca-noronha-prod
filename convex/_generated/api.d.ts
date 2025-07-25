@@ -124,6 +124,7 @@ import type * as domains_restaurants_queries from "../domains/restaurants/querie
 import type * as domains_restaurants_types from "../domains/restaurants/types.js";
 import type * as domains_restaurants_utils from "../domains/restaurants/utils.js";
 import type * as domains_reviews_mutations from "../domains/reviews/mutations.js";
+import type * as domains_reviews_queries from "../domains/reviews/queries.js";
 import type * as domains_shared_index from "../domains/shared/index.js";
 import type * as domains_shared_queries from "../domains/shared/queries.js";
 import type * as domains_stripe_actions from "../domains/stripe/actions.js";
@@ -303,6 +304,7 @@ declare const fullApi: ApiFromModules<{
   "domains/restaurants/types": typeof domains_restaurants_types;
   "domains/restaurants/utils": typeof domains_restaurants_utils;
   "domains/reviews/mutations": typeof domains_reviews_mutations;
+  "domains/reviews/queries": typeof domains_reviews_queries;
   "domains/shared/index": typeof domains_shared_index;
   "domains/shared/queries": typeof domains_shared_queries;
   "domains/stripe/actions": typeof domains_stripe_actions;
