@@ -1,25 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, HelpCircle, Plus, X, Settings, Users, Package, ShieldCheck } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import CouponAssetSelection from "./CouponAssetSelection";
-import CouponUserAssignment from "./CouponUserAssignment";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 
 interface CouponFormData {
   _id?: string;
@@ -30,27 +22,15 @@ interface CouponFormData {
   discountValue: number;
   maxDiscountAmount?: number;
   minimumOrderValue?: number;
-  maximumOrderValue?: number;
   usageLimit?: number;
   userUsageLimit?: number;
   validFrom: string;
   validUntil: string;
-  type: "public" | "private" | "first_purchase" | "returning_customer";
   isActive: boolean;
-  isPubliclyVisible: boolean;
-  stackable: boolean;
-  autoApply: boolean;
-  notifyOnExpiration: boolean;
   globalApplication: {
     isGlobal: boolean;
     assetTypes: string[];
   };
-  applicableAssets: Array<{
-    assetType: string;
-    assetId: string;
-    isActive: boolean;
-  }>;
-  allowedUsers: string[];
 }
 
 // Type for submission data with timestamps
@@ -85,7 +65,6 @@ export default function CouponForm({
   title = "Criar Cupom",
   description = "Configure os detalhes do cupom de desconto",
 }: CouponFormProps) {
-  const [activeTab, setActiveTab] = useState("general");
   const [formData, setFormData] = useState<CouponFormData>({
     code: "",
     name: "",
@@ -94,27 +73,15 @@ export default function CouponForm({
     discountValue: 0,
     validFrom: new Date().toISOString().slice(0, 16),
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-    type: "public",
     isActive: true,
-    isPubliclyVisible: true,
-    stackable: false,
-    autoApply: false,
-    notifyOnExpiration: true,
     globalApplication: {
       isGlobal: true,
-      assetTypes: [],
+      assetTypes: ["activities", "events", "restaurants", "vehicles", "accommodations", "packages"],
     },
-    applicableAssets: [],
-    allowedUsers: [],
     ...initialData,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Buscar usuários já atribuídos ao cupom (para edição)
-  const assignedUsersData = initialData?.allowedUsers && initialData.allowedUsers.length > 0
-    ? initialData.allowedUsers.map(userId => ({ _id: userId, name: "", email: "", profileImage: "" }))
-    : [];
 
   // Auto-gerar código do cupom
   const generateCouponCode = () => {
@@ -213,13 +180,12 @@ export default function CouponForm({
     if (!formData.validUntil) finalErrors.validUntil = "Data de fim é obrigatória";
 
     // Validar aplicabilidade
-    if (!formData.globalApplication.isGlobal && formData.applicableAssets.length === 0) {
-      finalErrors.applicability = "Selecione pelo menos um tipo de aplicação";
+    if (!formData.globalApplication.isGlobal) {
+      finalErrors.applicability = "Aplicação global deve estar habilitada";
     }
 
-    // Validar usuários permitidos para cupons privados
-    if (formData.type === "private" && formData.allowedUsers.length === 0) {
-      finalErrors.allowedUsers = "Cupons privados devem ter pelo menos um usuário permitido";
+    if (formData.globalApplication.assetTypes.length === 0) {
+      finalErrors.assetTypes = "Selecione pelo menos um tipo de serviço";
     }
 
     if (Object.keys(finalErrors).length > 0) {
@@ -239,6 +205,14 @@ export default function CouponForm({
         code: formData.code.toUpperCase(),
         validFrom: new Date(formData.validFrom).getTime(),
         validUntil: new Date(formData.validUntil).getTime(),
+        // Adicionar campos padrão para compatibilidade
+        type: "public" as const,
+        isPubliclyVisible: true,
+        stackable: false,
+        autoApply: false,
+        notifyOnExpiration: false,
+        applicableAssets: [],
+        allowedUsers: [],
       };
 
       await onSubmit(submitData);
@@ -261,28 +235,9 @@ export default function CouponForm({
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="general" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Geral</span>
-            </TabsTrigger>
-            <TabsTrigger value="rules" className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">Regras</span>
-            </TabsTrigger>
-            <TabsTrigger value="assets" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Serviços</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Usuários</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Tab Geral - Informações básicas e desconto */}
-          <TabsContent value="general" className="space-y-6 mt-6">
+        <div className="space-y-6">
+          {/* Informações básicas e desconto */}
+          <div className="space-y-6">
             {/* Informações Básicas */}
             <Card>
               <CardHeader>
@@ -468,7 +423,12 @@ export default function CouponForm({
                         size="sm"
                         onClick={() => {
                           const now = new Date();
-                          const formattedNow = now.toISOString().slice(0, 16);
+                          const year = now.getFullYear();
+                          const month = String(now.getMonth() + 1).padStart(2, '0');
+                          const day = String(now.getDate()).padStart(2, '0');
+                          const hours = String(now.getHours()).padStart(2, '0');
+                          const minutes = String(now.getMinutes()).padStart(2, '0');
+                          const formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`;
                           handleInputChange("validFrom", formattedNow);
                         }}
                         className="text-xs"
@@ -504,14 +464,14 @@ export default function CouponForm({
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
 
-          {/* Tab Regras - Limites e restrições */}
-          <TabsContent value="rules" className="space-y-6 mt-6">
-            {/* Regras de Aplicação */}
+          {/* Limites e restrições */}
+          <div className="space-y-6">
+            {/* Regras de Uso */}
             <Card>
               <CardHeader>
-                <CardTitle>Regras de Aplicação</CardTitle>
+                <CardTitle>Limites de Uso</CardTitle>
                 <CardDescription>
                   Configure as condições para uso do cupom
                 </CardDescription>
@@ -534,23 +494,6 @@ export default function CouponForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="maximumOrderValue">
-                      Valor Máximo do Pedido (R$)
-                    </Label>
-                    <Input
-                      id="maximumOrderValue"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.maximumOrderValue || ""}
-                      onChange={(e) => handleInputChange("maximumOrderValue", parseFloat(e.target.value) || undefined)}
-                      placeholder="Opcional"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
                     <Label htmlFor="usageLimit">
                       Limite Total de Uso
                     </Label>
@@ -563,207 +506,61 @@ export default function CouponForm({
                       placeholder="Ilimitado"
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="userUsageLimit">
-                      Limite por Usuário
-                    </Label>
-                    <Input
-                      id="userUsageLimit"
-                      type="number"
-                      min="1"
-                      value={formData.userUsageLimit || ""}
-                      onChange={(e) => handleInputChange("userUsageLimit", parseInt(e.target.value) || undefined)}
-                      placeholder="Ilimitado"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="userUsageLimit">
+                    Limite por Usuário
+                  </Label>
+                  <Input
+                    id="userUsageLimit"
+                    type="number"
+                    min="1"
+                    value={formData.userUsageLimit || ""}
+                    onChange={(e) => handleInputChange("userUsageLimit", parseInt(e.target.value) || undefined)}
+                    placeholder="Ilimitado"
+                  />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Tipo e Visibilidade */}
+            {/* Tipos de Serviços */}
             <Card>
               <CardHeader>
-                <CardTitle>Tipo e Visibilidade</CardTitle>
+                <CardTitle>Tipos de Serviços</CardTitle>
                 <CardDescription>
-                  Configure quem pode usar o cupom
+                  Selecione em quais tipos de serviços o cupom pode ser usado
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <Label>Tipo de Cupom</Label>
-                  <RadioGroup
-                    value={formData.type}
-                    onValueChange={(value: any) => handleInputChange("type", value)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="public" id="public" />
-                      <Label htmlFor="public">Público - Qualquer pessoa pode usar</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="private" id="private" />
-                      <Label htmlFor="private">Privado - Apenas usuários específicos</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="first_purchase" id="first_purchase" />
-                      <Label htmlFor="first_purchase">Primeira Compra - Novos clientes apenas</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="returning_customer" id="returning_customer" />
-                      <Label htmlFor="returning_customer">Cliente Recorrente - Clientes que já compraram</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isPubliclyVisible"
-                    checked={formData.isPubliclyVisible}
-                    onCheckedChange={(checked) => handleInputChange("isPubliclyVisible", checked)}
-                  />
-                  <Label htmlFor="isPubliclyVisible">Visível publicamente na listagem de cupons</Label>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Configurações Avançadas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações Avançadas</CardTitle>
-                <CardDescription>
-                  Opções adicionais para o cupom
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="stackable"
-                      checked={formData.stackable}
-                      onCheckedChange={(checked) => handleInputChange("stackable", checked)}
-                    />
-                    <Label htmlFor="stackable">
-                      Empilhável - Pode ser usado com outros cupons
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="autoApply"
-                      checked={formData.autoApply}
-                      onCheckedChange={(checked) => handleInputChange("autoApply", checked)}
-                    />
-                    <Label htmlFor="autoApply">
-                      Aplicação automática - Aplicar automaticamente quando elegível
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="notifyOnExpiration"
-                      checked={formData.notifyOnExpiration}
-                      onCheckedChange={(checked) => handleInputChange("notifyOnExpiration", checked)}
-                    />
-                    <Label htmlFor="notifyOnExpiration">
-                      Notificar sobre expiração próxima
-                    </Label>
+                  <Label>Tipos de Serviços</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ASSET_TYPES.map((assetType) => (
+                      <div key={assetType.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={assetType.value}
+                          checked={formData.globalApplication.assetTypes.includes(assetType.value)}
+                          onCheckedChange={(checked) => 
+                            handleAssetTypeToggle(assetType.value, checked as boolean)
+                          }
+                        />
+                        <Label htmlFor={assetType.value}>{assetType.label}</Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Tab Serviços - Seleção de assets */}
-          <TabsContent value="assets" className="space-y-6 mt-6">
-            {/* Aplicabilidade Global */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Aplicabilidade</CardTitle>
-                <CardDescription>
-                  Defina em quais serviços o cupom pode ser usado
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isGlobal"
-                    checked={formData.globalApplication.isGlobal}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({
-                        ...prev,
-                        globalApplication: { ...prev.globalApplication, isGlobal: checked }
-                      }))
-                    }
-                  />
-                  <Label htmlFor="isGlobal">Aplicar globalmente em tipos de serviços</Label>
-                </div>
-
-                {formData.globalApplication.isGlobal && (
-                  <div className="space-y-3">
-                    <Label>Tipos de Serviços</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {ASSET_TYPES.map((assetType) => (
-                        <div key={assetType.value} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={assetType.value}
-                            checked={formData.globalApplication.assetTypes.includes(assetType.value)}
-                            onCheckedChange={(checked) => 
-                              handleAssetTypeToggle(assetType.value, checked as boolean)
-                            }
-                          />
-                          <Label htmlFor={assetType.value}>{assetType.label}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {errors.assetTypes && (
+                  <p className="text-sm text-red-500">{errors.assetTypes}</p>
                 )}
-
                 {errors.applicability && (
                   <p className="text-sm text-red-500">{errors.applicability}</p>
                 )}
               </CardContent>
             </Card>
-
-            {/* Seleção de Assets Específicos */}
-            {!formData.globalApplication.isGlobal && (
-              <CouponAssetSelection
-                selectedAssets={formData.applicableAssets}
-                onAssetsChange={(assets) => setFormData(prev => ({ ...prev, applicableAssets: assets }))}
-                globalApplication={formData.globalApplication}
-              />
-            )}
-          </TabsContent>
-
-          {/* Tab Usuários - Atribuição de usuários */}
-          <TabsContent value="users" className="space-y-6 mt-6">
-            {formData.type === "private" ? (
-              <CouponUserAssignment
-                couponId={initialData?._id || ""}
-                currentUsers={assignedUsersData}
-                onUpdate={() => {
-                  // Atualizar lista de usuários permitidos
-                }}
-              />
-            ) : (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center space-y-4">
-                    <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <div>
-                      <h3 className="text-lg font-medium">Atribuição de Usuários</h3>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        A atribuição de usuários está disponível apenas para cupons do tipo "Privado".
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Altere o tipo do cupom na aba "Regras" para habilitar esta funcionalidade.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         {/* Botões de Ação */}
         <div className="flex justify-end gap-3">
@@ -782,4 +579,4 @@ export default function CouponForm({
       </form>
     </TooltipProvider>
   );
-} 
+}

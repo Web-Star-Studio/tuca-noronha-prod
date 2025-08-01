@@ -154,9 +154,9 @@ export default function CouponValidator({
           <Alert variant={isValid ? "default" : "destructive"}>
             <div className="flex items-center gap-2">
               {isValid ? (
-                <Check className="h-4 w-4 text-green-600" />
+                <Check className="text-green-600" />
               ) : (
-                <X className="h-4 w-4 text-red-600" />
+                <X className="text-red-600" />
               )}
               <AlertDescription>{message}</AlertDescription>
             </div>
@@ -165,7 +165,7 @@ export default function CouponValidator({
 
         {error && (
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
