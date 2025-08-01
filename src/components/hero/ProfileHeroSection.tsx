@@ -204,22 +204,6 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
         </motion.div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-30">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="flex gap-3"
-        >
-          <Button asChild className="bg-white/90 hover:bg-white text-gray-900 backdrop-blur-sm shadow-lg">
-            <Link href="/reservas">
-              <Calendar className="w-4 h-4 mr-2" />
-              Minhas Reservas
-            </Link>
-          </Button>
-        </motion.div>
-      </div>
 
       {/* Navigation */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30">

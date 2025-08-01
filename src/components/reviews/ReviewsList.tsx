@@ -168,14 +168,19 @@ export function ReviewsList({
       {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Avaliações dos Clientes
+          <div className="flex flex-col items-center justify-between">
+            <CardTitle className="flex items-center flex-col gap-2">
+             <div className="flex items-center gap-2 font-semibold">
+             <MessageSquare className="h-5 w-5" />
+              <p className="text-base">
+                Avaliações dos Clientes
+              </p>
+
+             </div>
               {total > 0 && (
-                <span className="text-base font-normal text-gray-500">
+                <p className="text-base font-normal text-gray-500">
                   ({total} {total === 1 ? 'avaliação' : 'avaliações'})
-                </span>
+                </p>
               )}
             </CardTitle>
 
@@ -191,39 +196,7 @@ export function ReviewsList({
           </div>
         </CardHeader>
 
-        {/* Filters */}
-        {total > 0 && (
-          <CardContent className="pt-0">
-            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filtros e Ordenação
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Ordenar por:</span>
-                    <Select value={sortBy} onValueChange={handleSortChange}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sortOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        )}
+
       </Card>
 
       {/* Create Form */}

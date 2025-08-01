@@ -21,6 +21,7 @@ import {
   LayoutPanelLeft,
   Car,
   MessageSquare,
+  MessageCircle,
   Bed,
   Activity,
   Calendar,
@@ -239,7 +240,7 @@ function MasterSidebar() {
     { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard Principal" },
     { href: "/admin/dashboard/usuarios", icon: Users, label: "Gestão de Usuários" },
     { href: "/admin/reviews", icon: Star, label: "Gerenciar Reviews" },
-    { href: "/admin/reviews/configuracoes", icon: Settings, label: "Configurações de Reviews" },
+    { href: "/admin/dashboard/chats", icon: MessageCircle, label: "Chats de Parceiros" },
     { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte", badge: 3 },
     { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria" },
   ]
