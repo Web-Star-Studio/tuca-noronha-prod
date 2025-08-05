@@ -6,7 +6,7 @@ import type { Id } from "@/../convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 // Helper function to query tickets - this will get tickets for an activity
-function queryTickets(id: string): Promise<ActivityTicket[]> {
+function queryTickets(): Promise<ActivityTicket[]> {
   return new Promise((resolve) => {
     // This is just a placeholder implementation
     // In a real app, you'd fetch the tickets from your backend
@@ -169,7 +169,7 @@ export const useGetConvexUserId = () => {
     try {
       const convexUserId = await getUserByClerkId({ clerkId });
       return convexUserId as Id<"users">;
-    } catch (error) {
+    } catch {
       console.error("Error getting Convex user ID:", error);
       return null;
     }
@@ -200,7 +200,7 @@ export const useActivities = () => {
               // Instead of directly calling the API, use the queryTickets utility
               const activityTickets = await queryTickets(activity.id);
               return activityTickets;
-            } catch (error) {
+            } catch {
               console.error("Error loading tickets for activity:", error);
               return [];
             }
@@ -240,7 +240,7 @@ export const useFeaturedActivities = () => {
               // Use the queryTickets utility
               const activityTickets = await queryTickets(activity.id);
               return activityTickets;
-            } catch (error) {
+            } catch {
               console.error("Error loading tickets for activity:", error);
               return [];
             }
@@ -263,12 +263,10 @@ export const usePublicActivity = (id: string | null) => {
     api.domains.activities.queries.getPublicActivityById, 
     id ? { id: id as Id<"activities"> } : "skip"
   );
-  
-  const isLoading = id !== null && activity === undefined;
-  
+
   return {
     activity: activity ? mapConvexActivity(activity as ActivityFromConvex) : null,
-    isLoading,
+    isLoading: activity === undefined,
   };
 };
 
@@ -298,7 +296,7 @@ export const usePublicActivities = () => {
               // Use the queryTickets utility
               const activityTickets = await queryTickets(activity.id);
               return activityTickets;
-            } catch (error) {
+            } catch {
               console.error("Error loading tickets for activity:", error);
               return [];
             }
@@ -344,7 +342,7 @@ export const useCreateActivity = () => {
       // Create the activity in Convex
       const activityId = await createActivityMutation(convexData);
       return activityId;
-    } catch (error) {
+    } catch {
       console.error("Error creating activity:", error);
       throw error;
     }
@@ -372,14 +370,17 @@ export const useUpdateActivity = () => {
       // We need to exclude some fields that are not in the update input
       const { 
         id,
-        createdAt,
-        updatedAt,
-        creatorName,
-        creatorEmail,
-        creatorImage,
-        tickets,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        creatorName: _creatorName,
+        creatorEmail: _creatorEmail,
+        creatorImage: _creatorImage,
+        tickets: _tickets,
         ...updateData
       } = activityData;
+      
+      // Avoid unused variable warnings
+      void _createdAt; void _updatedAt; void _creatorName; void _creatorEmail; void _creatorImage; void _tickets;
       
       // Update the activity in Convex
       const result = await updateActivityMutation({
@@ -391,7 +392,7 @@ export const useUpdateActivity = () => {
       });
       
       return result;
-    } catch (error) {
+    } catch {
       console.error("Error updating activity:", error);
       throw error;
     }
@@ -440,7 +441,7 @@ export const useUserActivities = () => {
           
           // Map activities to frontend format
           setActivities(activities.map(mapConvexActivity));
-        } catch (error) {
+        } catch {
           console.error("Error fetching user activities:", error);
         } finally {
           setIsLoading(false);
@@ -500,7 +501,7 @@ export const useCreateActivityTicket = () => {
     try {
       const ticketId = await createTicketMutation(convexData as any);
       return ticketId;
-    } catch (error) {
+    } catch {
       console.error("Error creating ticket:", error);
       throw error;
     }
@@ -511,7 +512,8 @@ export const useUpdateActivityTicket = () => {
   const updateTicketMutation = useMutation(api.domains.activities.mutations.updateTicket);
   
   return async (ticketData: ActivityTicket) => {
-    const { id, createdAt, ...updateData } = ticketData;
+    const { id, createdAt: _createdAt, ...updateData } = ticketData;
+    void _createdAt; // Avoid unused variable warning
     
     return await updateTicketMutation({
       id: id as Id<"activityTickets">,

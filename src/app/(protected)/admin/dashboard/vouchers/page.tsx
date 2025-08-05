@@ -30,7 +30,6 @@ import {
   Filter, 
   Download, 
   Eye, 
-  Calendar,
   Users,
   CheckCircle,
   AlertCircle,
@@ -38,11 +37,9 @@ import {
   Loader2
 } from "lucide-react";
 import { VoucherScanner } from "@/components/vouchers/VoucherScanner";
-import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 export default function AdminVouchersPage() {
-  const { user } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -266,7 +263,7 @@ export default function AdminVouchersPage() {
                       <SelectItem value="event">Evento</SelectItem>
                       <SelectItem value="restaurant">Restaurante</SelectItem>
                       <SelectItem value="vehicle">Veículo</SelectItem>
-                      <SelectItem value="accommodation">Hospedagem</SelectItem>
+      
                       <SelectItem value="package">Pacote</SelectItem>
                     </SelectContent>
                   </Select>

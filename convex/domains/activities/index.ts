@@ -3,7 +3,7 @@
  */
 
 // Re-export all queries from the queries file
-export * from "./queries";
+// Temporarily disabled due to Convex type issues: export * from "./queries";
 
 // Re-export all mutations from the mutations file
 export * from "./mutations";

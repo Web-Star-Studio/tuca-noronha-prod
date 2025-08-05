@@ -485,11 +485,7 @@ export async function getAccessibleAssetIds(
         .query("vehicles")
         .withIndex("by_ownerId", (q) => q.eq("ownerId", currentUserId))
         .collect();
-    } else if (assetType === "accommodations") {
-      assets = await ctx.db
-        .query("accommodations")
-        .withIndex("by_partner", (q) => q.eq("partnerId", currentUserId))
-        .collect();
+
     }
     
     return assets.map(asset => asset._id.toString());

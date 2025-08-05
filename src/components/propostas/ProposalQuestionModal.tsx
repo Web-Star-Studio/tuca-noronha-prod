@@ -60,7 +60,7 @@ export default function ProposalQuestionModal({
       } else {
         toast.error("Erro ao enviar pergunta");
       }
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar pergunta:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao enviar pergunta");
     } finally {
@@ -84,7 +84,7 @@ export default function ProposalQuestionModal({
             Fazer Pergunta sobre a Proposta
           </DialogTitle>
           <DialogDescription>
-            Envie uma pergunta sobre a proposta "{proposalTitle}". O parceiro será notificado e responderá em breve.
+            Envie uma pergunta sobre a proposta &quot;{proposalTitle}&quot;. O parceiro será notificado e responderá em breve.
           </DialogDescription>
         </DialogHeader>
 

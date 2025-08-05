@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ export function ReviewCard({
         voteType
       );
       setUserVote(voteType);
-    } catch (error) {
+    } catch {
       // Error handled by hook
     }
   };
@@ -230,9 +231,11 @@ export function ReviewCard({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {review.photos.map((photo, index) => (
                   <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                    <img
+                    <Image
                       src={photo}
                       alt={`Foto ${index + 1} da review`}
+                      width={200}
+                      height={200}
                       className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
                     />
                   </div>

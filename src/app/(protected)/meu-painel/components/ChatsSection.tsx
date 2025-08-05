@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageCircle, Search, Filter, Users, Clock, Plus } from "lucide-react";
+import { MessageCircle, Search, Users, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useChatRooms, formatMessageTime, getChatStatusColor, getChatStatusText } from "@/lib/services/chatService";
 import { Id } from "@/../convex/_generated/dataModel";
-import { motion } from "framer-motion";
+
 import { SupportModal } from "./SupportModal";
 
 const ChatsSection: React.FC = () => {
@@ -26,7 +26,8 @@ const ChatsSection: React.FC = () => {
   const allChats = useChatRooms();
   const activeChats = useChatRooms("active");
   
-  const isLoading = !allChats && !activeChats;
+  // Loading state
+  const isLoading = allChats === undefined || activeChats === undefined;
 
   // Filter chats based on search term
   const filterChats = (chats: any[]) => {
@@ -309,7 +310,6 @@ const ChatsSection: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-
 
       </div>
 

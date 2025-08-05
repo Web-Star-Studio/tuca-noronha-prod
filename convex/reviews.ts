@@ -70,40 +70,8 @@ export const createReview = mutation({
       .first();
 
     // Determine approval status based on moderation settings
-    let shouldAutoApprove = false;
-    
-    if (moderationSettings?.value) {
-      const settings = moderationSettings.value as any;
-      
-      // Check auto-approval setting
-      if (settings.autoApprove) {
-        shouldAutoApprove = true;
-        
-        // Additional checks for auto-approval
-        if (settings.minimumRating && args.rating < settings.minimumRating) {
-          shouldAutoApprove = false; // Low rating needs manual review
-        }
-        
-        // Check for banned words
-        if (settings.bannedWords && settings.bannedWords.length > 0) {
-          const content = `${args.title} ${args.comment}`.toLowerCase();
-          const hasBannedWords = settings.bannedWords.some((word: string) => 
-            content.includes(word.toLowerCase())
-          );
-          if (hasBannedWords) {
-            shouldAutoApprove = false; // Contains banned words
-          }
-        }
-        
-        // Check verification requirement
-        if (settings.requireVerification && !args.isVerified) {
-          shouldAutoApprove = false; // Unverified user
-        }
-      }
-    } else {
-      // Default behavior: manual moderation for better quality
-      shouldAutoApprove = false;
-    }
+    // Reviews são sempre aprovadas automaticamente
+    let shouldAutoApprove = true;
 
     // Create the review
     const reviewId = await ctx.db.insert("reviews", {

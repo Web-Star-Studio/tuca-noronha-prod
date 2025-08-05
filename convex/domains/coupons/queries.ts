@@ -681,30 +681,7 @@ export const getPartnerAssets = query({
         });
     }
 
-    // Buscar acomodações
-    if (!args.assetType || args.assetType === "accommodations") {
-      const accommodations = targetPartnerId
-        ? await ctx.db
-            .query("accommodations")
-            .withIndex("by_partner", (q) => q.eq("partnerId", targetPartnerId))
-            .collect()
-        : await ctx.db.query("accommodations").collect();
 
-      accommodations
-        .filter(accommodation => accommodation.isActive)
-        .forEach(accommodation => {
-          if (!args.searchTerm || accommodation.name.toLowerCase().includes(args.searchTerm.toLowerCase())) {
-            assets.push({
-              id: accommodation._id,
-              name: accommodation.name,
-              type: "accommodations",
-              image: accommodation.mainImage,
-              pricePerNight: accommodation.pricePerNight,
-              location: accommodation.address.city,
-            });
-          }
-        });
-    }
 
     // Buscar pacotes
     if (!args.assetType || args.assetType === "packages") {

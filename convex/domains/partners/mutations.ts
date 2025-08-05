@@ -166,7 +166,7 @@ export const recordPartnerTransaction = internalMutation({
       v.literal("activity"),
       v.literal("event"),
       v.literal("vehicle"),
-      v.literal("accommodation"),
+      
       v.literal("package")
     ),
     stripePaymentIntentId: v.string(),
@@ -206,7 +206,7 @@ export const createPartnerTransaction = internalMutation({
       v.literal("activity"),
       v.literal("event"),
       v.literal("vehicle"),
-      v.literal("accommodation"),
+      
       v.literal("package")
     ),
     stripePaymentIntentId: v.string(),
@@ -450,7 +450,7 @@ export const notifyPartnerNewTransaction = internalMutation({
       activity: "activityBookings",
       event: "eventBookings", 
       vehicle: "vehicleBookings",
-      accommodation: "accommodationBookings",
+
       package: "packageBookings",
     };
 
@@ -478,10 +478,7 @@ export const notifyPartnerNewTransaction = internalMutation({
             const vehicle = await ctx.db.get((booking as any).vehicleId);
             bookingName = `${(vehicle as any)?.brand} ${(vehicle as any)?.model}` || "Veículo";
             break;
-          case "accommodation":
-            const accommodation = await ctx.db.get((booking as any).accommodationId);
-            bookingName = (accommodation as any)?.name || "Hospedagem";
-            break;
+          
         }
       }
     }

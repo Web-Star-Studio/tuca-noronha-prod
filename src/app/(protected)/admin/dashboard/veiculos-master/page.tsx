@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +101,10 @@ export default function VehiclesMasterPage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedTransmission, setSelectedTransmission] = useState("all");
 
+  // Queries - moved before conditional returns
+  const vehiclesData = useQuery(api.domains.vehicles.queries.listVehiclesSimple, {});
+  const vehicles = vehiclesData as VehicleData[] | undefined;
+
   // Verificar permissões
   if (!user) {
     return (
@@ -122,10 +126,6 @@ export default function VehiclesMasterPage() {
       </div>
     );
   }
-
-  // Queries
-  const vehiclesData = useQuery(api.domains.vehicles.queries.listVehiclesSimple, {});
-  const vehicles = vehiclesData as VehicleData[] | undefined;
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("pt-BR", {

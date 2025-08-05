@@ -7,11 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  CheckCircle2, User, Calendar, MapPin, Clock, Users, CreditCard, DollarSign,
-  Info, Mail, Phone, FileText, Tag, Building, Package, Edit, Send
-} from "lucide-react";
+import { CheckCircle2, User, Calendar, CreditCard, DollarSign, Info, Mail, Phone, FileText, Tag, Package, Edit, Send } from "lucide-react";
 import { AdminReservationData } from "../AdminReservationCreationForm";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -49,7 +45,7 @@ const CREATION_METHOD_LABELS: Record<string, string> = {
   walk_in: "Walk-in (Presencial)",
 };
 
-const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
 
 const InfoRow = ({ icon: Icon, label, children }: { icon: React.ElementType; label: string; children: React.ReactNode }) => (
   <div className="flex items-start gap-3">
@@ -62,7 +58,7 @@ const InfoRow = ({ icon: Icon, label, children }: { icon: React.ElementType; lab
 );
 
 export function ConfirmationStep({ data, onSubmit, onEdit, isSubmitting }: ConfirmationStepProps) {
-  const { reservationData, assetType, assetTitle, travelerName, totalAmount, paymentMethod, paymentStatus, createdMethod, autoConfirm, sendNotifications, notes } = data;
+  const { reservationData, assetType, assetTitle, totalAmount, paymentMethod, paymentStatus, createdMethod, autoConfirm, sendNotifications, notes } = data;
 
   const formatDate = (dateInput?: string | Date) => dateInput ? format(new Date(dateInput), "PPP", { locale: ptBR }) : 'N/A';
   const formatDateTime = (dateInput?: string, timeInput?: string) => {

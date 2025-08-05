@@ -11,7 +11,7 @@ import { AdminReservationData } from "../AdminReservationCreationForm";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -217,7 +217,6 @@ export function ReservationDetailsStep({ data, onComplete }: ReservationDetailsS
     </Form>
   );
 }
-
 
 // Reusable field components
 const TextField = ({ field, label, type = "text", placeholder }: any) => (

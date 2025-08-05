@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { ExternalLink, CreditCard, Check, Info } from "lucide-react";
+import { ExternalLink, CreditCard, Info } from "lucide-react";
 import { 
   calculateStripeFee, 
   calculateTotalWithStripeFee 
@@ -30,8 +30,7 @@ export default function PaymentLinkCheckout({
   assetId,
   totalAmount,
   currency = "brl",
-  onSuccess,
-  onCancel,
+
   disabled = false,
   className = "",
 }: PaymentLinkCheckoutProps) {

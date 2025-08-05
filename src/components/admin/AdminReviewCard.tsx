@@ -9,14 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RatingStars } from "@/components/reviews/RatingStars";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { Check, X, Eye, MessageSquare, Calendar, MapPin, Trash2, Reply } from "lucide-react";
+import { Check, X, Eye, Calendar, MapPin, Trash2, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -40,38 +40,14 @@ interface AdminReviewCardProps {
 export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps) {
   const [moderationReason, setModerationReason] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showResponse, setShowResponse] = useState(false);
   const [responseText, setResponseText] = useState("");
   const [isPublicResponse, setIsPublicResponse] = useState(true);
+  const [openResponseDialog, setOpenResponseDialog] = useState(false);
 
-  const moderateReview = useMutation(api.domains.reviews.mutations.moderateReview);
-  const deleteReview = useMutation(api.domains.reviews.mutations.deleteReview);
-  const respondToReview = useMutation(api.domains.reviews.mutations.respondToReview);
+  const deleteReview = useMutation(api["domains/reviews/mutations"].deleteReview);
+  const respondToReview = useMutation(api["domains/reviews/mutations"].respondToReview);
 
-  const handleModerate = async (action: "approve" | "reject") => {
-    setIsLoading(true);
-    try {
-      await moderateReview({
-        reviewId: review._id,
-        action,
-        reason: moderationReason || undefined
-      });
 
-      toast.success(
-        action === "approve" 
-          ? "Review aprovada com sucesso!" 
-          : "Review rejeitada com sucesso!"
-      );
-      
-      onStatusChange();
-      setModerationReason("");
-    } catch (error) {
-      toast.error("Erro ao moderar review");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     setIsLoading(true);
@@ -107,7 +83,7 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
       });
 
       toast.success("Resposta enviada com sucesso!");
-      setShowResponse(false);
+      setOpenResponseDialog(false);
       setResponseText("");
       onStatusChange();
     } catch (error) {
@@ -121,7 +97,7 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
   const getAssetTypeLabel = (type: string) => {
     const labels = {
       restaurant: "Restaurante",
-      accommodation: "Hospedagem", 
+      accommodation: "Hospedagem",
       activity: "Atividade",
       event: "Evento",
       vehicle: "Veículo",
@@ -130,12 +106,10 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
     return labels[type as keyof typeof labels] || type;
   };
 
-  const getStatusColor = (isApproved: boolean) => {
-    return isApproved ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
-  };
+
 
   return (
-    <Card className={`border-l-4 ${review.isApproved ? 'border-l-green-500' : 'border-l-yellow-500'}`}>
+    <Card className="border-l-4 border-l-green-500">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
@@ -157,15 +131,10 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Badge className={getStatusColor(review.isApproved)}>
-              {review.isApproved ? "Aprovada" : "Pendente"}
-            </Badge>
-            <Badge variant="outline">
-              {getAssetTypeLabel(review.itemType)}
-            </Badge>
-          </div>
+
+          <Badge variant="outline">
+            {getAssetTypeLabel(review.itemType)}
+          </Badge>
         </div>
       </CardHeader>
 
@@ -206,14 +175,14 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
           <div className="bg-muted/20 p-3 rounded-lg">
             <h6 className="text-sm font-medium mb-2">Avaliações Detalhadas:</h6>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {Object.entries(review.detailedRatings).map(([key, value]) => (
-                value && (
+              {Object.entries(review.detailedRatings).map(([key, value]) => 
+                value ? (
                   <div key={key} className="flex justify-between">
                     <span className="capitalize">{key}:</span>
-                    <span>{value}/5</span>
+                    <span>{String(value)}/5</span>
                   </div>
-                )
-              ))}
+                ) : null
+              )}
             </div>
           </div>
         )}
@@ -237,7 +206,7 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
               <span>Grupo: {review.groupType}</span>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-1">
             <span>{review.helpfulVotes} útil</span>
             <span>•</span>
@@ -252,81 +221,62 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
         {/* Ações */}
         <div className="flex items-center justify-between pt-2 border-t">
           <div className="flex items-center space-x-2">
-            {!review.isApproved && (
-              <>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="default" disabled={isLoading}>
-                      <Check className="h-4 w-4 mr-1" />
-                      Aprovar
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Aprovar Review</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja aprovar esta review? Ela ficará visível para todos os usuários.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => handleModerate("approve")}
-                        disabled={isLoading}
-                      >
-                        Aprovar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="destructive" disabled={isLoading}>
-                      <X className="h-4 w-4 mr-1" />
-                      Rejeitar
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Rejeitar Review</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Por favor, forneça um motivo para a rejeição (opcional):
-                      </p>
-                      <Textarea
-                        placeholder="Motivo da rejeição..."
-                        value={moderationReason}
-                        onChange={(e) => setModerationReason(e.target.value)}
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline">
-                          Cancelar
-                        </Button>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => handleModerate("reject")}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? "Processando..." : "Rejeitar"}
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </>
-            )}
-
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => setShowResponse(!showResponse)}
-              disabled={isLoading}
-            >
-              <Reply className="h-4 w-4 mr-1" />
-              Responder
-            </Button>
+            
+            <Dialog open={openResponseDialog} onOpenChange={setOpenResponseDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isLoading}
+                >
+                  <Reply className="h-4 w-4 mr-1" />
+                  Responder
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-white max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Responder Review</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Sua resposta</label>
+                    <Textarea
+                      placeholder="Digite sua resposta..."
+                      value={responseText}
+                      onChange={(e) => setResponseText(e.target.value)}
+                      rows={4}
+                      className="resize-none"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="public-response-dialog"
+                      checked={isPublicResponse}
+                      onChange={(e) => setIsPublicResponse(e.target.checked)}
+                      className="rounded"
+                    />
+                    <label htmlFor="public-response-dialog" className="text-sm">
+                      Resposta pública (visível para todos)
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setOpenResponseDialog(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleRespond}
+                    disabled={isLoading || !responseText.trim()}
+                  >
+                    {isLoading ? "Enviando..." : "Enviar Resposta"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -351,10 +301,10 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction 
+                  <AlertDialogAction
                     onClick={handleDelete}
                     disabled={isLoading}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     {isLoading ? "Deletando..." : "Deletar"}
                   </AlertDialogAction>
@@ -368,51 +318,6 @@ export function AdminReviewCard({ review, onStatusChange }: AdminReviewCardProps
             Ver Detalhes
           </Button>
         </div>
-
-        {/* Seção de Resposta */}
-        {showResponse && (
-          <div className="mt-4 p-4 bg-muted/50 rounded-lg border-t">
-            <h6 className="font-medium mb-3">Responder à Review</h6>
-            <div className="space-y-3">
-              <Textarea
-                placeholder="Digite sua resposta..."
-                value={responseText}
-                onChange={(e) => setResponseText(e.target.value)}
-                rows={3}
-              />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="public-response"
-                    checked={isPublicResponse}
-                    onChange={(e) => setIsPublicResponse(e.target.checked)}
-                    className="rounded"
-                  />
-                  <label htmlFor="public-response" className="text-sm">
-                    Resposta pública (visível para todos)
-                  </label>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowResponse(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleRespond}
-                    disabled={isLoading || !responseText.trim()}
-                  >
-                    {isLoading ? "Enviando..." : "Enviar Resposta"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -35,7 +35,6 @@ export const AdminReservationAssetType = v.union(
   v.literal("events"),
   v.literal("restaurants"),
   v.literal("vehicles"),
-  v.literal("accommodations"),
   v.literal("packages")
 );
 
@@ -104,8 +103,7 @@ export const AutoConfirmationAssetType = v.union(
   v.literal("activities"),
   v.literal("events"),
   v.literal("restaurants"),
-  v.literal("vehicles"),
-  v.literal("accommodations")
+  v.literal("vehicles")
 );
 
 export const CreateAutoConfirmationSettingsArgs = v.object({

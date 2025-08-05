@@ -1,24 +1,10 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import {
-  Clock,
-  Users,
-  ArrowLeft,
-  Info,
-  Heart,
-  Share2,
-  Star,
-  ShoppingBag,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Compass,
-  Gauge,
-} from "lucide-react";
+import { Clock, Users, ArrowLeft, Info, Share2, Star, ShoppingBag, AlertTriangle, CheckCircle, XCircle, Compass, Gauge,  } from "lucide-react";
 import { usePublicActivity } from "@/lib/services/activityService";
 import { useConvexAuth } from "convex/react";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -29,21 +15,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Label } from "@/components/ui/label";
 import { WishlistButton } from "@/components/ui/wishlist-button";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
 import type { Id } from "@/../convex/_generated/dataModel";
+import { HelpSection } from "@/components/contact/HelpSection";
 
 export default function ActivityPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
-  const [isShareOpen, setIsShareOpen] = useState(false);
+  // Share modal removido
 
   const { activity, isLoading } = usePublicActivity(params.id);
   
@@ -84,7 +69,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
           text: activity.shortDescription,
           url: shareUrl,
         });
-      } catch (error) {
+      } catch {
         console.log("Erro ao compartilhar:", error);
       }
     } else {
@@ -96,7 +81,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
 
   const handleBookingClick = () => {
     if (isAuthenticated) {
-      setShowBookingForm(true);
+      setShowBookingForm(!showBookingForm);
     } else {
       router.push("/sign-in");
     }
@@ -401,8 +386,6 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                   </TabsContent>
                 )}
 
-
-
                 {/* Policies tab */}
                 <TabsContent value="policies" className="space-y-6 mt-2">
                   <div>
@@ -478,101 +461,29 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
             {/* Sticky sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-8 space-y-6">
-                {/* Pricing card */}
-                <Card className="border-gray-200 shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="mb-4">
-                      <div>
-                        <span className="text-2xl font-bold text-gray-900">
-                          {formatCurrency(activity.price)}
-                        </span>
-                        <span className="text-gray-500 text-sm ml-1">por pessoa</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleBookingClick}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 mb-4"
-                    >
-                      <ShoppingBag className="h-4 w-4 mr-2" />
-                      Reservar agora
-                    </Button>
-
-                    <div className="flex items-center gap-2">
-                      <WishlistButton
-                        itemId={params.id}
-                        itemType="activities"
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={handleShare}
-                        className="flex-1"
-                      >
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Compartilhar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Quick info */}
-                <Card className="border-gray-200 shadow-sm">
-                  <CardContent className="p-6">
-                    <h4 className="font-medium mb-4">Informações rápidas</h4>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span>Duração: {activity.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-gray-500" />
-                        <span>Mínimo: {activity.minParticipants} pessoas</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Compass className="h-4 w-4 text-gray-500" />
-                        <span>Categoria: {activity.category}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Gauge className="h-4 w-4 text-gray-500" />
-                        <span>Dificuldade: {activity.difficulty}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-yellow-500" />
-                        <span>Avaliação: {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}/5</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Booking Form */}
+                {isAuthenticated && (
+                  <ActivityBookingForm
+                    activityId={params.id as Id<"activities">}
+                    activity={activity}
+                    onBookingSuccess={() => {
+                      setShowBookingForm(false);
+                    }}
+                    className="border border-gray-200 shadow-sm"
+                  />
+                )}
+                <HelpSection 
+                  className="mt-4"
+                  customMessage={`Olá! Gostaria de tirar dúvidas sobre a atividade ${activity.title}. Vocês podem me ajudar?`}
+                  showDropdown={false}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Booking Form Modal */}
-      {showBookingForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 pb-4 border-b">
-              <h3 className="text-xl font-semibold">Reservar atividade</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowBookingForm(false)}
-                className="h-8 w-8 p-0"
-              >
-                ×
-              </Button>
-            </div>
-            <ActivityBookingForm
-              activityId={params.id as Id<"activities">}
-              activity={activity}
-              className="border-0 shadow-none rounded-none"
-            />
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

@@ -234,32 +234,7 @@ export const getAssetsByType = query({
           }));
         break;
 
-      case "accommodations":
-        if (isActive) {
-          const accommodations = await ctx.db
-            .query("accommodations")
-            .withIndex("active_accommodations", q => q.eq("isActive", true))
-            .take(limit);
-          
-          assets = accommodations.map(accommodation => ({
-            _id: accommodation._id,
-            name: accommodation.name,
-            isActive: accommodation.isActive,
-            partnerId: accommodation.partnerId,
-          }));
-        } else {
-          const accommodations = await ctx.db
-            .query("accommodations")
-            .take(limit);
-          
-          assets = accommodations.map(accommodation => ({
-            _id: accommodation._id,
-            name: accommodation.name,
-            isActive: accommodation.isActive,
-            partnerId: accommodation.partnerId,
-          }));
-        }
-        break;
+
 
       default:
         break;

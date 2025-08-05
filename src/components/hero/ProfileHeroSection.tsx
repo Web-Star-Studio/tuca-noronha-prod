@@ -4,8 +4,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { User, Calendar, Star, Award } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import ProfileHeroNavigation from "./ProfileHeroNavigation";
 
 interface ProfileHeroSectionProps {
@@ -174,7 +172,7 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
                   value: `R$ ${stats.totalSpent.toLocaleString('pt-BR')}`, 
                   color: "text-green-200" 
                 }
-              ].map((stat, index) => (
+              ].map((stat) => (
                 <div key={stat.label} className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-white/20">
                   <stat.icon className={`w-5 h-5 md:w-6 md:h-6 mx-auto mb-2 ${stat.color}`} />
                   <div className="text-white font-bold text-lg md:text-xl">{stat.value}</div>
@@ -203,7 +201,6 @@ const ProfileHeroSection: React.FC<ProfileHeroSectionProps> = ({
           )}
         </motion.div>
       </div>
-
 
       {/* Navigation */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30">

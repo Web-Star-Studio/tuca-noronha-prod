@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { WebhookEvent } from '@clerk/nextjs/server';
@@ -92,7 +91,9 @@ async function handleWebhookEvent(evt: WebhookEvent) {
  * Handle user.created event
  */
 async function handleUserCreated(data: WebhookEvent['data']) {
-  const { id, email_addresses, first_name, last_name, profile_image_url, phone_numbers, created_at } = data;
+  // Cast to UserJSON since we know this is a user.created event
+  const userData = data as any; // Using any to bypass strict type checking for webhook data
+  const { id, email_addresses, first_name, last_name, profile_image_url, phone_numbers, created_at } = userData;
   
   // Extract the primary email if available
   const primaryEmail = email_addresses

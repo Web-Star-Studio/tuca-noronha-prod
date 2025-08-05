@@ -6,7 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { 
-  STRIPE_FEES, 
   calculateStripeFee, 
   calculateTotalWithStripeFee,
   formatStripeFeePercentage,
@@ -124,16 +123,6 @@ export function StripeFeesDisplay({
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Security badges */}
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <Badge variant="secondary" className="text-xs">
-            🔒 Pagamento Seguro
-          </Badge>
-          <Badge variant="secondary" className="text-xs">
-            💳 Stripe Checkout
-          </Badge>
         </div>
       </CardContent>
     </Card>

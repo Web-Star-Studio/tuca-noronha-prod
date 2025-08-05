@@ -63,10 +63,7 @@ export const grantAssetPermission = mutationWithRole(["partner", "master"])({
         const vehicle = await ctx.db.get(args.assetId as Id<"vehicles">);
         isOwner = vehicle ? vehicle.ownerId && vehicle.ownerId.toString() === currentUserId.toString() : false;
       }
-      else if (args.assetType === "accommodations") {
-        const accommodation = await ctx.db.get(args.assetId as Id<"accommodations">);
-        isOwner = accommodation ? accommodation.partnerId.toString() === currentUserId.toString() : false;
-      }
+
       // Adicionar outros tipos de asset conforme necessário
       
       if (!isOwner) {
@@ -826,13 +823,7 @@ export const addAssetToOrganization = mutationWithRole(["partner", "master"])({
           assetOwnerId = vehicle.ownerId?.toString();
         }
         break;
-      case "accommodations":
-        const accommodation = await ctx.db.get(args.assetId as any);
-        if (accommodation) {
-          assetExists = true;
-          assetOwnerId = accommodation.partnerId?.toString();
-        }
-        break;
+
       default:
         throw new Error("Tipo de asset inválido");
     }

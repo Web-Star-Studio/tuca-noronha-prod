@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import NextImage from "next/image"
 import type { Media } from "@/lib/services/mediaService"
 import { useUpdateMedia } from "@/lib/services/mediaService"
 import {
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import type { Id } from '@/../convex/_generated/dataModel'
+
 import { buttonStyles, formStyles, transitionEffects, typography, cardStyles } from "@/lib/ui-config"
 import { cn } from "@/lib/utils"
 import { Save, PencilLine, Image } from "lucide-react"
@@ -85,7 +86,7 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
       if (onSuccess) {
         onSuccess()
       }
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar mídia:", error)
       toast.error("Erro ao atualizar mídia")
     } finally {
@@ -110,10 +111,12 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
           <div className="flex items-center gap-4 p-3 bg-muted rounded-md">
             <div className="h-16 w-16 flex-shrink-0 rounded-md overflow-hidden bg-background">
               {media.fileType.startsWith("image/") ? (
-                <img 
+                <NextImage 
                   src={media.url} 
                   alt={media.fileName}
                   className="h-full w-full object-cover"
+                  width={64}
+                  height={64}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-gray-100">

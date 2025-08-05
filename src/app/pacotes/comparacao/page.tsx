@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { X, Star, Users, Clock, Check, Calendar, MapPin, Car, Building } from "lucide-react";
+import { X, Star, Users, Clock, Check, Car, Building } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+// cn removido (não utilizado)
 
 export default function PackageComparisonPage() {
   const { userId } = useAuth();
@@ -24,15 +22,16 @@ export default function PackageComparisonPage() {
   );
 
   // Buscar estatísticas de avaliações para cada pacote
-  const reviewStats = useQuery(
-    comparison?.packages && comparison.packages.length > 0 
-      ? api.reviews.getItemReviewStats 
-      : undefined,
-    comparison?.packages?.[0] ? {
-      itemType: "package",
-      itemId: comparison.packages[0]._id,
-    } : undefined
-  );
+  // reviewStats removido (não utilizado)
+  // const reviewStats = useQuery(
+  //   comparison?.packages && comparison.packages.length > 0 
+  //     ? api.reviews.getItemReviewStats 
+  //     : undefined,
+  //   comparison?.packages?.[0] ? {
+  //     itemType: "package",
+  //     itemId: comparison.packages[0]._id,
+  //   } : undefined
+  // );
 
   // Mutations
   const removeFromComparison = useMutation(api.packageComparison.removeFromComparison);

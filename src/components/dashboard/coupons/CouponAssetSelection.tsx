@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,7 +82,7 @@ const ASSET_TYPE_CONFIG = {
 export default function CouponAssetSelection({
   selectedAssets,
   onAssetsChange,
-  globalApplication,
+  // globalApplication removido (não utilizado)
 }: CouponAssetSelectionProps) {
   const { user } = useCurrentUser();
   const [searchTerm, setSearchTerm] = useState("");
@@ -125,13 +124,7 @@ export default function CouponAssetSelection({
     }
   };
 
-  const handleRemoveAsset = (assetType: string, assetId: string) => {
-    onAssetsChange(
-      selectedAssets.filter(
-        asset => !(asset.assetType === assetType && asset.assetId === assetId)
-      )
-    );
-  };
+  // handleRemoveAsset removido (não utilizado)
 
   const isAssetSelected = (assetType: string, assetId: string) => {
     return selectedAssets.some(
@@ -145,10 +138,7 @@ export default function CouponAssetSelection({
     ).length;
   };
 
-  // Filtrar assets selecionados por tipo
-  const getSelectedAssetsByType = (type: string) => {
-    return selectedAssets.filter(asset => asset.assetType === type && asset.isActive);
-  };
+  // getSelectedAssetsByType removido (não utilizado)
 
   const formatPrice = (price?: number) => {
     if (!price) return "";
@@ -268,10 +258,12 @@ export default function CouponAssetSelection({
                           >
                             {/* Imagem do asset */}
                             {asset.image ? (
-                              <img
+                              <Image
                                 src={asset.image}
                                 alt={asset.name}
                                 className="h-12 w-12 rounded object-cover"
+                                width={48}
+                                height={48}
                               />
                             ) : (
                               <div className={`h-12 w-12 rounded ${config.bgColor} flex items-center justify-center`}>

@@ -480,43 +480,6 @@ async function generatePackageSuggestions(ctx: any, request: any): Promise<{
   const { tripDetails, preferences } = request;
   const budgetPerDay = tripDetails.budget / tripDetails.duration;
 
-  // Suggest accommodation (highest priority)
-  if (preferences.accommodationType.length > 0) {
-    const accommodations = await ctx.runQuery(api.domains.accommodations.queries.getAccommodations, {
-      filters: { isActive: true }
-    });
-
-    const suitableAccommodations = accommodations.filter((acc: any) => 
-      acc.capacity >= tripDetails.groupSize && 
-      acc.pricePerNight <= budgetPerDay * 0.6 // Max 60% of daily budget
-    );
-
-    if (suitableAccommodations.length > 0) {
-      const selected = suitableAccommodations[0];
-      const totalPrice = selected.pricePerNight * tripDetails.duration;
-      
-      components.push({
-        id: `comp_acc_${Date.now()}`,
-        type: "accommodation",
-        assetId: selected._id,
-        name: selected.name,
-        description: `${selected.type} para ${tripDetails.duration} noites`,
-        quantity: tripDetails.duration,
-        basePrice: selected.pricePerNight,
-        adjustedPrice: selected.pricePerNight,
-        isOptional: false,
-        day: 1,
-        notes: "Hospedagem principal do pacote",
-        metadata: {
-          capacity: selected.capacity,
-          location: selected.location,
-        },
-      });
-
-      estimatedPrice += totalPrice;
-    }
-  }
-
   // Suggest activities based on preferences
   if (preferences.activities.length > 0) {
     const activities = await ctx.runQuery(api.domains.activities.queries.getActivities, {

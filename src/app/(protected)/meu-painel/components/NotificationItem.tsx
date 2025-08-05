@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle2, Gift, Bell, Circle, Dot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ui } from "@/lib/ui-config";
+
 import { toast } from "sonner";
 import { NotificationItemProps } from '../types/dashboard';
 

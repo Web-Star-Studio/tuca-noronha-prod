@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
   Utensils, 
-  Users, 
   TrendingUp, 
   Search,
   Filter,
@@ -14,16 +13,11 @@ import {
   Eye,
   Edit,
   Trash2,
-  Plus,
   MapPin,
-  Calendar,
   CheckCircle,
-  XCircle,
-  AlertTriangle,
   Star,
   Clock,
-  Phone,
-  Globe
+  Phone
 } from "lucide-react"
 import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
@@ -52,7 +46,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from "next/link"
 import { DashboardPageHeader } from "../components"
 
 export default function RestaurantesMasterPage() {

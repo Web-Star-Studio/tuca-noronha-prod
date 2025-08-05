@@ -1,27 +1,14 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import {
-  MapPin,
-  Clock,
-  Phone,
-  Globe,
-  ArrowLeft,
-  Heart,
-  Share2,
-  Star,
-  UtensilsCrossed,
-  BookOpen,
-  Info,
-} from "lucide-react";
-import { type Restaurant as RestaurantStoreType } from "@/lib/store/restaurantsStore";
+import { MapPin, Clock, ArrowLeft, Share2, Star, UtensilsCrossed } from "lucide-react";
 import { useRestaurantBySlug, type Restaurant as RestaurantServiceType } from "@/lib/services/restaurantService";
 import { useConvexAuth } from "convex/react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+
 import type { Id } from "@/../convex/_generated/dataModel";
 
 // Shadcn components
@@ -31,11 +18,12 @@ import { WishlistButton } from "@/components/ui/wishlist-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RestaurantReservationForm } from "@/components/bookings/RestaurantReservationForm";
 import { ReviewStats } from "@/components/reviews/ReviewStats";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { useReviewStats } from "@/lib/hooks/useReviews";
+import { HelpSection } from "@/components/contact/HelpSection";
+
 
 export default function RestaurantPage(props: { params: Promise<{ slug:string }> }) {
   const params = use(props.params);
@@ -252,8 +240,6 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                   </div>
                 </TabsContent>
 
-
-
                 <TabsContent value="photos">
                   <h2 className="text-2xl font-semibold mb-4">Fotos do local</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -320,37 +306,19 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                     </CardContent>
                   </Card>
                 )}
-                
-                <Card>
-                  <CardContent className="p-4 flex flex-col gap-3">
-                    <WishlistButton
-                      itemType="restaurant"
-                      itemId={restaurant._id!}
-                      className="w-full"
-                    />
 
-                    <Button variant="outline" className="w-full">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Compartilhar
-                    </Button>
-                  </CardContent>
-                </Card>
+                <HelpSection 
+                  className="mt-4"
+                  customMessage={`Olá! Gostaria de tirar dúvidas sobre o restaurante ${restaurant.name}. Vocês podem me ajudar?`}
+                  showDropdown={false}
+                />
               </div>
             </div>
           </div>
         </div>
       </main>
       
-      <ChatButton
-        assetId={restaurant._id!}
-        assetType="restaurants"
-        assetName={restaurant.name}
-        partnerId={restaurant.partnerId as any}
-        variant="floating"
-        size="lg"
-        showLabel={true}
-        customLabel="Suporte"
-      />
+      
     </>
   );
 }

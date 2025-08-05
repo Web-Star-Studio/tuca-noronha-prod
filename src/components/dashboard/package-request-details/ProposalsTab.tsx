@@ -8,24 +8,12 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalDocumentManager } from '../ProposalDocumentManager';
 
-import {
-  FileText,
-  Plus,
-  SendIcon,
-  Eye,
-  Clock,
-  CheckCircle as CheckCircleIcon,
-  Upload,
-  X,
-} from 'lucide-react';
+import { FileText, Plus, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon } from "lucide-react";
 
 import { formatCurrency, formatDate } from './helpers';
 
@@ -63,7 +51,7 @@ export function ProposalsTab({ requestId, requestDetails, proposals }: Proposals
         customMessage: "Sua proposta personalizada está pronta! Confira todos os detalhes e entre em contato se tiver dúvidas.",
       });
       toast.success("Proposta enviada com sucesso!");
-    } catch (error) {
+    } catch {
       console.error("Error sending proposal:", error);
       toast.error("Erro ao enviar proposta");
     }

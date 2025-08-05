@@ -74,17 +74,7 @@ export const updateAssetRating = internalMutation({
           });
           break;
 
-        case "accommodation":
-          await updateAccommodationRating(ctx, args.itemId, {
-            overall: averageRating,
-            totalReviews: reviews.length,
-            cleanliness: detailedAverages.cleanliness || averageRating,
-            location: detailedAverages.location || averageRating,
-            service: detailedAverages.service || averageRating,
-            value: detailedAverages.value || averageRating,
-            recommendationPercentage,
-          });
-          break;
+
 
         case "activity":
           await updateActivityRating(ctx, args.itemId, {
@@ -151,25 +141,7 @@ async function updateRestaurantRating(ctx: any, restaurantId: string, ratingData
   }
 }
 
-async function updateAccommodationRating(ctx: any, accommodationId: string, ratingData: any) {
-  const accommodation = await ctx.db
-    .query("accommodations")
-    .filter((q: any) => q.eq(q.field("_id"), accommodationId))
-    .first();
 
-  if (accommodation) {
-    await ctx.db.patch(accommodation._id, {
-      rating: {
-        overall: Number(ratingData.overall.toFixed(1)),
-        cleanliness: Number(ratingData.cleanliness.toFixed(1)),
-        location: Number(ratingData.location.toFixed(1)),
-        service: Number(ratingData.service.toFixed(1)),
-        value: Number(ratingData.value.toFixed(1)),
-        totalReviews: BigInt(ratingData.totalReviews),
-      }
-    });
-  }
-}
 
 async function updateActivityRating(ctx: any, activityId: string, ratingData: any) {
   const activity = await ctx.db
@@ -280,7 +252,7 @@ export const moderateReview = mutationWithRole(["master"])({
 });
 
 /**
- * Deletar uma review (apenas para masters) - soft delete
+ * Deletar uma review (apenas para masters) - hard delete
  */
 export const deleteReview = mutationWithRole(["master"])({
   args: {
@@ -296,11 +268,28 @@ export const deleteReview = mutationWithRole(["master"])({
       throw new Error("Review não encontrada");
     }
 
-    // Soft delete - marcar como não aprovada e adicionar metadata
-    await ctx.db.patch(args.reviewId, {
-      isApproved: false,
-      updatedAt: Date.now()
-    });
+    // Deletar todos os votos relacionados a esta review
+    const votes = await ctx.db
+      .query("reviewVotes")
+      .withIndex("by_review", (q) => q.eq("reviewId", args.reviewId))
+      .collect();
+    
+    for (const vote of votes) {
+      await ctx.db.delete(vote._id);
+    }
+
+    // Deletar todas as respostas relacionadas a esta review
+    const responses = await ctx.db
+      .query("reviewResponses")
+      .withIndex("by_review", (q) => q.eq("reviewId", args.reviewId))
+      .collect();
+    
+    for (const response of responses) {
+      await ctx.db.delete(response._id);
+    }
+
+    // Hard delete - remover completamente a review
+    await ctx.db.delete(args.reviewId);
 
     // Log de auditoria
     await ctx.db.insert("auditLogs", {
@@ -375,38 +364,6 @@ export const respondToReview = mutationWithRole(["master"])({
       isPublic: args.isPublic,
       createdAt: Date.now(),
       updatedAt: Date.now()
-    });
-
-    // Log de auditoria
-    await ctx.db.insert("auditLogs", {
-      actor: {
-        userId: currentUserId!,
-        role: "master",
-        name: currentUser?.name || "Master Admin",
-        email: currentUser?.email
-      },
-      event: {
-        type: "create",
-        action: "Review response created",
-        category: "communication",
-        severity: "low"
-      },
-      resource: {
-        type: "reviewResponses",
-        id: responseId,
-        name: `Response to: ${review.title}`
-      },
-      source: {
-        ipAddress: "system",
-        platform: "web"
-      },
-      status: "success",
-      metadata: {
-        reviewId: args.reviewId,
-        isPublic: args.isPublic,
-        responseLength: args.response.length
-      },
-      timestamp: Date.now()
     });
 
     return { success: true, responseId };
@@ -515,12 +472,9 @@ export const initializeDefaultModerationSettings = mutationWithRole(["master"])(
 
     // Criar configurações padrão
     const defaultSettings = {
-      autoApprove: false, // Moderação manual por padrão para garantir qualidade
+      autoApprove: true, // Reviews aprovadas automaticamente
       minimumRating: undefined, // Sem restrição de rating mínimo
-      bannedWords: [
-        "spam", "lixo", "horrível", "terrível", "péssimo", 
-        "fraude", "golpe", "enganação", "não recomendo"
-      ], // Algumas palavras que podem indicar reviews problemáticas
+      bannedWords: [], // Sem palavras banidas (reviews já são aprovadas automaticamente)
       requireVerification: false, // Não exigir verificação por padrão
       updatedAt: Date.now()
     };

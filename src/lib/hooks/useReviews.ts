@@ -117,16 +117,19 @@ export function useReviewStats({ assetId, assetType }: UseReviewStatsOptions) {
   };
 }
 
-export function useUserReview(userId: Id<"users">, itemType: string, itemId: string) {
-  const userReview = useQuery(api.reviews.getUserReviewForItem, {
-    userId,
-    itemType,
-    itemId
-  });
+export function useUserReview(userId: Id<"users"> | undefined | null, itemType: string, itemId: string) {
+  const userReview = useQuery(
+    api.reviews.getUserReviewForItem, 
+    userId ? {
+      userId,
+      itemType,
+      itemId
+    } : "skip"
+  );
 
   return {
     userReview,
     hasReviewed: !!userReview,
-    isLoading: userReview === undefined
+    isLoading: userReview === undefined && !!userId
   };
 } 

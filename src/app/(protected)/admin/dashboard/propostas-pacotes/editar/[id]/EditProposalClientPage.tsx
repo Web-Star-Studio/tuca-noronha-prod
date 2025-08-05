@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,7 +30,6 @@ export default function EditProposalClientPage({ proposalId }: EditProposalClien
     id: proposalId,
   });
 
-  const updateProposal = useMutation(api.domains.packageProposals.mutations.updatePackageProposal);
 
   // Check if user can edit this proposal
   const canEdit = user && proposal && (
@@ -110,19 +109,6 @@ export default function EditProposalClientPage({ proposalId }: EditProposalClien
     withdrawn: { label: "Retirada", color: "bg-gray-500" },
   };
 
-  const handleUpdateProposal = async (data: any) => {
-    try {
-      await updateProposal({
-        id: proposalId,
-        ...data,
-      });
-      toast.success("Proposta atualizada com sucesso!");
-      router.push("/admin/dashboard/propostas-pacotes");
-    } catch (error) {
-      console.error("Error updating proposal:", error);
-      toast.error("Erro ao atualizar proposta");
-    }
-  };
 
   return (
     <div className="space-y-8">

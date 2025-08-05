@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Loader2 } from "lucide-react";
@@ -89,7 +89,7 @@ export default function BookingChatButton({
 
       // Redirecionar para a página de chat
       router.push(`/admin/dashboard/chats/${result._id}`);
-    } catch (error) {
+    } catch {
       console.error("Erro ao abrir chat:", error);
       toast.error("Erro ao abrir chat. Tente novamente.");
     } finally {

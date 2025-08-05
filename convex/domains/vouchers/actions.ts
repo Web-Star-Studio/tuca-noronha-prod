@@ -41,7 +41,7 @@ export const generateVoucherPDF = action({
           event: 'Evento', 
           restaurant: 'Restaurante',
           vehicle: 'Veículo',
-          accommodation: 'Hospedagem',
+        
           package: 'Pacote'
         };
         return labels[type] || type;

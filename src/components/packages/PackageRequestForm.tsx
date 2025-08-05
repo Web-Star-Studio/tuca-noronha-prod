@@ -113,7 +113,7 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
       setRequestNumber(result.requestNumber);
       setIsSubmitted(true);
       onSuccess?.(result.requestNumber);
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar solicitação:", error);
       alert("Erro ao enviar solicitação. Tente novamente.");
     } finally {

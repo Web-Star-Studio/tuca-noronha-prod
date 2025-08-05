@@ -9,11 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Plus, Search, UserCheck, Clock, AlertTriangle, Key, Trash2, UserPlus, Mail, Phone } from "lucide-react";
+import { Users, Search, UserCheck, Clock, AlertTriangle, Key, Trash2, UserPlus, Mail, Phone } from "lucide-react";
 import { SimpleCreateEmployeeForm } from "./SimpleCreateEmployeeForm";
 import { PermissionsManager } from "./PermissionsManager";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ui } from "@/lib/ui-config";
@@ -170,8 +169,6 @@ export function EmployeesPage() {
   const stats = useQuery(api.domains.users.queries.getPartnerEmployeeStats);
   const removeEmployee = useMutation(api.domains.users.mutations.removeEmployee);
 
-  const isLoading = employees === undefined;
-
   // Filter employees based on search
   const filteredEmployees = employees?.filter(employee => {
     if (!searchTerm) return true;
@@ -198,7 +195,7 @@ export function EmployeesPage() {
     try {
       await removeEmployee({ employeeId });
       toast.success("Colaborador removido com sucesso");
-    } catch (error) {
+    } catch {
       console.error("Error removing employee:", error);
       toast.error("Erro ao remover colaborador");
     }

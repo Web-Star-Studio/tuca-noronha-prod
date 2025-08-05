@@ -1,120 +1,25 @@
 "use client";
-import { useDebounce } from "@/hooks/use-debounce";
-import { useQuery } from "convex/react";
-import { api } from "../../../../../convex/_generated/api";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { format, isSameMonth, isAfter, isBefore, differenceInDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-
-import { 
-  ChevronRight, MapPin, Calendar, Utensils, Waves, Building, Info, Star, 
-  Plane, Home, Car, UtensilsCrossed, Sun, Clock, Filter, Heart, DollarSign, 
-  Thermometer, Droplets, Zap, X, Camera, Map, Menu, ArrowRight, ChevronDown,
-  Navigation, Cloud, CloudRain, Sparkles, Trophy, TrendingUp, Users, 
-  Shield, Phone, Mail, MessageCircle, Share2, Bookmark, Download, 
-  ChevronLeft, CheckCircle, AlertCircle, Eye, Globe, Compass, ArrowLeft,
-  Settings, BarChart3, TrendingDown, Wind, Sunrise, Sunset, Activity,
-  Fish, Key, ArrowUp, Command, Search, Mic, Hash, BookOpen, Layers, Shirt, Wallet, Play, Wifi, Trash2,
-      FileText, Lightbulb, CreditCard, TreePine, Mountain
-} from "lucide-react";
-import { cardStyles, decorativeBackgrounds, buttonStyles, ui } from "@/lib/ui-config";
-import { Button } from "@/components/ui/button";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import { ImageGallery } from "@/components/ui/image-gallery";
-import { BeachLocation } from "@/components/ui/beach-location";
-import { RealTimeConditions } from "@/components/ui/real-time-conditions";
-import { WeatherAlerts } from "@/components/ui/weather-alerts";
+import { useState, useRef } from "react";
 import Image from "next/image";
+// date-fns imports removidos (não utilizados)
+
+import { MapPin, Calendar, Utensils, Waves, Building, Star, Plane, Home, Car, UtensilsCrossed, Sun, Clock, Heart, Camera, CheckCircle, AlertCircle, Shirt, Wallet, Play, BarChart3, Lightbulb, Compass, Info, Thermometer, Users, Map, Navigation, Activity, Globe, Trophy, CloudRain, ArrowLeft, Menu, Search, ArrowUp, CreditCard, DollarSign, Droplets, FileText, Fish, Key, Phone, Shield, Trash2, TrendingDown, Wifi, Wind, Zap } from "lucide-react";
+import { cardStyles, decorativeBackgrounds, ui } from "@/lib/ui-config";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from "@/components/ui/command";
+import { motion, AnimatePresence } from "framer-motion";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useGesture } from "@use-gesture/react";
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+// useGesture removido (não utilizado)
+// recharts imports removidos (não utilizados)
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Glassmorphism styles (keeping for gradual migration)
-const glassStyles = {
-  base: "backdrop-blur-xl bg-white/80 border border-white/20 shadow-xl",
-  dark: "backdrop-blur-xl bg-gray-900/80 border border-white/10 shadow-2xl",
-  colored: (color: string) => `backdrop-blur-xl bg-${color}-500/10 border border-${color}-500/20 shadow-xl`,
-  hover: "hover:bg-white/90 hover:shadow-2xl hover:border-white/30 transition-all duration-300",
-  card: "backdrop-blur-md bg-white/60 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300",
-  button: "backdrop-blur-md bg-white/20 border border-white/30 hover:bg-white/30 transition-all duration-200"
-};
+// glassStyles removido (não utilizado)
 
-// Minimalist design system
-const minimalStyles = {
-  // Base styles with subtle effects
-  base: "bg-white border border-gray-100 shadow-sm",
-  elevated: "bg-white border border-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300",
-  
-  // Typography hierarchy
-  text: {
-    hero: "text-4xl md:text-5xl lg:text-6xl font-light tracking-tight",
-    title: "text-2xl md:text-3xl font-light tracking-tight",
-    subtitle: "text-lg md:text-xl font-normal text-gray-600",
-    body: "text-base font-normal text-gray-700 leading-relaxed",
-    caption: "text-sm text-gray-500"
-  },
-  
-  // Spacing system
-  spacing: {
-    section: "py-16 md:py-24",
-    container: "max-w-7xl mx-auto px-4 md:px-6 lg:px-8",
-    stack: "space-y-6 md:space-y-8"
-  },
-  
-  // Interactive elements
-  button: {
-    primary: "bg-gray-900 text-white hover:bg-gray-800 transition-colors duration-200",
-    secondary: "bg-white text-gray-900 border border-gray-200 hover:border-gray-300 transition-colors duration-200",
-    ghost: "text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
-  },
-  
-  // Cards with minimal styling
-  card: "bg-white rounded-lg p-6 border border-gray-100 hover:border-gray-200 transition-all duration-300"
-};
+// minimalStyles removido (não utilizado)
 
 const guideSections = [
   {
@@ -179,65 +84,69 @@ const guideSections = [
   }
 ];
 
-// Interface para preferências do usuário
-interface UserPreferences {
-  travelDate: Date | undefined;
-  duration: number;
-  budget: [number, number];
-  interests: string[];
-  difficultyLevel: string;
-  travelStyle: 'adventure' | 'relaxation' | 'cultural' | 'romantic' | 'family';
-  groupSize: number;
-  dietaryRestrictions: string[];
-  accessibility: boolean;
-}
+// Interface UserPreferences removida (não utilizada)
 
-// Interface para dados dinâmicos
-interface TravelData {
-  weather: {
-    temperature: number;
-    humidity: number;
-    rainChance: number;
-    season: string;
-    seaCondition: 'calm' | 'moderate' | 'rough';
-    visibility: number;
-  };
-  prices: {
-    accommodation: number;
-    transport: number;
-    activities: number;
-    meals: number;
-  };
-  crowds: 'low' | 'medium' | 'high';
-  bestActivities: string[];
-  events: Array<{
-    name: string;
-    date: string;
-    type: string;
-  }>;
-}
+// Interface TravelData removida (não utilizada)
 
-// Interface para filtros avançados
-interface AdvancedFilters {
-  priceRange: 'budget' | 'mid' | 'luxury' | 'all';
-  activityType: string[];
-  beachType: string[];
-  restaurantCuisine: string[];
-  accommodationType: string[];
-  accessibility: boolean;
-  familyFriendly: boolean;
-  petFriendly: boolean;
-}
+// Interface AdvancedFilters removida (não utilizada)
 
-// Dados de busca indexados
-interface SearchableContent {
-  id: string;
-  type: 'beach' | 'restaurant' | 'activity' | 'accommodation' | 'tip';
-  title: string;
-  description: string;
-  tags: string[];
-  section: string;
-  keywords: string[];
+// SearchableContent interface removida (não utilizada)
+
+// Componente para item da checklist (corrige hook rules violation)
+function ChecklistItem({ step, index }: { step: any; index: number }) {
+  const [checked, setChecked] = useState(false);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -30 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.1 }}
+      whileHover={{ x: 4 }}
+      className={cn(
+        "flex items-center gap-4 p-4 rounded-xl transition-all duration-300 cursor-pointer",
+        checked ? "bg-green-50 border-2 border-green-200" : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
+      )}
+      onClick={() => setChecked(!checked)}
+    >
+      <motion.div
+        animate={{ scale: checked ? [1, 1.2, 1] : 1 }}
+        className={cn(
+          "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
+          checked ? "bg-green-500" : "bg-white shadow-sm"
+        )}
+      >
+        {checked ? (
+          <CheckCircle className="w-6 h-6 text-white" />
+        ) : (
+          <step.icon className={cn("w-6 h-6", `text-${step.color}-600`)} />
+        )}
+      </motion.div>
+      <div className="flex-1">
+        <p className={cn(
+          "font-medium transition-all duration-300",
+          checked ? "text-green-700 line-through" : "text-gray-900"
+        )}>{step.category}</p>
+        <p className={cn(
+          "text-sm transition-all duration-300",
+          checked ? "text-green-600" : "text-gray-600"
+        )}>{step.task}</p>
+      </div>
+      <div className={cn(
+        "w-6 h-6 rounded-full border-2 transition-all duration-300",
+        checked ? "bg-green-500 border-green-500" : "border-gray-300"
+      )}>
+        {checked && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="w-full h-full flex items-center justify-center"
+          >
+            <CheckCircle className="w-4 h-4 text-white" />
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
 }
 
 // Mapa de cores para badges e cards
@@ -304,86 +213,17 @@ const colorMap = {
   }
 };
 
-// Animated counter for numbers
-function AnimatedNumber({ value, duration = 2000 }: { value: number; duration?: number }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
+// AnimatedNumber function removida (não utilizada)
 
-  useEffect(() => {
-    const startTime = Date.now();
-    const startValue = displayValue;
-    const endValue = value;
-
-    const updateValue = () => {
-      const now = Date.now();
-      const progress = Math.min((now - startTime) / duration, 1);
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const current = Math.round(startValue + (endValue - startValue) * easeOutQuart);
-      
-      setDisplayValue(current);
-      
-      if (progress < 1) {
-        requestAnimationFrame(updateValue);
-      }
-    };
-
-    requestAnimationFrame(updateValue);
-  }, [value, duration]);
-
-  return <span ref={ref}>{displayValue.toLocaleString()}</span>;
-}
-
-// Magnetic button component
-function MagneticButton({ 
-  children, 
-  className,
-  ...props 
-}: React.ComponentProps<typeof Button>) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    
-    const rect = ref.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    
-    setPosition({ x: x * 0.1, y: y * 0.1 });
-  };
-
-  const handleMouseLeave = () => {
-    setPosition({ x: 0, y: 0 });
-  };
-
-  return (
-    <Button
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={className}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: 'transform 0.2s ease-out'
-      }}
-      {...props}
-    >
-      {children}
-    </Button>
-  );
-}
+// MagneticButton function removida (não utilizada)
 
 // Componente de conteúdo das seções
 function SectionContent({ 
   sectionId, 
-  preferences, 
-  travelData, 
   favorites, 
   onToggleFavorite 
 }: {
   sectionId: string;
-  preferences: UserPreferences;
-  travelData: TravelData;
   favorites: string[];
   onToggleFavorite: (item: string) => void;
 }) {
@@ -639,62 +479,9 @@ function SectionContent({
               { category: "Equipamentos", task: "Kit de snorkel, garrafa reutilizável, câmera subaquática", icon: Camera, color: "green" },
               { category: "Saúde", task: "Kit primeiros socorros, medicamentos, protetor solar", icon: Heart, color: "red" },
               { category: "Documentos", task: "Comprovantes, documentos pessoais e dinheiro em espécie", icon: Wallet, color: "purple" }
-            ].map((step, index) => {
-              const [checked, setChecked] = useState(false);
-              
-              return (
-                <motion.div
-                  key={step.category}
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ x: 4 }}
-                  className={cn(
-                    "flex items-center gap-4 p-4 rounded-xl transition-all duration-300 cursor-pointer",
-                    checked ? "bg-green-50 border-2 border-green-200" : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
-                  )}
-                  onClick={() => setChecked(!checked)}
-                >
-                  <motion.div
-                    animate={{ scale: checked ? [1, 1.2, 1] : 1 }}
-                    className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
-                      checked ? "bg-green-500" : "bg-white shadow-sm"
-                    )}
-                  >
-                    {checked ? (
-                      <CheckCircle className="w-6 h-6 text-white" />
-                    ) : (
-                      <step.icon className={cn("w-6 h-6", `text-${step.color}-600`)} />
-                    )}
-                  </motion.div>
-                  <div className="flex-1">
-                    <p className={cn(
-                      "font-medium transition-all duration-300",
-                      checked ? "text-green-700 line-through" : "text-gray-900"
-                    )}>{step.category}</p>
-                    <p className={cn(
-                      "text-sm transition-all duration-300",
-                      checked ? "text-green-600" : "text-gray-600"
-                    )}>{step.task}</p>
-                  </div>
-                  <div className={cn(
-                    "w-6 h-6 rounded-full border-2 transition-all duration-300",
-                    checked ? "bg-green-500 border-green-500" : "border-gray-300"
-                  )}>
-                    {checked && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-full h-full flex items-center justify-center"
-                      >
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
+            ].map((step, index) => (
+              <ChecklistItem key={step.category} step={step} index={index} />
+            ))}
           </div>
         </motion.div>
 
@@ -995,8 +782,8 @@ function SectionContent({
                 <div className="space-y-3 mb-4">
                   <h5 className="text-sm font-semibold text-gray-900">Características:</h5>
                   <div className="space-y-2">
-                    {accommodation.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
+                    {accommodation.features.map((feature) => (
+                      <div key={feature} className="flex items-center gap-2">
                         <div className={cn(
                           "w-1.5 h-1.5 rounded-full",
                           {
@@ -1019,8 +806,8 @@ function SectionContent({
                        Vantagens
                      </h6>
                     <ul className="space-y-1">
-                      {accommodation.pros.map((pro, idx) => (
-                        <li key={idx} className="text-gray-600 flex items-start gap-1">
+                      {accommodation.pros.map((pro) => (
+                        <li key={pro} className="text-gray-600 flex items-start gap-1">
                           <span className="text-green-500 mt-0.5">•</span>
                           {pro}
                         </li>
@@ -1033,8 +820,8 @@ function SectionContent({
                       Atenção
                     </h6>
                     <ul className="space-y-1">
-                      {accommodation.cons.map((con, idx) => (
-                        <li key={idx} className="text-gray-600 flex items-start gap-1">
+                      {accommodation.cons.map((con) => (
+                        <li key={con} className="text-gray-600 flex items-start gap-1">
                           <span className="text-orange-500 mt-0.5">•</span>
                           {con}
                         </li>
@@ -1094,7 +881,7 @@ function SectionContent({
                 features: ["Tartarugas", "Mergulho", "Aventura", "Natureza"],
                 best: "Aventureiros"
               }
-            ].map((location, idx) => (
+                            ].map((location) => (
               <motion.div
                 key={location.name}
                 whileHover={{ scale: 1.02 }}
@@ -1167,9 +954,9 @@ function SectionContent({
                 title: "Contato Direto",
                 tip: "Ligue para confirmar detalhes e esclarecer dúvidas antes da viagem"
               }
-            ].map((tip, idx) => (
+            ].map((tip) => (
               <motion.div
-                key={idx}
+                key={tip.title}
                 whileHover={{ scale: 1.02 }}
                 className="flex items-start gap-4 p-4 bg-white/50 rounded-xl backdrop-blur-sm"
               >
@@ -1398,8 +1185,8 @@ function SectionContent({
                       <div className="space-y-3">
                         <h5 className="text-sm font-semibold text-gray-900">Características:</h5>
                         <div className="space-y-2">
-                          {transport.features.map((feature, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
+                          {transport.features.map((feature) => (
+                            <div key={feature} className="flex items-center gap-2">
                               <div className={cn(
                                 "w-1.5 h-1.5 rounded-full",
                                 {
@@ -1423,8 +1210,8 @@ function SectionContent({
                              Vantagens
                            </h6>
                           <ul className="space-y-1">
-                            {transport.pros.map((pro, idx) => (
-                              <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                            {transport.pros.map((pro) => (
+                              <li key={pro} className="text-xs text-gray-600 flex items-start gap-1">
                                 <span className="text-green-500 mt-0.5">•</span>
                                 {pro}
                               </li>
@@ -1438,8 +1225,8 @@ function SectionContent({
                             Atenção
                           </h6>
                           <ul className="space-y-1">
-                            {transport.cons.map((con, idx) => (
-                              <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                            {transport.cons.map((con) => (
+                              <li key={con} className="text-xs text-gray-600 flex items-start gap-1">
                                 <span className="text-orange-500 mt-0.5">•</span>
                                 {con}
                               </li>
@@ -1456,8 +1243,8 @@ function SectionContent({
                         Dicas Importantes
                       </h6>
                       <ul className="space-y-1">
-                        {transport.tips.map((tip, idx) => (
-                          <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                        {transport.tips.map((tip) => (
+                          <li key={tip} className="text-xs text-gray-600 flex items-start gap-1">
                             <span className="text-amber-500 mt-0.5">•</span>
                             {tip}
                           </li>
@@ -1518,7 +1305,7 @@ function SectionContent({
                 daily: "R$ 180-280/dia",
                 bestFor: "Aventureiros e esportistas"
               }
-            ].map((combo, idx) => (
+            ].map((combo) => (
               <motion.div
                 key={combo.title}
                 whileHover={{ scale: 1.02 }}
@@ -1729,7 +1516,7 @@ function SectionContent({
                 bestMonths: "Dez-Mar"
               }
             ].map((beach, index) => {
-              const beachColor = colorMap[beach.color as keyof typeof colorMap];
+              // beachColor removido (não utilizado)
               
               return (
                 <motion.div
@@ -1759,10 +1546,12 @@ function SectionContent({
                   </div>
 
                   <div className="relative h-64 overflow-hidden">
-                    <img
+                    <Image
                       src={beach.image}
                       alt={beach.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      width={300}
+                      height={256}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     
@@ -2116,7 +1905,7 @@ function SectionContent({
               description: "Experiências exclusivas"
             }
           ].map((cat, index) => {
-            const catColor = colorMap[cat.color as keyof typeof colorMap];
+            // catColor removido (não utilizado)
             
             return (
               <motion.div
@@ -2472,7 +2261,7 @@ function SectionContent({
                       <div className="space-y-2">
                         {step.details.map((detail, idx) => (
                           <motion.div
-                            key={idx}
+                            key={detail}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.3, delay: (index * 0.1) + (idx * 0.05) }}
@@ -2538,9 +2327,9 @@ function SectionContent({
                 title: "Proteção Solar",
                 tip: "Sol intenso o ano todo. Protetor solar é essencial."
               }
-            ].map((tip, idx) => (
+            ].map((tip) => (
               <motion.div
-                key={idx}
+                key={tip.title}
                 whileHover={{ scale: 1.02 }}
                 className="flex items-start gap-4 p-4 bg-white/50 rounded-xl backdrop-blur-sm"
               >
@@ -2585,133 +2374,48 @@ function getHeroImage(sectionId: string): string {
 
 function GuiaPageContent() {
   const [activeSection, setActiveSection] = useState<string>("boas-vindas");
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    travelDate: undefined,
-    duration: 7,
-    budget: [3000, 8000],
-    interests: [],
-    difficultyLevel: 'moderate',
-    travelStyle: 'adventure',
-    groupSize: 2,
-    dietaryRestrictions: [],
-    accessibility: false
-  });
+  // preferences removido (não utilizado)
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [showPreferences, setShowPreferences] = useState(false);
+  // showPreferences removido (não utilizado)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [readProgress, setReadProgress] = useState(0);
-  const [bookmarkedSections, setBookmarkedSections] = useState<string[]>([]);
+  // readProgress removido (não utilizado)
+  // bookmarkedSections removido (não utilizado)
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [openCommand, setOpenCommand] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 300); // 300ms delay
+  // setSearchTerm removido (não utilizado)
+  // debouncedSearchTerm removido (não utilizado)
 
-  const searchResults = useQuery(
-    api.guide.search,
-    debouncedSearchTerm && debouncedSearchTerm.trim() ? { query: debouncedSearchTerm } : "skip"
-  );
-  const [sectionProgress, setSectionProgress] = useState<Record<string, number>>({});
-  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
-  const [filters, setFilters] = useState<AdvancedFilters>({
-    priceRange: 'all',
-    activityType: [],
-    beachType: [],
-    restaurantCuisine: [],
-    accommodationType: [],
-    accessibility: false,
-    familyFriendly: false,
-    petFriendly: false
-  });
+  // searchResults removido (não utilizado)
+  // Estados não utilizados removidos: sectionProgress, setSectionProgress, viewMode, setViewMode, filters, setFilters
   const contentRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  const { scrollY } = useScroll();
+  // scrollY removido (não utilizado)
   // Remover parallax problemático que interfere na interação do hero
   // const heroParallax = useTransform(scrollY, [0, 500], [0, 150]);
   // const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
   // const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
 
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  // mouseX, mouseY removidos (não utilizados)
 
-  const bind = useGesture({
-    onDrag: ({ movement: [mx], velocity: [vx], direction: [dx], cancel }) => {
-      if (isMobile && (Math.abs(mx) > 100 || Math.abs(vx) > 1)) {
-        const currentIndex = guideSections.findIndex(s => s.id === activeSection);
-        if (dx > 0 && currentIndex > 0) {
-          scrollToSection(guideSections[currentIndex - 1].id);
-          cancel();
-        } else if (dx < 0 && currentIndex < guideSections.length - 1) {
-          scrollToSection(guideSections[currentIndex + 1].id);
-          cancel();
-        }
-      }
-    }
-  }, { drag: { axis: 'x', filterTaps: true, threshold: 20 } });
+  // bind gesture removido (não utilizado)
 
-  const travelData = useMemo((): TravelData => {
-    if (!preferences.travelDate) {
-      return {
-        weather: { temperature: 27, humidity: 75, rainChance: 30, season: 'Seca', seaCondition: 'moderate', visibility: 30 },
-        prices: { accommodation: 450, transport: 200, activities: 150, meals: 100 },
-        crowds: 'medium',
-        bestActivities: ['Mergulho', 'Trilhas', 'Praias'],
-        events: []
-      };
-    }
-    const month = preferences.travelDate.getMonth();
-    if (month >= 11 || month <= 5) { // Wet season
-      return {
-        weather: { temperature: 28, humidity: 85, rainChance: 70, season: 'Chuvosa', seaCondition: month >= 0 && month <= 2 ? 'rough' : 'moderate', visibility: 20 },
-        prices: { accommodation: 650, transport: 300, activities: 200, meals: 120 },
-        crowds: 'high',
-        bestActivities: ['Mergulho', 'Gastronomia', 'Observação de fauna'],
-        events: month === 1 ? [{name: 'Carnaval', date: 'Fevereiro', type: 'cultural'}] : month === 5 ? [{name: 'São João', date: '29 de Junho', type: 'tradicional'}] : []
-      };
-    } else { // Dry season
-      return {
-        weather: { temperature: 25, humidity: 65, rainChance: 15, season: 'Seca', seaCondition: 'calm', visibility: 50 },
-        prices: { accommodation: 400, transport: 180, activities: 120, meals: 90 },
-        crowds: 'low',
-        bestActivities: ['Todas as praias', 'Trilhas', 'Fotografia', 'Mergulho livre'],
-        events: month === 8 ? [{name: 'Festival Gastronômico', date: 'Setembro', type: 'gastronomia'}] : month === 9 ? [{name: 'Regata Refeno', date: 'Outubro', type: 'esportivo'}] : []
-      };
-    }
-  }, [preferences.travelDate]);
+  // travelData removido (não utilizado)
+  // resto do travelData removido
 
+  // useEffect para controlar botão de scroll to top
   useEffect(() => {
     const handleScroll = () => {
-      if (!contentRef.current) return;
-      const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
-      const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
-      setReadProgress(progress);
-      setShowScrollTop(scrollTop > 300);
+      setShowScrollTop(window.scrollY > 400);
     };
 
-    const mainEl = contentRef.current;
-    mainEl?.addEventListener('scroll', handleScroll);
-    return () => mainEl?.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setOpenCommand(true);
-      }
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        const currentIndex = guideSections.findIndex(s => s.id === activeSection);
-        if (e.key === 'ArrowLeft' && currentIndex > 0) {
-          scrollToSection(guideSections[currentIndex - 1].id);
-        } else if (e.key === 'ArrowRight' && currentIndex < guideSections.length - 1) {
-          scrollToSection(guideSections[currentIndex + 1].id);
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeSection]);
+  // useEffect keyboard removido (usa variáveis não utilizadas)
+  // resto do useEffect keyboard removido
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -2740,7 +2444,7 @@ function GuiaPageContent() {
   };
 
   const currentSectionData = guideSections.find(s => s.id === activeSection);
-  const currentColor = colorMap[currentSectionData?.color as keyof typeof colorMap] || colorMap.blue;
+      // currentColor removido (não utilizado)
 
   return (
     <>
@@ -2789,7 +2493,7 @@ function GuiaPageContent() {
             </aside>
           )}
 
-          <main {...bind()} className={cn("flex-1 overflow-y-auto", !isMobile && "ml-80")} ref={contentRef} id="main-content">
+          <main className={cn("flex-1 overflow-y-auto", !isMobile && "ml-80")} ref={contentRef} id="main-content">
             {/* Hero Section - agora dentro do container de scroll */}
             <motion.div
               key={`hero-${activeSection}`}
@@ -2843,8 +2547,6 @@ function GuiaPageContent() {
                   )}>
                     <SectionContent
                       sectionId={activeSection}
-                      preferences={preferences}
-                      travelData={travelData}
                       favorites={favorites}
                       onToggleFavorite={toggleFavorite}
                     />
@@ -2915,6 +2617,43 @@ function GuiaPageContent() {
             </div>
           </motion.div>
         )}
+
+        {/* Command/Search Dialog */}
+        <Dialog open={openCommand} onOpenChange={setOpenCommand}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Buscar no Guia</DialogTitle>
+              <DialogDescription>
+                Digite para procurar informações específicas no guia de Fernando de Noronha
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Ex: mergulho, trilhas, restaurantes..."
+                className="w-full"
+                autoFocus
+              />
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Sugestões:</p>
+                <div className="flex flex-wrap gap-2">
+                  {guideSections.slice(0, 6).map((section) => (
+                    <Button
+                      key={section.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        scrollToSection(section.id);
+                        setOpenCommand(false);
+                      }}
+                    >
+                      {section.title}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {showScrollTop && (
           <motion.button

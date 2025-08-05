@@ -5,7 +5,7 @@ import { v } from "convex/values";
  * These will be added to the main schema.ts file
  */
 
-// Extensions for existing asset tables (activities, events, restaurants, accommodations, vehicles)
+// Extensions for existing asset tables (activities, events, restaurants, vehicles)
 export const assetStripeFields = {
   // Stripe Product Information
   stripeProductId: v.optional(v.string()),      // Stripe Product ID
@@ -18,7 +18,7 @@ export const assetStripeFields = {
   
   // Stripe Metadata
   stripeMetadata: v.optional(v.object({
-    productType: v.string(), // "activity", "event", "restaurant", "accommodation", "vehicle"
+    productType: v.string(), // "activity", "event", "restaurant", "vehicle"
     partnerId: v.string(),   // Partner ID for reference
     createdAt: v.number(),   // When Stripe product was created
     updatedAt: v.number(),   // Last update

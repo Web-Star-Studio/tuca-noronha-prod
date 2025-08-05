@@ -3,9 +3,7 @@
  */
 
 import { useCurrentUser as CurrentUserHook } from "@/lib/hooks/useCurrentUser";
-import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from 'react';
-import { useQuery } from "convex/react";
 
 // Re-export the simpler implementation from the new location
 export const useCurrentUser = CurrentUserHook;

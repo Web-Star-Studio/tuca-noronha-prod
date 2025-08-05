@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -164,8 +164,6 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
   // Log processed data for debugging
   console.log("Processed voucher data:", voucherData);
 
-
-
   const handlePrint = () => {
     window.print();
   };
@@ -180,7 +178,7 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
           text: `Voucher de ${voucherData.asset.name}`,
           url: shareUrl,
         });
-      } catch (error) {
+      } catch {
         console.error("Erro ao compartilhar:", error);
       }
     } else {

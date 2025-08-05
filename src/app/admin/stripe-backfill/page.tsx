@@ -29,7 +29,7 @@ export default function StripeBackfillPage() {
       const result = await getSummary();
       setSummary(result);
       toast.success('Status atualizado');
-    } catch (error) {
+    } catch {
       toast.error('Erro ao obter status');
       console.error(error);
     }
@@ -65,7 +65,7 @@ export default function StripeBackfillPage() {
       if (!dryRun && result.succeeded > 0) {
         setTimeout(handleGetSummary, 1000);
       }
-    } catch (error) {
+    } catch {
       toast.error('Erro ao executar backfill');
       console.error(error);
     } finally {

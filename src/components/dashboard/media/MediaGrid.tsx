@@ -2,17 +2,16 @@
 
 import { useState } from "react"
 import { Media } from "@/lib/services/mediaService"
-import Image from "next/image"
 import type { Id } from "@/../convex/_generated/dataModel"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Pencil, Trash2, Eye, Copy, AlertCircle, Image as ImageIcon } from "lucide-react"
+import { Pencil, Trash2, Eye, Copy, AlertCircle, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner"
 import { MediaDetailsDialog } from "@/components/dashboard/media/MediaDetailsDialog"
 import { AnimatePresence, motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { cardStyles, buttonStyles, badgeStyles } from "@/lib/ui-config"
+import { cardStyles, badgeStyles } from "@/lib/ui-config"
 import { ConvexImage } from "@/components/ui/convex-image"
 import {
   Dialog,

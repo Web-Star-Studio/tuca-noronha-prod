@@ -21,11 +21,11 @@ export default function ReviewModerationSettingsPage() {
   const settings = useQuery(api.domains.reviews.queries.getModerationSettings, {});
   
   // Mutations
-  const updateSettings = useMutation(api.domains.reviews.mutations.updateModerationSettings);
-  const initializeSettings = useMutation(api.domains.reviews.mutations.initializeDefaultModerationSettings);
+  const updateSettings = useMutation(api["domains/reviews/mutations"].updateModerationSettings);
+  const initializeSettings = useMutation(api["domains/reviews/mutations"].initializeDefaultModerationSettings);
 
-  // Estados locais para o formulário
-  const [autoApprove, setAutoApprove] = useState(settings?.autoApprove || false);
+  // Estados locais para o formulário - Reviews sempre aprovadas automaticamente
+  const autoApprove = true; // Sempre true agora
   const [minimumRating, setMinimumRating] = useState(settings?.minimumRating || "");
   const [bannedWords, setBannedWords] = useState(
     settings?.bannedWords?.join(", ") || ""
@@ -37,7 +37,7 @@ export default function ReviewModerationSettingsPage() {
   // Atualizar estados quando as configurações carregarem
   useEffect(() => {
     if (settings && settings.exists) {
-      setAutoApprove(settings.autoApprove);
+      // autoApprove sempre true, não precisa ser carregado
       setMinimumRating(settings.minimumRating || "");
       setBannedWords(settings.bannedWords?.join(", ") || "");
       setRequireVerification(settings.requireVerification);
@@ -53,7 +53,7 @@ export default function ReviewModerationSettingsPage() {
         .filter((word) => word.length > 0);
 
       await updateSettings({
-        autoApprove,
+        autoApprove: true, // Sempre true
         minimumRating: minimumRating ? Number(minimumRating) : undefined,
         bannedWords: bannedWordsArray,
         requireVerification,
@@ -122,7 +122,7 @@ export default function ReviewModerationSettingsPage() {
                   Configurações não encontradas
                 </h3>
                 <p className="text-sm text-yellow-700">
-                  Clique em "Inicializar Configurações" para criar as configurações padrão de moderação.
+                  Clique em &quot;Inicializar Configurações&quot; para criar as configurações padrão de moderação.
                 </p>
               </div>
             </div>
@@ -141,8 +141,8 @@ export default function ReviewModerationSettingsPage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {autoApprove ? "SIM" : "NÃO"}
+                  <div className="text-2xl font-bold text-green-600">
+                    ATIVADA
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Aprovação Automática
@@ -176,71 +176,29 @@ export default function ReviewModerationSettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Informação sobre aprovação automática */}
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <div>
+                  <h3 className="font-medium text-green-800">
+                    Reviews são aprovadas automaticamente
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Todas as reviews dos usuários são aceitas automaticamente. O master admin pode responder ou deletar reviews em /admin/reviews/.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Configurações */}
           <Card>
             <CardHeader>
-              <CardTitle>Configurações de Moderação</CardTitle>
+              <CardTitle>Configurações Opcionais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Aprovação Automática */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base font-medium">
-                    Aprovação Automática
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Reviews são aprovadas automaticamente sem moderação manual
-                  </p>
-                </div>
-                <Switch
-                  checked={autoApprove}
-                  onCheckedChange={setAutoApprove}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Rating Mínimo */}
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-base font-medium">
-                    Rating Mínimo para Auto-Aprovação
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Reviews com rating abaixo deste valor precisarão de moderação manual
-                  </p>
-                </div>
-                <Input
-                  type="number"
-                  min="1"
-                  max="5"
-                  step="0.1"
-                  placeholder="Ex: 3.0 (deixe vazio para sem limite)"
-                  value={minimumRating}
-                  onChange={(e) => setMinimumRating(e.target.value)}
-                  className="max-w-xs"
-                />
-              </div>
-
-              <Separator />
-
-              {/* Verificação Obrigatória */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base font-medium">
-                    Exigir Verificação do Usuário
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Apenas usuários verificados podem ter reviews auto-aprovadas
-                  </p>
-                </div>
-                <Switch
-                  checked={requireVerification}
-                  onCheckedChange={setRequireVerification}
-                />
-              </div>
-
-              <Separator />
 
               {/* Palavras Banidas */}
               <div className="space-y-3">
@@ -292,7 +250,7 @@ export default function ReviewModerationSettingsPage() {
             <Button
               variant="outline"
               onClick={() => {
-                setAutoApprove(settings.autoApprove);
+                // autoApprove é sempre true, não precisa resetar
                 setMinimumRating(settings.minimumRating || "");
                 setBannedWords(settings.bannedWords?.join(", ") || "");
                 setRequireVerification(settings.requireVerification);

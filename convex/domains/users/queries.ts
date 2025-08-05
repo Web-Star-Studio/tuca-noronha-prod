@@ -36,12 +36,6 @@ export const validateAssetByType = (asset: any, expectedType: string): boolean =
         typeof asset.ownerId === "string" &&
         (asset.status === "available" || asset.status === "maintenance" || asset.status === "rented")
       );
-    case "accommodations":
-      return (
-        typeof asset.slug === "string" &&
-        typeof asset.phone === "string" &&
-        typeof asset.pricePerNight === "number"
-      );
     default:
       return false;
   }
@@ -89,12 +83,6 @@ export const standardizeAsset = (asset: any, assetType: string) => {
         isActive: asset.status === "available",
         assetType: "vehicles" as const,
       };
-    case "accommodations":
-      return {
-        ...baseFields,
-        ...asset,
-        assetType: "accommodations" as const,
-      };
     default:
       return {
         ...baseFields,
@@ -108,13 +96,12 @@ export const standardizeAsset = (asset: any, assetType: string) => {
  */
 async function verifyTravelerBookingAccess(ctx: any, partnerId: Id<"users">, travelerId: Id<"users">): Promise<boolean> {
   // Get all assets belonging to the partner
-  const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
-    ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-    ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-    ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-    ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", partnerId)).collect(),
-    ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-  ]);
+      const [restaurants, events, activities, vehicles] = await Promise.all([
+      ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+      ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+      ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+      ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", partnerId)).collect(),
+    ]);
 
   // Check for confirmed bookings with any of the partner's assets
   
@@ -625,13 +612,12 @@ export const listAllUsers = query({
       }
 
       // Get all assets belonging to the partner
-      const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
-        ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-        ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-        ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-        ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", partnerId)).collect(),
-        ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
-      ]);
+          const [restaurants, events, activities, vehicles] = await Promise.all([
+      ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+      ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+      ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
+      ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", partnerId)).collect(),
+    ]);
 
       // Collect unique user IDs from confirmed bookings for partner's assets
       const userIds = new Set<string>();
@@ -716,15 +702,15 @@ export const listAllUsers = query({
           organizationsCount = organizations.length;
 
           // Contar assets do partner
-          const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+          const [restaurants, events, activities, vehicles] = await Promise.all([
             ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
             ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
             ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
             ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", user._id)).collect(),
-            ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+      
           ]);
 
-          assetsCount = restaurants.length + events.length + activities.length + vehicles.length + accommodations.length;
+          assetsCount = restaurants.length + events.length + activities.length + vehicles.length;
         }
 
         return {
@@ -761,7 +747,7 @@ export const getSystemStatistics = query({
       events: v.number(),
       activities: v.number(),
       vehicles: v.number(),
-      accommodations: v.number(),
+
       active: v.number(),
     }),
     organizations: v.object({
@@ -797,7 +783,7 @@ export const getSystemStatistics = query({
         events,
         activities,
         vehicles,
-        accommodations,
+  
         organizations,
         eventBookings,
         supportMessages,
@@ -807,7 +793,7 @@ export const getSystemStatistics = query({
         ctx.db.query("events").collect(),
         ctx.db.query("activities").collect(),
         ctx.db.query("vehicles").collect(),
-        ctx.db.query("accommodations").collect(),
+  
         ctx.db.query("partnerOrganizations").collect(),
         ctx.db.query("eventBookings").collect(),
         ctx.db.query("supportMessages").collect(),
@@ -822,13 +808,13 @@ export const getSystemStatistics = query({
         masters: allUsers.filter(u => u.role === "master").length,
       };
 
-      const totalAssets = restaurants.length + events.length + activities.length + vehicles.length + accommodations.length;
+      const totalAssets = restaurants.length + events.length + activities.length + vehicles.length;
       const activeAssets = [
         ...restaurants.filter(r => r.isActive),
         ...events.filter(e => e.isActive),
         ...activities.filter(a => a.isActive),
         ...vehicles.filter(v => v.status === "available"),
-        ...accommodations.filter(a => a.isActive),
+
       ].length;
 
       const assetStats = {
@@ -837,7 +823,7 @@ export const getSystemStatistics = query({
         events: events.length,
         activities: activities.length,
         vehicles: vehicles.length,
-        accommodations: accommodations.length,
+        
         active: activeAssets,
       };
 
@@ -883,12 +869,11 @@ export const getSystemStatistics = query({
       }
 
       // Get all assets belonging to the partner
-      const [restaurants, events, activities, vehicles, accommodations, organizations] = await Promise.all([
+      const [restaurants, events, activities, vehicles, organizations] = await Promise.all([
         ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
         ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
         ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
         ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", partnerId)).collect(),
-        ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
         ctx.db.query("partnerOrganizations").withIndex("by_partner", (q) => q.eq("partnerId", partnerId)).collect(),
       ]);
 
@@ -960,13 +945,13 @@ export const getSystemStatistics = query({
         masters: 0, // Partners/employees don't see master stats
       };
 
-      const totalAssets = restaurants.length + events.length + activities.length + vehicles.length + accommodations.length;
+      const totalAssets = restaurants.length + events.length + activities.length + vehicles.length;
       const activeAssets = [
         ...restaurants.filter(r => r.isActive),
         ...events.filter(e => e.isActive),
         ...activities.filter(a => a.isActive),
         ...vehicles.filter(v => v.status === "available"),
-        ...accommodations.filter(a => a.isActive),
+
       ].length;
 
       const assetStats = {
@@ -975,7 +960,7 @@ export const getSystemStatistics = query({
         events: events.length,
         activities: activities.length,
         vehicles: vehicles.length,
-        accommodations: accommodations.length,
+        
         active: activeAssets,
       };
 
@@ -1225,42 +1210,6 @@ const vehicleAssetValidator = v.object({
   stripeProductId: v.optional(v.string()),
 });
 
-const accommodationAssetValidator = v.object({
-  ...baseAssetFields,
-  assetType: v.literal("accommodations"),
-  slug: v.string(),
-  description_long: v.string(),
-  address: addressValidator,
-  phone: v.string(),
-  website: v.optional(v.string()),
-  type: v.string(),
-  checkInTime: v.string(),
-  checkOutTime: v.string(),
-  pricePerNight: v.number(),
-  currency: v.string(),
-  discountPercentage: v.optional(v.number()),
-  taxes: v.optional(v.number()),
-  cleaningFee: v.optional(v.number()),
-  totalRooms: v.number(),
-  maxGuests: v.number(),
-  bedrooms: v.number(),
-  bathrooms: v.number(),
-  beds: v.object({
-    single: v.number(),
-    double: v.number(),
-    queen: v.number(),
-    king: v.number(),
-  }),
-  area: v.number(),
-  amenities: v.array(v.string()),
-  houseRules: v.array(v.string()),
-  cancellationPolicy: v.string(),
-  petsAllowed: v.boolean(),
-  smokingAllowed: v.boolean(),
-  eventsAllowed: v.boolean(),
-  minimumStay: v.number(),
-});
-
 export const listAllAssets = query({
   args: {
     assetType: v.optional(v.union(
@@ -1268,7 +1217,7 @@ export const listAllAssets = query({
       v.literal("events"),
       v.literal("activities"),
       v.literal("vehicles"),
-      v.literal("accommodations"),
+      
       v.literal("all")
     )),
     isActive: v.optional(v.boolean()),
@@ -1280,7 +1229,7 @@ export const listAllAssets = query({
     eventAssetValidator,
     activityAssetValidator,
     vehicleAssetValidator,
-    accommodationAssetValidator
+
   )),
   handler: async (ctx, args) => {
     const currentUserRole = await getCurrentUserRole(ctx);
@@ -1294,7 +1243,7 @@ export const listAllAssets = query({
 
     // Coletar assets de acordo com o filtro
     const assetTypes = args.assetType === "all" || !args.assetType 
-      ? ["restaurants", "events", "activities", "vehicles", "accommodations"]
+      ? ["restaurants", "events", "activities", "vehicles"]
       : [args.assetType];
 
     for (const assetType of assetTypes) {
@@ -1595,74 +1544,7 @@ export const listAllVehicles = query({
   },
 });
 
-/**
- * Listar apenas hospedagens (para melhor performance e type safety)
- */
-export const listAllAccommodations = query({
-  args: {
-    isActive: v.optional(v.boolean()),
-    partnerId: v.optional(v.id("users")),
-    limit: v.optional(v.number()),
-  },
-  returns: v.array(accommodationAssetValidator),
-  handler: async (ctx, args) => {
-    const currentUserRole = await getCurrentUserRole(ctx);
 
-    if (currentUserRole !== "master") {
-      throw new Error("Apenas administradores master podem ver todos os assets");
-    }
-
-    const limit = args.limit || 100;
-    let query = ctx.db.query("accommodations");
-
-    if (args.partnerId) {
-      query = query.withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId!)) as any;
-    }
-
-    if (args.isActive !== undefined) {
-      query = query.filter((q) => q.eq(q.field("isActive"), args.isActive));
-    }
-
-    const accommodations = await query.take(limit);
-
-    const enrichedAccommodations = await Promise.all(
-      accommodations.map(async (accommodation) => {
-        const partner = accommodation.partnerId ? await ctx.db.get(accommodation.partnerId) : null;
-        
-        // Transform complex rating object to match validator
-        let transformedRating: any = accommodation.rating;
-        if (accommodation.rating && typeof accommodation.rating === 'object' && 'totalReviews' in accommodation.rating) {
-          transformedRating = Number(accommodation.rating.location || 0); // Convert to simple number for validator
-        }
-        
-        return {
-          ...accommodation,
-          _id: accommodation._id.toString(),
-          assetType: "accommodations" as const,
-          partnerName: partner?.name,
-          partnerEmail: partner?.email,
-          bookingsCount: 0, // TODO: Implement booking counting for accommodations
-          rating: transformedRating,
-          minimumStay: accommodation.minimumStay ? Number(accommodation.minimumStay) : 1,
-          // Convert bigint fields to numbers
-          totalRooms: Number(accommodation.totalRooms),
-          maxGuests: Number(accommodation.maxGuests),
-          bedrooms: Number(accommodation.bedrooms),
-          bathrooms: Number(accommodation.bathrooms),
-          area: Number(accommodation.area),
-          beds: {
-            single: Number(accommodation.beds.single),
-            double: Number(accommodation.beds.double),
-            queen: Number(accommodation.beds.queen),
-            king: Number(accommodation.beds.king),
-          },
-        };
-      })
-    );
-
-    return enrichedAccommodations.sort((a, b) => b._creationTime - a._creationTime);
-  },
-});
 
 /**
  * Get basic admin info for proposal viewing (public access)
@@ -1737,7 +1619,7 @@ export const getUserDetailsById = query({
         events: v.number(),
         activities: v.number(),
         vehicles: v.number(),
-        accommodations: v.number(),
+
         total: v.number(),
       }),
       partnerInfo: v.optional(v.object({
@@ -1818,17 +1700,16 @@ export const getUserDetailsById = query({
       events: 0,
       activities: 0,
       vehicles: 0,
-      accommodations: 0,
       total: 0,
     };
 
     if (user.role === "partner") {
-      const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+      const [restaurants, events, activities, vehicles] = await Promise.all([
         ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
         ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
         ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
         ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", user._id)).collect(),
-        ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+  
       ]);
 
       assets = {
@@ -1836,8 +1717,8 @@ export const getUserDetailsById = query({
         events: events.length,
         activities: activities.length,
         vehicles: vehicles.length,
-        accommodations: accommodations.length,
-        total: restaurants.length + events.length + activities.length + vehicles.length + accommodations.length,
+        
+        total: restaurants.length + events.length + activities.length + vehicles.length,
       };
     }
 
@@ -1884,7 +1765,7 @@ export const getUserDetailsById = query({
           events: 0,
           activities: 0,
           vehicles: 0,
-          accommodations: 0,
+
           total: 0,
         }, // Travelers don't have assets
         partnerInfo: undefined,
@@ -2454,7 +2335,7 @@ export const getUserByIdPublic = query({
         events: v.number(),
         activities: v.number(),
         vehicles: v.number(),
-        accommodations: v.number(),
+
         total: v.number(),
       }),
       partnerInfo: v.optional(v.object({
@@ -2535,17 +2416,16 @@ export const getUserByIdPublic = query({
       events: 0,
       activities: 0,
       vehicles: 0,
-      accommodations: 0,
       total: 0,
     };
 
     if (user.role === "partner") {
-      const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+      const [restaurants, events, activities, vehicles] = await Promise.all([
         ctx.db.query("restaurants").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
         ctx.db.query("events").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
         ctx.db.query("activities").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
         ctx.db.query("vehicles").withIndex("by_ownerId", (q) => q.eq("ownerId", user._id)).collect(),
-        ctx.db.query("accommodations").withIndex("by_partner", (q) => q.eq("partnerId", user._id)).collect(),
+  
       ]);
 
       assets = {
@@ -2553,8 +2433,8 @@ export const getUserByIdPublic = query({
         events: events.length,
         activities: activities.length,
         vehicles: vehicles.length,
-        accommodations: accommodations.length,
-        total: restaurants.length + events.length + activities.length + vehicles.length + accommodations.length,
+        
+        total: restaurants.length + events.length + activities.length + vehicles.length,
       };
     }
 
@@ -2601,7 +2481,7 @@ export const getUserByIdPublic = query({
           events: 0,
           activities: 0,
           vehicles: 0,
-          accommodations: 0,
+
           total: 0,
         }, // Travelers don't have assets
         partnerInfo: undefined,

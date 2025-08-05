@@ -88,7 +88,7 @@ export default function NotificationsSection({
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markAsRead({ notificationId });
-    } catch (error) {
+    } catch {
       toast.error("Erro ao marcar notificação como lida");
     }
   };
@@ -97,7 +97,7 @@ export default function NotificationsSection({
     try {
       await markAllAsRead({});
       toast.success("Todas as notificações foram marcadas como lidas");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao marcar todas as notificações como lidas");
     }
   };
@@ -106,7 +106,7 @@ export default function NotificationsSection({
     try {
       await deleteNotification({ notificationId });
       toast.success("Notificação removida");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao remover notificação");
     }
   };

@@ -3,18 +3,9 @@
 import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
-import type { Id } from "@/../convex/_generated/dataModel"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { 
-  Package, 
-  Star, 
-  Power, 
-  Eye, 
-  TrendingUp,
-  Calendar,
-  DollarSign
-} from "lucide-react"
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Package, Star, Power, Eye, TrendingUp, DollarSign } from "lucide-react";
 
 export function PackagesStats() {
   const { user } = useCurrentUser()

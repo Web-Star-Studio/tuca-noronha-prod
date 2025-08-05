@@ -17,13 +17,12 @@ const useFeaturedVehicles = () => {
   });
 
   const vehicles = result?.vehicles || [];
-  const isLoading = result === undefined;
-
-  return { vehicles, isLoading };
+  
+  return { vehicles };
 };
 
 export default function FeaturedVehicles() {
-  const { vehicles: featuredVehicles, isLoading } = useFeaturedVehicles();
+  const { vehicles: featuredVehicles } = useFeaturedVehicles();
   
   return (
     <section className="py-24 relative overflow-hidden bg-slate-50/30">
@@ -72,7 +71,7 @@ export default function FeaturedVehicles() {
           </motion.div>
         </div>
 
-        {isLoading ? (
+        {featuredVehicles.length === 0 ? (
           <div className="flex justify-center items-center py-20">
             <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
             <span className="ml-3 text-gray-600">Carregando veículos em destaque...</span>

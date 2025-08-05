@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
   Building2, 
-  Users, 
+ 
   TrendingUp, 
   Search,
   Filter,
@@ -14,11 +14,9 @@ import {
   Eye,
   Edit,
   Trash2,
-  Plus,
   MapPin,
   Calendar,
   CheckCircle,
-  XCircle,
   AlertTriangle
 } from "lucide-react"
 import { useQuery } from "convex/react"
@@ -48,7 +46,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from "next/link"
 import { DashboardPageHeader } from "../components"
 
 const organizationTypeLabels = {

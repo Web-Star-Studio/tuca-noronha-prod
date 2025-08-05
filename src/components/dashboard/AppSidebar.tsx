@@ -1,25 +1,7 @@
 "use client"
 
 import type * as React from "react"
-import {
-  AudioWaveform,
-  Command,
-  LayoutDashboard,
-  Activity,
-  Utensils,
-  CalendarDays,
-  Package,
-  ShoppingBag,
-  Users,
-  Image as ImageIcon,
-  BarChart3,
-  ListOrderedIcon,
-  ClipboardList,
-  QrCode,
-  MessageCircle,
-  CreditCard,
-  Settings
-} from "lucide-react"
+import { LayoutDashboard, Activity, Utensils, CalendarDays, Package, ShoppingBag, Users, BarChart3, ListOrderedIcon, ClipboardList, QrCode, MessageCircle, CreditCard, Settings } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarRail, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator, SidebarGroup, SidebarGroupLabel } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"

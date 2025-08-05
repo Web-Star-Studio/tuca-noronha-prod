@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,17 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search,
-  FileText,
-  Languages,
-  Settings,
-  Copy,
-  Eye
-} from "lucide-react";
+import { Plus, Edit, Trash2, Search, FileText, Languages, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Template {
@@ -139,7 +129,7 @@ export function TemplateManager() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao criar template",
         description: "Tente novamente",
@@ -171,7 +161,7 @@ export function TemplateManager() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao atualizar template",
         description: "Tente novamente",
@@ -187,7 +177,7 @@ export function TemplateManager() {
         title: "Template deletado",
         description: "Template deletado com sucesso"
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao deletar template",
         description: "Tente novamente",

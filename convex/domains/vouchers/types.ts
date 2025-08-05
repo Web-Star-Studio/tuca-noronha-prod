@@ -24,7 +24,7 @@ export const BOOKING_TYPES = {
   EVENT: "event",
   RESTAURANT: "restaurant",
   VEHICLE: "vehicle",
-  ACCOMMODATION: "accommodation",
+
 } as const;
 
 // User types for logging
@@ -43,7 +43,7 @@ export const createVoucherValidator = v.object({
     v.literal("event"),
     v.literal("restaurant"),
     v.literal("vehicle"),
-    v.literal("accommodation"),
+
     v.literal("package")
   ),
   partnerId: v.id("users"),
@@ -269,15 +269,7 @@ export interface VehicleVoucherData extends VoucherTemplateData {
   };
 }
 
-export interface AccommodationVoucherData extends VoucherTemplateData {
-  accommodation: {
-    checkInTime: string;
-    checkOutTime: string;
-    roomType: string;
-    guestCount: number;
-    amenities: string[];
-  };
-}
+
 
 // Booking type for vouchers
-export type VoucherBookingType = "activity" | "event" | "restaurant" | "vehicle" | "accommodation" | "package";
+export type VoucherBookingType = "activity" | "event" | "restaurant" | "vehicle" | "package";

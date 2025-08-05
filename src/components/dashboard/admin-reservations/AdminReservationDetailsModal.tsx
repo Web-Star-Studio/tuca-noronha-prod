@@ -6,18 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Calendar, 
-  User, 
-  MapPin, 
-  DollarSign, 
-  CreditCard,
-  Clock,
-  FileText,
-  History,
-  CheckCircle,
-  XCircle
-} from "lucide-react";
+import { User, MapPin, DollarSign, Clock, FileText, History, CheckCircle, XCircle } from "lucide-react";
 
 interface AdminReservationDetailsModalProps {
   reservation: any;

@@ -98,8 +98,7 @@ export function getAssetTableName(assetType: string): string {
       return "events";
     case "restaurant":
       return "restaurants";
-    case "accommodation":
-      return "accommodations";
+
     case "vehicle":
       return "vehicles";
     case "package":
@@ -120,8 +119,7 @@ export function getBookingTableName(assetType: string): string {
       return "eventBookings";
     case "restaurant":
       return "restaurantReservations";
-    case "accommodation":
-      return "accommodationBookings";
+
     case "vehicle":
       return "vehicleBookings";
     case "package":
@@ -142,8 +140,7 @@ export function getAssetIdFieldName(assetType: string): string {
       return "eventId";
     case "restaurant":
       return "restaurantId";
-    case "accommodation":
-      return "accommodationId";
+
     case "vehicle":
       return "vehicleId";
     case "package":
@@ -272,7 +269,7 @@ export function generateStripeProductName(assetType: string, assetName: string):
     activity: "Atividade",
     event: "Evento",
     restaurant: "Restaurante",
-    accommodation: "Hospedagem",
+  
     vehicle: "Veículo",
     package: "Pacote"
   };

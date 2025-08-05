@@ -6,7 +6,7 @@ import { Calendar, Clock, ExternalLink, MapPin, Star, Trash2, RefreshCw, Pencil 
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+
 
 type EventCardProps = {
   event: Event;
@@ -25,7 +25,6 @@ export function EventCard({
 }: EventCardProps) {
   // Check if event was synced from Sympla
   const isSyncedFromSympla = Boolean(event.symplaId || event.external_id);
-  const router = useRouter();
   
   const handleCardClick = () => {
     if (isSyncedFromSympla && event.symplaUrl) {
@@ -97,10 +96,12 @@ export function EventCard({
             {/* Sympla link badge */}
             {event.symplaUrl && (
               <div className="bg-blue-100 shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-blue-700 flex items-center gap-1">
-                <img 
+                <Image 
                   src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
                   alt="Sympla" 
                   className="h-2.5 mr-1"
+                  width={20}
+                  height={10}
                 /> Sympla
               </div>
             )}

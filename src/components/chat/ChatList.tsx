@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { MessageCircle, Search, Filter, MoreVertical, Clock } from "lucide-react";
+import { useState } from "react";
+import { MessageCircle, Search, MoreVertical, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatWindow } from "./ChatWindow";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -84,7 +84,7 @@ export const ChatList: React.FC<ChatListProps> = ({
     try {
       await updateChatRoomStatus({ chatRoomId, status });
       toast.success(`Conversa ${getChatStatusText(status).toLowerCase()}`);
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar status:", error);
       toast.error("Erro ao atualizar status da conversa");
     }

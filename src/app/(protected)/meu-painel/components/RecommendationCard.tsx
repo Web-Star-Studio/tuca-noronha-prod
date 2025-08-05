@@ -9,14 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,  } from "@/components/ui/dialog";
 import { cardStyles, imageEffects } from "@/lib/ui-config";
 import { toast } from "sonner";
 import { RecommendationCardProps } from '../types/dashboard';

@@ -5,7 +5,7 @@ import { useReviewStats } from "@/lib/hooks/useReviews";
 import Image from "next/image";
 import Link from "next/link";
 import React, { forwardRef } from "react";
-import { Utensils, MapPin, Clock, ImageIcon } from "lucide-react";
+import { Utensils, MapPin, Clock } from "lucide-react";
 
 // Tipo que funciona com ambos os tipos de Restaurant
 type RestaurantType = RestaurantService | RestaurantStore;
@@ -118,16 +118,13 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
                 // Get rating from reviews system or fallback to restaurant static data
                 const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
                 const finalRating = hasReviewData ? reviewStats.averageRating : (restaurant.rating?.overall || 0);
-                const finalReviews = hasReviewData ? reviewStats.totalReviews : Number(restaurant.rating?.totalReviews || 0);
                 
                 // Ensure rating is valid
                 const validRating = typeof finalRating === 'number' && !isNaN(finalRating) && isFinite(finalRating) ? finalRating : 0;
-                const validReviews = typeof finalReviews === 'number' && !isNaN(finalReviews) && isFinite(finalReviews) ? finalReviews : 0;
                 
                 return (
                   <QuickStats
                     averageRating={validRating}
-                    totalReviews={validReviews}
                     recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
                     className="text-sm"
                   />

@@ -2,22 +2,8 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { 
-  Star, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Eye,
-  Edit, 
-  Trash2, 
-  Power,
-  Copy,
-  MoreVertical,
-  Bed,
-  Car,
-  Utensils,
-  Camera
-} from "lucide-react"
+import Image from "next/image"
+import { Star, Calendar, Users, Eye, Edit, Trash2, Power, Copy, MoreVertical, Bed, Car, Utensils, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -28,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface PackageCardProps {
   package: any
@@ -77,9 +62,11 @@ export function PackageCard({
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
           {!imageError ? (
-            <img
+            <Image
               src={pkg.mainImage || '/images/placeholder-package.jpg'}
               alt={pkg.name}
+              width={400}
+              height={200}
               className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
                 imageLoading ? 'opacity-0' : 'opacity-100'
               }`}

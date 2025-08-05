@@ -47,7 +47,7 @@ export const getAssetsForRecommendations = query({
     // Tipos de assets para buscar
     const assetTypes = args.assetType 
       ? [args.assetType] 
-      : ["restaurants", "events", "activities", "vehicles", "accommodations"];
+      : ["restaurants", "events", "activities", "vehicles"];
 
     for (const assetType of assetTypes) {
       let assets: any[] = [];
@@ -82,12 +82,7 @@ export const getAssetsForRecommendations = query({
               .take(limit);
             break;
 
-          case "accommodations":
-            assets = await ctx.db
-              .query("accommodations")
-              .filter((q) => q.eq(q.field("isActive"), true))
-              .take(limit);
-            break;
+
 
           default:
             continue;
@@ -287,7 +282,7 @@ function calculateSocialLevel(asset: any, assetType: string): number {
 function mapAssetTypeForRecommendations(assetType: string): string {
   const mapping: Record<string, string> = {
     "restaurants": "restaurant",
-    "accommodations": "accommodation", 
+ 
     "activities": "activity",
     "events": "experience",
     "vehicles": "activity" // Veículos como atividade de transporte
@@ -308,21 +303,20 @@ export const getAssetsStats = query({
       events: v.number(),
       activities: v.number(),
       vehicles: v.number(),
-      accommodations: v.number(),
+      
     }),
     avgRating: v.number(),
     avgPrice: v.number(),
   }),
   handler: async (ctx) => {
-    const [restaurants, events, activities, vehicles, accommodations] = await Promise.all([
+    const [restaurants, events, activities, vehicles] = await Promise.all([
       ctx.db.query("restaurants").filter(q => q.eq(q.field("isActive"), true)).collect(),
       ctx.db.query("events").filter(q => q.eq(q.field("isActive"), true)).collect(),
       ctx.db.query("activities").filter(q => q.eq(q.field("isActive"), true)).collect(),
       ctx.db.query("vehicles").filter(q => q.eq(q.field("status"), "available")).collect(),
-      ctx.db.query("accommodations").filter(q => q.eq(q.field("isActive"), true)).collect(),
     ]);
 
-    const allAssets = [...restaurants, ...events, ...activities, ...vehicles, ...accommodations];
+    const allAssets = [...restaurants, ...events, ...activities, ...vehicles];
     
     const total = allAssets.length;
     
@@ -332,7 +326,7 @@ export const getAssetsStats = query({
       let assetType = "unknown";
       if ((asset as any).cuisine) assetType = "restaurants";
       else if ((asset as any).pricePerDay) assetType = "vehicles";
-      else if ((asset as any).pricePerNight) assetType = "accommodations";
+
       else if ((asset as any).ticketPrice) assetType = "events";
       else assetType = "activities";
       
@@ -345,7 +339,7 @@ export const getAssetsStats = query({
       let assetType = "unknown";
       if ((asset as any).cuisine) assetType = "restaurants";
       else if ((asset as any).pricePerDay) assetType = "vehicles";
-      else if ((asset as any).pricePerNight) assetType = "accommodations";
+
       else if ((asset as any).ticketPrice) assetType = "events";
       else assetType = "activities";
       
@@ -363,7 +357,7 @@ export const getAssetsStats = query({
         events: events.length,
         activities: activities.length,
         vehicles: vehicles.length,
-        accommodations: accommodations.length,
+
       },
       avgRating: validRatings.length > 0 ? validRatings.reduce((a, b) => a + b, 0) / validRatings.length : 0,
       avgPrice: validPrices.length > 0 ? validPrices.reduce((a, b) => a + b, 0) / validPrices.length : 0,

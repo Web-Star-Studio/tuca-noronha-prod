@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ReviewStats,
@@ -15,7 +14,7 @@ import {
 } from "@/components/reviews";
 
 export function ReviewSystemExample() {
-  const [selectedItem, setSelectedItem] = useState({
+  const [selectedItem] = useState({
     type: "restaurant",
     id: "example-restaurant-id"
   });
@@ -24,7 +23,7 @@ export function ReviewSystemExample() {
     assetType: selectedItem.type,
     assetId: selectedItem.id,
   });
-  const { reviews, isLoading } = useReviews({
+  useReviews({
     itemType: selectedItem.type,
     itemId: selectedItem.id,
     limit: 5

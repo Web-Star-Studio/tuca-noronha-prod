@@ -43,8 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DashboardPageHeader } from "../components"
 
 const logTypeColors = {
@@ -86,7 +85,6 @@ export default function LogsPage() {
   })
 
   const logs = logsResult?.page || []
-  const logStats = logsResult?.stats || { total: 0, errors: 0, warnings: 0, today: 0 }
 
   // Buscar estatísticas detalhadas
   const statsResult = useQuery(api.domains.audit.queries.getAuditLogStats, {

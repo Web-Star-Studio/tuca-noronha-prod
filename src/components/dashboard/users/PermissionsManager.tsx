@@ -59,9 +59,7 @@ export default function PermissionsManager({
   currentPermissions,
   onPermissionsChange
 }: PermissionsManagerProps) {
-  
 
-  
   const grantPermission = useGrantOrganizationPermission();
   const revokePermission = useRevokeOrganizationPermission();
   const [isLoading, setIsLoading] = useState(false);
@@ -133,7 +131,7 @@ export default function PermissionsManager({
       if (onPermissionsChange) {
         onPermissionsChange();
       }
-    } catch (error) {
+    } catch {
       console.error(error);
       toast.error("Erro ao atribuir organização");
     } finally {
@@ -152,7 +150,7 @@ export default function PermissionsManager({
       if (onPermissionsChange) {
         onPermissionsChange();
       }
-    } catch (error) {
+    } catch {
       console.error(error);
       toast.error("Erro ao remover organização");
     } finally {

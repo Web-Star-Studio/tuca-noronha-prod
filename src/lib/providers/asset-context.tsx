@@ -3,13 +3,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useOrganization } from "./organization-context";
 import { Id } from "@/../convex/_generated/dataModel";
 
 interface Asset {
   _id: string;
   name: string;
-  assetType: "restaurants" | "events" | "activities" | "vehicles" | "accommodations";
+  assetType: "restaurants" | "events" | "activities" | "vehicles";
   partnerId: Id<"users">;
   isActive: boolean;
   // Add other common asset fields as needed
@@ -31,13 +30,15 @@ export function AssetProvider({ children }: { children: React.ReactNode }) {
   const userOrganizations = useQuery(api.domains.rbac.queries.listUserOrganizations);
 
   // Transform organizations to assets format
-  const availableAssets = userOrganizations?.map((org: any) => ({
-    _id: org._id,
-    name: org.name,
-    assetType: getAssetTypeFromOrganizationType(org.type),
-    partnerId: org.partnerId,
-    isActive: org.isActive,
-  })) || [];
+  const availableAssets = React.useMemo(() => 
+    userOrganizations?.map((org: any) => ({
+      _id: org._id,
+      name: org.name,
+      assetType: getAssetTypeFromOrganizationType(org.type),
+      partnerId: org.partnerId,
+      isActive: org.isActive,
+    })) || [], [userOrganizations]
+  );
 
   // Auto-select first asset when assets are loaded
   useEffect(() => {
@@ -71,8 +72,7 @@ function getAssetTypeFromOrganizationType(orgType: string): Asset["assetType"] {
       return "activities";
     case "rental_service":
       return "vehicles";
-    case "accommodation": // if this type exists
-      return "accommodations";
+
     default:
       return "restaurants"; // default fallback
   }

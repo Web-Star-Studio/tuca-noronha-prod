@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function VoucherScannerPage() {
-  const { user } = useUser();
+  useUser();
   const [scannedVoucher, setScannedVoucher] = useState<any>(null);
   const [scanError, setScanError] = useState<string | null>(null);
 

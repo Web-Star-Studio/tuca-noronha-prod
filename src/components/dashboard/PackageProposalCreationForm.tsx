@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useAction } from "convex/react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { api } from "../../../convex/_generated/api";
@@ -16,12 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, Plus, X, FileText, Calendar, DollarSign, Package, Users, Wand2, Check, ArrowRight, ArrowLeft, Info, Search, ChevronDown } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem } from "@/components/ui/accordion";
+import { Loader2, Plus, X, FileText, Calendar, DollarSign, Package, Users, Wand2, Check, ArrowRight, ArrowLeft, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
 
 interface PackageComponent {
   type: "accommodation" | "activity" | "event" | "restaurant" | "vehicle" | "transfer" | "guide" | "insurance" | "other";
@@ -139,7 +137,6 @@ export function PackageProposalCreationForm({
     }));
   }, [components, pricing.discount, pricing.taxes, pricing.fees]);
 
-
   const handleAnalyzeRequest = async () => {
     if (!packageRequest) return;
 
@@ -174,7 +171,7 @@ export function PackageProposalCreationForm({
           description: `${result.suggestions.length} componentes foram sugeridos com base no pedido.`,
         });
       }
-    } catch (error) {
+    } catch {
       console.error("Error analyzing request:", error);
       toast.error("Erro ao analisar solicitação.");
     } finally {
@@ -234,7 +231,6 @@ export function PackageProposalCreationForm({
 
   const addTag = () => handleListAction(formData.tags, (l) => setFormData(p => ({...p, tags: l})), newTag, setNewTag);
   const removeTag = (index:number) => setFormData(p => ({...p, tags: p.tags.filter((_, i) => i !== index)}));
-
 
   const validateStep = (stepIndex: number): boolean => {
     switch(stepIndex) {
@@ -337,7 +333,7 @@ export function PackageProposalCreationForm({
           toast.error(result.message || "Erro ao criar proposta");
         }
       }
-    } catch (error) {
+    } catch {
       console.error("Error submitting proposal:", error);
       toast.error(`Ocorreu um erro inesperado ao ${isEditing ? 'atualizar' : 'criar'} a proposta.`);
     } finally {

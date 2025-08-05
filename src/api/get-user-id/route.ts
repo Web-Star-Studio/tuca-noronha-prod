@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     // Return the Convex user ID
     return NextResponse.json({ userId: convexUserId });
-  } catch (error) {
+  } catch {
     console.error('Error resolving user ID:', error);
     return NextResponse.json(
       { error: 'Failed to resolve user ID', details: String(error) },

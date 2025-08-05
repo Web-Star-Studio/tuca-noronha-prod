@@ -513,7 +513,7 @@ export const applyCouponToBooking = action({
       v.literal("event"),
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation"),
+      
       v.literal("package")
     ),
     userId: v.id("users"),

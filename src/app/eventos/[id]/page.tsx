@@ -5,9 +5,8 @@ import { notFound } from "next/navigation";
 import { usePublicEvent } from "@/lib/services/eventService";
 import { ChatButton } from "@/components/chat/ChatButton";
 import EventDetails from "@/components/cards/EventDetails";
-
 // Review components
-import { ReviewStats, ReviewsList } from "@/components/reviews";
+// Reviews components removidos (não utilizados)
 import { useReviewStats } from "@/lib/hooks/useReviews";
 
 export default function EventPage(props: { params: Promise<{ id: string }> }) {
@@ -47,19 +46,7 @@ export default function EventPage(props: { params: Promise<{ id: string }> }) {
       <EventDetails 
         event={event} 
         reviewStats={reviewStats}
-      />
-      
-      {/* Botão de Chat Flutuante */}
-      <ChatButton
-        assetId={event.id}
-        assetType="events"
-        assetName={event.title}
-        partnerId={event.partnerId as any}
-        variant="floating"
-        size="lg"
-        showLabel={true}
-        customLabel="Suporte"
-      />
+      />      
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { MessageCircle, HelpCircle, X, Clock, Mail, Tag, AlertTriangle, CheckCircle2, Star } from "lucide-react";
+import { MessageCircle, HelpCircle, X, Clock, Tag, AlertTriangle, CheckCircle2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import { Input } from "@/components/ui/input";

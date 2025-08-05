@@ -57,7 +57,7 @@ export const getRevenueAnalytics = query({
       ctx.db.query("activityBookings").collect(),
       ctx.db.query("restaurantReservations").collect(),
       ctx.db.query("vehicleBookings").collect(),
-      ctx.db.query("accommodationBookings").collect(),
+
     ]);
 
     const flatBookings = allBookings.flat().filter(booking => {
@@ -135,7 +135,7 @@ export const getRevenueAnalytics = query({
       else if ("activityId" in booking) assetType = "activities";
       else if ("restaurantId" in booking) assetType = "restaurants";
       else if ("vehicleId" in booking) assetType = "vehicles";
-      else if ("accommodationId" in booking) assetType = "accommodations";
+
       
       const current = revenueByType.get(assetType) || 0;
       const amount = (booking as any).totalAmount || (booking as any).amount || 0;
@@ -316,14 +316,13 @@ export const getDestinationPerformance = query({
     const limit = args.limit || 10;
 
     // Buscar todos os assets com localização
-    const [restaurants, events, activities, accommodations] = await Promise.all([
+    const [restaurants, events, activities] = await Promise.all([
       ctx.db.query("restaurants").collect(),
       ctx.db.query("events").collect(),
       ctx.db.query("activities").collect(),
-      ctx.db.query("accommodations").collect(),
     ]);
 
-    const allAssets = [...restaurants, ...events, ...activities, ...accommodations];
+    const allAssets = [...restaurants, ...events, ...activities];
     
     // Agrupar por localização
     const locationMap = new Map<string, {
@@ -417,7 +416,7 @@ export const getAssetTypePerformance = query({
       throw new Error("Acesso negado");
     }
 
-    const assetTypes = ["restaurants", "events", "activities", "vehicles", "accommodations"];
+    const assetTypes = ["restaurants", "events", "activities", "vehicles"];
     const performance: Array<{
       assetType: string;
       totalAssets: number;

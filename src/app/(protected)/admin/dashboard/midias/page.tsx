@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react"
 import { useMedia, useDeleteMedia } from "@/lib/services/mediaService"
 import type { Media } from "@/lib/services/mediaService"
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { 
@@ -14,24 +13,20 @@ import {
 } from "@/components/dashboard/media"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Loader2, Image, Filter, Search } from "lucide-react"
+import { Plus, Image, Filter, Search } from "lucide-react"
 import type { Id } from "@/../convex/_generated/dataModel"
 import { AnimatePresence, motion } from "framer-motion"
-import { ui } from "@/lib/ui-config"
-import { cn } from "@/lib/utils"
 import { DashboardPageHeader } from "../components"
 
 export default function MediaPage() {
   const { media, isLoading } = useMedia()
   const deleteMedia = useDeleteMedia()
-  const { user } = useCurrentUser()
   
   // State for dialogs
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [, setIsDeleting] = useState(false)
   
   // State for filtering and pagination
   const [searchQuery, setSearchQuery] = useState("")
@@ -98,7 +93,7 @@ export default function MediaPage() {
       setIsDeleting(true)
       await deleteMedia(id)
       toast.success("Mídia excluída com sucesso!")
-    } catch (error) {
+    } catch {
       console.error("Erro ao excluir mídia:", error)
       toast.error("Erro ao excluir mídia")
     } finally {
@@ -132,7 +127,7 @@ export default function MediaPage() {
                 <p className="text-2xl font-bold text-foreground">{media?.length || 0}</p>
               </div>
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Image className="h-5 w-5 text-blue-600" />
+                <Image className="h-5 w-5 text-blue-600" alt="" />
               </div>
             </div>
           </CardContent>

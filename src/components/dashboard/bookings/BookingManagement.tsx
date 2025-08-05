@@ -160,7 +160,7 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
       setIsOpen(false);
       setNotes("");
       onSuccess();
-    } catch (error) {
+    } catch {
       console.error("Erro ao confirmar reserva:", error);
       toast.error("Erro ao confirmar reserva. Tente novamente.");
     }
@@ -252,7 +252,7 @@ function CancelBookingDialog({ bookingId, bookingType, currentStatus, onSuccess 
       setIsOpen(false);
       setReason("");
       onSuccess();
-    } catch (error) {
+    } catch {
       console.error("Erro ao cancelar reserva:", error);
       toast.error("Erro ao cancelar reserva. Tente novamente.");
     }
@@ -982,7 +982,7 @@ function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
 
 export default function BookingManagement() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [refreshKey, setRefreshKey] = useState(0);
+  // refreshKey removido (não utilizado)
 
   const partnerBookings = useQuery(api.domains.bookings.queries.getPartnerBookings, {
     paginationOpts: { numItems: 50, cursor: null },

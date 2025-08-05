@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "@/hooks/use-toast";
@@ -90,7 +90,7 @@ export function useCouponIntegration({
         usageId: result.usageId as any,
       };
 
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao aplicar cupom";
       
       toast({
@@ -138,7 +138,7 @@ export function useCouponIntegration({
 
       return { success: true };
 
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao remover cupom";
       
       toast({
@@ -240,7 +240,7 @@ export function useAutomaticCoupons({
   // Action para verificar cupons automáticos
   const checkAutomaticCoupons = useMutation(api.domains.coupons.actions.applyAutomaticCoupons);
 
-  const checkForAutomaticCoupons = async () => {
+  const checkForAutomaticCoupons = useCallback(async () => {
     setIsChecking(true);
 
     try {
@@ -261,19 +261,19 @@ export function useAutomaticCoupons({
         });
       }
 
-    } catch (error) {
+    } catch {
       console.error("Erro ao verificar cupons automáticos:", error);
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [userId, assetType, assetId, orderValue, checkAutomaticCoupons, onAutomaticCouponFound]);
 
   // Verificar cupons automáticos quando os parâmetros mudarem
   useEffect(() => {
     if (userId && assetType && assetId && orderValue > 0) {
       checkForAutomaticCoupons();
     }
-  }, [userId, assetType, assetId, orderValue]);
+  }, [userId, assetType, assetId, orderValue, checkForAutomaticCoupons]);
 
   return {
     isChecking,

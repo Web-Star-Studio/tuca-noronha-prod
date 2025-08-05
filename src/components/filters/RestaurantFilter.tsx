@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "../ui/button";
-import { Filter, ChevronDown, ChevronUp, Info, DollarSign } from "lucide-react";
+import { Filter, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RestaurantFiltersProps {
@@ -44,12 +44,11 @@ export default function RestaurantFilter({
   selectedCuisines,
   toggleCuisineFilter,
   priceRanges,
-  selectedPriceRanges,
-  togglePriceFilter,
+
   neighborhoods,
   selectedNeighborhoods,
   toggleNeighborhoodFilter,
-  applyFilters,
+
   resetFilters,
   isFilterOpen,
   setIsFilterOpen,

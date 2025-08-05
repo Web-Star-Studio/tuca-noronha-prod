@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Hotel, Package, Calendar, Heart, Mail, UtensilsCrossed, User, Car, MessageCircle } from "lucide-react";
+import { Home, Compass, Package, Calendar, Heart, Mail, UtensilsCrossed, User, Car, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSystemSettings } from "@/lib/hooks/useSystemSettings";
 

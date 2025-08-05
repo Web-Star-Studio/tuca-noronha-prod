@@ -1,28 +1,13 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
-import {
-  MapPin,
-  ArrowLeft,
-  Heart,
-  Share2,
-  Star,
-  Info,
-  Calendar,
-  Car,
-  Fuel,
-  ToggleLeft,
-  Users,
-  Palette,
-  DollarSign,
-  MessageCircle,
-} from "lucide-react";
+import { ArrowLeft, Heart, Share2, Star, Info, Calendar, Fuel, Users,  } from "lucide-react";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -32,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
-import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
+
 import { HelpSection } from "@/components/contact";
 
 export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
@@ -42,7 +27,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
   const router = useRouter();
   
   // Get WhatsApp link generator
-  const { generateWhatsAppLink } = useWhatsAppLink();
+  // WhatsApp link removido
   
   // Fetch vehicle data from Convex
   const vehicle = useQuery(api.domains.vehicles.queries.getVehicle, {
@@ -219,7 +204,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Características e comodidades</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                      {vehicle.features.map((feature, index) => (
+                      {vehicle.features.map((feature) => (
                         <div key={`feature-${feature}`} className="flex items-center gap-3 text-gray-700">
                           <div className="h-2 w-2 rounded-full bg-blue-500" />
                           <span>{feature}</span>
@@ -275,47 +260,6 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
             {/* Sticky Sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
-                <div className="bg-white border border-gray-100 rounded-lg shadow-sm p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <span className="text-2xl font-bold text-gray-800">R$ {vehicle.pricePerDay.toFixed(2)}</span>
-                      <span className="text-gray-500 text-sm"> / diária</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full h-8 w-8"
-                        onClick={() => setIsFavorite(!isFavorite)}
-                      >
-                        <Heart
-                          className={cn(
-                            "h-4 w-4",
-                            isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-500"
-                          )}
-                        />
-                        <span className="sr-only">Adicionar aos favoritos</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full h-8 w-8"
-                      >
-                        <Share2 className="h-4 w-4 text-gray-500" />
-                        <span className="sr-only">Compartilhar</span>
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <Alert className="bg-blue-50 text-blue-800 border-blue-100">
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Política de cancelamento</AlertTitle>
-                    <AlertDescription className="text-sm">
-                      Cancelamento gratuito até 24 horas antes da retirada do veículo. Após esse período, será cobrada uma taxa de 30%.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-
                 {isAuthenticated ? (
                   <VehicleBookingForm 
                     vehicleId={vehicle._id} 

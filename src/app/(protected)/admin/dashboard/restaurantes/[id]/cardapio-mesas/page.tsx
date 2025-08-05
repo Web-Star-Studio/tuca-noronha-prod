@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
-import { Loader2, Plus, Edit, Trash2, Users, MapPin, Eye, Star, ArrowLeft, Calendar, Clock, User } from "lucide-react"
+import { Loader2, Plus, Edit, Trash2, Users, MapPin, Eye, Star, ArrowLeft, Calendar, Clock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
@@ -34,8 +34,6 @@ interface Table {
   hasView: boolean
   notes?: string
 }
-
-
 
 export default function CardapioMesasPage() {
   const { id } = useParams()
@@ -102,7 +100,7 @@ export default function CardapioMesasPage() {
         // Por enquanto, vamos permitir acesso
       }
     }
-  }, [restaurant, user, toast])
+  }, [restaurant, user]) // toast removed - not a valid dependency
 
   // Formulários
   const [tableForm, setTableForm] = useState({
@@ -115,8 +113,6 @@ export default function CardapioMesasPage() {
     hasView: false,
     notes: "",
   })
-
-
 
   // Reset forms when dialogs close
   const resetTableForm = () => {
@@ -157,7 +153,7 @@ export default function CardapioMesasPage() {
       
       setIsTableDialogOpen(false)
       resetTableForm()
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar mesa:", error)
       toast.error("Erro ao criar mesa", {
         description: "Ocorreu um erro ao criar a mesa. Tente novamente.",
@@ -191,7 +187,7 @@ export default function CardapioMesasPage() {
       
       setIsTableDialogOpen(false)
       resetTableForm()
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar mesa:", error)
       toast.error("Erro ao atualizar mesa", {
         description: "Ocorreu um erro ao atualizar a mesa. Tente novamente.",
@@ -209,15 +205,13 @@ export default function CardapioMesasPage() {
       toast.success("Mesa excluída", {
         description: `A mesa ${table.name} foi removida.`,
       })
-    } catch (error) {
+    } catch {
       console.error("Erro ao excluir mesa:", error)
       toast.error("Erro ao excluir mesa", {
         description: "Ocorreu um erro ao excluir a mesa. Verifique se não há reservas associadas.",
       })
     }
   }
-
-
 
   // Editar mesa
   const editTable = (table: Table) => {
@@ -257,7 +251,7 @@ export default function CardapioMesasPage() {
       
       setIsAssignDialogOpen(false)
       setSelectedReservation(null)
-    } catch (error) {
+    } catch {
       console.error("Erro ao atribuir mesa:", error)
       toast.error("Erro ao atribuir mesa", {
         description: "Ocorreu um erro ao processar a atribuição. Tente novamente.",

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Image from "next/image"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useUploadMedia } from "@/lib/services/mediaService"
 import { Button } from "@/components/ui/button"
@@ -149,7 +150,7 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
       if (onSuccess) {
         onSuccess()
       }
-    } catch (error) {
+    } catch {
       console.error("Erro ao fazer upload:", error)
       toast.error("Erro ao fazer upload do arquivo")
     } finally {
@@ -182,10 +183,12 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
         
         {filePreview ? (
           <div className="relative">
-            <img 
+            <Image 
               src={filePreview} 
               alt="Preview" 
               className="h-48 max-w-full mx-auto object-contain rounded-md" 
+              width={300}
+              height={192}
             />
             <div className="flex items-center justify-center gap-2 mt-2 px-2">
               <div className="flex items-center text-sm text-green-600 min-w-0 flex-1 justify-center">

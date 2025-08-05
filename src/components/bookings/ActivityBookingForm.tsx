@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import {formatCurrency} from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Users, Clock, Ticket, MessageCircle } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
-import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
 
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
+import { buttonStyles, formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 
 interface ActivityBookingFormProps {
   activityId: Id<"activities">;
@@ -63,7 +63,6 @@ export function ActivityBookingForm({
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
-  const { user } = useCurrentUser();
 
   // Get activity tickets if available
   const tickets = useQuery(api.domains.activities.queries.getActivityTickets, {
@@ -73,8 +72,7 @@ export function ActivityBookingForm({
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
   
-  // Get WhatsApp link generator
-  const { generateWhatsAppLink } = useWhatsAppLink();
+  // WhatsApp link generator removido (não utilizado)
 
   // Available times (customize based on activity)
   const availableTimes = [
@@ -209,7 +207,7 @@ export function ActivityBookingForm({
         }
       }
 
-    } catch (error) {
+    } catch {
       toast.error("Erro ao criar reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });
@@ -223,7 +221,9 @@ export function ActivityBookingForm({
       <div className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Reserve sua atividade</h3>
+            <h2 className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(activity.price)} por pessoa
+              </h2>
             <p className="text-sm text-gray-500 mt-1">{activity.title}</p>
           </div>
 
@@ -411,13 +411,13 @@ export function ActivityBookingForm({
 
           {/* Payment Info */}
           <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-            💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
+            Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
           </div>
 
             {/* Submit Button */}
             <Button
               type="submit"
-              className={cn(buttonStyles.variant.default, "w-full")}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isSubmitting || !date}
             >
               {isSubmitting ? "Processando..." : "Reservar atividade"}

@@ -5,8 +5,6 @@ import {
   validateCouponCode, 
   validateDiscountValue, 
   validateDateRange, 
-  validateUsageLimits, 
-  validateOrderValueLimits, 
   validateCouponData 
 } from "../../convex/domains/coupons/validators";
 
@@ -268,7 +266,7 @@ describe("Validação de Regras de Negócio", () => {
   });
 
   test("deve rejeitar por limite de uso por usuário", () => {
-    const result = validateCouponRules(mockCoupon, 100, "user123", 5);
+    validateCouponRules(mockCoupon, 100, "user123", 5);
     // Assumindo que o cupom tem userUsageLimit de 5
     // E o usuário já usou 5 vezes
     // Este teste precisaria ser ajustado baseado na implementação real

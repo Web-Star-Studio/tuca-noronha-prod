@@ -8,7 +8,7 @@ import { Badge } from "./badge"
 import { GitCompare, X, Eye } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
-import { cn } from "@/lib/utils"
+
 import { motion, AnimatePresence } from "framer-motion"
 
 export function ComparisonBar() {

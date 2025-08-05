@@ -14,19 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search,
-  FileText,
-  Copy,
-  Eye,
-  Settings,
-  Package,
-  DollarSign
-} from "lucide-react";
+import { Plus, Edit, Trash2, Search, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface Template {
@@ -194,7 +182,7 @@ export function ProposalTemplateManager() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao salvar template");
       console.error("Error saving template:", error);
     }
@@ -204,7 +192,7 @@ export function ProposalTemplateManager() {
     try {
       await deleteTemplate({ id: templateId });
       toast.success("Template deletado com sucesso!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao deletar template");
       console.error("Error deleting template:", error);
     }

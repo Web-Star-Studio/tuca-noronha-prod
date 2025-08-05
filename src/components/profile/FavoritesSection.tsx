@@ -2,12 +2,12 @@
 
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Heart, MapPin, Calendar, Star, Users, Car, Utensils, Camera, Package, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { formatCurrency } from "@/lib/utils"
 import { WishlistButton } from "@/components/ui/wishlist-button"
 
@@ -159,9 +159,11 @@ export default function FavoritesSection({
               <div className="space-y-3">
                 {item.item?.images && item.item.images.length > 0 && (
                   <div className="aspect-video relative overflow-hidden rounded-md">
-                    <img
+                    <Image
                       src={item.item.images[0]}
                       alt={item.item.name || item.item.title}
+                      width={400}
+                      height={225}
                       className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                     />
                   </div>

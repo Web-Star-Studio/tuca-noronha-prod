@@ -145,7 +145,7 @@ export const updateBookingStripeInfo = internalMutation({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+      
       v.literal("vehicle"),
       v.literal("package")
     ),
@@ -226,16 +226,7 @@ export const updateBookingStripeInfo = internalMutation({
           bookingFound = true;
         }
         break;
-      case "accommodation":
-        booking = await ctx.db
-          .query("accommodationBookings")
-          .filter((q) => q.eq(q.field("_id"), args.bookingId))
-          .unique();
-        if (booking) {
-          await ctx.db.patch(booking._id, updateData);
-          bookingFound = true;
-        }
-        break;
+
       case "vehicle":
         booking = await ctx.db
           .query("vehicleBookings")
@@ -310,7 +301,7 @@ export const updateBookingPaymentStatus = internalMutation({
       "activityBookings",
       "eventBookings", 
       "restaurantReservations",
-      "accommodationBookings",
+
       "vehicleBookings",
       "packageBookings"
     ];
@@ -376,7 +367,7 @@ export const addRefundToBooking = internalMutation({
       "activityBookings",
       "eventBookings",
       "restaurantReservations", 
-      "accommodationBookings",
+
       "vehicleBookings",
       "packageBookings"
     ];
@@ -412,7 +403,7 @@ export const updateAssetStripeInfo = internalMutation({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+      
       v.literal("vehicle"),
       v.literal("package")
     ),
@@ -485,18 +476,7 @@ export const updateAssetStripeInfo = internalMutation({
           await ctx.db.patch(asset._id, restaurantUpdateData);
         }
         break;
-      case "accommodation":
-        asset = await ctx.db
-          .query("accommodations")
-          .filter((q) => q.eq(q.field("_id"), args.assetId))
-          .unique();
-        if (asset) {
-          // accommodations table doesn't have updatedAt field, so we create a separate updateData
-          const accommodationUpdateData = { ...updateData };
-          delete accommodationUpdateData.updatedAt;
-          await ctx.db.patch(asset._id, accommodationUpdateData);
-        }
-        break;
+
       case "vehicle":
         asset = await ctx.db
           .query("vehicles")
@@ -533,13 +513,13 @@ export const clearAssetStripeInfo = internalMutation({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+      
       v.literal("vehicle")
     ),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const tableName = args.assetType === "accommodation" ? "accommodations" : 
+    const tableName = 
                      args.assetType === "activity" ? "activities" :
                      args.assetType === "event" ? "events" :
                      args.assetType === "restaurant" ? "restaurants" : "vehicles";
@@ -590,7 +570,7 @@ export const updateBookingStatus = mutation({
       "activityBookings",
       "eventBookings",
       "restaurantReservations",
-      "accommodationBookings", 
+ 
       "vehicleBookings",
       "packageBookings"
     ];

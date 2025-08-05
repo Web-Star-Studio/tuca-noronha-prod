@@ -12,7 +12,7 @@ export interface Package {
   basePrice: number;
   discountPercentage?: number;
   currency: string;
-  accommodationId?: Id<"accommodations">;
+
   vehicleId?: Id<"vehicles">;
   includedActivityIds: Id<"activities">[];
   includedRestaurantIds: Id<"restaurants">[];
@@ -43,13 +43,7 @@ export interface Package {
 }
 
 export interface PackageWithDetails extends Package {
-  accommodation?: {
-    id: string;
-    name: string;
-    type: string;
-    mainImage: string;
-    pricePerNight: number;
-  } | null;
+
   vehicle?: {
     id: string;
     name: string;
@@ -99,7 +93,7 @@ export interface PackageBooking {
   guests: number;
   totalPrice: number;
   breakdown: {
-    accommodationPrice: number;
+  
     vehiclePrice?: number;
     activitiesPrice: number;
     restaurantsPrice: number;
@@ -110,7 +104,7 @@ export interface PackageBooking {
   paymentStatus?: string;
   paymentMethod?: string;
   relatedBookings: {
-    accommodationBookingId?: Id<"accommodationBookings">;
+  
     vehicleBookingId?: Id<"vehicleBookings">;
     activityBookingIds: Id<"activityBookings">[];
     restaurantReservationIds: Id<"restaurantReservations">[];
@@ -153,7 +147,7 @@ export interface PackageCreateInput {
   basePrice: number;
   discountPercentage?: number;
   currency: string;
-  accommodationId?: Id<"accommodations">;
+
   vehicleId?: Id<"vehicles">;
   includedActivityIds: Id<"activities">[];
   includedRestaurantIds: Id<"restaurants">[];
@@ -192,7 +186,7 @@ export interface PackageUpdateInput {
   basePrice?: number;
   discountPercentage?: number;
   currency?: string;
-  accommodationId?: Id<"accommodations">;
+
   vehicleId?: Id<"vehicles">;
   includedActivityIds?: Id<"activities">[];
   includedRestaurantIds?: Id<"restaurants">[];
@@ -365,13 +359,19 @@ export const BUDGET_FLEXIBILITY_OPTIONS = [
 ];
 
 export const ACCOMMODATION_TYPE_OPTIONS = [
-  { value: "hotel", label: "Hotel" },
   { value: "pousada", label: "Pousada" },
+  { value: "hotel", label: "Hotel" },
   { value: "resort", label: "Resort" },
-  { value: "apartment", label: "Apartamento" },
-  { value: "house", label: "Casa" },
+  { value: "casa_temporada", label: "Casa de temporada" },
+  { value: "apartamento", label: "Apartamento" },
   { value: "hostel", label: "Hostel" },
+  { value: "camping", label: "Camping" },
+  { value: "vila", label: "Vila" },
+  { value: "bangalo", label: "Bangalô" },
+  { value: "eco_lodge", label: "Eco Lodge" },
 ];
+
+
 
 export const ACTIVITY_OPTIONS = [
   { value: "mergulho", label: "Mergulho" },
@@ -431,7 +431,7 @@ export interface PackageRequestFormData {
     budgetFlexibility: string;
   };
   preferences: {
-    accommodationType: string[];
+  
     activities: string[];
     transportation: string[];
     foodPreferences: string[];

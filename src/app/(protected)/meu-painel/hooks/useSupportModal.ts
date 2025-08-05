@@ -94,7 +94,7 @@ export const useSupportModal = () => {
 
       toast.success("Mensagem enviada com sucesso! Nossa equipe entrará em contato em breve.");
       resetForm();
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar mensagem de suporte:", error);
       toast.error("Erro ao enviar mensagem. Tente novamente.");
     } finally {

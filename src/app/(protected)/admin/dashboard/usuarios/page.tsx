@@ -40,7 +40,6 @@ import {
   Users, 
   Search, 
   UserCheck, 
-  UserX, 
   Shield, 
   Mail, 
   Phone, 
@@ -54,7 +53,6 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { ui } from "@/lib/ui-config";
 import { motion } from "framer-motion";
 import { DashboardPageHeader } from "../components";
 
@@ -135,7 +133,7 @@ export default function UsersPage() {
     try {
       await toggleUserActive({ userId, isActive: !currentStatus });
       toast.success(currentStatus ? "Usuário desativado!" : "Usuário ativado!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao alterar status do usuário");
       console.error(error);
     }
@@ -145,7 +143,7 @@ export default function UsersPage() {
     try {
       await updateUserRole({ userId, role: newRole });
       toast.success("Papel do usuário atualizado!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao atualizar papel do usuário");
       console.error(error);
     }

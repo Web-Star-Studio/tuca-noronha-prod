@@ -28,7 +28,7 @@ export const STRIPE_ASSET_TYPES = {
   ACTIVITY: "activity",
   EVENT: "event", 
   RESTAURANT: "restaurant",
-  ACCOMMODATION: "accommodation",
+
   VEHICLE: "vehicle",
   PACKAGE: "package"
 } as const;
@@ -58,7 +58,7 @@ export const createStripeProductValidator = v.object({
     v.literal("activity"),
     v.literal("event"),
     v.literal("restaurant"),
-    v.literal("accommodation"),
+
     v.literal("vehicle"),
     v.literal("package")
   ),
@@ -81,7 +81,7 @@ export const createCheckoutSessionValidator = v.object({
     v.literal("activity"),
     v.literal("event"), 
     v.literal("restaurant"),
-    v.literal("accommodation"),
+
     v.literal("vehicle"),
     v.literal("package")
   ),
@@ -188,7 +188,7 @@ export const createPaymentLinkValidator = v.object({
     v.literal("activity"),
     v.literal("event"),
     v.literal("restaurant"), 
-    v.literal("accommodation"),
+
     v.literal("vehicle"),
     v.literal("package")
   ),

@@ -4,24 +4,13 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  DollarSign, 
-  Search, 
-  Download,
-  RefreshCcw,
-  Eye,
-  MessageSquare,
-  Filter
-} from 'lucide-react';
+import { CheckCircle, Clock, DollarSign, Search, Download, RefreshCcw, Eye } from "lucide-react";
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -34,7 +23,7 @@ export default function PartnerBookingsDashboard({ partnerId }: PartnerBookingsD
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  // selectedBooking removido (não utilizado)
 
   // Queries and mutations
   const bookings = useQuery(api.domains.stripe.queries.getPartnerBookingsWithPayments, {

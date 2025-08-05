@@ -124,7 +124,7 @@ export default function DebugUserPage() {
         <CardHeader>
           <CardTitle>Atualizar Role</CardTitle>
           <CardDescription>
-            Altere a role do usuário atual (requer role "master")
+            Altere a role do usuário atual (requer role &quot;master&quot;)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

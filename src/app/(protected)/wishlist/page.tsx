@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, MapPin, Calendar, Star, Users, Car, Utensils, Camera, Package } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 
@@ -21,7 +22,7 @@ export default function WishlistPage() {
     try {
       await removeFromWishlist({ itemType, itemId })
       toast.success("Removido dos favoritos")
-    } catch (error) {
+    } catch {
       toast.error("Não foi possível remover o item dos favoritos.")
     }
   }
@@ -101,10 +102,11 @@ export default function WishlistPage() {
           <div className="space-y-3">
             {item.item.images && item.item.images.length > 0 && (
               <div className="aspect-video relative overflow-hidden rounded-md">
-                <img
+                <Image
                   src={item.item.images[0]}
                   alt={item.item.name || item.item.title}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform"
                 />
               </div>
             )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Users, Clock, Ticket, MapPin } from "lucide-react";
+import { Ticket, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -22,10 +22,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles, badgeStyles } from "@/lib/ui-config";
+import { formStyles, badgeStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 
 interface EventBookingFormProps {
   eventId: Id<"events">;
@@ -53,7 +53,6 @@ export function EventBookingForm({
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"eventTickets"> | undefined>(undefined);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   
-  const { user } = useCurrentUser();
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -212,24 +211,6 @@ export function EventBookingForm({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Event Details */}
-          <div className="bg-blue-50 p-4 rounded-md space-y-3">
-            <div className="flex items-center text-sm text-gray-700">
-              <CalendarIcon className="mr-2 h-4 w-4 text-blue-600" />
-              <span>{format(eventDate, "PPP", { locale: ptBR })} às {event.time}</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-700">
-              <MapPin className="mr-2 h-4 w-4 text-blue-600" />
-              <span>{event.location}</span>
-            </div>
-            {isEventPast && (
-              <div className={cn(badgeStyles.base, badgeStyles.variant.warning)}>
-                Este evento já aconteceu
-              </div>
-            )}
-          </div>
-
           {/* Ticket Selection (if multiple tickets) */}
           {event.hasMultipleTickets && tickets && tickets.length > 0 && (
             <div className="space-y-2">
@@ -368,14 +349,15 @@ export function EventBookingForm({
           {/* Payment Info - show if requires payment */}
           {event.acceptsOnlinePayment && event.requiresUpfrontPayment && getPrice() > 0 && (
             <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-              💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo organizador.
+              Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo organizador.
             </div>
           )}
 
           {/* Submit Button */}
           <Button
             type="submit"
-            className={cn(buttonStyles.variant.default, "w-full")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            variant="default"
             disabled={isSubmitting || isEventPast}
           >
             {isSubmitting ? (

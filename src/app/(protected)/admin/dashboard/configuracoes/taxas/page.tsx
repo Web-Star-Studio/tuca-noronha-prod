@@ -7,10 +7,10 @@ import { TaxasPartnersList } from "./components/TaxasPartnersList";
 import { TaxaHistoryDrawer } from "./components/TaxaHistoryDrawer";
 import { TaxaBulkActions } from "./components/TaxaBulkActions";
 import { PartnerTransactionsList } from "./components/PartnerTransactionsList";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Percent, History, Download, Upload, Receipt, Edit } from "lucide-react";
+import { Percent, Download, Upload, Receipt, Edit } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
@@ -58,7 +58,7 @@ export default function TaxasPage() {
       });
       setIsEditingDefaultFee(false);
       setNewDefaultFee("");
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao atualizar taxa padrão",
         description: "Não foi possível atualizar a taxa padrão",

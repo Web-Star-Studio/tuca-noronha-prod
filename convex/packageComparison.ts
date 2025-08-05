@@ -186,8 +186,7 @@ export const getUserComparison = query({
         const pkg = await ctx.db.get(packageId);
         if (!pkg) return null;
 
-        // Get accommodation details
-        const accommodation = pkg.accommodationId ? await ctx.db.get(pkg.accommodationId) : null;
+
 
         // Get vehicle details (if exists)
         const vehicle = pkg.vehicleId ? await ctx.db.get(pkg.vehicleId) : null;
@@ -203,13 +202,7 @@ export const getUserComparison = query({
 
         return {
           ...pkg,
-          accommodation: accommodation ? {
-            id: accommodation._id,
-            name: accommodation.name,
-            type: accommodation.type,
-            mainImage: accommodation.mainImage,
-            pricePerNight: accommodation.pricePerNight,
-          } : null,
+
           vehicle: vehicle ? {
             id: vehicle._id,
             name: vehicle.name,

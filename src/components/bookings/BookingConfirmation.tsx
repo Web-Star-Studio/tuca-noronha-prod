@@ -1,40 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { 
-  CheckCircle,
-  Calendar,
-  MapPin,
-  Users,
-  Clock,
-  Car,
-  Utensils,
-  Ticket,
-  Download,
-  Share2,
-  Mail,
-  Phone,
-  Copy,
-} from "lucide-react";
+
+import { CheckCircle, Calendar, Users, Utensils, Ticket, Download, Share2, Mail, Phone, Copy,  } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import {  } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, badgeStyles } from "@/lib/ui-config";
+import { cardStyles, badgeStyles } from "@/lib/ui-config";
 
 interface BookingConfirmationProps {
   confirmationCode: string;

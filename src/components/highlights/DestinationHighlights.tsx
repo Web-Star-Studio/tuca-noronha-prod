@@ -2,9 +2,7 @@
 
 import React from "react";
 import { motion, Variants } from "framer-motion";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin, Camera, Umbrella, Fish } from "lucide-react";
+import { MapPin, Camera, Umbrella, Fish } from "lucide-react";
 import Image from "next/image";
 
 const containerVariants: Variants = {

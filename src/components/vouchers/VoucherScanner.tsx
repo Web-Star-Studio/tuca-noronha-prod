@@ -8,12 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, QrCode, AlertCircle, CheckCircle, X, Search, User, Calendar, MapPin, Camera } from "lucide-react";
+import { Loader2, QrCode, AlertCircle, CheckCircle, X } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
-import { Id } from "../../../convex/_generated/dataModel";
+
 
 interface VoucherScannerProps {
   partnerId: string;
@@ -71,7 +70,7 @@ export function VoucherScanner({ partnerId, onScanSuccess, onScanError }: Vouche
       // Verify voucher with the verification token
       await handleVoucherVerification(qrData.tk);
       
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao verificar voucher";
       setScanError(errorMessage);
       onScanError?.(errorMessage);
@@ -103,7 +102,7 @@ export function VoucherScanner({ partnerId, onScanSuccess, onScanError }: Vouche
     try {
       // For manual input, we'll use the voucher number directly
       await handleVoucherVerification(manualVoucherNumber.trim());
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao verificar voucher";
       setScanError(errorMessage);
       onScanError?.(errorMessage);
@@ -125,7 +124,7 @@ export function VoucherScanner({ partnerId, onScanSuccess, onScanError }: Vouche
       onScanSuccess?.(result);
       toast.success("Voucher verificado com sucesso!");
       
-    } catch (error) {
+    } catch {
       throw error;
     }
   };

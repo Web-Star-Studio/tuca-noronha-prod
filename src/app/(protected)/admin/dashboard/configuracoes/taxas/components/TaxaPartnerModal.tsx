@@ -71,7 +71,7 @@ export function TaxaPartnerModal({ partnerId, open, onClose }: TaxaPartnerModalP
       });
       
       onClose();
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao atualizar taxa",
         description: "Não foi possível atualizar a taxa do parceiro",

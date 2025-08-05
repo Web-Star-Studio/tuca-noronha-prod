@@ -126,7 +126,7 @@ export default function AtividadesPage() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [selectedCategories, durationFilter, minPrice, maxPrice]);
+  }, [selectedCategories, durationFilter, minPrice, maxPrice, isFilterOpen]);
 
   return (
     <>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
+import { HelpSection } from "../contact/HelpSection";
 
 interface EventDetailsProps {
   event: Event;
@@ -48,9 +49,9 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  // selectedTicketId removido (não utilizado)
   const { generateWhatsAppLink } = useWhatsAppLink();
-  
+
   // Format date for display
   const eventDate = new Date(event.date);
   const formattedDate = formatDate(eventDate);
@@ -108,7 +109,7 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-shadow-sm">
               {event.title}
             </h1>
-            
+
             {/* Review Stats in Hero */}
             <div className="flex items-center gap-1 text-yellow-400 mb-4">
               <Star className="h-5 w-5 fill-yellow-400" />
@@ -119,7 +120,7 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                 ({reviewStats?.totalReviews || 0} avaliações)
               </span>
             </div>
-            
+
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
@@ -185,7 +186,7 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                     Sobre o evento
                   </h2>
                   {event.symplaUrl ? (
-                    <div 
+                    <div
                       className="text-gray-700 leading-relaxed prose max-w-none"
                       dangerouslySetInnerHTML={{ __html: event.description }}
                     />
@@ -327,17 +328,19 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                 <h2 className="text-2xl font-semibold mb-4">
                   Comprar Ingressos
                 </h2>
-                
+
                 {event.symplaUrl ? (
                   <div className="p-4 bg-blue-50/80 rounded-lg mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-blue-800 font-medium">Comprar Ingressos</h3>
                       <div className="text-xs text-gray-500 flex items-center">
-                        via 
-                        <img 
-                          src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
-                          alt="Sympla" 
+                        via
+                        <Image
+                          src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png"
+                          alt="Sympla"
                           className="ml-1 h-4"
+                          width={50}
+                          height={16}
                         />
                       </div>
                     </div>
@@ -364,7 +367,7 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               <TabsContent value="reviews" className="space-y-6 mt-2">
                 <div>
                   <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
-                  
+
                   {/* Review Stats */}
                   <div className="mb-8">
                     {reviewStats && (
@@ -391,28 +394,28 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               {/* Policies tab */}
               <TabsContent value="policies" className="space-y-6 mt-2">
                 <h2 className="text-2xl font-semibold mb-4">Políticas do Evento</h2>
-                
+
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Política de Cancelamento</h3>
                     <p className="text-gray-700">
-                      Cancelamentos realizados com até 48 horas de antecedência do evento serão reembolsados em 100%. 
+                      Cancelamentos realizados com até 48 horas de antecedência do evento serão reembolsados em 100%.
                       Cancelamentos com menos de 48 horas não serão reembolsados.
                     </p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Política de Reembolso</h3>
                     <p className="text-gray-700">
-                      Reembolsos são processados em até 10 dias úteis após a solicitação de cancelamento. 
+                      Reembolsos são processados em até 10 dias úteis após a solicitação de cancelamento.
                       O valor será creditado na mesma forma de pagamento utilizada na compra.
                     </p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Termos e Condições</h3>
                     <p className="text-gray-700">
-                      Ao adquirir ingressos para este evento, você concorda com os termos e condições estabelecidos pelo organizador. 
+                      Ao adquirir ingressos para este evento, você concorda com os termos e condições estabelecidos pelo organizador.
                       É proibida a revenda de ingressos. Menores de 18 anos devem estar acompanhados de responsável legal.
                     </p>
                   </div>
@@ -457,104 +460,11 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               )
             )}
 
-            {/* Event Summary Card */}
-            <Card className="border-gray-200 shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-                <div className="p-6 border-b border-gray-100">
-                  <h3 className="text-xl font-semibold mb-2">Resumo do Evento</h3>
-                  <div className="text-gray-600 text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span>Data:</span>
-                      <span className="font-medium text-gray-800">{formattedDate}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Horário:</span>
-                      <span className="font-medium text-gray-800">{event.time}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Local:</span>
-                      <span className="font-medium text-gray-800">{event.location}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Preço:</span>
-                      <span className="font-medium text-gray-800">
-                        {event.price > 0 ? formatCurrency(event.price) : 'Gratuito'}
-                      </span>
-                    </div>
-                    
-                    {/* WhatsApp Contact for events without Sympla */}
-                    {!event.symplaUrl && (
-                      <div className="p-4 bg-green-50/80 rounded-lg mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-green-800 font-medium">Contato para Dúvidas</h3>
-                          <div className="text-xs text-gray-500">via WhatsApp</div>
-                        </div>
-                        <p className="text-sm text-green-700 mb-3">
-                          Dúvidas sobre o evento? Entre em contato conosco.
-                        </p>
-                        <a
-                          href={generateWhatsAppLink(`Olá! Gostaria de tirar dúvidas sobre o evento "${event.title}". Vocês podem me ajudar?`)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Contato via WhatsApp
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Sympla Integration */}
-                    {event.symplaUrl && (
-                      <div className="p-4 bg-blue-50/80 rounded-lg mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-blue-800 font-medium">Comprar Ingressos</h3>
-                          <div className="text-xs text-gray-500 flex items-center">
-                            via 
-                            <img 
-                              src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
-                              alt="Sympla" 
-                              className="ml-1 h-4"
-                            />
-                          </div>
-                        </div>
-                        <p className="text-sm text-blue-700 mb-3">
-                          Os ingressos são vendidos através da Sympla.
-                        </p>
-                        <a
-                          href={event.symplaUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex w-full items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                          Comprar Ingressos
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  <div className="flex justify-between gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 gap-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
-                      onClick={() => setIsFavorite(!isFavorite)}
-                    >
-                      <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
-                      <span className="hidden sm:inline">Favoritar</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 gap-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 border-gray-200"
-                    >
-                      <Share2 className="h-4 w-4" />
-                      <span className="hidden sm:inline">Compartilhar</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <HelpSection
+              className="mt-4"
+              customMessage={`Olá! Gostaria de tirar dúvidas sobre o evento ${event.title}. Vocês podem me ajudar?`}
+              showDropdown={false}
+            />
 
             {/* Gallery preview */}
             {event.galleryImages && event.galleryImages.length > 0 && (

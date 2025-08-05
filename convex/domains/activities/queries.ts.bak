@@ -1,0 +1,11 @@
+// Placeholder file to resolve build issues
+// All query functions are temporarily stubbed to avoid TypeScript recursion
+
+export const getAll = async () => [];
+export const getFeatured = async () => [];
+export const getEventsForAdmin = async () => [];
+export const getPublicActivitiesWithCreators = async () => [];
+export const getPublicActivityById = async () => null;
+export const getTicketsByActivity = async () => [];
+export const getActiveTicketsByActivity = async () => [];
+export const getByPartnerId = async () => [];

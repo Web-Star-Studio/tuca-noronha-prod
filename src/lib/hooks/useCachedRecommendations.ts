@@ -61,7 +61,6 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
       if (cached) {
         setCacheHits(prev => prev + 1);
 
-        
         // Mostrar toast discreto informando sobre o cache
         toast.success(`Recomendações carregadas instantaneamente!`, {
           description: `Cache de ${cached.cacheAge} minutos • ${cached.recommendations.length} itens`,
@@ -71,10 +70,9 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
         return cached;
       }
 
-      
       return null;
 
-    } catch (error) {
+    } catch {
       console.error('Erro ao verificar cache:', error);
       return null;
     } finally {
@@ -113,8 +111,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
       });
 
       if (result.success) {
-  
-        
+
         // Toast discreto para confirmar cache
         toast.success('Recomendações salvas para próxima vez!', {
           description: `Cache válido por ${config.cacheDurationHours} horas`,
@@ -124,7 +121,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
 
       return result;
 
-    } catch (error) {
+    } catch {
       console.error('Erro ao salvar no cache:', error);
       toast.error('Erro ao salvar cache', {
         description: 'As recomendações funcionarão normalmente',
@@ -141,8 +138,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
       const result = await invalidateCacheMutation({ category });
       
       if (result.success) {
-  
-        
+
         toast.info('Cache atualizado!', {
           description: result.deletedCount > 0 
             ? `${result.deletedCount} entradas removidas` 
@@ -153,7 +149,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
 
       return result;
 
-    } catch (error) {
+    } catch {
       console.error('Erro ao invalidar cache:', error);
       toast.error('Erro ao atualizar cache');
     }

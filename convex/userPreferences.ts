@@ -10,7 +10,6 @@ export type TravelPreferences = {
   interests: string[];
   budget: number;
   preferences: {
-    accommodation: string;
     dining: string[];
     activities: string[];
   };
@@ -30,7 +29,6 @@ export const saveUserPreferences = mutation({
       interests: v.array(v.string()),
       budget: v.number(),
       preferences: v.object({
-        accommodation: v.string(),
         dining: v.array(v.string()),
         activities: v.array(v.string()),
       }),
@@ -138,7 +136,7 @@ export const getPopularPreferences = query({
     
     // Analisar interesses mais populares
     const interestsCount: Record<string, number> = {};
-    const accommodationCount: Record<string, number> = {};
+
     
     for (const pref of allPreferences) {
       // Contar interesses
@@ -146,9 +144,7 @@ export const getPopularPreferences = query({
         interestsCount[interest] = (interestsCount[interest] || 0) + 1;
       }
       
-      // Contar tipos de acomodação
-      accommodationCount[pref.preferences.accommodation] = 
-        (accommodationCount[pref.preferences.accommodation] || 0) + 1;
+
     }
     
     // Ordenar por popularidade e limitar resultados
@@ -157,10 +153,7 @@ export const getPopularPreferences = query({
       .slice(0, limit)
       .map(([interest, count]) => ({ interest, count }));
       
-    const topAccommodations = Object.entries(accommodationCount)
-      .sort(([, countA], [, countB]) => countB - countA)
-      .slice(0, limit)
-      .map(([accommodation, count]) => ({ accommodation, count }));
+
     
     // Calcular orçamento médio
     const averageBudget = allPreferences.reduce((sum, pref) => sum + pref.budget, 0) / 
@@ -168,7 +161,7 @@ export const getPopularPreferences = query({
     
     return {
       topInterests,
-      topAccommodations,
+
       averageBudget,
       totalUsers: allPreferences.length,
     };

@@ -50,7 +50,7 @@ export function AdminActionsTab({ requestId, requestDetails }: AdminActionsTabPr
       });
       toast.success("Status atualizado com sucesso!");
       setAdminResponse("");
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar status:", error);
       toast.error("Erro ao atualizar status");
     }

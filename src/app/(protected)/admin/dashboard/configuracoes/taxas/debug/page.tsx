@@ -34,7 +34,7 @@ export default function DebugTaxasPage() {
         title: "Partner de teste criado",
         description: "O partner foi criado com sucesso para testes.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao criar partner",
         description: "Não foi possível criar o partner de teste.",
@@ -180,7 +180,7 @@ export default function DebugTaxasPage() {
                 <Alert>
                   <InfoIcon className="h-4 w-4" />
                   <AlertDescription>
-                    Nenhum usuário com role "partner" encontrado.
+                    Nenhum usuário com role &quot;partner&quot; encontrado.
                   </AlertDescription>
                 </Alert>
               )}
@@ -200,7 +200,7 @@ export default function DebugTaxasPage() {
             <AlertDescription>
               Para que parceiros apareçam na lista de taxas, eles precisam:
               <ol className="list-decimal pl-6 mt-2">
-                <li>Ter um usuário com role "partner" na tabela users</li>
+                <li>Ter um usuário com role &quot;partner&quot; na tabela users</li>
                 <li>Completar o onboarding do Stripe Connect (ou ter um registro na tabela partners)</li>
                 <li>Ter um registro correspondente na tabela partners</li>
               </ol>
@@ -210,8 +210,8 @@ export default function DebugTaxasPage() {
           <div className="space-y-2">
             <h3 className="font-semibold">Próximos passos:</h3>
             <ol className="list-decimal pl-6 space-y-1">
-              <li>Se não há usuários partner, crie um usuário e defina seu role como "partner"</li>
-              <li>Se há usuários partner mas não há registros na tabela partners, clique em "Criar Partner" ao lado do usuário</li>
+              <li>Se não há usuários partner, crie um usuário e defina seu role como &quot;partner&quot;</li>
+              <li>Se há usuários partner mas não há registros na tabela partners, clique em &quot;Criar Partner&quot; ao lado do usuário</li>
               <li>Volte para a página de taxas para ver os partners listados</li>
             </ol>
           </div>
@@ -219,7 +219,7 @@ export default function DebugTaxasPage() {
           <Alert className="border-orange-200 bg-orange-50">
             <InfoIcon className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
-              <strong>Nota:</strong> Os botões "Criar Partner" criam registros de teste apenas para desenvolvimento. 
+              <strong>Nota:</strong> Os botões &quot;Criar Partner&quot; criam registros de teste apenas para desenvolvimento. 
               Em produção, os partners devem completar o onboarding do Stripe Connect corretamente.
             </AlertDescription>
           </Alert>

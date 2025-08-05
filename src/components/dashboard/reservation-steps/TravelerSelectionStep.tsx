@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, User, Mail, Phone, Calendar, Briefcase, PlusCircle, Building2 } from "lucide-react";
+import { Search, User, Mail, Phone, Calendar, Briefcase, PlusCircle } from "lucide-react";
 import { AdminReservationData } from "../AdminReservationCreationForm";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -89,7 +89,7 @@ export function TravelerSelectionStep({ data, onComplete }: TravelerSelectionSte
   const status = result === undefined ? "loading" : "success";
   const canLoadMore = result && !result.isDone;
 
-  const loadMore = (numItems: number) => {
+  const loadMore = () => {
     if (result?.continueCursor) {
       setCursor(result.continueCursor);
     }

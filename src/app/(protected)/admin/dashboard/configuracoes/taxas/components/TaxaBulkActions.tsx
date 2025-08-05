@@ -1,17 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation } from "convex/react";  
 import { api } from "../../../../../../../../convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog,
+  DialogContent, 
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon, Loader2, X } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { 
+  Edit3, 
+  Trash2, 
+  Users, 
+  Percent,
+  AlertTriangle 
+} from "lucide-react";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface TaxaBulkActionsProps {
   selectedPartners: Id<"partners">[];
@@ -19,122 +45,198 @@ interface TaxaBulkActionsProps {
 }
 
 export function TaxaBulkActions({ selectedPartners, onComplete }: TaxaBulkActionsProps) {
-  const [feePercentage, setFeePercentage] = useState("");
-  const [reason, setReason] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [bulkTaxaPercentage, setBulkTaxaPercentage] = useState("");
+  const [bulkReason, setBulkReason] = useState("");
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
-  const updateFee = useMutation(api.domains.partners.mutations.updatePartnerFee);
+  // Mutations for bulk actions
+  const updatePartnerTaxa = useMutation(api.domains.partners.mutations.updatePartnerTaxa);
+  const deactivatePartners = useMutation(api.domains.partners.mutations.deactivateMultiplePartners);
 
-  const handleApply = async () => {
-    const fee = parseFloat(feePercentage);
-    
-    if (isNaN(fee) || fee < 0 || fee > 100) {
-      toast({
-        title: "Erro",
-        description: "A taxa deve ser um valor entre 0 e 100",
-        variant: "destructive",
-      });
+  const handleBulkUpdateTaxa = async () => {
+    if (!bulkTaxaPercentage.trim()) {
+      toast.error("Por favor, insira uma taxa válida");
       return;
     }
 
-    setIsLoading(true);
-    
+    const taxaValue = parseFloat(bulkTaxaPercentage);
+    if (isNaN(taxaValue) || taxaValue < 0 || taxaValue > 100) {
+      toast.error("A taxa deve ser um número entre 0 e 100");
+      return;
+    }
+
+    setIsUpdating(true);
     try {
-      // Update each selected partner
-      const updates = selectedPartners.map(partnerId =>
-        updateFee({
-          partnerId,
-          feePercentage: fee,
-          reason: reason.trim() || `Atualização em massa - ${selectedPartners.length} parceiros`,
-        })
+      // Update taxa for each selected partner
+      await Promise.all(
+        selectedPartners.map(partnerId =>
+          updatePartnerTaxa({
+            partnerId,
+            taxaPercentage: taxaValue,
+            reason: bulkReason.trim() || `Atualização em lote - ${new Date().toLocaleDateString()}`
+          })
+        )
       );
-      
-      await Promise.all(updates);
-      
-      toast({
-        title: "Taxas atualizadas",
-        description: `${selectedPartners.length} parceiros tiveram suas taxas atualizadas para ${fee}%`,
-      });
-      
+
+      toast.success(`Taxa atualizada para ${selectedPartners.length} parceiro(s)`);
+      setBulkTaxaPercentage("");
+      setBulkReason("");
+      setShowUpdateDialog(false);
       onComplete();
     } catch (error) {
-      toast({
-        title: "Erro ao atualizar taxas",
-        description: "Não foi possível atualizar as taxas dos parceiros selecionados",
-        variant: "destructive",
-      });
+      console.error("Error updating taxa:", error);
+      toast.error("Erro ao atualizar taxas");
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    setIsUpdating(true);
+    try {
+      await deactivatePartners({ partnerIds: selectedPartners });
+      toast.success(`${selectedPartners.length} parceiro(s) desativado(s)`);
+      setShowDeleteDialog(false);
+      onComplete();
+    } catch (error) {
+      console.error("Error deactivating partners:", error);
+      toast.error("Erro ao desativar parceiros");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="font-medium">Ações em Massa</h3>
-          <p className="text-sm text-muted-foreground">
-            {selectedPartners.length} parceiro(s) selecionado(s)
-          </p>
-        </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={onComplete}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+    <Card className="border-orange-200 bg-orange-50/50">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-orange-900">
+          <Users className="h-4 w-4" />
+          Ações em Lote
+          <Badge variant="secondary" className="ml-2">
+            {selectedPartners.length} selecionado(s)
+          </Badge>
+        </CardTitle>
+        <CardDescription className="text-orange-700">
+          Gerencie múltiplos parceiros simultaneamente
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        <div className="flex flex-wrap gap-2">
+          {/* Update Taxa Dialog */}
+          <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Percent className="h-4 w-4" />
+                Atualizar Taxa
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Atualizar Taxa em Lote</DialogTitle>
+                <DialogDescription>
+                  Alterar a taxa para {selectedPartners.length} parceiro(s) selecionado(s)
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bulkTaxa">Nova Taxa (%)</Label>
+                  <Input
+                    id="bulkTaxa"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="Ex: 15.5"
+                    value={bulkTaxaPercentage}
+                    onChange={(e) => setBulkTaxaPercentage(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bulkReason">Motivo da Alteração</Label>
+                  <Textarea
+                    id="bulkReason"
+                    placeholder="Descreva o motivo da alteração da taxa..."
+                    value={bulkReason}
+                    onChange={(e) => setBulkReason(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUpdateDialog(false)}
+                  disabled={isUpdating}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleBulkUpdateTaxa}
+                  disabled={isUpdating}
+                  className="gap-2"
+                >
+                  <Edit3 className="h-4 w-4" />
+                  {isUpdating ? "Atualizando..." : "Atualizar Taxa"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-      <div className="space-y-4">
-        <Alert>
-          <InfoIcon className="h-4 w-4" />
-          <AlertDescription>
-            Esta ação irá atualizar a taxa de todos os parceiros selecionados simultaneamente.
-            Esta operação não pode ser desfeita automaticamente.
-          </AlertDescription>
-        </Alert>
+          {/* Bulk Deactivate Dialog */}
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700">
+                <Trash2 className="h-4 w-4" />
+                Desativar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                  Confirmar Desativação em Lote
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Você está prestes a desativar <strong>{selectedPartners.length} parceiro(s)</strong>.
+                  Essa ação pode ser revertida posteriormente através da reativação individual.
+                  
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    ⚠️ Parceiros desativados não poderão receber novas reservas.
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isUpdating}>
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleBulkDeactivate}
+                  disabled={isUpdating}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isUpdating ? "Desativando..." : "Desativar Parceiros"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="bulk-fee">Nova Taxa (%)</Label>
-            <Input
-              id="bulk-fee"
-              type="number"
-              step="0.1"
-              min="0"
-              max="100"
-              value={feePercentage}
-              onChange={(e) => setFeePercentage(e.target.value)}
-              placeholder="Ex: 15"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="bulk-reason">Motivo da Alteração</Label>
-          <Textarea
-            id="bulk-reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Ex: Promoção especial, ajuste de mercado..."
-            rows={2}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onComplete}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleApply} 
-            disabled={!feePercentage || isLoading}
+          {/* Clear Selection Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onComplete}
+            className="text-muted-foreground hover:text-foreground"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Aplicar Taxa
+            Limpar Seleção
           </Button>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
-} 
+}

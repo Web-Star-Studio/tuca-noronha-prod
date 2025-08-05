@@ -1,17 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useQuery, useMutation } from "convex/react"
+import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
-import type { Id } from "@/../convex/_generated/dataModel"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -25,19 +22,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { 
-  Plus, 
-  Minus, 
-  Calculator,
-  Upload,
-  X,
-  Bed,
-  Car,
-  MapPin,
-  Calendar,
-  Users,
-  DollarSign
-} from "lucide-react"
+
 import { toast } from "sonner"
 
 interface PackageFormProps {
@@ -49,7 +34,7 @@ interface PackageFormProps {
 
 export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: PackageFormProps) {
   // Fetch data for selects
-  const accommodationsQuery = useQuery(api.domains.accommodations.queries.getAll, {})
+
   const vehiclesQuery = useQuery(api.domains.vehicles.queries.listVehicles, {
     paginationOpts: { limit: 100 },
     organizationId: undefined // Load all vehicles for package creation
@@ -57,7 +42,7 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
   const activitiesQuery = useQuery(api.domains.activities.queries.getAll, {})
   const restaurantsQuery = useQuery(api.domains.restaurants.queries.getAll, {})
   const eventsQuery = useQuery(api.domains.events.queries.getAll, {})
-  const calculatePricing = useMutation(api.domains.packages.mutations.calculatePackagePricing)
+
 
   // Form state
   const [formData, setFormData] = useState({
@@ -70,13 +55,13 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
     basePrice: 0,
     discountPercentage: 0,
     currency: "BRL",
-    accommodationId: "",
+
     vehicleId: "",
     includedActivityIds: [] as string[],
     includedRestaurantIds: [] as string[],
     includedEventIds: [] as string[],
     highlights: ["Vista panorâmica", "Guia especializado"] as string[],
-    includes: ["Hospedagem", "Transporte", "Refeições"] as string[],
+    includes: ["Transporte", "Refeições"] as string[],
     excludes: ["Bebidas alcoólicas", "Seguro viagem"] as string[],
     itinerary: [] as Array<{
       day: number
@@ -97,18 +82,13 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
     category: "Aventura",
   })
 
-  const [calculatedPricing, setCalculatedPricing] = useState<any>(null)
-  const [newHighlight, setNewHighlight] = useState("")
-  const [newInclude, setNewInclude] = useState("")
-  const [newExclude, setNewExclude] = useState("")
-  const [newTerm, setNewTerm] = useState("")
-  const [newTag, setNewTag] = useState("")
-  const [newItineraryItem, setNewItineraryItem] = useState({
-    day: 1,
-    title: "",
-    description: "",
-    activities: [] as string[]
-  })
+
+
+
+
+
+
+
 
   // Initialize form with existing package data
   useEffect(() => {
@@ -166,20 +146,9 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleArrayAdd = (field: string, value: string) => {
-    if (!value.trim()) return
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...(prev[field] as string[]), value.trim()]
-    }))
-  }
 
-  const handleArrayRemove = (field: string, index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (prev[field] as string[]).filter((_, i) => i !== index)
-    }))
-  }
+
+
 
   const handleMultiSelectChange = (field: string, value: string, checked: boolean) => {
     setFormData(prev => {
@@ -190,25 +159,6 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
         return { ...prev, [field]: currentArray.filter(item => item !== value) }
       }
     })
-  }
-
-  const calculatePackagePricing = async () => {
-    try {
-      const pricing = await calculatePricing({
-        accommodationId: formData.accommodationId ? formData.accommodationId as Id<"accommodations"> : undefined,
-        vehicleId: formData.vehicleId ? formData.vehicleId as Id<"vehicles"> : undefined,
-        includedActivityIds: formData.includedActivityIds as Id<"activities">[],
-        includedRestaurantIds: formData.includedRestaurantIds as Id<"restaurants">[],
-        includedEventIds: formData.includedEventIds as Id<"events">[],
-        duration: formData.duration,
-        guests: formData.maxGuests,
-        discountPercentage: formData.discountPercentage,
-      })
-      setCalculatedPricing(pricing)
-    } catch (error) {
-      console.error("Erro ao calcular preços:", error)
-      toast.error("Erro ao calcular preços")
-    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -233,7 +183,7 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
     // Convert string IDs to proper format for submission
     const submissionData = {
       ...formData,
-      accommodationId: formData.accommodationId || undefined,
+
       vehicleId: formData.vehicleId || undefined,
     }
 
@@ -367,26 +317,7 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
 
           {/* Services */}
           <TabsContent value="services" className="space-y-6">
-            {/* Accommodation */}
-            <div className="space-y-2">
-              <Label>Hospedagem (Opcional)</Label>
-              <Select 
-                value={formData.accommodationId || "none"} 
-                onValueChange={(value) => handleInputChange("accommodationId", value === "none" ? "" : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma hospedagem" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma hospedagem</SelectItem>
-                  {accommodationsQuery?.accommodations?.map((acc) => (
-                    <SelectItem key={acc._id} value={acc._id}>
-                      {acc.name} - {formatPrice(acc.pricePerNight)}/noite
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
 
             {/* Vehicle */}
             <div className="space-y-2">

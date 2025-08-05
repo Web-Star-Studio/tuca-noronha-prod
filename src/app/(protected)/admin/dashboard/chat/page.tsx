@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, Bell, Users, TrendingUp, Search } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
-import { ui } from "@/lib/ui-config";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { DashboardPageHeader } from "../components";

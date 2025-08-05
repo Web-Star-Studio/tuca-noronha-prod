@@ -6,7 +6,6 @@ import { useSystemSettings } from "@/lib/hooks/useSystemSettings";
 
 const Footer = () => {
   const { 
-    companyName, 
     supportEmail, 
     supportPhone, 
     footerText,

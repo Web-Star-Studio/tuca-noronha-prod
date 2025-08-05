@@ -1,43 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../../convex/_generated/api"
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
+
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Users, Shield, Key, CheckSquare, Trash2, Search } from "lucide-react"
+import { UserPlus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 
-type Employee = {
-  _id: string;
-  name?: string;
-  email?: string;
-  image?: string;
-  role?: string;
-}
 
-type Permission = {
-  permissionId: string;
-  assetId: string;
-  assetType: string;
-  permissions: string[];
-  note?: string;
-  asset: any;
-  partner?: {
-    id: string;
-    name?: string;
-    email?: string;
-  } | null;
-}
+
+
 
 interface AssetPermissionsProps {
   assetId: string;
@@ -46,12 +26,12 @@ interface AssetPermissionsProps {
 }
 
 export function AssetPermissions({ assetId, assetType, assetName }: AssetPermissionsProps) {
-  const { user } = useCurrentUser()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
   const [note, setNote] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery] = useState("")
   
   // Buscar lista de employees do parceiro atual
   const employees = useQuery(api.domains.rbac.queries.listEmployees)
@@ -72,19 +52,7 @@ export function AssetPermissions({ assetId, assetType, assetName }: AssetPermiss
     )
   }) || []
   
-  // Verifica se um employee já tem permissão para este asset
-  const hasPermission = (employeeId: string) => {
-    return permissions?.some(
-      p => p.assetId === assetId && 
-           p.assetType === assetType && 
-           // Como a propriedade employeeId não está sendo retornada no tipo Permission,
-           // precisamos verificar a permissão de outra forma
-           permissions.find(permission => 
-             permission.assetId === assetId && 
-             permission.assetType === assetType
-           )
-    )
-  }
+
   
   // Concede permissão a um employee
   const handleGrantPermission = async () => {
@@ -112,7 +80,7 @@ export function AssetPermissions({ assetId, assetType, assetName }: AssetPermiss
       setSelectedEmployeeId(null)
       setSelectedPermissions([])
       setNote("")
-    } catch (error) {
+    } catch {
       console.error("Erro ao conceder permissão:", error)
       toast.error("Erro ao conceder permissão")
     }
@@ -130,7 +98,7 @@ export function AssetPermissions({ assetId, assetType, assetName }: AssetPermiss
       })
       
       toast.success("Permissão removida com sucesso")
-    } catch (error) {
+    } catch {
       console.error("Erro ao remover permissão:", error)
       toast.error("Erro ao remover permissão")
     }

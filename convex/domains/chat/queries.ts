@@ -143,9 +143,7 @@ export const listChatRooms = query({
             case "vehicles":
               contextData = await ctx.db.get(room.contextId as Id<"vehicles">);
               break;
-            case "accommodations":
-              contextData = await ctx.db.get(room.contextId as Id<"accommodations">);
-              break;
+
           }
         }
 
@@ -313,9 +311,6 @@ export const getChatRoom = query({
           break;
         case "vehicles":
           contextData = await ctx.db.get(chatRoom.contextId as Id<"vehicles">);
-          break;
-        case "accommodations":
-          contextData = await ctx.db.get(chatRoom.contextId as Id<"accommodations">);
           break;
       }
     }

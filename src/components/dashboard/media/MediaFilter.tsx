@@ -25,7 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { buttonStyles, formStyles, badgeStyles, cardStyles, transitionEffects } from "@/lib/ui-config"
+import { buttonStyles, formStyles, cardStyles } from "@/lib/ui-config"
 
 // Media categories
 const MEDIA_CATEGORIES = [

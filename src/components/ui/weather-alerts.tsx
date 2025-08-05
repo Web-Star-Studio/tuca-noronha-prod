@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { AlertTriangle, Cloud, Sun, Droplets, Wind, Thermometer, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -113,7 +112,7 @@ export function WeatherAlerts({ className }: WeatherAlertsProps) {
       const data = await fetchWeatherSummary();
       setWeatherSummary(data);
       setLastUpdate(new Date());
-    } catch (error) {
+    } catch {
       console.error('Error fetching weather data:', error);
     } finally {
       setIsLoading(false);

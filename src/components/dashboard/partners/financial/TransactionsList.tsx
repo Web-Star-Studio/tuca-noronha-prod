@@ -10,20 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Search, 
-  Filter,
-  Download,
-  Eye,
-  ArrowUpDown,
-  CheckCircle,
-  XCircle,
-  Clock,
-  RefreshCcw,
-  FileText
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Search, Download, Eye, ArrowUpDown, CheckCircle, XCircle, Clock, RefreshCcw } from "lucide-react";
+
 import { PartnerTransactionDetails } from "./PartnerTransactionDetails";
 import { toast } from "sonner";
 

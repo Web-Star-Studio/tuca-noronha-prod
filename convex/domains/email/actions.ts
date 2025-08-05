@@ -28,7 +28,7 @@ export const sendBookingConfirmationEmail = internalAction({
       v.literal("event"), 
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation")
+      
     ),
     confirmationCode: v.string(),
     bookingDate: v.string(),
@@ -100,7 +100,7 @@ export const sendBookingCancelledEmail = internalAction({
       v.literal("event"), 
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation")
+      
     ),
     confirmationCode: v.string(),
     reason: v.optional(v.string()),
@@ -168,7 +168,7 @@ export const sendPartnerNewBookingEmail = internalAction({
       v.literal("event"), 
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation")
+      
     ),
     confirmationCode: v.string(),
     bookingDate: v.string(),

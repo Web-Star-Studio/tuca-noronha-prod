@@ -8,21 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  Building2, 
-  Store, 
-  Users, 
-  Activity,
-  Car,
-  Crown,
-  UserCheck,
-  Loader2,
-  AlertCircle
-} from "lucide-react";
+import { User, Mail, Phone, Calendar, Building2, Store, Users, Activity, Crown, UserCheck, Loader2, AlertCircle } from "lucide-react";
 
 interface UserDetailsModalProps {
   isOpen: boolean;

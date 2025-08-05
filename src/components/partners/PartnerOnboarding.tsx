@@ -20,14 +20,13 @@ import { usePartner } from "@/lib/hooks/usePartner";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { OnboardingStatus } from "./OnboardingStatus";
-import { Id } from "@/convex/_generated/dataModel";
+
 
 export function PartnerOnboarding() {
   const { user } = useUser();
   const { 
     partner, 
     canBePartner, 
-    needsOnboarding,
     createStripeAccount,
     currentUser 
   } = usePartner();
@@ -68,7 +67,7 @@ export function PartnerOnboarding() {
 
     setIsCreating(true);
     try {
-      const { stripeAccountId, onboardingUrl } = await createStripeAccount({
+      const { onboardingUrl } = await createStripeAccount({
         userId: currentUser._id, // Usar ID do Convex
         email: user.emailAddresses[0].emailAddress,
         country: "BR", // Brasil como padrão
@@ -82,7 +81,7 @@ export function PartnerOnboarding() {
       setTimeout(() => {
         window.location.href = onboardingUrl;
       }, 1500);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao criar conta");
       console.error(error);
     } finally {

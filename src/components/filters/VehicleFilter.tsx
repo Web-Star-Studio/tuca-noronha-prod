@@ -1,5 +1,5 @@
 import { useState, KeyboardEvent } from "react";
-import { Check, ChevronDown, ChevronUp, Filter, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";

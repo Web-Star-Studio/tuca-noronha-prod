@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Copy, Edit, Eye, MoreHorizontal, Percent, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
@@ -142,7 +142,7 @@ export default function CouponCard({
         title: "Código copiado!",
         description: "O código do cupom foi copiado para a área de transferência.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao copiar",
         description: "Não foi possível copiar o código do cupom.",
@@ -161,7 +161,7 @@ export default function CouponCard({
         title: coupon.isActive ? "Cupom desativado" : "Cupom ativado",
         description: `O cupom foi ${coupon.isActive ? "desativado" : "ativado"} com sucesso.`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível alterar o status do cupom.",
@@ -186,7 +186,7 @@ export default function CouponCard({
         title: "Cupom excluído",
         description: "O cupom foi excluído com sucesso.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível excluir o cupom.",

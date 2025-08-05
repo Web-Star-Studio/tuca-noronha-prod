@@ -65,7 +65,7 @@ class WeatherService {
         lastUpdated: new Date().toISOString()
       };
       
-    } catch (error) {
+    } catch {
       console.error('Error fetching real weather data:', error);
       // Fallback para dados simulados em caso de erro
       return this.getSimulatedWeatherData();
@@ -84,7 +84,7 @@ class WeatherService {
     return this.getSimulatedSeaConditions();
   }
 
-  async getBeachStatus(beachName: string): Promise<BeachStatus> {
+  async getBeachStatus(): Promise<BeachStatus> {
     // Sistema de monitoramento de praias seria integrado aqui
     // Por enquanto, dados simulados
     return this.getSimulatedBeachStatus();

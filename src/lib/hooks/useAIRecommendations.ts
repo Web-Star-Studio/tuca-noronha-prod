@@ -9,7 +9,7 @@ type UserPreferences = SmartPreferences;
 
 interface AIRecommendation {
   id: string;
-  type: 'accommodation' | 'activity' | 'restaurant' | 'experience';
+  type: 'activity' | 'restaurant' | 'experience';
   title: string;
   description: string;
   reasoning: string;
@@ -31,17 +31,7 @@ interface AIRecommendation {
   isActive?: boolean;
 }
 
-interface RecommendationRequest {
-  userProfile: UserPreferences;
-  category?: string;
-  limit?: number;
-}
 
-interface RecommendationResponse {
-  recommendations: AIRecommendation[];
-  personalizedMessage: string;
-  confidenceScore: number;
-}
 
 export const useAIRecommendations = () => {
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
@@ -52,7 +42,7 @@ export const useAIRecommendations = () => {
   const [isUsingAI, setIsUsingAI] = useState<boolean>(false);
   const [isCacheHit, setIsCacheHit] = useState<boolean>(false);
   const [cacheAge, setCacheAge] = useState<number>(0);
-  const { preferences } = useConvexPreferences();
+  const {} = useConvexPreferences();
   
   // Hook de cache para otimização
   const {
@@ -75,7 +65,7 @@ export const useAIRecommendations = () => {
     limit: 50,
   });
 
-  // Função para gerar perfil textual do usuário
+  /* Função para gerar perfil textual do usuário (comentada - não está sendo usada)
   const generateUserProfileText = useCallback((userPrefs: UserPreferences): string => {
     const personalityDescriptions = {
       adventureLevel: userPrefs.personalityProfile.adventureLevel > 70 ? 'muito aventureiro' : 
@@ -98,7 +88,7 @@ export const useAIRecommendations = () => {
       - Vibes desejadas: ${userPrefs.moodTags.join(', ')}
       - Objetivos da viagem: ${userPrefs.experienceGoals.join(', ')}
     `;
-  }, []);
+  }, []); */
 
   // Sistema de scoring baseado no perfil
   const calculateMatchScore = useCallback((
@@ -210,7 +200,7 @@ export const useAIRecommendations = () => {
       
       return {
         id: asset.id,
-        type: asset.type as 'accommodation' | 'activity' | 'restaurant' | 'experience',
+        type: asset.type as 'activity' | 'restaurant' | 'experience',
         title: asset.name,
         description: asset.description,
         reasoning: `Combina ${matchScore}% com seu perfil baseado em ${asset.partnerName ? 'parceiro verificado' : 'características'} e avaliações reais`,
@@ -323,7 +313,7 @@ export const useAIRecommendations = () => {
               confidenceScore: aiResult.confidenceScore,
             };
             
-          } catch (aiError) {
+          } catch {
             // OpenAI indisponível, usando algoritmo tradicional
             
             const totalTime = Date.now() - startTime;

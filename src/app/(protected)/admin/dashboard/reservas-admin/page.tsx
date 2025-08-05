@@ -8,22 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
-  Search, 
-  Filter, 
+ 
   Edit, 
   Eye, 
   CheckCircle,
   XCircle,
   Clock,
-  DollarSign,
   User,
   Calendar,
   MapPin,
@@ -81,7 +75,6 @@ export default function AdminReservasPage() {
   
   // Mutations
   const confirmReservation = useMutation(api.domains.adminReservations.mutations.confirmAdminReservation);
-  const cancelReservation = useMutation(api.domains.adminReservations.mutations.cancelAdminReservation);
   
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -93,23 +86,11 @@ export default function AdminReservasPage() {
     try {
       await confirmReservation({ id: id as any });
       toast.success("Reserva confirmada com sucesso!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao confirmar reserva");
     }
   };
   
-  const handleCancelReservation = async (id: string, reason: string) => {
-    try {
-      await cancelReservation({ 
-        id: id as any, 
-        reason,
-        notifyCustomer: true 
-      });
-      toast.success("Reserva cancelada com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao cancelar reserva");
-    }
-  };
   
   const filteredReservations = reservationsQuery?.reservations?.filter(reservation => {
     const matchesSearch = !searchTerm || 
@@ -312,9 +293,11 @@ export default function AdminReservasPage() {
                           <span className="font-medium">
                             Valor: R$ {reservation.totalAmount.toFixed(2)}
                           </span>
-                          <span className="text-muted-foreground">
-                            Criada por: {reservation.admin?.name}
-                          </span>
+                          {user && (
+                            <span className="text-muted-foreground">
+                              Criada por: {reservation.admin?.name}
+                            </span>
+                          )}
                         </div>
                       </div>
                       

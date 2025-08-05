@@ -6,7 +6,6 @@ import { api } from "@/../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   MessageSquare, 
@@ -14,11 +13,7 @@ import {
   User, 
   Clock,
   CheckCircle,
-  XCircle,
-  Search,
-  Filter,
-  Mail,
-  Phone
+  Mail
 } from "lucide-react";
 import {
   Dialog,
@@ -141,7 +136,7 @@ export default function SupportPage() {
       setIsDialogOpen(false);
       setSelectedMessage(null);
       setResponseText("");
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar status:", error);
       toast.error("Erro ao atualizar status da mensagem");
     }
@@ -155,16 +150,6 @@ export default function SupportPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const getUrgentMessages = () => {
-    return supportMessages?.filter(msg => msg.isUrgent && msg.status !== "closed") || [];
-  };
-
-  const getMyAssignedMessages = () => {
-    return supportMessages?.filter(msg => 
-      msg.assignedToMasterId?.toString() === user?._id?.toString()
-    ) || [];
   };
 
   return (

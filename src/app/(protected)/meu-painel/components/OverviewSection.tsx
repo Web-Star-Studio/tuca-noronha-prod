@@ -2,13 +2,9 @@
 
 import React from 'react';
 import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 import { useRouter } from "next/navigation";
-import { 
-  CalendarDays, 
-  Bell
-} from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,10 +24,7 @@ const ReservationIcon = ({ type }: { type: string }) => {
 };
 
 const OverviewSection: React.FC<OverviewSectionProps> = ({ 
-  reservations, 
-  notifications, 
-  onMarkAsRead, 
-  onSectionChange,
+  reservations,
   stats
 }) => {
   const router = useRouter();

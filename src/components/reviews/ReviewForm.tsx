@@ -16,7 +16,7 @@ import { useCreateReview, CreateReviewData } from "@/lib/hooks/useCreateReview";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Id } from "../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
-import { Star, Upload, X } from "lucide-react";
+import { Star } from "lucide-react";
 import { toast } from "sonner";
 
 const reviewSchema = z.object({
@@ -58,7 +58,7 @@ export function ReviewForm({
 }: ReviewFormProps) {
   const { user } = useCurrentUser();
   const { submitReview, isSubmitting } = useCreateReview();
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos] = useState<string[]>([]);
 
   const {
     register,
@@ -88,13 +88,7 @@ export function ReviewForm({
           { key: "location", label: "Ambiente" },
           { key: "value", label: "Custo-benefício" }
         ];
-      case "accommodation":
-        return [
-          { key: "cleanliness", label: "Limpeza" },
-          { key: "location", label: "Localização" },
-          { key: "service", label: "Serviço" },
-          { key: "value", label: "Custo-benefício" }
-        ];
+
       case "activity":
         return [
           { key: "organization", label: "Organização" },
@@ -145,7 +139,7 @@ export function ReviewForm({
 
       await submitReview(user._id as Id<"users">, reviewData);
       onSuccess?.();
-    } catch (error) {
+    } catch {
       // Error is handled by the hook
     }
   };
@@ -298,14 +292,15 @@ export function ReviewForm({
             <Button
               type="submit"
               disabled={isSubmitting || rating === 0}
-              className="flex-1"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isSubmitting ? "Enviando..." : "Enviar Avaliação"}
             </Button>
             {onCancel && (
               <Button
                 type="button"
-                variant="outline"
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
                 onClick={onCancel}
                 disabled={isSubmitting}
               >

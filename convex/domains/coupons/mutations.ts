@@ -28,7 +28,7 @@ export const createCoupon = mutation({
         v.literal("events"),
         v.literal("restaurants"),
         v.literal("vehicles"),
-        v.literal("accommodations"),
+
         v.literal("packages")
       ),
       assetId: v.string(),
@@ -213,7 +213,7 @@ export const updateCoupon = mutation({
         v.literal("events"),
         v.literal("restaurants"),
         v.literal("vehicles"),
-        v.literal("accommodations"),
+
         v.literal("packages")
       ),
       assetId: v.string(),
@@ -498,7 +498,7 @@ export const applyCoupon = mutation({
       v.literal("event"),
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation"),
+      
       v.literal("package")
     ),
     originalAmount: v.number(),
@@ -917,7 +917,7 @@ export const createCouponUsage = mutation({
       v.literal("event"),
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation"),
+      
       v.literal("package")
     ),
     originalAmount: v.number(),
@@ -1166,7 +1166,7 @@ export const updateCouponAssets = mutation({
         v.literal("events"),
         v.literal("restaurants"),
         v.literal("vehicles"),
-        v.literal("accommodations"),
+
         v.literal("packages")
       ),
       assetId: v.string(),

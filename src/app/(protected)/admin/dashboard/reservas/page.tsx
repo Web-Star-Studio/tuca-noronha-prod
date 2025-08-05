@@ -9,7 +9,7 @@ function shouldShowCustomerInfo(status: string): boolean {
 }
 import { useQuery, useMutation, useConvex, useAction } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,14 +47,11 @@ import {
   Store,
   Activity,
   Mail,
-  Phone,
   Eye,
-  FileText,
 } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { ui } from "@/lib/ui-config";
 import { useAsset } from "@/lib/providers/asset-context";
 import { AssetSelector } from "@/components/dashboard/AssetSelector";
 import { motion } from "framer-motion";
@@ -93,7 +90,7 @@ const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string 
     }
 
     return format(date, formatString, { locale: ptBR });
-  } catch (error) {
+  } catch {
     console.error("Error formatting date:", error, "Date value:", dateValue);
     return "Data inválida";
   }
@@ -410,7 +407,7 @@ export default function AdminBookingsPage() {
       setShowConfirmDialog(false);
       setSelectedBooking(null);
       setPartnerNotes("");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao confirmar reserva");
       console.error(error);
     }
@@ -470,7 +467,7 @@ export default function AdminBookingsPage() {
       setShowCancelDialog(false);
       setSelectedBooking(null);
       setPartnerNotes("");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao cancelar reserva");
       console.error(error);
     }

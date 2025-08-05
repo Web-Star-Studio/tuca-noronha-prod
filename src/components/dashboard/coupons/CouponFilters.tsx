@@ -136,7 +136,7 @@ export default function CouponFilters({
               <Checkbox
                 id="percentage_discount"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por tipo de desconto
                 }}
               />
@@ -150,7 +150,7 @@ export default function CouponFilters({
               <Checkbox
                 id="fixed_discount"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por tipo de desconto
                 }}
               />
@@ -164,7 +164,7 @@ export default function CouponFilters({
               <Checkbox
                 id="stackable"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por empilhável
                 }}
               />
@@ -178,7 +178,7 @@ export default function CouponFilters({
               <Checkbox
                 id="auto_apply"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por aplicação automática
                 }}
               />
@@ -192,7 +192,7 @@ export default function CouponFilters({
               <Checkbox
                 id="publicly_visible"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por visibilidade pública
                 }}
               />
@@ -206,7 +206,7 @@ export default function CouponFilters({
               <Checkbox
                 id="has_usage_limit"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por limite de uso
                 }}
               />
@@ -220,7 +220,7 @@ export default function CouponFilters({
               <Checkbox
                 id="expiring_soon"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por expiração próxima
                 }}
               />
@@ -234,7 +234,7 @@ export default function CouponFilters({
               <Checkbox
                 id="highly_used"
                 checked={false} // Implementar lógica se necessário
-                onCheckedChange={(checked) => {
+                                  onCheckedChange={() => {
                   // Implementar filtro por uso alto
                 }}
               />

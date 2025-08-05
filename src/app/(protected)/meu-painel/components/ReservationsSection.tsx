@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from "framer-motion";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, Clock, MapPin, Users, Plus, Filter, FileText } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

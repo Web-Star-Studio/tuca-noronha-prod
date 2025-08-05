@@ -31,7 +31,7 @@ export function MediaSelector({ open, onOpenChange, multiple = false, initialSel
     if (open) {
       setSelected([...initialSelected])
     }
-  }, [open])
+  }, [open, initialSelected])
 
   const toggleSelect = (url: string) => {
     if (multiple) {

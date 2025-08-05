@@ -4,34 +4,26 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
   Users, 
-  Activity, 
   Calendar, 
-  Store, 
-  TrendingUp, 
-  Building2,
-  Car,
   Plus,
   Shield,
   MessageSquare,
   Database,
-  AlertTriangle,
   MessageCircle,
   Star,
   DollarSign,
-  BarChart3,
   CheckCircle,
   Image,
-  AlertCircle
+  AlertCircle,
+  Building2
 } from "lucide-react"
-import { useOrganization, useOrganizationAssets } from "@/lib/providers/organization-context"
-import { ChatList } from "@/components/chat/ChatList"
+import { useOrganization } from "@/lib/providers/organization-context"
 import Link from "next/link"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { ChatNotifications } from "@/components/dashboard/ChatNotifications"
 import { StatsCard, DashboardSection, ActionCard, DashboardPageHeader } from "./components"
-import { EmailTestDialog } from "@/components/dashboard/EmailTestDialog"
 
 // Master Dashboard Component for system-wide view
 function MasterDashboard() {
@@ -158,24 +150,12 @@ function MasterDashboard() {
           />
         </div>
       </DashboardSection>
-
-      {/* Ações Rápidas */}
-      <DashboardSection 
-        title="Ações Rápidas" 
-        description="Acesso direto às principais funcionalidades"
-        variant="elevated"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {systemActions.map((action, index) => (
-            <ActionCard key={index} {...action} />
-          ))}
-        </div>
-      </DashboardSection>
     </div>
   )
 }
 
-const getOrganizationTypeInfo = (type: string) => {
+/*
+const _getOrganizationTypeInfo = (type: string) => {
   switch (type) {
     case "restaurant":
       return {
@@ -219,6 +199,7 @@ const getOrganizationTypeInfo = (type: string) => {
       }
   }
 }
+*/
 
 function EmptyStateCard() {
   const { user } = useCurrentUser()
@@ -258,95 +239,9 @@ function EmptyStateCard() {
   )
 }
 
-function OrganizationDashboard() {
-  const { activeOrganization } = useOrganization()
-  const { assets, isLoading } = useOrganizationAssets()
-
-  if (!activeOrganization) {
-    return <EmptyStateCard />
-  }
-
-  const orgInfo = getOrganizationTypeInfo(activeOrganization.type)
-  const Icon = orgInfo.icon
-
-  const totalAssets = assets.length
-  const activeAssets = assets.filter(asset => asset.isActive).length
-
-  return (
-    <div className="space-y-8">
-      {/* Header da Organização */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-            <Icon className="h-7 w-7 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{activeOrganization.name}</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <Badge variant="secondary" className="border-blue-200">{orgInfo.label}</Badge>
-              <span className="text-gray-600">{orgInfo.description}</span>
-            </div>
-          </div>
-        </div>
-        <Button variant="outline" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Adicionar Asset
-        </Button>
-      </div>
-
-      {/* Métricas da Organização */}
-      <DashboardSection 
-        title="Métricas da Organização" 
-        description="Desempenho e estatísticas do seu negócio"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            title={`Total de ${orgInfo.assets}`}
-            value={totalAssets}
-            subtitle={`${activeAssets} ativos`}
-            icon={Icon}
-            variant="info"
-          />
-          <StatsCard
-            title={`${orgInfo.mainMetric} do Mês`}
-            value={0}
-            subtitle="vs mês anterior"
-            icon={TrendingUp}
-            trend={{ value: "0%", isPositive: true }}
-            variant="success"
-          />
-          <StatsCard
-            title="Colaboradores"
-            value={0}
-            subtitle="Employees ativos"
-            icon={Users}
-            variant="default"
-          />
-          <StatsCard
-            title="Receita"
-            value="R$ 0"
-            subtitle="vs mês anterior"
-            icon={DollarSign}
-            trend={{ value: "0%", isPositive: true }}
-            variant="success"
-          />
-        </div>
-      </DashboardSection>
-
-      {/* Chat List */}
-      <DashboardSection 
-        title="Conversas Recentes" 
-        description="Mensagens de clientes interessados em seus serviços"
-        variant="elevated"
-      >
-        <ChatList />
-      </DashboardSection>
-    </div>
-  )
-}
 
 function PartnerDashboard() {
-  const { activeOrganization, organizations } = useOrganization();
+  const { activeOrganization } = useOrganization();
   const partnerStats = useQuery(api.domains.rbac.queries.getPartnerStats);
   
   if (!activeOrganization) {
@@ -644,7 +539,6 @@ function EmployeeDashboard() {
 
 export default function DashboardPage() {
   const { user } = useCurrentUser()
-  const { activeOrganization } = useOrganization()
   
   if (!user) {
     return (

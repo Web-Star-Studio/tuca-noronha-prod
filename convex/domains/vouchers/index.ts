@@ -56,7 +56,7 @@ export type {
   EventVoucherData,
   RestaurantVoucherData,
   VehicleVoucherData,
-  AccommodationVoucherData,
+
 } from "./types";
 
 // Utilities

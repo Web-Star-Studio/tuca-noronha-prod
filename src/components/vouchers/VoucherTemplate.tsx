@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MapPin, Calendar, Users, Phone, Mail, Car, Package, Utensils, Calendar as CalendarIcon, Activity } from "lucide-react";
+import { MapPin, Users, Phone, Mail, Car, Package, Utensils, Activity, Calendar } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { VoucherTemplateData, VoucherBookingType } from "../../../convex/domains/vouchers/types";
 
@@ -23,7 +24,7 @@ const formatSafeDate = (dateValue: any): string => {
     }
 
     return format(date, "dd/MM/yyyy", { locale: ptBR });
-  } catch (error) {
+  } catch {
     console.error("Error formatting date:", error);
     return "Erro na data";
   }
@@ -36,7 +37,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       case "activity":
         return <Activity className="w-6 h-6" />;
       case "event":
-        return <CalendarIcon className="w-6 h-6" />;
+        return <Calendar className="w-6 h-6" />;
       case "restaurant":
         return <Utensils className="w-6 h-6" />;
       case "vehicle":
@@ -77,7 +78,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
           </div>
           <div className="text-right">
             {voucherData.brandInfo.logoUrl ? (
-              <img src={voucherData.brandInfo.logoUrl} alt="Logo" className="h-16 mb-2" />
+              <Image src={voucherData.brandInfo.logoUrl} alt="Logo" width={64} height={64} className="h-16 mb-2" />
             ) : (
               <div className="flex items-center gap-2 mb-2">
                 {getAssetIcon()}

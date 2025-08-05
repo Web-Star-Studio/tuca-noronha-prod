@@ -15,7 +15,7 @@ export const approveBookingAndCapturePayment = action({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+
       v.literal("vehicle"),
       v.literal("package")
     ),
@@ -31,7 +31,7 @@ export const approveBookingAndCapturePayment = action({
       "activityBookings",
       "eventBookings",
       "restaurantReservations",
-      "accommodationBookings",
+      
       "vehicleBookings",
       "packageBookings"
     ];
@@ -102,14 +102,7 @@ export const approveBookingAndCapturePayment = action({
               partnerId = event?.partnerId;
             }
             break;
-          case "accommodation":
-            if (booking.accommodationId) {
-              const accommodation = await ctx.runQuery(internal.domains.accommodations.queries.getById, {
-                id: booking.accommodationId,
-              });
-              partnerId = accommodation?.partnerId;
-            }
-            break;
+          
           case "vehicle":
             if (booking.vehicleId) {
               const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getById, {
@@ -166,14 +159,7 @@ export const approveBookingAndCapturePayment = action({
               assetName = event?.name || "Evento";
             }
             break;
-          case "accommodation":
-            if (booking.accommodationId) {
-              const accommodation = await ctx.runQuery(internal.domains.accommodations.queries.getById, {
-                id: booking.accommodationId,
-              });
-              assetName = accommodation?.name || "Hospedagem";
-            }
-            break;
+          
           case "vehicle":
             if (booking.vehicleId) {
               const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getById, {
@@ -234,7 +220,7 @@ export const rejectBookingAndCancelPayment = action({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+
       v.literal("vehicle"),
       v.literal("package")
     ),
@@ -251,7 +237,7 @@ export const rejectBookingAndCancelPayment = action({
       "activityBookings",
       "eventBookings",
       "restaurantReservations",
-      "accommodationBookings",
+      
       "vehicleBookings",
       "packageBookings"
     ];

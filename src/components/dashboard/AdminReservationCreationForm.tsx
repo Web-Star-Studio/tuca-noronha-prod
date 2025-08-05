@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, CheckCircle2, Package, User, FileText, CreditCard, CheckCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { AssetSelectionStep } from "./reservation-steps/AssetSelectionStep";
 import { TravelerSelectionStep } from "./reservation-steps/TravelerSelectionStep";
 import { ReservationDetailsStep } from "./reservation-steps/ReservationDetailsStep";
@@ -13,12 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
+
 
 export interface AdminReservationData {
   // Asset Information
   assetId: string;
-  assetType: "activities" | "events" | "restaurants" | "vehicles" | "accommodations";
+  assetType: "activities" | "events" | "restaurants" | "vehicles";
   assetTitle: string;
   
   // Traveler Information
@@ -49,64 +47,10 @@ export interface AdminReservationData {
   notes?: string;
 }
 
-const STEPS = [
-  { id: "asset", title: "Selecionar Ativo", description: "Escolha o serviço", icon: Package },
-  { id: "traveler", title: "Selecionar Viajante", description: "Identifique o cliente", icon: User },
-  { id: "details", title: "Detalhes da Reserva", description: "Preencha as informações", icon: FileText },
-  { id: "payment", title: "Pagamento", description: "Configure a cobrança", icon: CreditCard },
-  { id: "confirmation", title: "Confirmação", description: "Revise e finalize", icon: CheckCircle }
-] as const;
 
 
-function StepIndicator({ 
-  currentStep, 
-  setCurrentStep 
-}: { 
-  currentStep: number, 
-  setCurrentStep: (step: number) => void 
-}) {
-  return (
-    <nav aria-label="Progress">
-      <ol role="list" className="space-y-6">
-        {STEPS.map((step, stepIdx) => (
-          <li key={step.id}>
-            <div
-              onClick={() => {
-                if (stepIdx < currentStep) {
-                  setCurrentStep(stepIdx);
-                }
-              }}
-              className={cn(
-                "group flex items-start w-full",
-                stepIdx < currentStep ? "cursor-pointer hover:opacity-75 transition-opacity" : "cursor-default"
-              )}
-            >
-              <span className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full">
-                {stepIdx < currentStep ? (
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                ) : (
-                  <step.icon className={cn(
-                    "h-8 w-8",
-                    stepIdx === currentStep ? "text-primary" : "text-gray-400"
-                  )} />
-                )}
-              </span>
-              <div className="ml-4 flex min-w-0 flex-col">
-                <p className={cn(
-                  "text-base font-semibold",
-                   stepIdx === currentStep ? "text-primary" : "text-foreground"
-                )}>
-                  {step.title}
-                </p>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </nav>
-  );
-}
+// StepIndicator removido (não utilizado)
+
 
 
 export function AdminReservationCreationForm() {
@@ -149,7 +93,7 @@ export function AdminReservationCreationForm() {
     
     try {
       // Prepare reservationData with only the fields expected by the mutation
-      const { customerName, customerEmail, customerPhone, customerDocument, ...assetSpecificData } = finalData.reservationData;
+      const { ...assetSpecificData } = finalData.reservationData;
       
       // Convert dates to timestamps in assetSpecific data
       const processedAssetSpecific = Object.keys(assetSpecificData).reduce((acc, key) => {
@@ -212,7 +156,7 @@ export function AdminReservationCreationForm() {
       });
       setCurrentStep(0);
       
-    } catch (error) {
+    } catch {
       console.error('Erro ao criar reserva:', error);
       toast({
         title: "Erro ao criar reserva",

@@ -7,13 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { MediaSelector } from "@/components/dashboard/media";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
-
 
 type EventFormProps = {
   event: Event | null;
@@ -59,8 +58,6 @@ export function EventForm({
       updatedAt: new Date()
     }
   );
-
-
 
   // Form tabs
   const [activeTab, setActiveTab] = useState("basic");
@@ -161,8 +158,6 @@ export function EventForm({
     }
     return true;
   };
-
-
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
@@ -503,7 +498,6 @@ export function EventForm({
             </div>
           </div>  
         </TabsContent>
-
 
         {/* Additional Information Tab */}
         <TabsContent value="additional" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">

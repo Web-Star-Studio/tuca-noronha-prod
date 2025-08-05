@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import type { Media } from "@/lib/services/mediaService"
-import type { Id } from "@/../convex/_generated/dataModel"
+
 import {
   Dialog,
   DialogContent,
@@ -16,10 +15,9 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { buttonStyles, cardStyles, badgeStyles, decorativeBackgrounds, transitionEffects, typography } from "@/lib/ui-config"
-import { cn } from "@/lib/utils"
+
+
 import { ConvexImage } from "@/components/ui/convex-image"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type MediaDetailsDialogProps = {

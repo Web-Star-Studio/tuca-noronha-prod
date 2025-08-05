@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PackageProposalCreationForm } from "@/components/dashboard/PackageProposalCreationForm";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { 
   ArrowLeftIcon, 
   User, 
@@ -142,7 +142,7 @@ export default function CreateProposalClientPage({ packageRequestId }: CreatePro
         <CardContent>
           <PackageProposalCreationForm
             packageRequestId={packageRequestId}
-            onSuccess={(proposalId) => {
+            onSuccess={() => {
               toast.success("Proposta criada com sucesso!");
               router.push(`/admin/dashboard/propostas-pacotes`);
             }}

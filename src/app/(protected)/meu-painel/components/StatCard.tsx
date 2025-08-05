@@ -1,15 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { cardStyles } from "@/lib/ui-config";
+
 import { StatCardProps } from '../types/dashboard';
 
 const StatCard: React.FC<StatCardProps> = ({ 
   icon: Icon, 
   title, 
   value, 
-  color, 
-  bgColor, 
   children 
 }) => {
   return (

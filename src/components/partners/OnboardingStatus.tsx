@@ -86,7 +86,7 @@ export function OnboardingStatus() {
       
       window.open(onboardingUrl, "_blank");
       toast.success("Link de onboarding atualizado!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao gerar novo link de onboarding");
       console.error(error);
     } finally {
@@ -104,7 +104,7 @@ export function OnboardingStatus() {
       });
       
       window.open(url, "_blank");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao abrir dashboard");
       console.error(error);
     } finally {
@@ -127,7 +127,7 @@ export function OnboardingStatus() {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao sincronizar status");
       console.error(error);
     } finally {

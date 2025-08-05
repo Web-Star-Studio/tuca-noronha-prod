@@ -241,7 +241,7 @@ export const getVoucherAnalytics = query({
         event: vouchers.filter(v => v.bookingType === "event").length,
         restaurant: vouchers.filter(v => v.bookingType === "restaurant").length,
         vehicle: vouchers.filter(v => v.bookingType === "vehicle").length,
-        accommodation: vouchers.filter(v => v.bookingType === "accommodation").length,
+
       },
       timeSeriesData: [] as any[], // Would need more complex grouping logic
     };
@@ -320,15 +320,7 @@ export const getVoucherByNumberInternal = internalQuery({
           asset = await ctx.db.get(booking.vehicleId);
         }
         break;
-      case "accommodation":
-        booking = await ctx.db
-          .query("accommodationBookings")
-          .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
-          .first();
-        if (booking) {
-          asset = await ctx.db.get(booking.accommodationId);
-        }
-        break;
+
     }
 
     if (!booking || !asset) {

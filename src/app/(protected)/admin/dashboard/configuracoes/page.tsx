@@ -1,10 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
-import { Loader2, Settings, Building, CreditCard, Bell, Shield } from "lucide-react";
+import { Loader2, Building, CreditCard, Bell, Shield } from "lucide-react";
 
 export default function ConfiguracoesAdminPage() {
   const currentUser = useQuery(api.domains.users.queries.getCurrentUser);

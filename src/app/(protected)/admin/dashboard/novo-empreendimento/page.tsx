@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select"
 import { 
   Store, 
-  Building2, 
+ 
   Car, 
   Activity, 
   Calendar, 
@@ -30,7 +30,6 @@ import { toast } from "sonner"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { RestaurantForm } from "@/components/dashboard/restaurants"
 import type { Restaurant } from "@/lib/services/restaurantService"
-import { DashboardPageHeader } from "../components"
 
 const organizationTypes = [
   {
@@ -124,7 +123,7 @@ export default function NovoEmpreendimentoPage() {
 
       toast.success("Empreendimento criado com sucesso!")
       router.push("/admin/dashboard")
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar empreendimento:", error)
       toast.error("Erro ao criar empreendimento. Tente novamente.")
     } finally {
@@ -179,7 +178,7 @@ export default function NovoEmpreendimentoPage() {
 
       toast.success("Empreendimento e restaurante criados com sucesso!")
       router.push("/admin/dashboard")
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar empreendimento:", error)
       toast.error("Erro ao criar empreendimento. Tente novamente.")
     } finally {

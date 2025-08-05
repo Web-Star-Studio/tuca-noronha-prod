@@ -1,7 +1,7 @@
 import { Activity } from "@/lib/store/activitiesStore";
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, Star, Users, ImageIcon } from "lucide-react";
+import { Clock, Users, ImageIcon } from "lucide-react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
 

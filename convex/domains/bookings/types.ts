@@ -124,26 +124,7 @@ export const createVehicleBookingValidator = v.object({
   finalAmount: v.optional(v.number()),
 });
 
-// Accommodation booking validators
-export const createAccommodationBookingValidator = v.object({
-  accommodationId: v.id("accommodations"),
-  checkInDate: v.string(),
-  checkOutDate: v.string(),
-  guestCount: v.number(),
-  customerInfo: v.optional(customerInfoValidator),
-  specialRequests: v.optional(v.string()),
-  couponCode: v.optional(v.string()),
-  discountAmount: v.optional(v.number()),
-  finalAmount: v.optional(v.number()),
-});
 
-export const updateAccommodationBookingValidator = v.object({
-  bookingId: v.id("accommodationBookings"),
-  status: v.optional(v.string()),
-  paymentStatus: v.optional(v.string()),
-  paymentMethod: v.optional(v.string()),
-  specialRequests: v.optional(v.string()),
-});
 
 export const updateVehicleBookingValidator = v.object({
   bookingId: v.id("vehicleBookings"),

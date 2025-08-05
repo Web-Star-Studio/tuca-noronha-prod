@@ -3,26 +3,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReviewCard } from "./ReviewCard";
 import { ReviewForm } from "./ReviewForm";
 import { useReviews } from "@/lib/hooks/useReviews";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useUserReview } from "@/lib/hooks/useReviews";
 import { cn } from "@/lib/utils";
-import { 
-  MessageSquare, 
-  Plus, 
-  Filter,
-  ChevronDown,
-  Star,
-  Users
-} from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { MessageSquare, Plus, Star, Users } from "lucide-react";
+import {  } from "@/components/ui/collapsible";
 
 interface ReviewsListProps {
   itemType: string;
@@ -42,10 +30,10 @@ export function ReviewsList({
   maxReviews
 }: ReviewsListProps) {
   const { user } = useCurrentUser();
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "rating_high" | "rating_low" | "helpful">("newest");
+  const [sortBy] = useState<"newest" | "oldest" | "rating_high" | "rating_low" | "helpful">("newest");
   const [showForm, setShowForm] = useState(false);
   const [page, setPage] = useState(0);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
 
   const limit = maxReviews || 10;
   const offset = page * limit;
@@ -59,28 +47,19 @@ export function ReviewsList({
   });
 
   const { hasReviewed } = useUserReview(
-    user?._id || ("" as any),
+    user?._id || null,
     itemType,
     itemId
   );
 
-  const handleSortChange = (newSort: string) => {
-    setSortBy(newSort as any);
-    setPage(0); // Reset to first page when sorting changes
-  };
+
 
   const handleFormSuccess = () => {
     setShowForm(false);
     setPage(0); // Reset to first page to see new review
   };
 
-  const sortOptions = [
-    { value: "newest", label: "Mais recentes" },
-    { value: "oldest", label: "Mais antigas" },
-    { value: "rating_high", label: "Maior avaliação" },
-    { value: "rating_low", label: "Menor avaliação" },
-    { value: "helpful", label: "Mais úteis" }
-  ];
+
 
   if (compact) {
     return (
@@ -195,7 +174,6 @@ export function ReviewsList({
             )}
           </div>
         </CardHeader>
-
 
       </Card>
 

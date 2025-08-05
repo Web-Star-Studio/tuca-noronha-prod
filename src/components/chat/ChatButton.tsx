@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageCircle, Users } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ import { toast } from "sonner";
 interface ChatButtonProps {
   // Informações do asset
   assetId: string;
-  assetType: "restaurants" | "events" | "activities" | "vehicles" | "accommodations";
+  assetType: "restaurants" | "events" | "activities" | "vehicles";
   assetName: string;
   partnerId: Id<"users">;
   
@@ -70,7 +70,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   try {
     contextId = ensureValidId(bookingId || assetId);
     hasValidId = true;
-  } catch (error) {
+  } catch {
     contextId = ""; // valor padrão para evitar problemas
   }
 
@@ -167,7 +167,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
       setInitialMessage("");
       
       toast.success("Conversa iniciada!");
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar conversa:", error);
       toast.error("Erro ao iniciar conversa");
     }

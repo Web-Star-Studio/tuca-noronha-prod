@@ -10,15 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-import {
-  MessageSquare,
-  Send,
-  User,
-  Bot,
-} from 'lucide-react';
+import { MessageSquare, Send, Bot,  } from "lucide-react";
 
 import { formatDateTime, getPriorityLabel, getPriorityColor } from './helpers';
 
@@ -63,7 +58,7 @@ export function ChatTab({ requestId, requestDetails, requestMessages }: ChatTabP
   const handleMarkAsRead = async (messageId: Id<"packageRequestMessages">) => {
     try {
       await markMessageAsRead({ messageId });
-    } catch (error) {
+    } catch {
       console.error("Erro ao marcar mensagem como lida:", error);
     }
   };
@@ -86,7 +81,7 @@ export function ChatTab({ requestId, requestDetails, requestMessages }: ChatTabP
 
       setReplyMessage("");
       toast.success("Mensagem enviada!");
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar mensagem:", error);
       toast.error("Erro ao enviar mensagem");
     } finally {

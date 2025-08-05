@@ -42,7 +42,7 @@ export interface BookingConfirmationEmailData extends BaseEmailData {
   type: "booking_confirmation";
   customerName: string;
   assetName: string;
-  bookingType: "activity" | "event" | "restaurant" | "vehicle" | "accommodation";
+  bookingType: "activity" | "event" | "restaurant" | "vehicle";
   confirmationCode: string;
   bookingDate: string;
   totalPrice?: number;
@@ -55,7 +55,7 @@ export interface BookingCancelledEmailData extends BaseEmailData {
   type: "booking_cancelled";
   customerName: string;
   assetName: string;
-  bookingType: "activity" | "event" | "restaurant" | "vehicle" | "accommodation";
+  bookingType: "activity" | "event" | "restaurant" | "vehicle";
   confirmationCode: string;
   reason?: string;
   refundAmount?: number;
@@ -99,7 +99,7 @@ export interface PartnerNewBookingEmailData extends BaseEmailData {
   partnerName: string;
   customerName: string;
   assetName: string;
-  bookingType: "activity" | "event" | "restaurant" | "vehicle" | "accommodation";
+  bookingType: "activity" | "event" | "restaurant" | "vehicle";
   confirmationCode: string;
   bookingDate: string;
   totalPrice?: number;

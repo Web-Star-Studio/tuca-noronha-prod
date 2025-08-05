@@ -41,7 +41,7 @@ export type BookingId =
   | Id<"activityBookings">
   | Id<"eventBookings">
   | Id<"vehicleBookings">
-  | Id<"accommodationBookings">
+
   | Id<"packageBookings">;
 
 export interface PartnerTransaction {
@@ -49,7 +49,7 @@ export interface PartnerTransaction {
   _creationTime: number;
   partnerId: Id<"partners">;
   bookingId: string; // ID genérico da reserva (pode ser de qualquer tipo)
-  bookingType: "activity" | "event" | "vehicle" | "accommodation" | "package";
+  bookingType: "activity" | "event" | "vehicle" | "package";
   stripePaymentIntentId: string;
   stripeTransferId?: string;
   amount: number; // em centavos

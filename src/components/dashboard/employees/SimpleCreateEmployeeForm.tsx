@@ -12,25 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
-  UserPlus, 
-  Key, 
-  Building2, 
-  Calendar, 
-  Car, 
-  Home, 
-  MapPin,
-  Plus,
-  Trash2
-} from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, UserPlus, Building2, Plus, Trash2 } from "lucide-react";
 import type { Id } from "@/../convex/_generated/dataModel";
 
 const createEmployeeSchema = z.object({
@@ -78,8 +64,6 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
     reset,
   } = useForm<CreateEmployeeFormData>({
@@ -149,7 +133,7 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
               note: organization.note || "Acesso completo concedido automaticamente",
             });
             organizationsGranted++;
-          } catch (error) {
+          } catch {
             console.error("Error granting organization access:", error);
             organizationErrors++;
           }
@@ -181,7 +165,7 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
       // Reset form after success
       reset();
       setSelectedOrganizations([]);
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar colaborador:", error);
       setResult({
         success: false,
@@ -308,7 +292,6 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
                   <p className="text-sm text-red-600">{errors.password.message}</p>
                 )}
               </div>
-
 
             </TabsContent>
 

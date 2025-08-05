@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ChevronLeft, Users, Calendar, MapPin, Star, Heart, Share2, Clock, Check, X, ChevronRight } from "lucide-react";
+import { ChevronLeft, Users, Star, Heart, Share2, Clock, Check, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import type { PackageWithDetails } from "../../../../convex/domains/packages/types";
+// Tipo removido pois não está sendo utilizado
+// import type { PackageWithDetails } from "../../../../convex/domains/packages/types";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

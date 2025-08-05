@@ -3,23 +3,19 @@
 import { useState, useMemo, useEffect } from "react"
 import { useRestaurantsWithCreators, useCreateRestaurant, useUpdateRestaurant, useDeleteRestaurant, useToggleFeatured, useToggleActive } from "@/lib/services/restaurantService"
 import { Restaurant } from "@/lib/services/restaurantService"
-import type { Id } from "@/../convex/_generated/dataModel"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Trash2, Store, Plus, Search, Filter } from "lucide-react"
+import { Trash2, Store, Plus, Search } from "lucide-react"
 import { 
-  RestaurantsHeader, 
-  RestaurantsFilter, 
   RestaurantsGrid, 
   RestaurantsPagination, 
   RestaurantForm
 } from "@/components/dashboard/restaurants"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ui } from "@/lib/ui-config"
 import { motion } from "framer-motion"
 import { DashboardPageHeader } from "../components"
 
@@ -120,7 +116,7 @@ export default function RestaurantsPage() {
       toast.success("Restaurante criado com sucesso!")
       setDialogOpen(false)
       setSelectedRestaurant(null)
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar restaurante:", error)
       toast.error("Erro ao criar restaurante")
     } finally {
@@ -135,7 +131,7 @@ export default function RestaurantsPage() {
       toast.success("Restaurante atualizado com sucesso!")
       setDialogOpen(false)
       setSelectedRestaurant(null)
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar restaurante:", error)
       toast.error("Erro ao atualizar restaurante")
     } finally {
@@ -148,7 +144,7 @@ export default function RestaurantsPage() {
       await deleteRestaurant(id)
       toast.success("Restaurante excluído com sucesso!")
       setConfirmDeleteId(null)
-    } catch (error) {
+    } catch {
       console.error("Erro ao excluir restaurante:", error)
       toast.error("Erro ao excluir restaurante")
     }
@@ -158,7 +154,7 @@ export default function RestaurantsPage() {
     try {
       await toggleFeatured(id, featured)
       toast.success(featured ? "Restaurante destacado!" : "Destaque removido!")
-    } catch (error) {
+    } catch {
       console.error("Erro ao alterar destaque do restaurante:", error)
       toast.error("Erro ao alterar destaque")
     }
@@ -168,7 +164,7 @@ export default function RestaurantsPage() {
     try {
       await toggleActive(id, active)
       toast.success(active ? "Restaurante ativado!" : "Restaurante desativado!")
-    } catch (error) {
+    } catch {
       console.error("Erro ao alterar status do restaurante:", error)
       toast.error("Erro ao alterar status")
     }

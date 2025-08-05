@@ -138,27 +138,7 @@ export const getPackageById = query({
     const packageData = await ctx.db.get(args.id);
     if (!packageData) return null;
 
-    // Get accommodation details (if exists)
-    let accommodation: {
-      id: string;
-      name: string;
-      type: string;
-      mainImage: string;
-      pricePerNight: number;
-    } | null = null;
-    
-    if (packageData.accommodationId) {
-      const accommodationData = await ctx.db.get(packageData.accommodationId);
-      if (accommodationData) {
-        accommodation = {
-          id: accommodationData._id,
-          name: accommodationData.name,
-          type: accommodationData.type,
-          mainImage: accommodationData.mainImage,
-          pricePerNight: accommodationData.pricePerNight,
-        };
-      }
-    }
+
 
     // Get vehicle details (if exists)
     let vehicle: {
@@ -234,7 +214,7 @@ export const getPackageById = query({
 
     return {
       ...packageData,
-      accommodation,
+
       vehicle,
       includedActivities: includedActivities.filter(Boolean) as any[],
       includedRestaurants: includedRestaurants.filter(Boolean) as any[],
@@ -396,25 +376,6 @@ export const getPackageAvailability = query({
       return { available: false, reason: "Datas não disponíveis (blackout)" };
     }
 
-    // Check accommodation availability (if exists)
-    if (packageData.accommodationId) {
-      const accommodationBookings = await ctx.db
-        .query("accommodationBookings")
-        .withIndex("by_accommodation_dates", (q) =>
-          q.eq("accommodationId", packageData.accommodationId!)
-           .gte("checkInDate", startDate)
-           .lte("checkInDate", endDate)
-        )
-        .collect();
-
-      const hasAccommodationConflict = accommodationBookings.some(booking =>
-        booking.status === "confirmed" || booking.status === "pending"
-      );
-
-      if (hasAccommodationConflict) {
-        return { available: false, reason: "Hospedagem não disponível" };
-      }
-    }
 
     return { available: true };
   },
@@ -828,7 +789,6 @@ export const getMyPackageRequests = query({
       budgetFlexibility: v.string(),
     }),
     preferences: v.object({
-      accommodationType: v.array(v.string()),
       activities: v.array(v.string()),
       transportation: v.array(v.string()),
       foodPreferences: v.array(v.string()),

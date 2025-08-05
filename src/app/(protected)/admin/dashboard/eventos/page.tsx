@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Image from "next/image"
 import { useQuery, useMutation, useAction } from "convex/react"
 import { api } from "../../../../../../convex/_generated/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,7 +42,6 @@ import {
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
-import { ui } from "@/lib/ui-config"
 import { motion } from "framer-motion"
 import { EventForm } from "@/components/dashboard/events/EventForm"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
@@ -67,7 +67,6 @@ export default function EventsPage() {
   // Mutations
   const deleteEvent = useMutation(api.domains.events.mutations.remove)
   const toggleEventFeatured = useMutation(api.domains.events.mutations.toggleFeatured)
-  const toggleEventActive = useMutation(api.domains.events.mutations.toggleActive)
   const createEvent = useMutation(api.domains.events.mutations.create)
   const updateEvent = useMutation(api.domains.events.mutations.update)
   
@@ -120,7 +119,7 @@ export default function EventsPage() {
       await deleteEvent({ id: eventId })
       toast.success("Evento excluído com sucesso!")
       setConfirmDeleteId(null)
-    } catch (error) {
+    } catch {
       toast.error("Erro ao excluir evento")
       console.error(error)
     }
@@ -171,7 +170,7 @@ export default function EventsPage() {
       
       setShowCreateModal(false)
       setSelectedEvent(null)
-    } catch (error) {
+    } catch {
       toast.error(selectedEvent?._id ? "Erro ao atualizar evento" : "Erro ao criar evento")
       console.error(error)
     }
@@ -197,7 +196,7 @@ export default function EventsPage() {
       toast.success("Sincronização com Sympla realizada com sucesso!")
       setShowSyncModal(false)
       setSymplaToken("")
-    } catch (error) {
+    } catch {
       toast.error("Erro ao sincronizar com Sympla")
       console.error(error)
     } finally {
@@ -209,18 +208,8 @@ export default function EventsPage() {
     try {
       await toggleEventFeatured({ id: eventId, isFeatured: featured })
       toast.success(featured ? "Evento destacado!" : "Destaque removido!")
-    } catch (error) {
+    } catch {
       toast.error("Erro ao alterar destaque")
-      console.error(error)
-    }
-  }
-
-  const handleToggleActive = async (eventId: string, active: boolean) => {
-    try {
-      await toggleEventActive({ id: eventId, isActive: active })
-      toast.success(active ? "Evento ativado!" : "Evento desativado!")
-    } catch (error) {
-      toast.error("Erro ao alterar status")
       console.error(error)
     }
   }
@@ -437,10 +426,12 @@ export default function EventsPage() {
                           {/* Event Image */}
                           <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">
                             {event.imageUrl ? (
-                              <img 
+                              <Image 
                                 src={event.imageUrl} 
                                 alt={event.title}
                                 className="w-full h-full object-cover rounded-xl"
+                                width={80}
+                                height={80}
                               />
                             ) : (
                               <Calendar className="w-8 h-8 text-muted-foreground" />
@@ -575,10 +566,12 @@ export default function EventsPage() {
               {/* Event Image */}
               {selectedEvent.imageUrl && (
                 <div className="w-full h-48 bg-muted rounded-xl overflow-hidden">
-                  <img 
+                  <Image 
                     src={selectedEvent.imageUrl} 
                     alt={selectedEvent.title}
                     className="w-full h-full object-cover"
+                    width={400}
+                    height={192}
                   />
                 </div>
               )}
@@ -740,7 +733,7 @@ export default function EventsPage() {
                 className="mt-2"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Você pode encontrar seu token na seção "API" do painel do Sympla
+                Você pode encontrar seu token na seção &quot;API&quot; do painel do Sympla
               </p>
             </div>
             

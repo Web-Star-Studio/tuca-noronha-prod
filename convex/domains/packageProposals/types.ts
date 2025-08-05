@@ -28,7 +28,7 @@ export const PackageProposalApprovalStatus = v.union(
 );
 
 export const PackageComponentType = v.union(
-  v.literal("accommodation"),
+  
   v.literal("activity"),
   v.literal("event"),
   v.literal("restaurant"),
@@ -201,7 +201,7 @@ export const PROPOSAL_PRIORITY_COLORS = {
 } as const;
 
 export const COMPONENT_TYPE_LABELS = {
-  accommodation: "Hospedagem",
+
   activity: "Atividade",
   event: "Evento",
   restaurant: "Restaurante",
@@ -213,7 +213,7 @@ export const COMPONENT_TYPE_LABELS = {
 } as const;
 
 export const COMPONENT_TYPE_ICONS = {
-  accommodation: "🏨",
+
   activity: "🏃",
   event: "🎉",
   restaurant: "🍽️",

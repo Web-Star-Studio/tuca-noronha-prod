@@ -48,7 +48,7 @@ export default function DashboardPersonalizationPage() {
           });
           setLoading(false);
         }, 800);
-      } catch (error) {
+      } catch {
         console.error("Erro ao carregar dados de personalização:", error);
         setLoading(false);
       }

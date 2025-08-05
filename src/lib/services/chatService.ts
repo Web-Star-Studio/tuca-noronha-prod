@@ -146,8 +146,6 @@ export const generateChatTitle = (
       return `Conversa sobre ${assetName || "Atividade"}`;
     case "vehicles":
       return `Conversa sobre ${assetName || "Veículo"}`;
-    case "accommodations":
-      return `Conversa sobre ${assetName || "Hospedagem"}`;
     default:
       return "Nova Conversa";
   }

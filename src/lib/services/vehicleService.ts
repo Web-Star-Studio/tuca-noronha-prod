@@ -1,8 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "@/../convex/_generated/dataModel";
-import { toast } from "sonner";
 
 // Types
 export interface Vehicle {
@@ -74,12 +73,11 @@ export function useVehicles(
 
   const vehicles = result?.vehicles || [];
   const continueCursor = result?.continueCursor;
-  const isLoading = result === undefined;
-
+  
   return {
     vehicles,
     continueCursor,
-    isLoading,
+    isLoading: result === undefined,
   };
 }
 
@@ -90,11 +88,9 @@ export function useVehicle(id: Id<"vehicles"> | null) {
     id ? { id } : "skip"
   );
 
-  const isLoading = id !== null && result === undefined;
-
   return {
     vehicle: result,
-    isLoading,
+    isLoading: result === undefined,
   };
 }
 
@@ -102,8 +98,7 @@ export function useVehicle(id: Id<"vehicles"> | null) {
 export function useVehicleStats() {
   const result = useQuery(api.domains.vehicles.queries.getVehicleStats, {});
 
-  const isLoading = result === undefined;
-  const stats: VehicleStats = result || {
+    const stats: VehicleStats = result || {
     totalVehicles: 0,
     availableVehicles: 0,
     rentedVehicles: 0,
@@ -114,7 +109,7 @@ export function useVehicleStats() {
 
   return {
     stats,
-    isLoading,
+    isLoading: result === undefined,
   };
 }
 
@@ -127,7 +122,7 @@ export function useCreateVehicle() {
       try {
         const vehicleId = await createVehicleMutation(vehicleData);
         return vehicleId;
-      } catch (error) {
+      } catch {
         console.error("Error creating vehicle:", error);
         throw error;
       }
@@ -153,7 +148,7 @@ export function useUpdateVehicle() {
           ...vehicleData,
         });
         return vehicleId;
-      } catch (error) {
+      } catch {
         console.error("Error updating vehicle:", error);
         throw error;
       }
@@ -173,7 +168,7 @@ export function useDeleteVehicle() {
       try {
         await deleteVehicleMutation({ id });
         return true;
-      } catch (error) {
+      } catch {
         console.error("Error deleting vehicle:", error);
         throw error;
       }
@@ -200,12 +195,11 @@ export function useVehicleBookings(
 
   const bookings = result?.bookings || [];
   const continueCursor = result?.continueCursor;
-  const isLoading = result === undefined;
-
+  
   return {
     bookings,
     continueCursor,
-    isLoading,
+    isLoading: result === undefined,
   };
 }
 
@@ -218,7 +212,7 @@ export function useCreateVehicleBooking() {
       try {
         const bookingId = await createBookingMutation(bookingData);
         return bookingId;
-      } catch (error) {
+      } catch {
         console.error("Error creating booking:", error);
         throw error;
       }
@@ -244,7 +238,7 @@ export function useUpdateVehicleBooking() {
           ...bookingData,
         });
         return bookingId;
-      } catch (error) {
+      } catch {
         console.error("Error updating booking:", error);
         throw error;
       }

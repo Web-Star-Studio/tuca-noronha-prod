@@ -169,7 +169,7 @@ export const getAssetsWithStripeInfo = internalQuery({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+      
       v.literal("vehicle")
     ),
     limit: v.number(),
@@ -183,7 +183,7 @@ export const getAssetsWithStripeInfo = internalQuery({
     stripePaymentLinkId: v.optional(v.string()),
   })),
   handler: async (ctx, args) => {
-    const tableName = args.assetType === "accommodation" ? "accommodations" : 
+    const tableName = 
                      args.assetType === "activity" ? "activities" :
                      args.assetType === "event" ? "events" :
                      args.assetType === "restaurant" ? "restaurants" : "vehicles";

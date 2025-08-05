@@ -156,7 +156,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       }
       
       onSubmit();
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao salvar veículo";
       console.error(error);
       toast.error(errorMessage);

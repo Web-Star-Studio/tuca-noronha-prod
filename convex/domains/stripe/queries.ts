@@ -91,7 +91,7 @@ export const getBookingForCheckout = internalQuery({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+
       v.literal("vehicle"),
       v.literal("package")
     ),
@@ -159,14 +159,7 @@ export const getBookingForCheckout = internalQuery({
           };
         }
         break;
-      case "accommodation":
-        booking = await ctx.db
-          .query("accommodationBookings")
-          .filter((q) => q.eq(q.field("_id"), args.bookingId))
-          .unique();
-        if (booking) {
-          asset = await ctx.db.get(booking.accommodationId);
-        }
+
         break;
       case "vehicle":
         booking = await ctx.db
@@ -218,7 +211,7 @@ export const getAssetStripeInfo = internalQuery({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+
       v.literal("vehicle"),
       v.literal("package")
     ),
@@ -255,12 +248,7 @@ export const getAssetStripeInfo = internalQuery({
           .filter((q) => q.eq(q.field("_id"), args.assetId))
           .unique();
         break;
-      case "accommodation":
-        asset = await ctx.db
-          .query("accommodations")
-          .filter((q) => q.eq(q.field("_id"), args.assetId))
-          .unique();
-        break;
+
       case "vehicle":
         asset = await ctx.db
           .query("vehicles")
@@ -319,7 +307,7 @@ export const getBookingPaymentInfo = internalQuery({
       "activityBookings",
       "eventBookings",
       "restaurantReservations",
-      "accommodationBookings",
+      
       "vehicleBookings",
       "packageBookings"
     ];
@@ -386,7 +374,7 @@ export const getBookingByConfirmationCode = query({
       { table: "activityBookings", assetTable: "activities", assetType: "activity" },
       { table: "eventBookings", assetTable: "events", assetType: "event" },
       { table: "restaurantReservations", assetTable: "restaurants", assetType: "restaurant" },
-      { table: "accommodationBookings", assetTable: "accommodations", assetType: "accommodation" },
+
       { table: "vehicleBookings", assetTable: "vehicles", assetType: "vehicle" },
       { table: "packageBookings", assetTable: "packages", assetType: "package" },
     ];
@@ -409,9 +397,7 @@ export const getBookingByConfirmationCode = query({
         } else if (config.assetType === "event") {
           const asset = await ctx.db.get(booking.eventId);
           assetName = (asset as any)?.title || "Unknown Event";
-        } else if (config.assetType === "accommodation") {
-          const asset = await ctx.db.get(booking.accommodationId);
-          assetName = (asset as any)?.name || "Unknown Accommodation";
+        
         } else if (config.assetType === "vehicle") {
           const asset = await ctx.db.get(booking.vehicleId);
           assetName = (asset as any)?.name || "Unknown Vehicle";
@@ -497,14 +483,14 @@ export const getPartnerBookingsWithPayments = query({
     const limit = args.limit || 50;
 
     // Get all assets based on role
-    let activities, events, restaurants, accommodations, vehicles, packages;
+    let activities, events, restaurants, vehicles, packages;
 
     if (currentUser.role === "master") {
       // Masters see ALL assets in the system
       activities = await ctx.db.query("activities").collect();
       events = await ctx.db.query("events").collect();
       restaurants = await ctx.db.query("restaurants").collect();
-      accommodations = await ctx.db.query("accommodations").collect();
+
       vehicles = await ctx.db.query("vehicles").collect();
       packages = await ctx.db.query("packages").collect();
     } else {
@@ -524,10 +510,7 @@ export const getPartnerBookingsWithPayments = query({
         .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
         .collect();
 
-      accommodations = await ctx.db
-        .query("accommodations")
-        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
-        .collect();
+
 
       vehicles = await ctx.db
         .query("vehicles")
@@ -629,7 +612,7 @@ export const getBookingBySessionId = query({
       { table: "activityBookings", assetTable: "activities", assetType: "activity", assetIdField: "activityId" },
       { table: "eventBookings", assetTable: "events", assetType: "event", assetIdField: "eventId" },
       { table: "restaurantReservations", assetTable: "restaurants", assetType: "restaurant", assetIdField: "restaurantId" },
-      { table: "accommodationBookings", assetTable: "accommodations", assetType: "accommodation", assetIdField: "accommodationId" },
+
       { table: "vehicleBookings", assetTable: "vehicles", assetType: "vehicle", assetIdField: "vehicleId" },
       { table: "packageBookings", assetTable: "packages", assetType: "package", assetIdField: "packageId" },
     ];

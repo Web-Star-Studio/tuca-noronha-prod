@@ -13,21 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  RefreshCcw,
-  Calendar,
-  DollarSign,
-  CreditCard,
-  Package,
-  User,
-  Hash,
-  ExternalLink,
-  Copy,
-  FileText
-} from "lucide-react";
+import { CheckCircle, XCircle, Clock, RefreshCcw, Calendar, DollarSign, Package, Hash, ExternalLink, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 interface PartnerTransactionDetailsProps {

@@ -102,7 +102,7 @@ const PackageRequestsSection: React.FC = () => {
       setTimeout(() => {
         setIsSearching(false);
       }, 100);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao buscar solicitação");
       setSearchResults(null);
       setIsSearching(false);
@@ -514,7 +514,7 @@ const PackageRequestsSection: React.FC = () => {
                     <p className="text-gray-500 mb-6 max-w-md mx-auto">
                       Crie sua primeira solicitação de pacote personalizado
                     </p>
-                    <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+                    <Button asChild size="lg" className="bg-blue-600 text-white hover:bg-blue-700">
                       <Link href="/pacotes">
                         <Plus className="h-5 w-5 mr-2" />
                         Fazer Solicitação

@@ -73,9 +73,11 @@ export default function EventCard({ event }: { event: Event }) {
             {/* Sympla badge for linked events */}
             {event.symplaUrl && (
               <div className="bg-white shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-blue-600 flex items-center gap-1">
-                <img 
+                <Image 
                   src="https://www.sympla.com.br/images/public/logo-sympla-new-blue@3x.png" 
                   alt="Sympla" 
+                  width={20}
+                  height={10}
                   className="h-2.5"
                 />
                 Sympla

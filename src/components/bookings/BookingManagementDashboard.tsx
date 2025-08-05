@@ -3,21 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Calendar,
-  MapPin,
-  Users,
-  Clock,
-  Car,
-  Utensils,
-  Ticket,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Search,
-  Filter,
-  Download,
-} from "lucide-react";
+import { Calendar, MapPin, Users, Car, Utensils, Ticket, CheckCircle, XCircle, AlertCircle, Search, Download,  } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
@@ -42,7 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, badgeStyles } from "@/lib/ui-config";
+import { cardStyles, badgeStyles } from "@/lib/ui-config";
 
 interface BookingManagementDashboardProps {
   className?: string;
@@ -51,7 +37,7 @@ interface BookingManagementDashboardProps {
 export function BookingManagementDashboard({ className }: BookingManagementDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  // selectedBooking removido (não utilizado)
 
   // Fetch bookings data
   const activityBookings = useQuery(api.domains.bookings.queries.getUserActivityBookings, {
@@ -128,7 +114,7 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
       
       toast.success("Reserva cancelada com sucesso");
       setSelectedBooking(null);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao cancelar reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });

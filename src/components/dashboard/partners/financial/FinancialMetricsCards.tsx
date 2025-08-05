@@ -1,16 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  DollarSign, 
-  TrendingUp, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  Activity,
-  Percent,
-  AlertCircle,
-  CheckCircle
-} from "lucide-react";
+import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Activity, Percent, AlertCircle } from "lucide-react";
 
 interface FinancialMetricsCardsProps {
   analytics: {

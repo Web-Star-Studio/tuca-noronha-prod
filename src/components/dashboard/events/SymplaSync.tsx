@@ -48,7 +48,7 @@ export function SymplaSync() {
       } else {
         toast.error(`Erro na sincronização: ${result.error}`);
       }
-    } catch (error) {
+    } catch {
       console.error("Error syncing with Sympla:", error);
       toast.error("Ocorreu um erro ao sincronizar com o Sympla");
     } finally {

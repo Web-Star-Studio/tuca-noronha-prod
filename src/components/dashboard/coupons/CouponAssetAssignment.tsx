@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Search, X, Plus, Building, Package, MapPin, Calendar, Tag } from "lucide-react";
+import { Search, X, Plus, Building, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface CouponAssetAssignmentProps {
@@ -116,7 +116,7 @@ export default function CouponAssetAssignment({
         title: "Assets atualizados",
         description: `${selectedAssets.length} asset(s) adicionado(s) ao cupom com sucesso.`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar os assets do cupom.",
@@ -142,7 +142,7 @@ export default function CouponAssetAssignment({
         title: "Asset removido",
         description: "Asset removido do cupom com sucesso.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível remover o asset do cupom.",

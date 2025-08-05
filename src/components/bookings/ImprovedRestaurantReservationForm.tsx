@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin, ChefHat, Star, Check } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
+import { Clock, Plus, Minus, MapPin, ChefHat, Calendar as CalendarIcon } from "lucide-react";
+import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -14,7 +14,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -171,7 +170,7 @@ export function RestaurantReservationForm({
       setPartySize(2);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao fazer reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });
@@ -354,8 +353,6 @@ export function RestaurantReservationForm({
               placeholder="Aniversário, alergia alimentar, preferência de mesa..."
             />
           </div>
-
-
 
           {/* Submit Button */}
           <Button

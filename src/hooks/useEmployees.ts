@@ -36,7 +36,7 @@ export function useEmployees() {
       });
       
       return result;
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar colaborador:", error);
       
       const errorMessage = error instanceof Error 

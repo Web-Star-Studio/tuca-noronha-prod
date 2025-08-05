@@ -12,18 +12,18 @@ import { AdminReservationData } from "../AdminReservationCreationForm";
 import { api } from "../../../../convex/_generated/api";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 
-import { CreditCard, Banknote, Building, Clock, Info, DollarSign, Calendar, User, FileText, CheckCircle, Bell, Settings, Tag } from "lucide-react";
+
+import { CreditCard, Banknote, Building, Clock, Info, Settings, Tag } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PaymentConfigurationStepProps {
@@ -85,7 +85,6 @@ export function PaymentConfigurationStep({ data, onComplete }: PaymentConfigurat
   
   const autoConfirmSettings = useQuery(api.domains.systemSettings.queries.getSetting, { key: "autoConfirmReservations" });
   const isAutoConfirmEnabled = autoConfirmSettings?.value === "true";
-
 
   const onSubmit = (values: FormData) => {
     onComplete(values);
@@ -250,7 +249,6 @@ export function PaymentConfigurationStep({ data, onComplete }: PaymentConfigurat
     </Form>
   );
 }
-
 
 function SummaryCard({ data, formValues }: { data: Partial<AdminReservationData>, formValues: Partial<FormData> }) {
     const { assetTitle, travelerName, reservationData } = data;

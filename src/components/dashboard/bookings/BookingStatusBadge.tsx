@@ -2,18 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { 
-  Clock, 
-  CreditCard, 
-  CheckCircle, 
-  AlertCircle, 
-  XCircle, 
-  Timer,
-  UserCheck,
-  Play,
-  Check,
-  Ban
-} from "lucide-react";
+import { Clock, CreditCard, CheckCircle, AlertCircle, XCircle, Timer, UserCheck, Play, Check } from "lucide-react";
 
 interface BookingStatusBadgeProps {
   status: string;

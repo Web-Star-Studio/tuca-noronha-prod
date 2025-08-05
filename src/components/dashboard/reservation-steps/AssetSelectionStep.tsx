@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Search, MapPin, Calendar, Users, Car, Hotel, UtensilsCrossed, Building, Wind } from "lucide-react";
+import { Search, MapPin, Calendar, Users, Car, UtensilsCrossed, Building, Wind } from "lucide-react";
 import { AdminReservationData } from "../AdminReservationCreationForm";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,6 @@ interface AssetSelectionStepProps {
 }
 
 const ASSET_TYPES = [
-  { value: "accommodations", label: "Hospedagens", icon: Hotel },
   { value: "activities", label: "Passeios", icon: Wind },
   { value: "vehicles", label: "Veículos", icon: Car },
   { value: "restaurants", label: "Restaurantes", icon: UtensilsCrossed },

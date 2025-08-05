@@ -4,21 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  User, 
-  Home, 
-  Compass, 
-  Hotel, 
-  Package, 
-  Calendar, 
-  UtensilsCrossed, 
-  Car, 
-  Heart, 
-  ChevronDown,
-  Settings,
-  HelpCircle,
-  LogOut
-} from 'lucide-react'
+import { User, Home, Compass, Package, Calendar, UtensilsCrossed, Car, Heart, ChevronDown, Settings, HelpCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { buttonStyles, transitionEffects } from '@/lib/ui-config'
+import { transitionEffects } from '@/lib/ui-config'
 
 interface DropdownNavigationProps {
   isTransparent?: boolean

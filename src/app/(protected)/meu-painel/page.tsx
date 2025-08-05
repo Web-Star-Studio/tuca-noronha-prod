@@ -1,28 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useUser } from "@clerk/nextjs"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-  Utensils, 
-  Activity, 
-  CreditCard, 
-  Award, 
-  Sparkles
-} from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import ProfileHeroSection from "@/components/hero/ProfileHeroSection"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useQuery } from "convex/react"
-import { api } from "../../../../convex/_generated/api"
 import MobileBottomNavigation from "@/components/hero/MobileBottomNavigation"
 
 // Import our refactored components
@@ -32,14 +11,11 @@ import ReservationsSection from './components/ReservationsSection'
 import PackageRequestsSection from './components/PackageRequestsSection'
 import OverviewSection from './components/OverviewSection'
 import FloatingSupportButton from './components/FloatingSupportButton'
-import RecommendationCard from './components/RecommendationCard'
 import AIRecommendationsSection from '@/components/AIRecommendationsSection'
 import ChatsSection from './components/ChatsSection'
 import NotificationsSection from './components/NotificationsSection'
 
 export default function Dashboard() {
-  const { user } = useUser()
-  
   const {
     activeSection,
     setActiveSection,
@@ -50,22 +26,11 @@ export default function Dashboard() {
     handleCancelReservation,
     reservations,
     stats,
-    isLoadingReservations,
-    isLoadingNotifications,
-    isLoadingStats
+    isLoadingReservations
   } = useDashboard()
 
-  // Sync activeSection with local state
-  const [activeTab, setActiveTab] = useState(activeSection)
-
-  // Keep activeTab in sync with activeSection from useDashboard hook
-  useEffect(() => {
-    setActiveTab(activeSection)
-  }, [activeSection])
-
   // Show loading state while fetching data
-  const isLoading = isLoadingReservations || isLoadingNotifications || isLoadingStats;
-
+  
   const renderPageContent = () => {
     switch (activeSection) {
       case 'overview':
@@ -112,7 +77,7 @@ export default function Dashboard() {
   }
 
   // Show loading state while fetching data
-  if (isLoading) {
+  if (isLoadingReservations) {
     return (
       <div className="min-h-screen w-full">
         <ProfileHeroSection 
@@ -150,7 +115,6 @@ export default function Dashboard() {
           className="space-y-6 md:space-y-8"
         >
 
-          
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}

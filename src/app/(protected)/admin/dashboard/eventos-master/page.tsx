@@ -7,23 +7,15 @@ import { Input } from "@/components/ui/input"
 import { 
   Calendar, 
   Users, 
-  TrendingUp, 
   Search,
   Filter,
-  MoreHorizontal,
-  Eye,
   Edit,
   Trash2,
   Plus,
   MapPin,
   Clock,
-  CheckCircle,
-  XCircle,
   AlertTriangle,
   Star,
-  Ticket,
-  Music,
-  Utensils,
   ToggleLeft,
   ToggleRight,
   ExternalLink,
@@ -59,7 +51,6 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from "next/link"
 import { DashboardPageHeader } from "../components"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useRouter } from "next/navigation"
@@ -105,21 +96,6 @@ const eventTypeColors = {
   "nature": "bg-emerald-100 text-emerald-800"
 }
 
-const categoryLabels: Record<string, string> = {
-  "music": "Música",
-  "gastronomy": "Gastronomia",
-  "culture": "Cultura",
-  "sport": "Esporte",
-  "nature": "Natureza",
-};
-
-const eventStatusColors = {
-  "upcoming": "bg-blue-100 text-blue-800",
-  "ongoing": "bg-green-100 text-green-800", 
-  "finished": "bg-gray-100 text-gray-800",
-  "cancelled": "bg-red-100 text-red-800"
-}
-
 export default function EventosMasterPage() {
   const { user } = useCurrentUser();
   const router = useRouter();
@@ -141,6 +117,11 @@ export default function EventosMasterPage() {
   const deleteEvent = useMutation(api.domains.events.mutations.remove);
   const toggleFeatured = useMutation(api.domains.events.mutations.toggleFeatured);
   const toggleActive = useMutation(api.domains.events.mutations.toggleActive);
+
+  // Buscar dados - moved before conditional returns
+  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics)
+  const eventsResult = useQuery(api.domains.events.queries.getEventsWithCreators)
+  const partners = useQuery(api.domains.users.queries.getUsersByRole, { role: "partner" })
 
   // Verificar permissões
   if (!user) {
@@ -164,18 +145,13 @@ export default function EventosMasterPage() {
     );
   }
 
-  // Buscar dados
-  const systemStats = useQuery(api.domains.users.queries.getSystemStatistics)
-  const eventsResult = useQuery(api.domains.events.queries.getEventsWithCreators)
-  const partners = useQuery(api.domains.users.queries.getUsersByRole, { role: "partner" })
-
   // Handlers para operações CRUD
   const handleCreateEvent = async (formData: any) => {
     try {
       await createEvent(formData);
       toast.success("Evento criado com sucesso!");
       setAddDialogOpen(false);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao criar evento");
       console.error("Erro ao criar evento:", error);
     }
@@ -190,7 +166,7 @@ export default function EventosMasterPage() {
       });
       toast.success("Evento atualizado com sucesso!");
       setEditingEvent(null);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao atualizar evento");
       console.error("Erro ao atualizar evento:", error);
     }
@@ -201,7 +177,7 @@ export default function EventosMasterPage() {
       await deleteEvent({ id: id as Id<"events"> });
       toast.success("Evento removido com sucesso!");
       setConfirmDeleteId(null);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao remover evento");
       console.error("Erro ao remover evento:", error);
     }
@@ -211,7 +187,7 @@ export default function EventosMasterPage() {
     try {
       await toggleFeatured({ id: id as Id<"events">, isFeatured: !isFeatured });
       toast.success(`Evento ${!isFeatured ? "destacado" : "removido dos destaques"} com sucesso!`);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao alterar destaque");
       console.error("Erro ao alterar destaque:", error);
     }
@@ -221,7 +197,7 @@ export default function EventosMasterPage() {
     try {
       await toggleActive({ id: id as Id<"events">, isActive: !isActive });
       toast.success(`Evento ${!isActive ? "ativado" : "desativado"} com sucesso!`);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao alterar status");
       console.error("Erro ao alterar status:", error);
     }
@@ -303,16 +279,6 @@ export default function EventosMasterPage() {
       month: '2-digit',
       year: '2-digit'
     })
-  }
-
-  const getStatusLabel = (status: string) => {
-    const labels = {
-      "upcoming": "Próximo",
-      "ongoing": "Em andamento",
-      "finished": "Finalizado", 
-      "cancelled": "Cancelado"
-    }
-    return labels[status as keyof typeof labels] || status
   }
 
   const getTypeLabel = (type: string) => {
@@ -783,22 +749,6 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
     }
 
     onSave(formData);
-  };
-
-  const handleArrayChange = (field: string, value: string) => {
-    if (value.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        [field]: [...prev[field as keyof typeof prev] as string[], value.trim()]
-      }));
-    }
-  };
-
-  const removeArrayItem = (field: string, index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index)
-    }));
   };
 
   return (

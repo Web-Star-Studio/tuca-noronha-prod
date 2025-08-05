@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { HelpCircle } from "lucide-react";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 

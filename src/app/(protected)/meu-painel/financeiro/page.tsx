@@ -7,22 +7,8 @@ import { usePartner } from "@/lib/hooks/usePartner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Activity,
-  Download,
-  Calendar,
-  Filter,
-  RefreshCw,
-  Eye,
-  CreditCard,
-  AlertCircle
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { TrendingUp, DollarSign, Activity, Download, RefreshCw, CreditCard, AlertCircle } from "lucide-react";
+
 import { FinancialMetricsCards } from "@/components/dashboard/partners/financial/FinancialMetricsCards";
 import { MonthlyRevenueChart } from "@/components/dashboard/partners/financial/MonthlyRevenueChart";
 import { TransactionsList } from "@/components/dashboard/partners/financial/TransactionsList";

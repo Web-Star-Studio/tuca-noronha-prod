@@ -49,7 +49,7 @@ const partnerTransactions = defineTable({
     v.literal("activity"),
     v.literal("event"),
     v.literal("vehicle"),
-    v.literal("accommodation"),
+
     v.literal("package")
   ),
   stripePaymentIntentId: v.string(),
@@ -262,7 +262,7 @@ export default defineSchema({
     contextId: v.string(),
     
     // Tipo do asset (se contextType for "asset")
-    assetType: v.optional(v.string()), // "restaurants", "events", "activities", "vehicles", "accommodations"
+    assetType: v.optional(v.string()), // "restaurants", "events", "activities", "vehicles"
     
     // Participantes do chat
     travelerId: v.id("users"), // O traveler que iniciou o chat
@@ -384,7 +384,7 @@ export default defineSchema({
       v.literal("events"), 
       v.literal("restaurants"),
       v.literal("vehicles"),
-      v.literal("accommodations"),
+
       v.literal("packages"),
       v.literal("general")
     )),
@@ -757,7 +757,7 @@ export default defineSchema({
     interests: v.array(v.string()),                 // Interesses (praias, mergulho, etc)
     budget: v.number(),                             // Orçamento por pessoa
     preferences: v.object({                         // Preferências específicas
-      accommodation: v.string(),                    // Tipo de hospedagem
+      accommodation: v.optional(v.string()),        // TEMPORARY: for backward compatibility
       dining: v.array(v.string()),                  // Preferências gastronômicas
       activities: v.array(v.string()),              // Atividades preferidas
     }),
@@ -957,134 +957,6 @@ export default defineSchema({
     .index("by_vehicleId_status", ["vehicleId", "status"])
     .index("by_dates", ["startDate", "endDate"]),
 
-  // Accommodations/Hospedagens
-  accommodations: defineTable({
-    name: v.string(),                                   // Nome da hospedagem
-    slug: v.string(),                                   // Slug para URL
-    description: v.string(),                            // Descrição curta
-    description_long: v.string(),                       // Descrição longa
-    address: v.object({                                 // Objeto com informações de endereço
-      street: v.string(),                               // Rua
-      city: v.string(),                                 // Cidade
-      state: v.string(),                                // Estado
-      zipCode: v.string(),                              // CEP
-      neighborhood: v.string(),                         // Bairro
-      coordinates: v.object({                           // Coordenadas geográficas
-        latitude: v.float64(),                          // Latitude
-        longitude: v.float64(),                         // Longitude
-      }),
-    }),
-    phone: v.string(),                                  // Telefone de contato
-    website: v.optional(v.string()),                    // Website (opcional)
-    type: v.string(),                                   // Tipo (Pousada, Hotel, Apartamento, Casa, Villa)
-    checkInTime: v.string(),                            // Horário de check-in
-    checkOutTime: v.string(),                           // Horário de check-out
-    pricePerNight: v.float64(),                         // Preço por noite
-    currency: v.string(),                               // Moeda (BRL)
-    discountPercentage: v.optional(v.float64()),        // Porcentagem de desconto (opcional)
-    taxes: v.optional(v.float64()),                     // Taxas adicionais (opcional)
-    cleaningFee: v.optional(v.float64()),               // Taxa de limpeza (opcional)
-    totalRooms: v.int64(),                              // Total de quartos
-    maxGuests: v.int64(),                               // Número máximo de hóspedes
-    bedrooms: v.int64(),                                // Número de quartos
-    bathrooms: v.int64(),                               // Número de banheiros
-    beds: v.object({                                    // Informações sobre camas
-      single: v.int64(),                                // Camas de solteiro
-      double: v.int64(),                                // Camas de casal
-      queen: v.int64(),                                 // Camas queen
-      king: v.int64(),                                  // Camas king
-    }),
-    area: v.float64(),                                  // Área em m²
-    amenities: v.array(v.string()),                     // Comodidades
-    houseRules: v.array(v.string()),                    // Regras da casa
-    cancellationPolicy: v.string(),                     // Política de cancelamento
-    petsAllowed: v.boolean(),                           // Animais permitidos
-    smokingAllowed: v.boolean(),                        // Fumo permitido
-    eventsAllowed: v.boolean(),                         // Eventos permitidos
-    minimumStay: v.int64(),                             // Estadia mínima em noites
-    mainImage: v.string(),                              // Imagem principal
-    galleryImages: v.array(v.string()),                 // Imagens da galeria
-    rating: v.object({                                  // Objeto com avaliações
-      overall: v.float64(),                             // Nota geral
-      cleanliness: v.float64(),                         // Nota para limpeza
-      location: v.float64(),                            // Nota para localização
-      checkin: v.float64(),                             // Nota para check-in
-      value: v.float64(),                               // Nota para custo-benefício
-      accuracy: v.float64(),                            // Nota para precisão
-      communication: v.float64(),                       // Nota para comunicação
-      totalReviews: v.int64(),                          // Total de avaliações
-    }),
-    isActive: v.boolean(),                              // Status ativo/inativo
-    isFeatured: v.boolean(),                            // Status destacado
-    tags: v.array(v.string()),                          // Tags para busca
-    partnerId: v.id("users"),                           // ID do parceiro/proprietário
-    // Stripe integration fields
-    stripeProductId: v.optional(v.string()),
-    stripePriceId: v.optional(v.string()),
-    stripePaymentLinkId: v.optional(v.string()),
-    acceptsOnlinePayment: v.optional(v.boolean()),
-    requiresUpfrontPayment: v.optional(v.boolean()),
-    stripeMetadata: v.optional(v.object({
-      productType: v.string(),
-      partnerId: v.string(),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })),
-  })
-    .index("by_slug", ["slug"])                         // Índice por slug (URL)
-    .index("by_partner", ["partnerId"])                 // Índice por parceiro
-    .index("featured_accommodations", ["isFeatured", "isActive"]) // Índice para hospedagens destacadas
-    .index("active_accommodations", ["isActive"]),      // Índice para hospedagens ativas
-
-  // Accommodation Bookings
-  accommodationBookings: defineTable({
-    accommodationId: v.id("accommodations"),            // Referência à hospedagem
-    userId: v.id("users"),                              // Usuário que fez a reserva
-    checkInDate: v.string(),                            // Data de check-in (YYYY-MM-DD)
-    checkOutDate: v.string(),                           // Data de check-out (YYYY-MM-DD)
-    guests: v.int64(),                                  // Número de hóspedes
-    totalPrice: v.float64(),                            // Preço total da reserva
-    status: v.string(),                                 // Status (pending, confirmed, canceled, completed, refunded)
-    paymentStatus: v.optional(v.string()),              // Status do pagamento (pending, paid, refunded, failed)
-    paymentMethod: v.optional(v.string()),              // Método de pagamento (credit_card, pix, bank_transfer)
-    specialRequests: v.optional(v.string()),            // Solicitações especiais do cliente
-    partnerNotes: v.optional(v.string()),               // Notas do parceiro/funcionário
-    confirmationCode: v.string(),                       // Código único de confirmação
-    customerInfo: v.object({                            // Informações de contato do cliente
-      name: v.string(),
-      email: v.string(),
-      phone: v.string(),
-    }),
-    // Coupon fields
-    couponCode: v.optional(v.string()),                 // Applied coupon code
-    discountAmount: v.optional(v.number()),             // Discount amount applied
-    finalAmount: v.optional(v.number()),                // Final amount after discount
-    // Stripe integration fields
-    stripeCheckoutSessionId: v.optional(v.string()),
-    stripePaymentIntentId: v.optional(v.string()),
-    stripeCustomerId: v.optional(v.string()),
-    stripePaymentLinkId: v.optional(v.string()),
-    paymentDetails: v.optional(v.object({
-      receiptUrl: v.optional(v.string()),
-    })),
-    refunds: v.optional(v.array(v.object({
-      refundId: v.string(),
-      amount: v.number(),
-      reason: v.string(),
-      status: v.string(),
-      createdAt: v.number(),
-      processedAt: v.optional(v.number()),
-    }))),
-    createdAt: v.number(),                              // Timestamp de criação
-    updatedAt: v.number(),                              // Timestamp de atualização
-  })
-    .index("by_accommodation", ["accommodationId"])     // Índice por hospedagem
-    .index("by_user", ["userId"])                       // Índice por usuário
-    .index("by_status", ["status"])                     // Índice por status
-    .index("by_check_in_date", ["checkInDate"])         // Índice por data de check-in
-    .index("by_accommodation_dates", ["accommodationId", "checkInDate", "checkOutDate"]) // Índice por hospedagem e datas
-    .index("by_confirmation_code", ["confirmationCode"]), // Índice por código de confirmação
-
   // Notifications System
   notifications: defineTable({
     userId: v.id("users"),                      // User who receives the notification
@@ -1146,7 +1018,7 @@ export default defineSchema({
     currency: v.string(),                       // Moeda (BRL)
     
     // Included Services
-    accommodationId: v.optional(v.id("accommodations")), // Hospedagem incluída (opcional)
+
     vehicleId: v.optional(v.id("vehicles")),    // Veículo incluído (opcional)
     includedActivityIds: v.array(v.id("activities")), // Atividades incluídas
     includedRestaurantIds: v.array(v.id("restaurants")), // Restaurantes incluídos
@@ -1204,7 +1076,7 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("featured_packages", ["isFeatured", "isActive"])
     .index("active_packages", ["isActive"])
-    .index("by_accommodation", ["accommodationId"])
+
     .index("by_vehicle", ["vehicleId"]),
 
   // Package Bookings
@@ -1216,7 +1088,7 @@ export default defineSchema({
     guests: v.number(),
     totalPrice: v.number(),
     breakdown: v.object({
-      accommodationPrice: v.number(),
+  
       vehiclePrice: v.optional(v.number()),
       activitiesPrice: v.number(),
       restaurantsPrice: v.number(),
@@ -1227,7 +1099,7 @@ export default defineSchema({
     paymentStatus: v.optional(v.string()),
     paymentMethod: v.optional(v.string()),
     relatedBookings: v.object({
-      accommodationBookingId: v.optional(v.id("accommodationBookings")),
+  
       vehicleBookingId: v.optional(v.id("vehicleBookings")),
       activityBookingIds: v.array(v.id("activityBookings")),
       restaurantReservationIds: v.array(v.id("restaurantReservations")),
@@ -1271,7 +1143,7 @@ export default defineSchema({
   // Wishlist/Favorites System
   wishlistItems: defineTable({
     userId: v.id("users"),
-    itemType: v.string(), // "package", "accommodation", "activity", "restaurant", "event", "vehicle"
+    itemType: v.string(), // "package", "activity", "restaurant", "event", "vehicle"
     itemId: v.string(), // ID of the item (stored as string for flexibility)
     addedAt: v.number(),
   })
@@ -1322,11 +1194,12 @@ export default defineSchema({
     
     // Preferences
     preferences: v.object({
-      accommodationType: v.array(v.string()), // hotel, pousada, resort, apartment, etc.
+  
       activities: v.array(v.string()), // adventure, cultural, relaxation, food, etc.
       transportation: v.array(v.string()), // car, bus, plane, walking, etc.
       foodPreferences: v.array(v.string()), // local_cuisine, international, vegetarian, etc.
       accessibility: v.optional(v.array(v.string())), // wheelchair, visual_impairment, etc.
+      accommodationType: v.optional(v.array(v.string())), // hotel, hostel, apartment, etc.
     }),
     
     // Special Requirements
@@ -1400,10 +1273,10 @@ export default defineSchema({
     .index("by_priority", ["priority"])
     .index("by_created_date", ["createdAt"]),
 
-  // Reviews System (for packages, accommodations, restaurants, activities, events)
+  // Reviews System (for packages, restaurants, activities, events)
   reviews: defineTable({
     userId: v.id("users"),
-    itemType: v.string(), // "package", "accommodation", "activity", "restaurant", "event"
+    itemType: v.string(), // "package", "activity", "restaurant", "event"
     itemId: v.string(), // ID of the item being reviewed
     rating: v.number(), // Overall rating 1-5
     title: v.string(),
@@ -1413,8 +1286,7 @@ export default defineSchema({
     detailedRatings: v.optional(v.object({
       value: v.optional(v.number()), // Value for money
       service: v.optional(v.number()), // Service quality
-      cleanliness: v.optional(v.number()), // Cleanliness (accommodations)
-      location: v.optional(v.number()), // Location (accommodations/restaurants)
+      location: v.optional(v.number()), // Location (restaurants)
       food: v.optional(v.number()), // Food quality (restaurants)
       organization: v.optional(v.number()), // Organization (activities/events)
       guide: v.optional(v.number()), // Guide quality (activities)
@@ -1944,7 +1816,7 @@ export default defineSchema({
         v.literal("events"),
         v.literal("restaurants"),
         v.literal("vehicles"),
-        v.literal("accommodations"),
+  
         v.literal("packages")
       ),
       assetId: v.string(),                      // ID do asset
@@ -2013,7 +1885,7 @@ export default defineSchema({
       v.literal("event"),
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation"),
+  
       v.literal("package")
     ),
     
@@ -2133,7 +2005,7 @@ export default defineSchema({
     
     // Booking Reference
     bookingId: v.string(),            // Unified booking ID as string (support for different types)
-    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("accommodation"), v.literal("package"), v.literal("admin_reservation")),
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("package"), v.literal("admin_reservation")),
     
     // Voucher Details
     type: v.optional(v.string()),     // Type of voucher
@@ -2235,7 +2107,7 @@ export default defineSchema({
       v.literal("events"),
       v.literal("restaurants"),
       v.literal("vehicles"),
-      v.literal("accommodations"),
+
       v.literal("packages")
     ),
     travelerId: v.id("users"),                    // Traveler assigned to this reservation
@@ -2368,7 +2240,7 @@ export default defineSchema({
     // Package Components
     components: v.array(v.object({
       type: v.union(
-        v.literal("accommodation"),
+    
         v.literal("activity"),
         v.literal("event"),
         v.literal("restaurant"),
@@ -2680,7 +2552,7 @@ export default defineSchema({
     // Default Components
     defaultComponents: v.array(v.object({
       type: v.union(
-        v.literal("accommodation"),
+    
         v.literal("activity"),
         v.literal("event"),
         v.literal("restaurant"),

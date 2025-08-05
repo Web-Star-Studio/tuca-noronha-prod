@@ -8,23 +8,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { 
-  CheckCircle, 
-  Star, 
-  Shield, 
-  Calendar,
-  CreditCard,
-  Loader2,
-  ArrowRight,
-  ChevronRight,
-  Sparkles,
-  Globe,
-  Users,
-  TrendingUp,
-  Zap,
-  Award,
-  Heart
-} from "lucide-react";
+import { Star, Shield, Calendar, CreditCard, Loader2, ArrowRight, ChevronRight, Sparkles, Globe, Users, TrendingUp, Zap, Award, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -157,7 +141,7 @@ export default function GuiaAssinaturaPage() {
       } else {
         toast.error(result.error || "Erro ao criar sessão de pagamento");
       }
-    } catch (error) {
+    } catch {
       console.error("Erro no checkout:", error);
       toast.error("Erro ao processar pagamento");
     } finally {
@@ -386,7 +370,7 @@ export default function GuiaAssinaturaPage() {
                         <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
-                    <p className="text-gray-600 mb-4 italic">"{testimonial.comment}"</p>
+                    <p className="text-gray-600 mb-4 italic">&ldquo;{testimonial.comment}&rdquo;</p>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-200 rounded-full" />
                       <div>

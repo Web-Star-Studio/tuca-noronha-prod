@@ -2,18 +2,13 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Users, Palmtree, Waves, Camera, Utensils, BedDouble, 
-  ChevronRight, MapPin, Check, ArrowRight, ChevronLeft,
-  Star, Zap, Compass, Award, Target, TrendingUp, Sparkles,
-  Clock, Calendar, Heart, Sun, Moon
-} from "lucide-react";
+import { Users, Palmtree, Waves, Camera, ChevronRight, MapPin, Check, ArrowRight, ChevronLeft, Star, Zap, Compass, Award, TrendingUp, Sparkles, Clock, Calendar, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { cardStyles, buttonStyles, ui } from "@/lib/ui-config";
+import { cardStyles, buttonStyles } from "@/lib/ui-config";
 import { cn } from "@/lib/utils";
 
 interface PersonalityProfile {
@@ -356,7 +351,7 @@ export default function PersonalizationChatbot({
   const renderOptions = (step: PersonalizationStep) => {
     if (!step.options) return null;
 
-    const isMultiSelect = ['mood-board', 'goal-selection'].includes(step.type);
+    // isMultiSelect removido (não utilizado)
     
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">

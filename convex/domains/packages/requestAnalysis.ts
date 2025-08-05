@@ -252,35 +252,13 @@ async function generateCustomPackageSuggestion(ctx: any, request: any) {
   const activities = await ctx.runQuery(api.domains.activities.queries.getActivities, {
     filters: { isActive: true }
   });
-  const accommodations = await ctx.runQuery(api.domains.accommodations.queries.getAccommodations, {
-    filters: { isActive: true }
-  });
+
   const restaurants = await ctx.runQuery(api.domains.restaurants.queries.getRestaurants, {
     filters: { isActive: true }
   });
   const vehicles = await ctx.runQuery(api.domains.vehicles.queries.getVehicles, {
     filters: { isActive: true }
   });
-
-  // Suggest accommodation (if requested)
-  if (request.preferences.accommodationType.length > 0 && accommodations.length > 0) {
-    const budgetPerNight = request.tripDetails.budget / request.tripDetails.duration * 0.6; // 60% of budget for accommodation
-    const suitableAccommodations = accommodations.filter((acc: any) => 
-      acc.pricePerNight <= budgetPerNight && acc.capacity >= request.tripDetails.groupSize
-    );
-    
-    if (suitableAccommodations.length > 0) {
-      const selected = suitableAccommodations[0];
-      const totalPrice = selected.pricePerNight * request.tripDetails.duration;
-      estimatedPrice += totalPrice;
-      suggestedComponents.push({
-        type: "accommodation",
-        name: selected.name,
-        price: totalPrice,
-        reasoning: "Hospedagem adequada para o grupo e orçamento",
-      });
-    }
-  }
 
   // Suggest activities (based on preferences)
   if (request.preferences.activities.length > 0 && activities.length > 0) {

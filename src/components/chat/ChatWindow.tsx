@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, X, MessageCircle, MoreVertical } from "lucide-react";
+import { Send, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,7 +39,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   className = "",
 }) => {
   const [messageInput, setMessageInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  // isTyping removido (não utilizado)
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -87,7 +87,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         content: messageContent,
         messageType: "text",
       });
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar mensagem:", error);
       toast.error("Erro ao enviar mensagem");
       setMessageInput(messageContent); // Restaurar mensagem em caso de erro
@@ -109,7 +109,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       toast.success("Conversa fechada");
       onClose();
-    } catch (error) {
+    } catch {
       console.error("Erro ao fechar conversa:", error);
       toast.error("Erro ao fechar conversa");
     }
@@ -123,13 +123,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       toast.success("Conversa arquivada");
       onClose();
-    } catch (error) {
+    } catch {
       console.error("Erro ao arquivar conversa:", error);
       toast.error("Erro ao arquivar conversa");
     }
   };
 
-  const renderMessage = (message: ChatMessage, index: number) => {
+  const renderMessage = (message: ChatMessage) => {
     const isOwnMessage = message.senderId === chatRoom?.traveler._id;
     const isSystemMessage = message.messageType === "system";
 
@@ -243,7 +243,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Messages */}
       <ScrollArea className="flex-1 p-4 h-80">
         <div className="space-y-2">
-          {messages.map((message, index) => renderMessage(message, index))}
+                      {messages.map((message) => renderMessage(message))}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>

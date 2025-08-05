@@ -120,9 +120,7 @@ export const createChatRoom = mutation({
           case "vehicles":
             asset = await ctx.db.get(assetId);
             break;
-          case "accommodations":
-            asset = await ctx.db.get(assetId);
-            break;
+
         }
       } catch (error) {
         console.warn("Failed to fetch asset:", error);
@@ -321,9 +319,7 @@ export const createChatRoomAsPartner = mutation({
           case "vehicles":
             asset = await ctx.db.get(assetId);
             break;
-          case "accommodations":
-            asset = await ctx.db.get(assetId);
-            break;
+
         }
       } catch (error) {
         console.warn("Failed to fetch asset:", error);
@@ -484,9 +480,7 @@ export const sendMessage = mutation({
           case "vehicles":
             asset = await ctx.db.get(assetId);
             break;
-          case "accommodations":
-            asset = await ctx.db.get(assetId);
-            break;
+
         }
       } catch (error) {
         console.warn("Failed to fetch asset:", error);

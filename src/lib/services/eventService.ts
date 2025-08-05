@@ -304,12 +304,10 @@ export const usePublicEvent = (id: string | null) => {
     api.domains.events.queries.getById, 
     id ? { id: id as Id<"events"> } : "skip"
   );
-  
-  const isLoading = id !== null && event === undefined;
-  
+
   return {
     event: event ? mapConvexEvent(event as EventFromConvex) : null,
-    isLoading,
+    isLoading: event === undefined,
   };
 };
 
@@ -385,7 +383,7 @@ export const useCreateEvent = () => {
       // Create the event in Convex
       const eventId = await createEventMutation(convexData);
       return eventId;
-    } catch (error) {
+    } catch {
       console.error("Error creating event:", error);
       throw error;
     }
@@ -413,14 +411,17 @@ export const useUpdateEvent = () => {
       // We need to exclude some fields that are not in the update input
       const { 
         id,
-        createdAt,
-        updatedAt,
-        creatorName,
-        creatorEmail,
-        creatorImage,
-        tickets,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        creatorName: _creatorName,
+        creatorEmail: _creatorEmail,
+        creatorImage: _creatorImage,
+        tickets: _tickets,
         ...updateData
       } = eventData;
+      
+      // Avoid unused variable warnings
+      void _createdAt; void _updatedAt; void _creatorName; void _creatorEmail; void _creatorImage; void _tickets;
       
       // Update the event in Convex
       const result = await updateEventMutation({
@@ -431,7 +432,7 @@ export const useUpdateEvent = () => {
       });
       
       return result;
-    } catch (error) {
+    } catch {
       console.error("Error updating event:", error);
       throw error;
     }
@@ -475,7 +476,6 @@ export const useUserEvents = () => {
       }
       
       try {
-        const convexUserId = user._id as Id<"users">;
         
         // Query events for this user
         const userEventsQuery = api.domains.events.queries.getEventsForAdmin;
@@ -484,7 +484,7 @@ export const useUserEvents = () => {
         // Map to frontend events
         const mappedEvents = userEvents.map(mapConvexEvent);
         setEvents(mappedEvents);
-      } catch (error) {
+      } catch {
         console.error("Error fetching user events:", error);
       } finally {
         setIsLoading(false);
@@ -571,7 +571,7 @@ export const useCreateEventTicket = () => {
     try {
       const ticketId = await createTicketMutation(convexData as any);
       return ticketId;
-    } catch (error) {
+    } catch {
       console.error("Error creating ticket:", error);
       throw error;
     }
@@ -582,7 +582,8 @@ export const useUpdateEventTicket = () => {
   const updateTicketMutation = useMutation(api.domains.events.mutations.updateEventTicket);
   
   return async (ticketData: EventTicket) => {
-    const { id, createdAt, ...updateData } = ticketData;
+    const { id, createdAt: _createdAt, ...updateData } = ticketData;
+    void _createdAt; // Avoid unused variable warning
     
     return await updateTicketMutation({
       id: id as Id<"eventTickets">,

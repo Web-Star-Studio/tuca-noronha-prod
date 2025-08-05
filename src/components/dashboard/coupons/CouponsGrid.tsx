@@ -6,7 +6,7 @@ import CouponForm from "./CouponForm";
 import CouponFilters from "./CouponFilters";
 import CouponStats from "./CouponStats";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,7 +84,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         title: "Cupom criado",
         description: "O cupom foi criado com sucesso.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível criar o cupom. Tente novamente.",
@@ -100,6 +100,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
     try {
       // Create a new object without the _id field
       const { _id, ...updateData } = data;
+      void _id; // Suppress unused variable warning
       
       await updateCoupon({
         couponId: selectedCoupon._id,
@@ -114,7 +115,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         title: "Cupom atualizado",
         description: "O cupom foi atualizado com sucesso.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o cupom. Tente novamente.",
@@ -131,7 +132,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         title: "Cupom excluído",
         description: "O cupom foi excluído com sucesso.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível excluir o cupom. Tente novamente.",
@@ -143,7 +144,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
   const handleToggleStatus = async (couponId: string, isActive: boolean) => {
     try {
       await toggleStatus({ couponId: couponId as any, isActive });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível alterar o status do cupom.",

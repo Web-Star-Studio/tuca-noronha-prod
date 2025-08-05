@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+
 import { toast } from "sonner";
 
 interface VoucherDownloadButtonProps {
@@ -77,7 +77,7 @@ export function VoucherDownloadButton({
       } else {
         throw new Error("Não foi possível gerar o PDF");
       }
-    } catch (error) {
+    } catch {
       console.error("Error downloading PDF:", error);
       toast.error("Erro ao baixar PDF. Tente novamente.", { id: "pdf-generation" });
     } finally {

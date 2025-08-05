@@ -10,20 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { 
   Settings, 
-  Clock, 
-  DollarSign, 
-  Users, 
-  Calendar,
-  CheckCircle,
-  AlertCircle,
   Save,
-  Plus,
-  Trash
+  Plus
 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -113,7 +105,7 @@ const CUSTOMER_TYPES = [
 ];
 
 export default function AutoConfirmacaoPage() {
-  const { user } = useCurrentUser();
+  const {} = useCurrentUser();
   const [selectedAssetType, setSelectedAssetType] = useState<string>("");
   const [selectedAssetId, setSelectedAssetId] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
@@ -206,7 +198,7 @@ export default function AutoConfirmacaoPage() {
       setSelectedAssetType("");
       setSelectedAssetId("");
       setIsCreating(false);
-    } catch (error) {
+    } catch {
       console.error("Error saving auto-confirmation settings:", error);
       toast.error("Erro ao salvar configurações");
     } finally {

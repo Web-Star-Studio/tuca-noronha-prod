@@ -259,7 +259,7 @@ export const backfillSingleActivity = internalAction({
  * Validate and clean invalid Stripe price IDs from assets
  * This helps fix issues when price IDs exist in database but not in Stripe
  */
-const ASSET_TYPES = ["activity", "event", "restaurant", "accommodation", "vehicle"] as const;
+const ASSET_TYPES = ["activity", "event", "restaurant", "vehicle"] as const;
 type AssetType = typeof ASSET_TYPES[number];
 
 export const validateAndCleanStripePriceIds = internalAction({

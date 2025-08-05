@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, PhoneIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
+import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon, ShieldExclamationIcon } from "@heroicons/react/24/solid";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
@@ -180,7 +180,7 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
       } else {
         toast.error("Erro ao aceitar proposta");
       }
-    } catch (error) {
+    } catch {
       console.error("Erro ao aceitar proposta:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao aceitar proposta");
     } finally {

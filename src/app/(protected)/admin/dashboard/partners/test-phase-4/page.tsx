@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../../../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,17 +24,12 @@ export default function TestPhase4Page() {
     } : undefined
   );
 
-  // Mutations for testing
-  const createRefund = useMutation(api.domains.stripe.actions.createRefund);
-
   const simulateSuccessfulTransaction = async () => {
     setIsProcessing(true);
     try {
       // This would normally happen through the webhook
       toast.success("Transação simulada com sucesso!");
       toast.info("Em produção, isto seria processado automaticamente via webhook do Stripe");
-    } catch (error) {
-      toast.error("Erro ao simular transação");
     } finally {
       setIsProcessing(false);
     }
@@ -46,8 +41,6 @@ export default function TestPhase4Page() {
       // This would normally happen through the webhook
       toast.error("Falha de transação simulada!");
       toast.info("Em produção, o parceiro receberia uma notificação sobre a falha");
-    } catch (error) {
-      toast.error("Erro ao simular falha");
     } finally {
       setIsProcessing(false);
     }
@@ -64,8 +57,6 @@ export default function TestPhase4Page() {
       // In a real scenario, we would process the refund
       toast.success("Estorno simulado com sucesso!");
       toast.info("O parceiro seria notificado sobre o estorno da transação");
-    } catch (error) {
-      toast.error("Erro ao simular estorno");
     } finally {
       setIsProcessing(false);
     }

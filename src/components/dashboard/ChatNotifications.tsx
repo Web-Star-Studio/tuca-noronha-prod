@@ -15,20 +15,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  MessageCircle,
-  BellRing,
-  CheckCircle2,
-  Clock,
-  User,
-  ExternalLink,
-  X,
-  Dot,
-} from "lucide-react";
+import { MessageCircle, CheckCircle2, ExternalLink, X, Dot,  } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { ui } from "@/lib/ui-config";
+
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Id } from "@/../convex/_generated/dataModel";
@@ -67,7 +57,7 @@ export function ChatNotifications({
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markAsRead({ notificationId });
-    } catch (error) {
+    } catch {
       toast.error("Erro ao marcar notificação como lida");
       console.error(error);
     }
@@ -77,7 +67,7 @@ export function ChatNotifications({
     try {
       await deleteNotification({ notificationId });
       toast.success("Notificação removida");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao remover notificação");
       console.error(error);
     }

@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bell, CheckCircle, XCircle, AlertCircle, DollarSign } from "lucide-react";
+import { Bell, XCircle, AlertCircle, DollarSign } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ interface PartnerTransactionNotificationsProps {
 }
 
 export function PartnerTransactionNotifications({
-  partnerId,
+
   limit = 10,
   className,
 }: PartnerTransactionNotificationsProps) {

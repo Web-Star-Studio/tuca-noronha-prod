@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
-import { internal, api } from '../../../convex/_generated/api';
+import { internal } from '../../../convex/_generated/api';
 import Stripe from 'stripe';
 
 // Initialize Stripe
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ received: true });
-  } catch (error) {
+  } catch {
     console.error('Error processing webhook:', error);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
@@ -165,7 +165,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     }
     
     // For activities and events, payment should be authorized but not captured until admin approval
-    // For other types (restaurants, vehicles, accommodations), proceed with immediate confirmation
+            // For other types (restaurants, vehicles), proceed with immediate confirmation
     if (metadata.assetType === 'activity' || metadata.assetType === 'event') {
       console.log(`🔍 Processing ${metadata.assetType} booking:`, {
         bookingId: metadata.bookingId,
@@ -210,7 +210,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     // which calls sendBookingPaymentConfirmationEmails with complete booking data
     console.log('✅ Booking payment updated - confirmation emails will be sent via updateBookingPaymentSuccess');
     
-  } catch (error) {
+  } catch {
     console.error('Error updating booking payment status:', error);
     throw error;
   }
@@ -248,14 +248,14 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
           });
           console.log('✅ Partner notified about new transaction');
         }
-      } catch (error) {
+      } catch {
         console.error('Error updating partner transaction:', error);
         // Log error but don't fail the webhook
       }
     }
     
     console.log('✅ Payment intent processed successfully');
-  } catch (error) {
+  } catch {
     console.error('Error processing payment intent succeeded:', error);
     throw error;
   }
@@ -299,13 +299,13 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
           });
           console.log('✅ Partner transaction error handled');
         }
-      } catch (error) {
+      } catch {
         console.error('Error handling partner transaction error:', error);
       }
     }
     
     console.log('✅ Payment failure handled successfully');
-  } catch (error) {
+  } catch {
     console.error('Error handling payment intent failed:', error);
     throw error;
   }
@@ -340,7 +340,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     });
     
     console.log(`✅ Partner onboarding status updated to: ${onboardingStatus}`);
-  } catch (error) {
+  } catch {
     console.error('Error updating partner onboarding status:', error);
     throw error;
   }

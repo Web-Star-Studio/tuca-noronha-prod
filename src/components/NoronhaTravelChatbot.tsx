@@ -8,18 +8,16 @@ import {
   ChevronRight, MapPin, Check, ArrowRight, ChevronLeft,
   Moon, Sun, UserPlus, PersonStanding, Baby, Heart
 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { buttonStyles, cardStyles, transitionEffects } from "@/lib/ui-config";
+
 import { cn } from "@/lib/utils";
 
 interface ChatbotFormData {
@@ -36,26 +34,9 @@ interface ChatbotFormData {
   specialRequirements: string;
 }
 
-interface QuestionOption {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-}
+// QuestionOption interface removida (não utilizada)
 
-interface Question {
-  id: string;
-  question: string;
-  type: 'text' | 'textarea' | 'multiselect' | 'radio' | 'slider';
-  placeholder?: string;
-  icon?: React.ReactNode;
-  description?: string;
-  options?: QuestionOption[];
-  min?: number;
-  max?: number;
-  step?: number;
-  parentField?: string;
-  category: string;
-}
+// Question interface removida (não utilizada)
 
 interface NoronhaChatbotProps {
   onComplete?: (data: ChatbotFormData) => void;
@@ -66,7 +47,7 @@ interface NoronhaChatbotProps {
 export default function NoronhaTravelChatbot({ onComplete, initialData, userName = "Visitante" }: NoronhaChatbotProps) {
   const [currentInput, setCurrentInput] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [isTyping, setIsTyping] = useState(false);
+  // isTyping removido (não utilizado)
   const [showSummary, setShowSummary] = useState(false);
   const [formData, setFormData] = useState<ChatbotFormData>({
     tripDuration: initialData?.tripDuration || "",
@@ -773,13 +754,7 @@ export default function NoronhaTravelChatbot({ onComplete, initialData, userName
     return "bg-purple-500";
   };
 
-  // Função para determinar a cor de hover com base na questão atual
-  const getHoverColor = () => {
-    if (currentQuestion < 2) return "hover:bg-indigo-600";
-    if (currentQuestion < 4) return "hover:bg-rose-600";
-    if (currentQuestion < 6) return "hover:bg-emerald-600";
-    return "hover:bg-purple-600";
-  };
+  // getHoverColor removido (não utilizado)
 
   return (
     <div className="bg-white text-gray-900 rounded-lg border border-gray-200 overflow-hidden">

@@ -194,7 +194,7 @@ export const createCheckoutSession = action({
         case "activity":
         case "event":
         case "restaurant":
-        case "accommodation":
+  
         case "package":
           assetOwnerId = booking.asset?.partnerId;
           break;
@@ -928,14 +928,8 @@ async function handleCheckoutSessionCompleted(ctx: any, sessionData: any) {
               assetName = vehicle?.name || "Veículo";
             }
             break;
-          case "accommodation":
-            if (booking.accommodationId) {
-              const accommodation = await ctx.runQuery(internal.domains.accommodations.queries.getById, {
-                id: booking.accommodationId,
-              });
-              assetName = accommodation?.name || "Hospedagem";
-            }
-            break;
+    
+            
           case "package":
             if (booking.packageId) {
               const packageData = await ctx.runQuery(internal.domains.packages.queries.getById, {
@@ -1298,7 +1292,7 @@ export const createPaymentLinkForBooking = action({
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
-      v.literal("accommodation"),
+      
       v.literal("vehicle")
     ),
     assetId: v.string(),

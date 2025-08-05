@@ -6,7 +6,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: false,
   },
   trailingSlash: true,
   // Timeout de geração de páginas estáticas (em segundos)

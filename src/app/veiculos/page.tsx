@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Header from "@/components/header/Header";
@@ -27,11 +27,7 @@ interface Vehicle {
   status: string;
 }
 
-// Define interface for Convex response
-interface VehiclesResponse {
-  vehicles: Vehicle[];
-  continueCursor: string | null;
-}
+// VehiclesResponse removido (não utilizado)
 
 export default function VeiculosPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -50,9 +46,8 @@ export default function VeiculosPage() {
     organizationId: undefined // Public view - show all available vehicles
   });
 
-  const vehicles = vehiclesData || [];
-  const isLoading = vehiclesData === undefined;
-  
+  const vehicles = useMemo(() => vehiclesData || [], [vehiclesData]);
+    
   // Extract all available categories, brands, and transmissions (without duplicates)
   const categories = useMemo(() => {
     return Array.from(new Set(vehicles
@@ -240,7 +235,7 @@ export default function VeiculosPage() {
             {/* Grid de veículos com paginação */}
             <VehiclesGrid 
               vehicles={paginatedVehicles} 
-              isLoading={isLoading} 
+              isLoading={false} 
               resetFilters={resetFilters} 
             />
             

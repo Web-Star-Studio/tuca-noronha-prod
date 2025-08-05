@@ -6,7 +6,7 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileName, fileType } = await request.json();
+    const { fileName } = await request.json();
     
     // Get upload URL from Convex media domain
     const uploadUrl = await convex.mutation(api.domains.media.mutations.generateUploadUrl);
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       uploadUrl, 
       storageId 
     });
-  } catch (error) {
+  } catch {
     console.error('Error generating upload URL:', error);
     return NextResponse.json(
       { error: 'Failed to generate upload URL' },

@@ -26,7 +26,7 @@ export const couponValidator = v.object({
       v.literal("events"),
       v.literal("restaurants"),
       v.literal("vehicles"),
-      v.literal("accommodations"),
+
       v.literal("packages")
     ),
     assetId: v.string(),
@@ -67,7 +67,7 @@ export const applyCouponValidator = v.object({
     v.literal("event"),
     v.literal("restaurant"),
     v.literal("vehicle"),
-    v.literal("accommodation"),
+    
     v.literal("package")
   ),
   originalAmount: v.number(),

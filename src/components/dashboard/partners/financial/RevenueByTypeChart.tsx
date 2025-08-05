@@ -1,15 +1,15 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart as PieChartIcon } from "lucide-react";
 import { 
   PieChart, 
   Pie, 
   Cell, 
   Tooltip, 
-  ResponsiveContainer, 
-  Legend 
+  ResponsiveContainer
 } from "recharts";
-import { PieChart as PieChartIcon } from "lucide-react";
+
 
 interface RevenueByTypeChartProps {
   data: Record<string, {

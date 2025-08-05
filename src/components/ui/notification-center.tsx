@@ -15,21 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Bell,
-  BellRing,
-  CheckCircle,
-  Calendar,
-  CreditCard,
-  CheckCircle2,
-  Trash2,
-  MessageCircle,
-  X,
-  Dot,
-} from "lucide-react";
+import { Bell, BellRing, CheckCircle, Calendar, CreditCard, CheckCircle2, MessageCircle, X, Dot,  } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { ui } from "@/lib/ui-config";
+
 
 interface NotificationCenterProps {
   children?: React.ReactNode;
@@ -43,7 +32,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
 
   // Protected focus handlers to prevent infinite recursion
   const safeFocusHandler = useCallback((action: string, callback: () => void) => {
-    const now = Date.now().toString();
+
     
     // Prevent rapid successive focus actions
     if (lastFocusActionRef.current === action) {
@@ -60,7 +49,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     // Execute the callback safely
     try {
       callback();
-    } catch (error) {
+    } catch {
       console.error('Focus handler error:', error);
     }
     
@@ -93,7 +82,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     safeFocusHandler(`markAsRead:${notificationId}`, async () => {
       try {
         await markAsRead({ notificationId });
-      } catch (error) {
+      } catch {
         toast.error("Erro ao marcar notificação como lida");
         console.error(error);
       }
@@ -113,7 +102,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     try {
       await markAllAsRead({});
       toast.success("Todas as notificações foram marcadas como lidas");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao marcar todas as notificações como lidas");
       console.error(error);
     }
@@ -123,7 +112,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     try {
       await deleteNotification({ notificationId });
       toast.success("Notificação removida");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao remover notificação");
       console.error(error);
     }

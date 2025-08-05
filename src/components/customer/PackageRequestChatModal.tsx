@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
@@ -14,13 +14,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { 
-  MessageSquare,
-  Send,
-  X,
-  User,
-  Clock
-} from "lucide-react";
+import { MessageSquare, Send, X } from "lucide-react";
 import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { usePackageRequestQueries } from "@/hooks/usePackageRequestQueries";
@@ -55,6 +49,18 @@ export default function PackageRequestChatModal({
 
   // Mutations
   const sendMessage = useMutation(api.packages.createPackageRequestMessage);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (requestMessages && requestMessages.length > 0) {
+      setTimeout(() => {
+        const chatMessages = document.getElementById('customer-chat-messages');
+        if (chatMessages) {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+      }, 100);
+    }
+  }, [requestMessages]);
 
   // Não renderizar se não há requestId válido
   if (isOpen && !hasValidId) {
@@ -118,7 +124,7 @@ export default function PackageRequestChatModal({
       }, 100);
 
       toast.success("Mensagem enviada!");
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar mensagem:", error);
       toast.error("Erro ao enviar mensagem");
     } finally {
@@ -126,17 +132,7 @@ export default function PackageRequestChatModal({
     }
   };
 
-  // Auto-scroll to bottom when new messages arrive
-  React.useEffect(() => {
-    if (requestMessages && requestMessages.length > 0) {
-      setTimeout(() => {
-        const chatMessages = document.getElementById('customer-chat-messages');
-        if (chatMessages) {
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-      }, 100);
-    }
-  }, [requestMessages]);
+  // useEffect duplicado removido (já movido para cima)
 
   if (isLoading) {
     return (
@@ -211,19 +207,15 @@ export default function PackageRequestChatModal({
               <DialogTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-blue-600" />
                 Chat - Solicitação #{requestNumber}
+                <Badge className={getStatusColor(requestDetails.status)}>
+                {getStatusLabel(requestDetails.status)}
+              </Badge>
               </DialogTitle>
               <DialogDescription className="mt-1">
                 Converse com nossa equipe sobre sua solicitação
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge className={getStatusColor(requestDetails.status)}>
-                {getStatusLabel(requestDetails.status)}
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            
           </div>
         </DialogHeader>
 

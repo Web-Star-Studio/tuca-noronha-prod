@@ -118,7 +118,7 @@ export function useVerifyMediaUrls() {
             console.log(`Mídia ${media._id} foi excluída, ignorando atualização de URL`);
           }
         }
-      } catch (error) {
+      } catch {
         // Em caso de erro de rede, também atualiza a URL
         console.log(`Erro ao verificar URL para mídia ${media._id}, atualizando...`);
         try {
@@ -210,7 +210,7 @@ export function useGetConvexUserId() {
       }
       const data = await response.json();
       return data.userId as Id<"users">;
-    } catch (error) {
+    } catch {
       console.error('Error getting Convex user ID:', error);
       return null;
     }

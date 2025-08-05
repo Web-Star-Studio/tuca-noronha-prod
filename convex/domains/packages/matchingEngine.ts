@@ -31,7 +31,7 @@ export const PackageMatchResult = v.object({
     budgetMatch: v.number(),
     durationMatch: v.number(),
     activityMatch: v.number(),
-    accommodationMatch: v.number(),
+
     groupSizeMatch: v.number(),
     dateAvailability: v.number(),
   }),
@@ -163,7 +163,7 @@ async function executeSimilarityMatching(ctx: any, request: any, packages: any[]
       budgetMatch: 0.20,
       durationMatch: 0.15,
       activityMatch: 0.15,
-      accommodationMatch: 0.10,
+  
       groupSizeMatch: 0.10,
       dateAvailability: 0.05,
     });
@@ -276,7 +276,7 @@ async function executeBudgetOptimizedMatching(ctx: any, request: any, packages: 
       budgetMatch: 0.35, // Increased weight for budget
       durationMatch: 0.15,
       activityMatch: 0.10,
-      accommodationMatch: 0.10,
+  
       groupSizeMatch: 0.05,
       dateAvailability: 0.05,
     };
@@ -373,7 +373,7 @@ function calculateSimilarityFactors(request: any, pkg: any): any {
     budgetMatch: 0,
     durationMatch: 0,
     activityMatch: 0,
-    accommodationMatch: 0,
+
     groupSizeMatch: 0,
     dateAvailability: 0,
   };
@@ -430,12 +430,7 @@ function calculateSimilarityFactors(request: any, pkg: any): any {
     factors.activityMatch = 50; // Neutral if no preferences specified
   }
 
-  // Accommodation match
-  if (request.preferences.accommodationType.length > 0) {
-    factors.accommodationMatch = pkg.accommodationId ? 80 : 20;
-  } else {
-    factors.accommodationMatch = 50; // Neutral
-  }
+
 
   // Group size match
   if (pkg.maxGuests >= request.tripDetails.groupSize) {
@@ -473,7 +468,7 @@ function createCustomWeights(request: any): any {
     budgetMatch: 0.20,
     durationMatch: 0.15,
     activityMatch: 0.15,
-    accommodationMatch: 0.10,
+
     groupSizeMatch: 0.10,
     dateAvailability: 0.05,
   };
@@ -482,11 +477,11 @@ function createCustomWeights(request: any): any {
   if (request.tripDetails.budgetFlexibility === "rigid") {
     baseWeights.budgetMatch += 0.10;
     baseWeights.activityMatch -= 0.05;
-    baseWeights.accommodationMatch -= 0.05;
+    
   } else if (request.tripDetails.budgetFlexibility === "very_flexible") {
     baseWeights.budgetMatch -= 0.10;
     baseWeights.activityMatch += 0.05;
-    baseWeights.accommodationMatch += 0.05;
+    
   }
 
   // Adjust for date flexibility

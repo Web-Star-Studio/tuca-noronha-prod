@@ -23,8 +23,6 @@ export default function ChatsPage() {
   // Fetch chat rooms based on status
   const allChats = useChatRooms();
   const activeChats = useChatRooms("active");
-  
-  const isLoading = !allChats && !activeChats;
 
   // Filter chats based on search term
   const filterChats = (chats: any[]) => {

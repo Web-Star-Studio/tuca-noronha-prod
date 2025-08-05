@@ -40,7 +40,7 @@ export function useModalCleanup(isOpen: boolean) {
       });
       
       // Forçar reflow
-      body.offsetHeight;
+      void body.offsetHeight;
     }, 300); // Aguardar tempo suficiente para animações do Radix
   }, []);
 
@@ -102,7 +102,7 @@ export function useForceModalCleanup() {
       elements.forEach(element => {
         try {
           element.remove();
-        } catch (e) {
+        } catch {
           // Ignorar erros de elementos já removidos
         }
       });
@@ -118,7 +118,7 @@ export function useForceModalCleanup() {
     });
     
     // Forçar reflow
-    body.offsetHeight;
+    void body.offsetHeight;
   }, []);
 
   return { forceCleanup };

@@ -198,8 +198,7 @@ export function calculateVoucherExpiration(bookingType: string, bookingDate?: st
         return now + (7 * 24 * 60 * 60 * 1000);  // 7 days
       case "vehicle":
         return now + (90 * 24 * 60 * 60 * 1000); // 90 days
-      case "accommodation":
-        return now + (90 * 24 * 60 * 60 * 1000); // 90 days
+
       default:
         return now + (30 * 24 * 60 * 60 * 1000); // 30 days default
     }
@@ -267,8 +266,7 @@ export function getBookingTypeName(bookingType: string): string {
       return "Restaurante";
     case "vehicle":
       return "Veículo";
-    case "accommodation":
-      return "Hospedagem";
+
     default:
       return "Reserva";
   }

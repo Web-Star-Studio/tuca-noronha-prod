@@ -119,7 +119,8 @@ export function useCreateRestaurant() {
   
   return async (restaurantData: Restaurant, partnerId: Id<"users">) => {
     // Remove internal Convex fields that shouldn't be sent to the mutation
-    const { _id, _creationTime, id, creator, ...cleanData } = restaurantData;
+    const { _id: _id_field, _creationTime: _creationTime_field, id: _id_alt, creator: _creator_field, ...cleanData } = restaurantData;
+    void _id_field; void _creationTime_field; void _id_alt; void _creator_field; // Avoid unused variable warnings
     
     // Garantir que o restaurante tenha o partnerId
     const dataWithPartner = {
@@ -134,7 +135,7 @@ export function useCreateRestaurant() {
       const restaurantId = await createMutation(dataWithPartner as any);
       console.log("Restaurant created successfully with ID:", restaurantId);
       return restaurantId;
-    } catch (error) {
+    } catch {
       console.error("Error in createMutation:", error);
       throw error;
     }
@@ -151,7 +152,8 @@ export function useUpdateRestaurant() {
     }
     
     // Remove internal Convex fields that shouldn't be sent to the mutation
-    const { _id, _creationTime, id, creator, ...cleanData } = restaurantData;
+    const { _id: _id_field, _creationTime: _creationTime_field, id: _id_alt, creator: _creator_field, ...cleanData } = restaurantData;
+    void _id_field; void _creationTime_field; void _id_alt; void _creator_field; // Avoid unused variable warnings
     
     const restaurantId = await updateMutation({
       id: restaurantData._id,

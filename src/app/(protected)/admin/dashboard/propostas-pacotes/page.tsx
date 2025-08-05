@@ -10,9 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
-import { PackageProposalCreationForm } from "@/components/dashboard/PackageProposalCreationForm";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { 
@@ -50,7 +49,6 @@ interface ProposalFilters {
 export default function PackageProposalsPage() {
   const { user } = useCurrentUser();
   const [filters, setFilters] = useState<ProposalFilters>({});
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -79,7 +77,6 @@ export default function PackageProposalsPage() {
 
   // Mutations
   const sendProposal = useMutation(api.domains.packageProposals.mutations.sendPackageProposal);
-  const updateProposal = useMutation(api.domains.packageProposals.mutations.updatePackageProposal);
   const deleteProposal = useMutation(api.domains.packageProposals.mutations.deletePackageProposal);
 
   const statusConfig = {
@@ -122,7 +119,7 @@ export default function PackageProposalsPage() {
         customMessage: "Sua proposta personalizada está pronta! Confira todos os detalhes e entre em contato se tiver dúvidas.",
       });
       toast.success("Proposta enviada com sucesso!");
-    } catch (error) {
+    } catch {
       console.error("Error sending proposal:", error);
       toast.error("Erro ao enviar proposta");
     }
@@ -156,7 +153,7 @@ export default function PackageProposalsPage() {
       setShowDeleteDialog(false);
       setSelectedProposal(null);
       setDeleteReason("");
-    } catch (error) {
+    } catch {
       console.error("Error deleting proposal:", error);
       toast.error("Erro ao excluir proposta");
     } finally {
@@ -418,7 +415,6 @@ export default function PackageProposalsPage() {
                   const status = statusConfig[proposal.status as keyof typeof statusConfig];
                   const priority = priorityConfig[proposal.priority as keyof typeof priorityConfig];
                   const isExpired = proposal.validUntil < Date.now();
-                  const IconComponent = status.icon;
 
                   return (
                     <div key={proposal._id} className="border rounded-lg p-4 hover:bg-gray-50">
@@ -643,7 +639,7 @@ export default function PackageProposalsPage() {
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a proposta "{selectedProposal?.title}"?
+              Tem certeza que deseja excluir a proposta &quot;{selectedProposal?.title}&quot;?
               Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>

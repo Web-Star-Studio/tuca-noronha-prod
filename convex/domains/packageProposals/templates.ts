@@ -32,7 +32,6 @@ export const CreatePackageProposalTemplateArgs = v.object({
   summaryTemplate: v.optional(v.string()),
   defaultComponents: v.array(v.object({
     type: v.union(
-      v.literal("accommodation"),
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),
@@ -77,7 +76,6 @@ export const UpdatePackageProposalTemplateArgs = v.object({
   summaryTemplate: v.optional(v.string()),
   defaultComponents: v.optional(v.array(v.object({
     type: v.union(
-      v.literal("accommodation"),
       v.literal("activity"),
       v.literal("event"),
       v.literal("restaurant"),

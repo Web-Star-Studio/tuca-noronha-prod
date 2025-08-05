@@ -54,7 +54,7 @@ export function EmailTestDialog() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "💥 Erro inesperado",
         description: "Não foi possível enviar o email de teste",

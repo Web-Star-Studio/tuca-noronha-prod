@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PenSquare, Trash2, CarFront, AlertCircle } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PenSquare, Trash2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { useVehicles } from "@/lib/services/vehicleService";
-import type { Vehicle } from "@/lib/services/vehicleService";
-import { toast } from "sonner";
+
 import { useOrganization } from "@/lib/providers/organization-context";
 
 type VehicleListProps = {

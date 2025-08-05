@@ -37,9 +37,7 @@ export const getVoucherByConfirmationCode = query({
         case "vehicle":
           booking = await ctx.db.get(voucher.bookingId as any);
           break;
-        case "accommodation":
-          booking = await ctx.db.get(voucher.bookingId as any);
-          break;
+
       }
       
       if (booking?.confirmationCode === confirmationCode) {
@@ -142,15 +140,7 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
         asset = await ctx.db.get(booking.vehicleId);
       }
       break;
-    case "accommodation":
-      booking = await ctx.db
-        .query("accommodationBookings")
-        .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
-        .first();
-      if (booking) {
-        asset = await ctx.db.get(booking.accommodationId);
-      }
-      break;
+
   }
 
   if (!booking || !asset) {
@@ -221,7 +211,7 @@ export const getVoucherByNumber = query({
 export const getVoucherByBooking = query({
   args: { 
     bookingId: v.string(), 
-    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("package"), v.literal("accommodation"))
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("package"))
   },
   handler: async (ctx, { bookingId, bookingType }) => {
     // Find voucher by booking
@@ -770,7 +760,7 @@ export const getVoucherStats = query({
         event: vouchers.filter(v => v.bookingType === "event").length,
         restaurant: vouchers.filter(v => v.bookingType === "restaurant").length,
         vehicle: vouchers.filter(v => v.bookingType === "vehicle").length,
-        accommodation: vouchers.filter(v => v.bookingType === "accommodation").length,
+
       },
     };
 

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Database, Search, Filter, Store, Calendar, Activity, Car, Building2, User,
-  MapPin, Star, DollarSign, TrendingUp, CheckCircle, XCircle, Shield, Eye,
+  Star, TrendingUp, CheckCircle, XCircle, Shield, Eye,
   ExternalLink, MoreHorizontal, Info, AlertTriangle, Package
 } from "lucide-react";
 import {
@@ -27,8 +27,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Id } from "@/../convex/_generated/dataModel";
-import { useRouter } from "next/navigation";
 import Image from 'next/image';
 import { DashboardPageHeader } from "../components";
 
@@ -39,7 +37,6 @@ const assetTypeLabels: Record<string, string> = {
   events: "Evento",
   activities: "Atividade",
   vehicles: "Veículo",
-  accommodations: "Hospedagem",
 };
 
 const assetTypeColors: Record<string, string> = {
@@ -47,7 +44,6 @@ const assetTypeColors: Record<string, string> = {
   events: "bg-blue-100 text-blue-800",
   activities: "bg-green-100 text-green-800",
   vehicles: "bg-purple-100 text-purple-800",
-  accommodations: "bg-pink-100 text-pink-800",
 };
 
 const assetTypeIcons: Record<string, any> = {
@@ -55,7 +51,6 @@ const assetTypeIcons: Record<string, any> = {
   events: Calendar,
   activities: Activity,
   vehicles: Car,
-  accommodations: Building2,
 };
 
 const getAssetIcon = (assetType: string) => {
@@ -390,7 +385,6 @@ const StatusDisplay = ({
 
 export default function AssetsManagementPage() {
   const { user } = useCurrentUser();
-  const router = useRouter();
   const isMobile = useIsMobile();
   const [selectedAssetType, setSelectedAssetType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -417,6 +411,38 @@ export default function AssetsManagementPage() {
   const assetTypeCounts = useAssetTypeCounts();
   const systemStats = useQuery(api.domains.users.queries.getSystemStatistics);
 
+  // Filtrar assets baseado na busca - moved before early return
+  const filteredAssets = useMemo(() => {
+    if (!allAssets) return [];
+    if (!searchTerm) return allAssets;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return allAssets.filter((asset) => (
+      (asset.name || asset.title || "").toLowerCase().includes(searchLower) ||
+      asset.partnerName?.toLowerCase().includes(searchLower) ||
+      asset.partnerEmail?.toLowerCase().includes(searchLower) ||
+      assetTypeLabels[asset.assetType]?.toLowerCase().includes(searchLower)
+    ));
+  }, [allAssets, searchTerm]);
+
+  // Optimized asset statistics using memoization - moved before early return
+  const assetStats = useMemo(() => {
+    if (!filteredAssets || filteredAssets.length === 0) return null;
+
+    const withBookings = filteredAssets.filter(a => (a.bookingsCount || 0) > 0).length;
+    const avgRating = allAssets && allAssets.length > 0 
+      ? allAssets.reduce((sum, a) => sum + (a.rating || 0), 0) / allAssets.length
+      : 0;
+
+    return {
+      total: totalCount,
+      active: activeCount,
+      inactive: inactiveCount,
+      withBookings,
+      avgRating,
+    };
+  }, [allAssets, filteredAssets, totalCount, activeCount, inactiveCount]);
+
   if (user?.role !== "master") {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -428,37 +454,6 @@ export default function AssetsManagementPage() {
       </div>
     );
   }
-
-  // Filtrar assets baseado na busca
-  const filteredAssets = useMemo(() => allAssets?.filter((asset) => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (asset.name || asset.title || "").toLowerCase().includes(searchLower) ||
-      asset.partnerName?.toLowerCase().includes(searchLower) ||
-      asset.partnerEmail?.toLowerCase().includes(searchLower) ||
-      assetTypeLabels[asset.assetType]?.toLowerCase().includes(searchLower)
-    );
-  }) || [], [allAssets, searchTerm]);
-
-  // Optimized asset statistics using memoization
-  const assetStats = useMemo(() => {
-    if (!allAssets || allAssets.length === 0) return null;
-
-    const withBookings = allAssets.filter(a => (a.bookingsCount || 0) > 0).length;
-    const avgRating = allAssets.length > 0 
-      ? allAssets.reduce((sum, a) => sum + (a.rating || 0), 0) / allAssets.length
-      : 0;
-
-    return {
-      total: totalCount,
-      active: activeCount,
-      inactive: inactiveCount,
-      withBookings,
-      avgRating,
-    };
-  }, [allAssets, totalCount, activeCount, inactiveCount]);
 
   // Handler for viewing asset details
   const handleViewAssetDetails = (asset: Asset) => {
@@ -473,7 +468,7 @@ export default function AssetsManagementPage() {
       events: `/eventos/${asset._id}`,
       activities: `/atividades/${asset._id}`,
       vehicles: `/veiculos/${asset._id}`,
-      accommodations: `/hospedagens/${asset.slug}`
+  
     };
 
     const route = routes[asset.assetType as keyof typeof routes];
@@ -551,7 +546,7 @@ export default function AssetsManagementPage() {
               <Building2 className="h-4 w-4 text-pink-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-pink-600">{assetTypeCounts.accommodations}</div>
+              
             </CardContent>
           </Card>
         </div>
@@ -647,7 +642,7 @@ export default function AssetsManagementPage() {
             <SelectItem value="events">Eventos</SelectItem>
             <SelectItem value="activities">Atividades</SelectItem>
             <SelectItem value="vehicles">Veículos</SelectItem>
-            <SelectItem value="accommodations">Hospedagens</SelectItem>
+            
           </SelectContent>
         </Select>
 

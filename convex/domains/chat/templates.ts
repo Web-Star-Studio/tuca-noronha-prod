@@ -21,7 +21,7 @@ export const MessageTemplateArgs = v.object({
     v.literal("events"), 
     v.literal("restaurants"),
     v.literal("vehicles"),
-    v.literal("accommodations"),
+    
     v.literal("packages"),
     v.literal("general")
   )),
@@ -52,7 +52,7 @@ export const UpdateTemplateArgs = v.object({
     v.literal("events"), 
     v.literal("restaurants"),
     v.literal("vehicles"),
-    v.literal("accommodations"),
+    
     v.literal("packages"),
     v.literal("general")
   )),
@@ -80,7 +80,7 @@ export const ListTemplatesArgs = v.object({
     v.literal("events"), 
     v.literal("restaurants"),
     v.literal("vehicles"),
-    v.literal("accommodations"),
+    
     v.literal("packages"),
     v.literal("general")
   )),

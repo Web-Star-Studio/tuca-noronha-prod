@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { CarFront, Plus, Loader2, PenSquare, Trash2, Calendar, DollarSign, Filter } from "lucide-react";
+import { CarFront, Plus, Loader2, Trash2, Calendar, DollarSign, Filter } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,7 +72,7 @@ export default function VehiclesPage() {
       await deleteVehicle(vehicleToRemove);
       toast.success("Veículo removido com sucesso");
       setConfirmDialogOpen(false);
-    } catch (error) {
+    } catch {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "Erro ao remover veículo");
     } finally {

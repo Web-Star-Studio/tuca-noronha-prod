@@ -8,7 +8,7 @@
 import React from 'react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
-import { buttonStyles } from '@/lib/ui-config';
+
 import { Heart, Star, Edit, Trash2, ExternalLink } from 'lucide-react';
 
 export function ButtonExamples() {

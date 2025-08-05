@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { useAsset } from "@/lib/providers/asset-context";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,25 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Store,
-  Calendar,
-  Activity,
-  Car,
-  Building2,
-  MapPin,
-  Star,
-  Users,
-  ChevronRight,
-} from "lucide-react";
-import { ui } from "@/lib/ui-config";
+import { Store, Calendar, Activity, Car, Building2,  } from "lucide-react";
+
 
 const assetTypeLabels: Record<string, string> = {
   restaurants: "Restaurante",
   events: "Evento", 
   activities: "Atividade",
   vehicles: "Veículo",
-  accommodations: "Hospedagem",
 };
 
 const assetTypeColors: Record<string, string> = {
@@ -38,7 +25,6 @@ const assetTypeColors: Record<string, string> = {
   events: "bg-blue-100 text-blue-800",
   activities: "bg-green-100 text-green-800",
   vehicles: "bg-purple-100 text-purple-800",
-  accommodations: "bg-pink-100 text-pink-800",
 };
 
 const assetTypeIcons: Record<string, any> = {
@@ -46,7 +32,6 @@ const assetTypeIcons: Record<string, any> = {
   events: Calendar,
   activities: Activity,
   vehicles: Car,
-  accommodations: Building2,
 };
 
 interface AssetSelectorProps {

@@ -1,7 +1,6 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
   BarChart3, 
@@ -10,7 +9,6 @@ import {
   Building2,
   Calendar,
   Database,
-  Activity,
   MessageSquare,
   ArrowUp,
   ArrowDown,
@@ -29,8 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { DashboardPageHeader } from "../components"
 
 type MetricCardProps = {
@@ -69,7 +65,6 @@ function MetricCard({ title, value, change, icon: Icon, description, color }: Me
   )
 }
 
-type TimeRange = "7d" | "30d" | "90d" | "1y";
 
 export default function MetricasPage() {
   const [timeRange, setTimeRange] = useState("30d")

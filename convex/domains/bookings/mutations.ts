@@ -19,12 +19,12 @@ import {
   createEventBookingValidator,
   createRestaurantReservationValidator,
   createVehicleBookingValidator,
-  createAccommodationBookingValidator,
+
   updateActivityBookingValidator,
   updateEventBookingValidator,
   updateRestaurantReservationValidator,
   updateVehicleBookingValidator,
-  updateAccommodationBookingValidator
+
 } from "./types";
 
 const assetInfoValidator = v.object({
@@ -695,124 +695,7 @@ export const createVehicleBooking = mutation({
   },
 });
 
-/**
- * Create accommodation booking
- */
-export const createAccommodationBooking = mutation({
-  args: createAccommodationBookingValidator,
-  returns: v.object({
-    bookingId: v.id("accommodationBookings"),
-    confirmationCode: v.string(),
-    totalPrice: v.number(),
-  }),
-  handler: async (ctx, args) => {
-    // Get current user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Usuário não autenticado");
-    }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user) {
-      throw new Error("Usuário não encontrado");
-    }
-
-    // Definir informações do cliente usando dados do usuário caso não fornecidas
-    const customerInfo = args.customerInfo ?? {
-      name: user.name || identity.name || "",
-      email: user.email || identity.email || "",
-      phone: user.phoneNumber || "",
-    };
-
-    // Validar informações do cliente
-    if (!isValidEmail(customerInfo.email)) {
-      throw new Error("Email inválido");
-    }
-    if (!isValidPhone(customerInfo.phone)) {
-      throw new Error("Telefone inválido");
-    }
-
-    // Substituir args.customerInfo por customerInfo consolidado
-    args.customerInfo = customerInfo as any;
-
-    // Get accommodation
-    const accommodation = await ctx.db.get(args.accommodationId);
-    if (!accommodation) {
-      throw new Error("Hospedagem não encontrada");
-    }
-
-    if (!accommodation.isActive) {
-      throw new Error("Hospedagem não está disponível");
-    }
-
-    // Check guest limits
-    if (args.guestCount > accommodation.maxGuests) {
-      throw new Error("Máximo de " + accommodation.maxGuests + " hóspedes");
-    }
-
-    // Calculate total price (simplified - in real implementation, consider nights, season, etc.)
-    const calculatedPrice = accommodation.pricePerNight * calculateNights(args.checkInDate, args.checkOutDate);
-    // Use finalAmount if coupon is applied, otherwise use calculated price
-    const totalPrice = args.finalAmount ?? calculatedPrice;
-
-    // Generate confirmation code
-    const confirmationCode = generateConfirmationCode(args.checkInDate, customerInfo.name);
-
-    // Determine initial booking status
-    let initialStatus: string = BOOKING_STATUS.DRAFT;
-    let initialPaymentStatus: string = PAYMENT_STATUS.PENDING;
-    
-    if (totalPrice === 0) {
-      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
-      initialPaymentStatus = PAYMENT_STATUS.NOT_REQUIRED;
-    } else if (accommodation.acceptsOnlinePayment && accommodation.requiresUpfrontPayment) {
-      initialStatus = BOOKING_STATUS.DRAFT;
-      initialPaymentStatus = PAYMENT_STATUS.PENDING;
-    } else if (!accommodation.requiresUpfrontPayment) {
-      initialStatus = BOOKING_STATUS.AWAITING_CONFIRMATION;
-      initialPaymentStatus = PAYMENT_STATUS.PENDING;
-    }
-
-    // Create booking
-    const bookingId = await ctx.db.insert("accommodationBookings", {
-      accommodationId: args.accommodationId,
-      userId: user._id,
-      checkInDate: args.checkInDate,
-      checkOutDate: args.checkOutDate,
-      guests: BigInt(args.guestCount),
-      totalPrice,
-      status: initialStatus,
-      paymentStatus: initialPaymentStatus,
-      confirmationCode,
-      customerInfo,
-      specialRequests: args.specialRequests,
-      couponCode: args.couponCode,
-      discountAmount: args.discountAmount,
-      finalAmount: args.finalAmount,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    return {
-      bookingId,
-      confirmationCode,
-      totalPrice,
-    };
-  },
-});
-
-// Helper function to calculate nights between dates
-function calculateNights(checkInDate: string, checkOutDate: string): number {
-  const checkIn = new Date(checkInDate);
-  const checkOut = new Date(checkOutDate);
-  const timeDiff = checkOut.getTime() - checkIn.getTime();
-  const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
-  return Math.max(1, nights); // Minimum 1 night
-}
 
 /**
  * Update activity booking status
@@ -1472,107 +1355,6 @@ export const confirmVehicleBooking = mutation({
   },
 });
 
-/**
- * Confirm accommodation booking (Partner only)
- */
-export const confirmAccommodationBooking = mutation({
-  args: {
-    bookingId: v.id("accommodationBookings"),
-    partnerNotes: v.optional(v.string()),
-    assetInfo: assetInfoValidator,
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Usuário não autenticado");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user) {
-      throw new Error("Usuário não encontrado");
-    }
-
-    const booking = await ctx.db.get(args.bookingId);
-    if (!booking) {
-      throw new Error("Reserva não encontrada");
-    }
-
-    // Get accommodation to verify ownership
-    const accommodation = await ctx.db.get(booking.accommodationId);
-    if (!accommodation) {
-      throw new Error("Hospedagem não encontrada");
-    }
-
-    // Authorization check
-    const isMaster = user.role === "master";
-    const isPartner = user._id === accommodation.partnerId;
-
-    if (!isMaster && !isPartner) {
-      throw new Error("Não autorizado a confirmar esta reserva");
-    }
-
-    if (booking.status === BOOKING_STATUS.CONFIRMED) {
-      throw new Error("Reserva já está confirmada");
-    }
-
-    // Update booking status
-    await ctx.db.patch(args.bookingId, {
-      status: BOOKING_STATUS.CONFIRMED,
-      partnerNotes: args.partnerNotes,
-      updatedAt: Date.now(),
-    });
-
-    // Generate voucher
-    const voucherId = await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
-      bookingId: args.bookingId,
-      bookingType: "accommodation",
-      partnerId: accommodation.partnerId,
-      customerId: booking.userId,
-    });
-
-    // Send booking confirmation email
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      bookingId: args.bookingId,
-      bookingType: "accommodation",
-      assetName: accommodation.name,
-      confirmationCode: booking.confirmationCode,
-      customerEmail: booking.customerInfo.email,
-      customerName: booking.customerInfo.name,
-      partnerName: user.name,
-    });
-
-    // Get voucher details for email
-    const voucher: any = await ctx.db.get(voucherId);
-    if (voucher) {
-      // Send voucher email with PDF attachment
-      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
-        customerEmail: booking.customerInfo.email,
-        customerName: booking.customerInfo.name,
-        assetName: accommodation.name,
-        bookingType: "accommodation",
-        confirmationCode: booking.confirmationCode,
-        voucherNumber: voucher.voucherNumber,
-        bookingDate: booking.checkInDate + " - " + booking.checkOutDate,
-        partnerName: user.name,
-        attachPDF: true,
-        bookingDetails: {
-          checkIn: booking.checkInDate,
-          checkOut: booking.checkOutDate,
-          guests: booking.guests,
-          totalPrice: booking.totalPrice,
-        },
-      });
-    }
-
-    return null;
-  },
-});
-
 // Helper function to check employee permissions
 async function hasEmployeePermission(
   ctx: MutationCtx, 
@@ -1776,78 +1558,6 @@ export const seedTestReservations = mutation({
       });
       reservationsCreated++;
 
-      // Create test accommodation booking
-      const accommodationId = await ctx.db.insert("accommodations", {
-        name: "Pousada Mar Azul",
-        slug: "pousada-mar-azul",
-        description: "Pousada aconchegante com vista para o mar",
-        description_long: "Localizada na Praia do Sueste, oferece quartos confortáveis com vista panorâmica para o oceano",
-        address: {
-          street: "Estrada da Praia do Sueste, 100",
-          city: "Fernando de Noronha",
-          state: "PE",
-          zipCode: "53990-000",
-          neighborhood: "Praia do Sueste",
-          coordinates: { latitude: -3.8536, longitude: -32.4297 },
-        },
-        phone: "+55 81 3619-5678",
-        type: "pousada",
-        checkInTime: "14:00",
-        checkOutTime: "12:00",
-        pricePerNight: 320.0,
-        currency: "BRL",
-        totalRooms: BigInt(12),
-        maxGuests: BigInt(4),
-        bedrooms: BigInt(2),
-        bathrooms: BigInt(1),
-        beds: { single: BigInt(0), double: BigInt(2), queen: BigInt(0), king: BigInt(0) },
-        area: 45,
-        amenities: ["wifi", "ar-condicionado", "cafe-da-manha", "vista-mar"],
-        houseRules: ["Não permitido fumar", "Não permitido festas"],
-        cancellationPolicy: "Cancelamento gratuito até 24h antes",
-        petsAllowed: false,
-        smokingAllowed: false,
-        eventsAllowed: false,
-        minimumStay: BigInt(2),
-        mainImage: "/images/pousada-mar-azul.jpg",
-        galleryImages: ["/images/pousada-mar-azul-1.jpg"],
-        rating: {
-          overall: 4.6,
-          cleanliness: 4.7,
-          location: 4.8,
-          checkin: 4.5,
-          value: 4.4,
-          accuracy: 4.6,
-          communication: 4.5,
-          totalReviews: BigInt(89),
-        },
-        tags: ["vista-mar", "aconchegante", "cafe-da-manha"],
-        isActive: true,
-        isFeatured: true,
-        partnerId: currentUser._id,
-      });
-
-      const checkInDate = new Date(nextMonth);
-      const checkOutDate = new Date(nextMonth + 3 * 24 * 60 * 60 * 1000); // 3 days later
-
-      await ctx.db.insert("accommodationBookings", {
-        accommodationId,
-        userId: travelerUser._id,
-        checkInDate: checkInDate.toISOString().split('T')[0],
-        checkOutDate: checkOutDate.toISOString().split('T')[0],
-        guests: BigInt(2),
-        totalPrice: 960.0, // 3 nights * 320
-        status: "confirmed",
-        confirmationCode: "HOTEL001",
-        customerInfo: {
-          name: travelerUser.name || "Usuário",
-          email: travelerUser.email || args.travelerEmail,
-          phone: travelerUser.phoneNumber || "+55 00 00000-0000",
-        },
-        createdAt: now,
-        updatedAt: now,
-      });
-      reservationsCreated++;
 
       return {
         success: true,
@@ -1938,13 +1648,6 @@ export const cancelBooking = mutation({
           });
           break;
 
-        case "accommodation":
-          await ctx.runMutation(internal.domains.bookings.mutations.cancelAccommodationBookingInternal, {
-            bookingId: args.reservationId as Id<"accommodationBookings">,
-            userId: user._id,
-            reason: args.reason,
-          });
-          break;
 
         default:
           throw new Error("Tipo de reserva não reconhecido");
@@ -2189,63 +1892,6 @@ export const cancelVehicleBookingInternal = mutation({
 /**
  * Internal function to cancel accommodation booking with user permission validation
  */
-export const cancelAccommodationBookingInternal = mutation({
-  args: {
-    bookingId: v.id("accommodationBookings"),
-    userId: v.id("users"),
-    reason: v.optional(v.string()),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const booking = await ctx.db.get(args.bookingId);
-    if (!booking) {
-      throw new Error("Reserva não encontrada");
-    }
-
-    // Verify that the user owns this booking
-    if (booking.userId !== args.userId) {
-      throw new Error("Você não tem permissão para cancelar esta reserva");
-    }
-
-    if (booking.status === BOOKING_STATUS.CANCELED) {
-      throw new Error("Reserva já foi cancelada");
-    }
-
-    const accommodation = await ctx.db.get(booking.accommodationId);
-    if (!accommodation) {
-      throw new Error("Hospedagem não encontrada");
-    }
-
-    await ctx.db.patch(args.bookingId, {
-      status: BOOKING_STATUS.CANCELED,
-      updatedAt: Date.now(),
-    });
-
-    // Schedule cancellation notification
-    await ctx.scheduler.runAfter(0, internal.domains.notifications.actions.sendBookingCancellationNotification, {
-      userId: booking.userId,
-      bookingId: booking._id,
-      bookingType: "accommodation",
-      assetName: accommodation.name,
-      confirmationCode: booking.confirmationCode,
-      customerEmail: booking.customerInfo.email,
-      customerName: booking.customerInfo.name,
-      reason: args.reason,
-    });
-
-    // Send cancellation email to customer
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingCancelledEmail, {
-      customerEmail: booking.customerInfo.email,
-      customerName: booking.customerInfo.name,
-      assetName: accommodation.name,
-      bookingType: "accommodation",
-      confirmationCode: booking.confirmationCode,
-      reason: args.reason,
-    });
-
-    return null;
-  },
-});
 
 /**
  * Update booking status after payment initiation
@@ -2271,10 +1917,6 @@ export const updateBookingPaymentInitiated = mutation({
       case "event":
         booking = await ctx.db.get(args.bookingId as Id<"eventBookings">);
         tableName = "eventBookings";
-        break;
-      case "accommodation":
-        booking = await ctx.db.get(args.bookingId as Id<"accommodationBookings">);
-        tableName = "accommodationBookings";
         break;
       case "vehicle":
         booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
@@ -2331,9 +1973,6 @@ export const updateBookingStatus = mutation({
         break;
       case "event":
         booking = await ctx.db.get(args.bookingId as Id<"eventBookings">);
-        break;
-      case "accommodation":
-        booking = await ctx.db.get(args.bookingId as Id<"accommodationBookings">);
         break;
       case "vehicle":
         booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
@@ -2405,11 +2044,6 @@ export const updateBookingPaymentSuccess = mutation({
         .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
         .first();
         
-      const accommodationBooking = await ctx.db
-        .query("accommodationBookings")
-        .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
-        .first();
-        
       const vehicleBooking = await ctx.db
         .query("vehicleBookings")
         .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
@@ -2420,7 +2054,7 @@ export const updateBookingPaymentSuccess = mutation({
         .filter(q => q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId))
         .first();
         
-      booking = activityBooking || eventBooking || accommodationBooking || vehicleBooking || restaurantReservation;
+      booking = activityBooking || eventBooking || vehicleBooking || restaurantReservation;
     }
     // Or find by booking ID if provided
     else if (args.bookingId && args.bookingType) {
@@ -2430,9 +2064,6 @@ export const updateBookingPaymentSuccess = mutation({
           break;
         case "event":
           booking = await ctx.db.get(args.bookingId as Id<"eventBookings">);
-          break;
-        case "accommodation":
-          booking = await ctx.db.get(args.bookingId as Id<"accommodationBookings">);
           break;
         case "vehicle":
           booking = await ctx.db.get(args.bookingId as Id<"vehicleBookings">);
@@ -2459,7 +2090,6 @@ export const updateBookingPaymentSuccess = mutation({
     const bookingType = args.bookingType || 
       (booking._id.startsWith("activityBookings") ? "activity" :
        booking._id.startsWith("eventBookings") ? "event" :
-       booking._id.startsWith("accommodationBookings") ? "accommodation" :
        booking._id.startsWith("vehicleBookings") ? "vehicle" :
        booking._id.startsWith("restaurantReservations") ? "restaurant" : "unknown");
 
@@ -2773,25 +2403,6 @@ export const updateBookingStatusesByDate = mutation({
       }
     }
 
-    // Accommodations - check check-in date
-    const confirmedAccommodationBookings = await ctx.db
-      .query("accommodationBookings")
-      .filter(q => q.eq(q.field("status"), BOOKING_STATUS.CONFIRMED))
-      .collect();
-
-    for (const booking of confirmedAccommodationBookings) {
-      if (booking.checkInDate <= todayStr && booking.checkOutDate > todayStr) {
-        await ctx.db.patch(booking._id, {
-          status: BOOKING_STATUS.IN_PROGRESS,
-          updatedAt: Date.now(),
-        });
-      } else if (booking.checkOutDate <= todayStr) {
-        await ctx.db.patch(booking._id, {
-          status: BOOKING_STATUS.COMPLETED,
-          updatedAt: Date.now(),
-        });
-      }
-    }
   },
 });
 

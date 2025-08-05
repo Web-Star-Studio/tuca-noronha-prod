@@ -7,7 +7,7 @@ import { api } from '../../../../convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, MapPin, Users, Download, ArrowLeft, Loader2, FileText } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Download, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from 'sonner';
 import { VoucherDownloadButton } from '@/components/vouchers/VoucherDownloadButton';
 import { Id } from 'convex/_generated/dataModel';
@@ -170,7 +170,7 @@ export default function BookingSuccessPage() {
               </p>
               <p className="text-sm text-gray-600 mb-6">
                 Não se preocupe! Se o pagamento foi processado, você receberá um email de confirmação.
-                Você também pode verificar o status em "Minhas Reservas".
+                Você também pode verificar o status em &quot;Minhas Reservas&quot;.
               </p>
               <div className="space-y-3">
                 <Button onClick={handleViewBookings} className="w-full">
@@ -345,8 +345,8 @@ export default function BookingSuccessPage() {
           
           <Button 
             onClick={handleBackToHome} 
-            variant="outline" 
-            className="w-full"
+            variant="default" 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar ao Início
@@ -363,7 +363,7 @@ export default function BookingSuccessPage() {
                 <p>• <strong>Seu voucher está disponível acima</strong> - apresente no local do serviço</p>
               )}
               <p>• O parceiro pode entrar em contato para confirmar detalhes</p>
-              <p>• Você pode acompanhar o status na seção "Minhas Reservas"</p>
+                              <p>• Você pode acompanhar o status na seção &quot;Minhas Reservas&quot;</p>
               <p>• Em caso de dúvidas, entre em contato conosco</p>
             </div>
           </CardContent>

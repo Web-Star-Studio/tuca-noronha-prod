@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "../ui/button";
 import { Filter, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ui } from "@/lib/ui-config";
+
 
 interface TourFiltersProps {
   categories: string[];
@@ -40,7 +40,7 @@ export default function ActivitiesFilter({
   setMaxPrice,
   durationFilter,
   toggleDurationFilter,
-  applyFilters,
+
   resetFilters,
   isFilterOpen,
   setIsFilterOpen,

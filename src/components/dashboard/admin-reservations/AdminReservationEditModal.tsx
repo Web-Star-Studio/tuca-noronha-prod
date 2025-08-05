@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, DollarSign, FileText, CreditCard, User } from "lucide-react";
+import { CalendarIcon, DollarSign, User } from "lucide-react";
 
 interface AdminReservationEditModalProps {
   reservation: any;
@@ -84,7 +84,7 @@ export function AdminReservationEditModal({
       toast.success("Reserva atualizada com sucesso!");
       onUpdate();
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       console.error("Error updating reservation:", error);
       toast.error("Erro ao atualizar reserva");
     } finally {

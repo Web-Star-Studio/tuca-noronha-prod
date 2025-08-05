@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef<
       body.removeAttribute('data-radix-scroll-lock-disabled');
       
       // Forçar reflow para garantir que as mudanças sejam aplicadas
-      body.offsetHeight;
+      void body.offsetHeight;
     };
   }, []);
 

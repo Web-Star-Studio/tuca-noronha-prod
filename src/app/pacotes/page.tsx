@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Send, MapPin, Calendar, Users, DollarSign, CheckCircle, Sparkles, Heart, Star, Globe, Phone, Mail, User, Briefcase, Clock, Target, Car, Camera, Utensils, Waves, TreePine, Fish, Palette, Bike, Sunset, Ship, Sun, Zap, Mountain } from "lucide-react"
+import { Send, MapPin, CheckCircle, Star, User, Target, Car, Waves, Fish, Palette, Bike, Sunset, Ship, Sun, Zap, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -237,7 +237,7 @@ export default function PackagesPage() {
       setIsSubmitted(true)
       toast.success("Solicitação enviada com sucesso!")
 
-    } catch (error) {
+    } catch {
       console.error("Erro ao enviar solicitação:", error)
       toast.error("Erro ao enviar solicitação. Tente novamente.")
     } finally {
@@ -313,7 +313,7 @@ export default function PackagesPage() {
                       Acompanhar Solicitação
                     </Link>
                   </Button>
-                  <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Link href="/">
                       <Car className="w-4 h-4 mr-2" />
                       Voltar ao Início
@@ -857,7 +857,7 @@ export default function PackagesPage() {
                     Atividades de Interesse
                   </Label>
                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {activityOptions.map((activity, index) => (
+                    {activityOptions.map((activity) => (
                       <div
                         key={activity.id}
                         className={cn(

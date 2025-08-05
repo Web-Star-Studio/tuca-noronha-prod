@@ -86,7 +86,7 @@ export function useCouponValidation({
       });
 
       return result;
-    } catch (error) {
+    } catch {
       setValidationResult({
         isValid: false,
         isLoading: false,
@@ -195,7 +195,7 @@ export function useMultipleCouponsValidation({
             validCoupons.push(result.coupon);
             calculatedDiscount += result.coupon.discountAmount;
           }
-        } catch (error) {
+        } catch {
           results[code] = {
             isValid: false,
             isLoading: false,
@@ -231,7 +231,7 @@ export function useMultipleCouponsValidation({
       setFinalAmount(Math.max(0, (orderValue || 0) - calculatedDiscount));
       setConflicts(newConflicts);
 
-    } catch (error) {
+    } catch {
       console.error("Erro ao validar cupons:", error);
     } finally {
       setIsLoading(false);
@@ -271,11 +271,11 @@ export function useMultipleCouponsValidation({
   }, [validateAllCoupons]);
 
   const validCoupons = Object.entries(validationResults)
-    .filter(([_, result]) => result.isValid)
+    .filter(([, result]) => result.isValid)
     .map(([code, result]) => ({ code, ...result }));
 
   const invalidCoupons = Object.entries(validationResults)
-    .filter(([_, result]) => !result.isValid)
+    .filter(([, result]) => !result.isValid)
     .map(([code, result]) => ({ code, ...result }));
 
   return {

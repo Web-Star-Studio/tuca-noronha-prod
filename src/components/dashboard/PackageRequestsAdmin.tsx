@@ -4,40 +4,17 @@ import React, { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { 
-  Calendar, 
-  Users, 
-  MapPin, 
-  DollarSign, 
-  Eye, 
-  Edit, 
-  BarChart3,
-  Filter,
-  Mail,
-  Phone,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Clock
-} from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, MapPin, DollarSign, Eye, Edit, Filter, Mail, ChevronLeft, ChevronRight, FileText, Clock } from "lucide-react";
 import { 
   STATUS_LABELS, 
   STATUS_COLORS,
-  type PackageRequestSummary,
-  type PackageRequest
+  // PackageRequestSummary removido (não utilizado)
+  // PackageRequest removido (não utilizado)
 } from "../../../convex/domains/packages/types";
 import { Id } from "@/../convex/_generated/dataModel";
 import PackageRequestDetailsModal from "./PackageRequestDetailsModal";
@@ -122,7 +99,7 @@ export default function PackageRequestsAdmin() {
       });
       setIsUpdateDialogOpen(false);
       setUpdateForm({ status: "", adminNotes: "", proposalDetails: "" });
-    } catch (error) {
+    } catch {
       console.error("Erro ao atualizar solicitação:", error);
       alert("Erro ao atualizar solicitação");
     }

@@ -293,13 +293,7 @@ export const getAdminReservationById = query({
           assetData = vehicle;
         }
         break;
-      case "accommodations":
-        const accommodation = await ctx.db.get(reservation.assetId as Id<"accommodations">);
-        if (accommodation) {
-          assetName = accommodation.name;
-          assetData = accommodation;
-        }
-        break;
+
     }
 
     // Get traveler information
@@ -325,12 +319,8 @@ export const getAdminReservationById = query({
       totalAmount: reservation.totalAmount,
       // Common date fields for the success page
       date: startDate ? new Date(startDate).toISOString() : undefined,
-      checkIn: reservation.assetType === "accommodations" && startDate 
-        ? new Date(startDate).toISOString() 
-        : undefined,
-      checkOut: reservation.assetType === "accommodations" && endDate
-        ? new Date(endDate).toISOString()
-        : undefined,
+      checkIn: undefined,
+      checkOut: undefined,
       participants: reservation.reservationData.assetSpecific?.participants,
       guests: reservation.reservationData.guests,
       partySize: reservation.reservationData.assetSpecific?.guests,
@@ -645,8 +635,7 @@ export const listAssetsForAdminReservation = query({
       v.literal("activities"),
       v.literal("events"),
       v.literal("restaurants"),
-      v.literal("vehicles"),
-      v.literal("accommodations")
+      v.literal("vehicles")
     ),
     searchTerm: v.optional(v.string()),
     paginationOpts: paginationOptsValidator,
@@ -714,19 +703,7 @@ export const listAssetsForAdminReservation = query({
         }
         return await query.order("desc").paginate(paginationOpts);
       }
-      case "accommodations": {
-        let query = ctx.db.query("accommodations").withIndex("active_accommodations", (q) => q.eq("isActive", true));
-        if (searchTerm) {
-          query = query.filter((q) => 
-            q.or(
-              q.eq(q.field("name"), searchTerm),
-              q.eq(q.field("description"), searchTerm),
-              q.eq(q.field("type"), searchTerm)
-            )
-          );
-        }
-        return await query.order("desc").paginate(paginationOpts);
-      }
+
       default:
         // Should be unreachable due to validator
         return { page: [], isDone: true, continueCursor: null };
@@ -812,15 +789,7 @@ export const getUserAdminReservations = query({
                 `${restaurant.address.street}, ${restaurant.address.neighborhood}` : "";
             }
             break;
-          case "accommodations":
-            const accommodation = await ctx.db.get(reservation.assetId as Id<"accommodations">);
-            if (accommodation) {
-              assetName = accommodation.name;
-              assetImageUrl = accommodation.mainImage || "";
-              assetLocation = accommodation.address ? 
-                `${accommodation.address.street}, ${accommodation.address.neighborhood}` : "";
-            }
-            break;
+
           case "vehicles":
             const vehicle = await ctx.db.get(reservation.assetId as Id<"vehicles">);
             if (vehicle) {

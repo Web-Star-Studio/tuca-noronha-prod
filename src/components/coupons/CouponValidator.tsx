@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, X, AlertCircle, Tag, Percent, Calendar, Users } from "lucide-react";
+import { Check, X, AlertCircle, Tag, Percent, Calendar } from "lucide-react";
 import { useCouponValidation, useMultipleCouponsValidation } from "@/hooks/useCouponValidation";
 import { toast } from "@/hooks/use-toast";
 
@@ -37,11 +37,12 @@ export default function CouponValidator({
   showOrderSummary = true,
 }: CouponValidatorProps) {
   const [isApplied, setIsApplied] = useState(false);
+  const [lastValidationAttempt, setLastValidationAttempt] = useState<string | null>(null);
   
   const {
     couponCode,
     setCouponCode,
-    validationResult,
+    // validationResult removido (não utilizado)
     validateCoupon,
     clearValidation,
     isLoading,
@@ -57,6 +58,18 @@ export default function CouponValidator({
     autoValidate: true,
   });
 
+  // Mostrar toast quando houver erro de validação (apenas para novas tentativas)
+  useEffect(() => {
+    if (!isLoading && message && !isValid && couponCode && couponCode !== lastValidationAttempt) {
+      toast({
+        title: "Cupom não encontrado",
+        description: message,
+        variant: "destructive",
+      });
+      setLastValidationAttempt(couponCode);
+    }
+  }, [isLoading, message, isValid, couponCode, lastValidationAttempt]);
+
   const handleApplyCoupon = async () => {
     if (!isValid || !coupon) return;
 
@@ -67,7 +80,7 @@ export default function CouponValidator({
         title: "Cupom aplicado!",
         description: `Desconto de R$ ${coupon.discountAmount.toFixed(2)} aplicado.`,
       });
-    } catch (error) {
+    } catch {
       setIsApplied(false);
       toast({
         title: "Erro",
@@ -80,6 +93,7 @@ export default function CouponValidator({
   const handleRemoveCoupon = () => {
     setIsApplied(false);
     clearValidation();
+    setLastValidationAttempt(null); // Reset para permitir nova validação
     onCouponRemoved?.();
     toast({
       title: "Cupom removido",
@@ -150,18 +164,7 @@ export default function CouponValidator({
           </div>
         )}
 
-        {!isLoading && message && (
-          <Alert variant={isValid ? "default" : "destructive"}>
-            <div className="flex items-center gap-2">
-              {isValid ? (
-                <Check className="text-green-600" />
-              ) : (
-                <X className="text-red-600" />
-              )}
-              <AlertDescription>{message}</AlertDescription>
-            </div>
-          </Alert>
-        )}
+
 
         {error && (
           <Alert variant="destructive">
@@ -280,7 +283,7 @@ export function MultipleCouponValidator({
     finalAmount,
     conflicts,
     validCoupons,
-    invalidCoupons,
+    // invalidCoupons removido (não utilizado)
     hasValidCoupons,
     hasConflicts,
   } = useMultipleCouponsValidation({

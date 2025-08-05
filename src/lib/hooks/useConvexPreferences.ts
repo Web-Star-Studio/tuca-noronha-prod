@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useUser } from '@clerk/nextjs';
-import type { Id } from '../../../convex/_generated/dataModel';
 import { toast } from 'sonner';
 
 export type TravelPreferences = {
@@ -38,8 +37,8 @@ export type SmartPreferences = {
 // Função para converter SmartPreferences para TravelPreferences
 function convertSmartToTravelPreferences(smartPrefs: SmartPreferences): TravelPreferences {
   // Mapear moodTags e experienceGoals para preferências específicas
-  const accommodation = smartPrefs.personalityProfile.luxuryPreference > 70 ? 'resort' :
-                       smartPrefs.personalityProfile.luxuryPreference > 40 ? 'pousada' : 'casa';
+  const accommodation = smartPrefs.personalityProfile.luxuryPreference > 70 ? 'premium' :
+                       smartPrefs.personalityProfile.luxuryPreference > 40 ? 'confortavel' : 'economico';
                        
   const dining: string[] = [];
   if (smartPrefs.moodTags.includes('tranquil')) dining.push('frutos_mar');

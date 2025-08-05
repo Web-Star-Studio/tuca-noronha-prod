@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, RefreshCw, Target, MapPin, DollarSign, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,26 +15,24 @@ export default function AIRecommendationsSection() {
   const { 
     recommendations, 
     isLoading, 
-    personalizedMessage, 
-    isUsingAI,
-    generateRecommendations,
-    assetsStats
+    personalizedMessage,
+    generateRecommendations
   } = useAIRecommendations();
 
   useEffect(() => {
     if (preferences && recommendations.length === 0 && !isLoading) {
       handleGenerateRecommendations();
     }
-  }, [preferences]);
+  }, [preferences, recommendations.length, isLoading, handleGenerateRecommendations]);
 
-  const handleGenerateRecommendations = async () => {
+  const handleGenerateRecommendations = useCallback(async () => {
     if (!preferences) return;
     try {
       await generateRecommendations(preferences, undefined, 6);
     } catch (err) {
       console.error('Erro ao gerar recomendações:', err);
     }
-  };
+  }, [preferences, generateRecommendations]);
 
   const handleCreateProfile = () => {
     router.push('/personalizacao');
@@ -168,7 +166,7 @@ export default function AIRecommendationsSection() {
         {/* Right Side - Recommendations Grid */}
         <div className="lg:col-span-3">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {recommendations.map((recommendation, index) => (
+            {recommendations.map((recommendation) => (
               <Card 
                 key={recommendation.id} 
                 className="bg-white shadow-sm border border-gray-200 hover:shadow-md transition-shadow"

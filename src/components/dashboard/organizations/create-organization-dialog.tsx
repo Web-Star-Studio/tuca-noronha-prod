@@ -120,7 +120,7 @@ export function CreateOrganizationDialog({ children, onSuccess }: CreateOrganiza
       })
       setOpen(false)
       onSuccess?.()
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar organização:", error)
       toast.error("Erro ao criar organização. Tente novamente.")
     } finally {

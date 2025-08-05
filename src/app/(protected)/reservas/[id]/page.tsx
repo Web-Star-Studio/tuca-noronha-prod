@@ -123,9 +123,9 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
           <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
           <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white mb-4">Reserva não encontrada</h1>
           <p className="text-slate-600 dark:text-slate-400 mb-6">A reserva solicitada não foi encontrada ou você não tem permissão para visualizá-la.</p>
-          <Button onClick={() => router.push('/meu-painel')} variant="outline">
+          <Button onClick={() => router.push('/reservas')} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Painel
+            Voltar para Minhas Reservas
           </Button>
         </div>
       </div>

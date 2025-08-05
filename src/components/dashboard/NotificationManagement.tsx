@@ -5,13 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent,  } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,21 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Bell,
-  BellRing,
-  CheckCircle,
-  Calendar,
-  CreditCard,
-  Users,
-  Send,
-  Search,
-  Filter,
-  Trash2,
-  Eye,
-  Plus,
-  MessageCircle,
-} from "lucide-react";
+import { Bell, BellRing, CheckCircle, Calendar, CreditCard, Send, Search, Trash2, Eye, Plus, MessageCircle,  } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ui } from "@/lib/ui-config";
@@ -59,7 +39,7 @@ export function NotificationManagement({ className }: NotificationManagementProp
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedNotification, setSelectedNotification] = useState<any>(null);
+  // selectedNotification removido (não utilizado)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newNotification, setNewNotification] = useState({
     type: "system_update",
@@ -81,7 +61,7 @@ export function NotificationManagement({ className }: NotificationManagementProp
 
   // Mutations
   const createNotification = useMutation(api.domains.notifications.mutations.createNotification);
-  const markAsRead = useMutation(api.domains.notifications.mutations.markAsRead);
+  // markAsRead removido (não utilizado)
   const deleteNotification = useMutation(api.domains.notifications.mutations.deleteNotification);
   const sendBulkNotification = useMutation(api.domains.notifications.mutations.sendBulkNotification);
 
@@ -140,7 +120,7 @@ export function NotificationManagement({ className }: NotificationManagementProp
         message: "",
         userEmail: "",
       });
-    } catch (error) {
+    } catch {
       toast.error("Erro ao enviar notificação");
       console.error(error);
     }
@@ -150,7 +130,7 @@ export function NotificationManagement({ className }: NotificationManagementProp
     try {
       await deleteNotification({ notificationId });
       toast.success("Notificação removida");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao remover notificação");
       console.error(error);
     }

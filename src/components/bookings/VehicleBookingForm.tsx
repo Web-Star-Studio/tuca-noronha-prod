@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
+
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -24,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 
 interface VehicleBookingFormProps {
   vehicleId: Id<"vehicles">;
@@ -46,7 +47,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
   const [pickupLocation, setPickupLocation] = useState("");
   const [notes, setNotes] = useState("");
   
-  const { user } = useCurrentUser();
+  // useCurrentUser removido (não utilizado)
 
   // Get current user
   const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
@@ -179,7 +180,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
 
       // Redirect to confirmation page or user bookings
       // router.push("/reservas");
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar reserva:", error);
       toast.error("Erro ao fazer reserva", {
         description: "Ocorreu um erro ao processar sua reserva. Por favor, tente novamente.",
@@ -351,14 +352,12 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
       {/* Payment Info - show if requires payment */}
       {vehicle?.acceptsOnlinePayment && vehicle?.requiresUpfrontPayment && totalPrice > 0 && (
         <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-          💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
+          Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
         </div>
       )}
 
-
-
             <Button 
-              className="w-full mt-4" 
+              className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white" 
               onClick={handleBooking}
               disabled={
                 isLoading || 
@@ -371,10 +370,6 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
             >
               {isLoading ? "Processando..." : "Reservar agora"}
             </Button>
-
-            <p className="text-xs text-gray-500 mt-4 text-center">
-              Você não será cobrado ainda. O pagamento será realizado na retirada do veículo.
-            </p>
           </div>
         </div>
       </div>

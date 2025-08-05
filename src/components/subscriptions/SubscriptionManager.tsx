@@ -8,15 +8,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { 
-  CreditCard, 
-  Calendar, 
-  Settings, 
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  ExternalLink
-} from "lucide-react";
+import { Settings, Loader2, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -56,7 +48,7 @@ export function SubscriptionManager() {
       } else {
         toast.error(result.error || "Erro ao abrir portal");
       }
-    } catch (error) {
+    } catch {
       console.error("Erro ao criar sessão do portal:", error);
       toast.error("Erro ao abrir portal de gerenciamento");
     } finally {

@@ -3366,8 +3366,8 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: false,
-              startDate: booking.startDate,
-              endDate: booking.endDate,
+              startDate: new Date(booking.startDate).toISOString(),
+              endDate: new Date(booking.endDate).toISOString(),
               seats: vehicle.seats,
             });
           }
@@ -3402,8 +3402,8 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
-              startDate: booking.startDate,
-              endDate: booking.endDate,
+              startDate: new Date(booking.startDate).toISOString(),
+              endDate: new Date(booking.endDate).toISOString(),
               seats: vehicle.seats,
             });
           }
@@ -3429,8 +3429,8 @@ export const getBookingsWithRBAC = query({
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
               canManage: true,
-              startDate: booking.startDate,
-              endDate: booking.endDate,
+              startDate: new Date(booking.startDate).toISOString(),
+              endDate: new Date(booking.endDate).toISOString(),
               seats: vehicle.seats,
             });
           }
@@ -3796,15 +3796,6 @@ export const getReservationWithPartnerDetails = query({
         }
         break;
 
-      case "accommodation":
-        reservation = await ctx.db.get(args.reservationId as Id<"accommodationBookings">);
-        if (reservation) {
-          asset = await ctx.db.get(reservation.accommodationId);
-          if (asset) {
-            partner = await ctx.db.get(asset.partnerId);
-          }
-        }
-        break;
 
       default:
         return null;
@@ -3841,7 +3832,6 @@ export const getReservationWithPartnerDetails = query({
       partnerName: partner.name,
       partnerEmail: partner.email,
       assetType: args.reservationType === "vehicle" ? "vehicles" : 
-                 args.reservationType === "accommodation" ? "accommodations" :
                  `${args.reservationType}s`,
       customerName,
     };
@@ -3975,7 +3965,7 @@ export const getBookingsByStatusGroup = query({
     }
 
     // Similar logic for other booking types...
-    // (events, accommodations, vehicles, restaurants)
+    // (events, vehicles, restaurants)
 
     // Sort by urgency and creation date
     return results.sort((a, b) => {

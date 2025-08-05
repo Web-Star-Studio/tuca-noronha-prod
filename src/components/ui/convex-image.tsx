@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ export interface ConvexImageProps extends React.ImgHTMLAttributes<HTMLImageEleme
  * - Fornece um fallback em caso de falha
  */
 export function ConvexImage({
-  storageId,
+
   mediaId,
   src,
   alt,
@@ -45,7 +45,7 @@ export function ConvexImage({
           const newUrl = await refreshUrl({ id: mediaId });
           setImageSrc(newUrl);
           setIsLoading(false);
-        } catch (error) {
+        } catch {
           console.error("Erro ao atualizar URL da imagem:", error);
           setHasError(true);
           setIsLoading(false);
@@ -65,7 +65,7 @@ export function ConvexImage({
         }
         
         setIsLoading(false);
-      } catch (error) {
+      } catch {
         // Em caso de erro, tentar obter uma nova URL
         try {
           const newUrl = await refreshUrl({ id: mediaId });
@@ -114,16 +114,18 @@ export function ConvexImage({
   
   // Se a URL for válida, renderizar a imagem
   return (
-    <img
+    <Image
       src={imageSrc}
       alt={alt}
       className={className}
+      width={300}
+      height={200}
       onError={async () => {
         // Se a imagem falhar ao carregar, tentar obter uma nova URL
         try {
           const newUrl = await refreshUrl({ id: mediaId });
           setImageSrc(newUrl);
-        } catch (error) {
+        } catch {
           setHasError(true);
           onError?.();
         }

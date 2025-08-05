@@ -693,7 +693,7 @@ export const bulkUpdateVoucherExpiration = mutation({
       v.literal("event"),
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("accommodation")
+      
     )),
     newExpirationDate: v.number(),
     reason: v.string(),

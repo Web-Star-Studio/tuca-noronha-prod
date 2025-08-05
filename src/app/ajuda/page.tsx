@@ -20,16 +20,12 @@ import {
   Clock,
   Star,
   ExternalLink,
-  MapPin,
   Calendar,
   CheckCircle,
-  HeadphonesIcon,
-  Shield,
-  AlertTriangle,
-  Users,
-  ChevronDown
+  HeadphonesIcon
 } from "lucide-react";
 import { GlobalContactButton } from "@/components/contact/GlobalContactButton";
+import Link from "next/link";
 
 interface FAQItem {
   id: string;
@@ -374,23 +370,23 @@ export default function AjudaPage() {
                   <ExternalLink className="w-3 h-3 md:w-4 md:h-4 text-gray-400 flex-shrink-0" />
                 </a>
                 
-                <a href="/reservas" className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                <Link href="/reservas" className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
                   <Calendar className="w-4 h-4 md:w-5 md:h-5 text-green-600 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm md:text-base text-gray-800 group-hover:text-green-600">Minhas Reservas</p>
                     <p className="text-xs md:text-sm text-gray-600 truncate">Gerencie suas reservas</p>
                   </div>
                   <ExternalLink className="w-3 h-3 md:w-4 md:h-4 text-gray-400 flex-shrink-0" />
-                </a>
+                </Link>
                 
-                <a href="/pacotes" className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                <Link href="/pacotes" className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
                   <Star className="w-4 h-4 md:w-5 md:h-5 text-purple-600 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm md:text-base text-gray-800 group-hover:text-purple-600">Políticas</p>
                     <p className="text-xs md:text-sm text-gray-600 truncate">Termos e condições</p>
                   </div>
                   <ExternalLink className="w-3 h-3 md:w-4 md:h-4 text-gray-400 flex-shrink-0" />
-                </a>
+                </Link>
               </div>
             </CardContent>
           </Card>

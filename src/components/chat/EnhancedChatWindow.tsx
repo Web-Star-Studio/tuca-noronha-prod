@@ -7,29 +7,12 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { 
-  Send, 
-  FileText, 
-  Image, 
-  MoreVertical, 
-  CheckCircle, 
-  Edit, 
-  X, 
-  AlertTriangle, 
-  Clock,
-  UserPlus,
-  StickyNote,
-  Zap,
-  Settings
-} from "lucide-react";
+import { Send, FileText, MoreVertical, CheckCircle, Edit, X, AlertTriangle, UserPlus, StickyNote, Zap } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -53,16 +36,7 @@ interface Message {
   };
 }
 
-interface ChatRoom {
-  _id: Id<"chatRooms">;
-  contextType: string;
-  contextId: string;
-  reservationId?: string;
-  title: string;
-  status: string;
-  priority: string;
-  assignedTo?: Id<"users">;
-}
+// ChatRoom interface removida (não utilizada)
 
 interface Template {
   _id: Id<"chatMessageTemplates">;
@@ -96,7 +70,7 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
   const sendMessage = useMutation(api.domains.chat.mutations.sendMessage);
   const sendTemplateMessage = useMutation(api.domains.chat.mutations.sendTemplateMessage);
   const executeQuickAction = useMutation(api.domains.chat.mutations.executeQuickAction);
-  const markAsRead = useMutation(api.domains.chat.mutations.markAsRead);
+  // markAsRead removido (não utilizado)
 
   useEffect(() => {
     scrollToBottom();
@@ -116,7 +90,7 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
         messageType: "text"
       });
       setNewMessage("");
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao enviar mensagem",
         description: "Tente novamente",
@@ -141,7 +115,7 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
         title: "Mensagem enviada",
         description: "Template aplicado com sucesso"
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao enviar template",
         description: "Tente novamente",
@@ -172,7 +146,7 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro ao executar ação",
         description: "Tente novamente",

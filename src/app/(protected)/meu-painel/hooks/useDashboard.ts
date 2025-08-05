@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
-import { Notification, Reservation } from '../types/dashboard';
+import { Reservation } from '../types/dashboard';
 
 export function useDashboard() {
   const router = useRouter();
@@ -174,7 +174,7 @@ export function useDashboard() {
 
       toast.success("Reserva cancelada com sucesso!");
       
-    } catch (error) {
+    } catch {
       console.error('Erro ao cancelar reserva:', error);
       toast.error(`Erro ao cancelar reserva: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
@@ -183,7 +183,7 @@ export function useDashboard() {
   const markNotificationAsRead = async (id: string) => {
     try {
       await markAsReadMutation({ notificationId: id as any });
-    } catch (error) {
+    } catch {
       console.error('Erro ao marcar notificação como lida:', error);
     }
   };

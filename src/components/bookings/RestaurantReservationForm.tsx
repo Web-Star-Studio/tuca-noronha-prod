@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Users, Clock, Plus, Minus, MapPin } from "lucide-react";
+import { Users, Clock, Plus, Minus, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -28,10 +28,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { cardStyles, buttonStyles, formStyles } from "@/lib/ui-config";
+import { buttonStyles, formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+
 
 interface RestaurantReservationFormProps {
   restaurantId: Id<"restaurants">;
@@ -67,7 +67,6 @@ export function RestaurantReservationForm({
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
-  const { user } = useCurrentUser();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
@@ -201,7 +200,7 @@ export function RestaurantReservationForm({
       setPartySize(2);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao fazer reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });
@@ -223,12 +222,7 @@ export function RestaurantReservationForm({
   };
 
   // Helper para formatação de moeda
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // formatCurrency removido (não utilizado);
 
   return (
     <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
@@ -414,14 +408,14 @@ export function RestaurantReservationForm({
           {/* Payment Info - show if requires payment */}
           {restaurant.acceptsOnlinePayment && restaurant.requiresUpfrontPayment && restaurant.price && restaurant.price > 0 && (
             <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-              💳 Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo restaurante.
+              Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo restaurante.
             </div>
           )}
 
           {/* Submit Button */}
           <Button 
             type="submit"
-            className={cn(buttonStyles.base, buttonStyles.variant.primary, "w-full")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             disabled={!date || !time || isSubmitting || !restaurant.acceptsReservations}
           >
             {isSubmitting ? (

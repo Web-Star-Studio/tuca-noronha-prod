@@ -121,7 +121,7 @@ export default function RestaurantesPage() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [selectedCuisines, selectedNeighborhoods, minPrice, maxPrice]);
+  }, [selectedCuisines, selectedNeighborhoods, minPrice, maxPrice, isFilterOpen]);
 
   return (
     <>

@@ -30,7 +30,7 @@ export default function SyncVehiclesPage() {
       if (syncResult.errors.length > 0) {
         toast.warning(`${syncResult.errors.length} erros encontrados durante a sincronização`);
       }
-    } catch (error) {
+    } catch {
       console.error("Erro na sincronização:", error);
       toast.error("Erro ao executar sincronização");
     } finally {
@@ -107,7 +107,7 @@ export default function SyncVehiclesPage() {
         <CardContent className="space-y-2 text-sm text-gray-600">
           <p>1. Verifica todos os veículos existentes na base de dados</p>
           <p>2. Para cada veículo, verifica se já existe uma entrada na tabela partnerAssets</p>
-          <p>3. Se não existe, busca a organização do tipo "rental_service" do proprietário</p>
+          <p>3. Se não existe, busca a organização do tipo &quot;rental_service&quot; do proprietário</p>
           <p>4. Cria a associação na tabela partnerAssets</p>
           <p>5. Retorna o número de veículos sincronizados e eventuais erros</p>
         </CardContent>

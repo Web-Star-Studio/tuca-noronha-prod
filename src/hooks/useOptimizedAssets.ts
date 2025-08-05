@@ -7,7 +7,7 @@ import { api } from "../../convex/_generated/api";
  * Inspired by TanStack Query performance best practices
  */
 export interface AssetQueryOptions {
-  assetType?: "all" | "restaurants" | "events" | "activities" | "vehicles" | "accommodations";
+  assetType?: "all" | "restaurants" | "events" | "activities" | "vehicles";
   isActive?: boolean;
   partnerId?: string;
   limit?: number;
@@ -60,7 +60,7 @@ export interface OptimizedAssetHookResult {
  * Uses conditional query execution and memoized results
  */
 export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHookResult {
-  const { assetType = "all", isActive, partnerId, limit = 50 } = options;
+  const { assetType = "all", isActive, partnerId } = options;
 
   // Asset-specific queries with conditional execution
   const restaurantsQuery = useQuery(
@@ -83,10 +83,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
     (assetType === "all" || assetType === "vehicles") ? {} : "skip"
   );
 
-  const accommodationsQuery = useQuery(
-    api.domains.accommodations.queries.getAll,
-    (assetType === "all" || assetType === "accommodations") ? {} : "skip"
-  );
+
 
   // Query all users to get partner information
   const usersQuery = useQuery(api.domains.users.queries.listAllUsers);
@@ -183,17 +180,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
         };
         break;
       
-      case 'accommodations':
-        enrichedAsset = {
-          ...enrichedAsset,
-          type: asset.type,
-          pricePerNight: asset.pricePerNight,
-          maxGuests: asset.maxGuests,
-          bedrooms: asset.bedrooms,
-          bathrooms: asset.bathrooms,
-          amenities: asset.amenities,
-        };
-        break;
+
     }
 
     return enrichedAsset;
@@ -217,9 +204,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
       if (vehiclesQuery?.vehicles) {
         assets.push(...vehiclesQuery.vehicles.map((asset: any) => enrichAsset(asset, 'vehicles')));
       }
-      if (accommodationsQuery) {
-        assets.push(...accommodationsQuery.map((asset: any) => enrichAsset(asset, 'accommodations')));
-      }
+
     } else {
       // Return specific asset type data directly
       switch (assetType) {
@@ -243,11 +228,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
             return vehiclesQuery.vehicles.map((asset: any) => enrichAsset(asset, 'vehicles'));
           }
           break;
-        case "accommodations":
-          if (accommodationsQuery) {
-            return accommodationsQuery.map((asset: any) => enrichAsset(asset, 'accommodations'));
-          }
-          break;
+
         default:
           return [];
       }
@@ -274,8 +255,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
     eventsQuery,
     activitiesQuery,
     vehiclesQuery,
-    accommodationsQuery,
-    usersMap,
+    enrichAsset,
   ]);
 
   // Memoized loading state
@@ -284,8 +264,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
     
     if (assetType === "all") {
       return restaurantsQuery === undefined || eventsQuery === undefined || 
-             activitiesQuery === undefined || vehiclesQuery === undefined || 
-             accommodationsQuery === undefined;
+             activitiesQuery === undefined || vehiclesQuery === undefined;
     }
     
     switch (assetType) {
@@ -293,7 +272,6 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
       case "events": return eventsQuery === undefined;
       case "activities": return activitiesQuery === undefined;
       case "vehicles": return vehiclesQuery === undefined;
-      case "accommodations": return accommodationsQuery === undefined;
       default: return false;
     }
   }, [
@@ -303,7 +281,6 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
     eventsQuery,
     activitiesQuery,
     vehiclesQuery,
-    accommodationsQuery,
   ]);
 
   // Memoized error state - Convex doesn't return errors in the same way
@@ -348,18 +325,16 @@ export function useAssetTypeCounts() {
   const eventCount = useQuery(api.domains.events.queries.getAll);
   const activityCount = useQuery(api.domains.activities.queries.getAll);
   const vehicleCount = useQuery(api.domains.vehicles.queries.listVehicles);
-  const accommodationCount = useQuery(api.domains.accommodations.queries.getAll);
+
 
   return useMemo(() => ({
     restaurants: restaurantCount?.length || 0,
     events: eventCount?.length || 0,
     activities: activityCount?.length || 0,
     vehicles: vehicleCount?.vehicles?.length || 0,
-    accommodations: accommodationCount?.length || 0,
     total: (restaurantCount?.length || 0) + 
            (eventCount?.length || 0) + 
            (activityCount?.length || 0) + 
-           (vehicleCount?.vehicles?.length || 0) + 
-           (accommodationCount?.length || 0),
-  }), [restaurantCount, eventCount, activityCount, vehicleCount, accommodationCount]);
+           (vehicleCount?.vehicles?.length || 0),
+  }), [restaurantCount, eventCount, activityCount, vehicleCount]);
 } 

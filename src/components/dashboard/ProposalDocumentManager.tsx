@@ -4,30 +4,14 @@ import { useState, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Upload, 
-  FileText, 
-  Download, 
-  Trash2, 
-  Eye,
-  FileImage,
-  FileSpreadsheet,
-  File,
-  Loader2,
-  Plus,
-  Settings,
-  Camera
-} from "lucide-react";
+import { Upload, FileText, Download, Trash2, FileImage, FileSpreadsheet, File, Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProposalDocumentManagerProps {
@@ -159,7 +143,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
         setUploads(prev => prev.filter((_, i) => i !== index));
       }, 2000);
 
-    } catch (error) {
+    } catch {
       console.error("Error uploading file:", error);
       setUploads(prev => prev.map((upload, i) => 
         i === index ? { ...upload, error: "Erro no upload" } : upload
@@ -175,7 +159,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
         storageId,
       });
       toast.success(`Arquivo "${fileName}" removido com sucesso!`);
-    } catch (error) {
+    } catch {
       console.error("Error removing attachment:", error);
       toast.error(`Erro ao remover arquivo "${fileName}"`);
     }
@@ -205,7 +189,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
       } else {
         toast.error(result.message);
       }
-    } catch (error) {
+    } catch {
       console.error("Error generating PDF:", error);
       toast.error("Erro ao gerar PDF");
     } finally {
@@ -234,7 +218,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
       } else {
         toast.error("Erro ao obter link de download");
       }
-    } catch (error) {
+    } catch {
       console.error("Error downloading file:", error);
       toast.error("Erro ao baixar arquivo");
     }
@@ -443,7 +427,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
               <p>Nenhum documento anexado ainda</p>
               {canEdit && (
                 <p className="text-sm mt-2">
-                  Clique em "Enviar Arquivos" para adicionar documentos
+                  Clique em &ldquo;Enviar Arquivos&rdquo; para adicionar documentos
                 </p>
               )}
             </div>

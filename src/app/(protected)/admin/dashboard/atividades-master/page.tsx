@@ -5,9 +5,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,16 +39,13 @@ import {
   Users, 
   Calendar, 
   DollarSign, 
-  Eye, 
   ExternalLink, 
   Star, 
-  MapPin,
   Clock,
   Search,
   Filter,
   TrendingUp,
   Award,
-  Building2,
   Loader2,
   AlertCircle,
   Plus,
@@ -62,7 +58,6 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardPageHeader } from "../components";
-import { MediaSelector } from "@/components/dashboard/media";
 
 type ActivityData = {
   _id: Id<"activities">;
@@ -125,6 +120,9 @@ export default function ActivitiesMasterPage() {
   const [editingActivity, setEditingActivity] = useState<ActivityData | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // Queries - Must be called before any conditional returns
+  const activities = useQuery(api.domains.activities.queries.getActivitiesWithCreators) as ActivityData[] | undefined;
+
   // Mutations
   const createActivity = useMutation(api.domains.activities.mutations.create);
   const updateActivity = useMutation(api.domains.activities.mutations.update);
@@ -153,9 +151,6 @@ export default function ActivitiesMasterPage() {
       </div>
     );
   }
-
-  // Queries
-  const activities = useQuery(api.domains.activities.queries.getActivitiesWithCreators) as ActivityData[] | undefined;
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("pt-BR", {
@@ -209,7 +204,7 @@ export default function ActivitiesMasterPage() {
       });
       toast.success("Atividade criada com sucesso");
       setAddDialogOpen(false);
-    } catch (error) {
+    } catch {
       console.error("Error creating activity:", error);
       toast.error("Erro ao criar atividade");
     }
@@ -224,7 +219,7 @@ export default function ActivitiesMasterPage() {
       });
       toast.success("Atividade atualizada com sucesso");
       setEditingActivity(null);
-    } catch (error) {
+    } catch {
       console.error("Error updating activity:", error);
       toast.error("Erro ao atualizar atividade");
     }
@@ -235,7 +230,7 @@ export default function ActivitiesMasterPage() {
       await deleteActivity({ id: id as Id<"activities"> });
       toast.success("Atividade excluída com sucesso");
       setConfirmDeleteId(null);
-    } catch (error) {
+    } catch {
       console.error("Error deleting activity:", error);
       toast.error("Erro ao excluir atividade");
     }
@@ -245,7 +240,7 @@ export default function ActivitiesMasterPage() {
     try {
       await toggleFeatured({ id: id as Id<"activities">, isFeatured: featured });
       toast.success(`Atividade ${featured ? "destacada" : "removida dos destaques"} com sucesso`);
-    } catch (error) {
+    } catch {
       console.error("Error toggling featured:", error);
       toast.error("Erro ao alterar status de destaque");
     }
@@ -255,7 +250,7 @@ export default function ActivitiesMasterPage() {
     try {
       await toggleActive({ id: id as Id<"activities">, isActive: active });
       toast.success(`Atividade ${active ? "ativada" : "desativada"} com sucesso`);
-    } catch (error) {
+    } catch {
       console.error("Error toggling active:", error);
       toast.error("Erro ao alterar status ativo");
     }
@@ -682,7 +677,6 @@ function ActivityFormDialog({
     partnerId: "",
   });
 
-  const [partners] = useState<any[]>([]);
   const allUsers = useQuery(api.domains.users.queries.getAllUsers);
 
   const partnerUsers = allUsers?.filter(user => user.role === "partner") || [];

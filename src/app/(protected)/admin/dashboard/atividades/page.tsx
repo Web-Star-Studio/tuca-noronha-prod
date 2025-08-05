@@ -293,7 +293,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
       // Pass the form data to the parent component which will handle the API calls
       // This prevents duplicate activity creation
       onSave(formData);
-    } catch (error) {
+    } catch {
       console.error("Error creating activity:", error);
       toast.error("Ocorreu um erro ao criar a atividade");
     } finally {
@@ -932,7 +932,6 @@ export default function ActivitiesPage() {
     
     try {
       // Use the clerk ID for user identification
-      const clerkId = user._id;
       
       // Save the creator information
       await createActivity(newActivity);
@@ -941,7 +940,7 @@ export default function ActivitiesPage() {
       console.log(`Activity created by user ${user._id} at ${new Date().toISOString()}`);
       toast.success("Atividade criada com sucesso");
       setAddDialogOpen(false);
-    } catch (error) {
+    } catch {
       console.error("Error creating activity:", error);
       toast.error("Ocorreu um erro ao criar a atividade");
     }
@@ -952,7 +951,7 @@ export default function ActivitiesPage() {
       await updateActivity(updatedActivity);
       toast.success("Atividade atualizada com sucesso");
       setEditingActivity(null);
-    } catch (error) {
+    } catch {
       console.error("Error updating activity:", error);
       toast.error("Ocorreu um erro ao atualizar a atividade");
     }
@@ -963,7 +962,7 @@ export default function ActivitiesPage() {
       await deleteActivity(id);
       toast.success("Atividade excluída com sucesso");
       setConfirmDeleteId(null);
-    } catch (error) {
+    } catch {
       console.error("Error deleting activity:", error);
       toast.error("Ocorreu um erro ao excluir a atividade");
     }
@@ -973,7 +972,7 @@ export default function ActivitiesPage() {
     try {
       await toggleFeatured(id, featured);
       toast.success(`Atividade ${featured ? "destacada" : "removida dos destaques"} com sucesso`);
-    } catch (error) {
+    } catch {
       console.error("Error toggling featured status:", error);
       toast.error("Ocorreu um erro ao alterar o status de destaque");
     }
@@ -983,7 +982,7 @@ export default function ActivitiesPage() {
     try {
       await toggleActive(id, active);
       toast.success(`Atividade ${active ? "ativada" : "desativada"} com sucesso`);
-    } catch (error) {
+    } catch {
       console.error("Error toggling active status:", error);
       toast.error("Ocorreu um erro ao alterar o status da atividade");
     }

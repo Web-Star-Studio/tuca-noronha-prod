@@ -1,23 +1,15 @@
 "use client"
 
 import {
-  Building2,
-  CalendarClock,
-  Home,
-  Map as MapIcon,
   Package,
   Receipt,
   Settings,
-  Store,
   Users,
   Bell,
   ChevronsUpDown,
   PlusCircle,
-  Check,
   Image,
   FileText,
-  ChevronLeft,
-  Search,
   LayoutPanelLeft,
   Car,
   MessageSquare,
@@ -28,34 +20,20 @@ import {
   Utensils,
   UserCheck,
   Database,
-  Shield,
   BarChart3,
   TrendingUp,
-  Globe,
-  AlertTriangle,
-  Clock,
-  HelpCircle,
   DollarSign,
-  Music,
-  Truck,
-  Badge,
-  ClipboardList,
-  BookOpen,
-  Heart,
-  Zap,
-  UtensilsCrossed,
-  MapPin,
-  UserPlus,
   Tag,
-  Ticket,
   QrCode,
-  LayoutDashboard,
-  Plus,
-  CheckCircle,
   CreditCard,
-  Star
+  Star,
+  Check,
+  Shield,
+  Home,
+  ChevronLeft,
+  Search
 } from "lucide-react"
-import { UserButton, useUser } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
 import {
   Sidebar,
@@ -91,8 +69,6 @@ import { Input } from "@/components/ui/input"
 import { OrganizationProvider, useOrganization } from "@/lib/providers/organization-context"
 import { AssetProvider } from "@/lib/providers/asset-context"
 import type { Organization } from "@/lib/providers/organization-context"
-import { useMutation } from "convex/react"
-import { api } from "../../../../../convex/_generated/api"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { NotificationCenter } from "@/components/ui/notification-center"
 

@@ -181,9 +181,7 @@ async function getAssetInfo(ctx: any, itemType: string, itemId: string) {
         asset = await ctx.db.get(itemId);
         return asset ? { name: (asset as any).name, description: (asset as any).description } : null;
       
-      case "accommodation":
-        asset = await ctx.db.get(itemId);
-        return asset ? { name: (asset as any).name, description: (asset as any).description } : null;
+
       
       case "activity":
         asset = await ctx.db.get(itemId);

@@ -33,7 +33,7 @@ export function VoucherScannerEnhanced({ partnerId, onScanSuccess, onScanError }
   // Use the new verification actions
   const verifyQRToken = useAction(api.domains.vouchers.actions.verifyQRToken);
   const manualVoucherLookup = useAction(api.domains.vouchers.actions.manualVoucherLookup);
-  const useVoucherByQR = useAction(api.domains.vouchers.mutations.useVoucherByQR);
+  const voucherByQRAction = useAction(api.domains.vouchers.mutations.useVoucherByQR);
 
   useEffect(() => {
     if (isScanning) {
@@ -92,7 +92,7 @@ export function VoucherScannerEnhanced({ partnerId, onScanSuccess, onScanError }
         throw new Error(result.error || "QR Code inválido");
       }
       
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao verificar voucher";
       setScanError(errorMessage);
       onScanError?.(errorMessage);
@@ -145,7 +145,7 @@ export function VoucherScannerEnhanced({ partnerId, onScanSuccess, onScanError }
       } else {
         throw new Error(result.error || "Voucher não encontrado");
       }
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao verificar voucher";
       setScanError(errorMessage);
       onScanError?.(errorMessage);
@@ -162,7 +162,7 @@ export function VoucherScannerEnhanced({ partnerId, onScanSuccess, onScanError }
     setScanError(null);
 
     try {
-      const result = await useVoucherByQR({
+      const result = await voucherByQRAction({
         voucherNumber: scannedVoucher.voucher.voucherNumber,
         partnerId,
         usageNotes: "Usado via scanner QR",
@@ -186,7 +186,7 @@ export function VoucherScannerEnhanced({ partnerId, onScanSuccess, onScanError }
       } else {
         throw new Error(result.error || "Erro ao usar voucher");
       }
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao usar voucher";
       setScanError(errorMessage);
       toast.error(errorMessage);

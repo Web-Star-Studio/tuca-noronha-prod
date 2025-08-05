@@ -174,9 +174,7 @@ export const getUserWishlist = query({
           case "package":
             details = await ctx.db.get(item.itemId as Id<"packages">);
             break;
-          case "accommodation":
-            details = await ctx.db.get(item.itemId as Id<"accommodations">);
-            break;
+
           case "activity":
             details = await ctx.db.get(item.itemId as Id<"activities">);
             break;

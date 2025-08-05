@@ -17,7 +17,7 @@ export const createPackage = mutation({
     basePrice: v.number(),
     discountPercentage: v.optional(v.number()),
     currency: v.string(),
-    accommodationId: v.optional(v.id("accommodations")),
+
     vehicleId: v.optional(v.id("vehicles")),
     includedActivityIds: v.array(v.id("activities")),
     includedRestaurantIds: v.array(v.id("restaurants")),
@@ -56,13 +56,7 @@ export const createPackage = mutation({
       throw new Error("Um pacote com este slug já existe");
     }
 
-    // Validate accommodation exists (if provided)
-    if (args.accommodationId) {
-      const accommodation = await ctx.db.get(args.accommodationId);
-      if (!accommodation) {
-        throw new Error("Hospedagem não encontrada");
-      }
-    }
+
 
     // Validate vehicle exists (if provided)
     if (args.vehicleId) {
@@ -100,16 +94,12 @@ export const createPackage = mutation({
     
     const packageData = {
       ...args,
-      // Set accommodationId as required field, but allow it to be null in the schema
-      accommodationId: args.accommodationId || ("" as any),
+
       createdAt: now,
       updatedAt: now,
     };
 
-    // Remove accommodationId if it's empty to make it optional
-    if (!args.accommodationId) {
-      delete (packageData as any).accommodationId;
-    }
+
 
     return await ctx.db.insert("packages", packageData);
   },
@@ -128,7 +118,7 @@ export const updatePackage = mutation({
     basePrice: v.optional(v.number()),
     discountPercentage: v.optional(v.number()),
     currency: v.optional(v.string()),
-    accommodationId: v.optional(v.id("accommodations")),
+
     vehicleId: v.optional(v.id("vehicles")),
     includedActivityIds: v.optional(v.array(v.id("activities"))),
     includedRestaurantIds: v.optional(v.array(v.id("restaurants"))),
@@ -176,12 +166,7 @@ export const updatePackage = mutation({
     }
 
     // Validate references if being updated
-    if (updateData.accommodationId) {
-      const accommodation = await ctx.db.get(updateData.accommodationId);
-      if (!accommodation) {
-        throw new Error("Hospedagem não encontrada");
-      }
-    }
+    
 
     if (updateData.vehicleId) {
       const vehicle = await ctx.db.get(updateData.vehicleId);
@@ -318,7 +303,7 @@ export const createPackageBooking = mutation({
     guests: v.number(),
     totalPrice: v.number(),
     breakdown: v.object({
-      accommodationPrice: v.number(),
+
       vehiclePrice: v.optional(v.number()),
       activitiesPrice: v.number(),
       restaurantsPrice: v.number(),
@@ -554,7 +539,7 @@ export const confirmPackageBooking = mutation({
 // Calculate package pricing
 export const calculatePackagePricing = mutation({
   args: {
-    accommodationId: v.optional(v.id("accommodations")),
+
     vehicleId: v.optional(v.id("vehicles")),
     includedActivityIds: v.array(v.id("activities")),
     includedRestaurantIds: v.array(v.id("restaurants")),
@@ -564,7 +549,6 @@ export const calculatePackagePricing = mutation({
     discountPercentage: v.optional(v.number()),
   },
   returns: v.object({
-    accommodationPrice: v.number(),
     vehiclePrice: v.number(),
     activitiesPrice: v.number(),
     restaurantsPrice: v.number(),
@@ -574,19 +558,13 @@ export const calculatePackagePricing = mutation({
     total: v.number(),
   }),
   handler: async (ctx, args) => {
-    let accommodationPrice = 0;
+
     let vehiclePrice = 0;
     let activitiesPrice = 0;
     let restaurantsPrice = 0;
     let eventsPrice = 0;
 
-    // Calculate accommodation price
-    if (args.accommodationId) {
-      const accommodation = await ctx.db.get(args.accommodationId);
-      if (accommodation) {
-        accommodationPrice = accommodation.pricePerNight * args.duration;
-      }
-    }
+
 
     // Calculate vehicle price
     if (args.vehicleId) {
@@ -624,12 +602,12 @@ export const calculatePackagePricing = mutation({
       }
     }
 
-    const subtotal = accommodationPrice + vehiclePrice + activitiesPrice + restaurantsPrice + eventsPrice;
+    const subtotal = vehiclePrice + activitiesPrice + restaurantsPrice + eventsPrice;
     const discount = args.discountPercentage ? (subtotal * args.discountPercentage / 100) : 0;
     const total = subtotal - discount;
 
     return {
-      accommodationPrice,
+
       vehiclePrice,
       activitiesPrice,
       restaurantsPrice,
@@ -737,11 +715,11 @@ const tripDetailsValidator = v.object({
 
 // Preferences validator
 const preferencesValidator = v.object({
-  accommodationType: v.array(v.string()),
   activities: v.array(v.string()),
   transportation: v.array(v.string()),
   foodPreferences: v.array(v.string()),
   accessibility: v.optional(v.array(v.string())),
+  accommodationType: v.optional(v.array(v.string())),
 });
 
 // Additional info validator (now optional since it's not always sent)

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  User, Edit, Save, AlertTriangle, Check, RefreshCw, Loader2
+  User, Edit, AlertTriangle, Check, RefreshCw, Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,32 +36,7 @@ export default function PreferencesSection() {
     }
   }, [preferences]);
 
-  const handlePreferenceUpdate = async (key: string, value: any) => {
-    if (!preferences) return;
-    
-    try {
-      setIsSaving(true);
-      
-      // Create a deep copy of preferences
-      const updatedPreferences = JSON.parse(JSON.stringify(preferences));
-      
-      // Handle nested keys like 'preferences.accommodation'
-      if (key.includes('.')) {
-        const [parentKey, childKey] = key.split('.');
-        updatedPreferences[parentKey][childKey] = value;
-      } else {
-        updatedPreferences[key] = value;
-      }
-      
-      await saveUserPreferences(updatedPreferences);
-      toast.success('Preferência atualizada');
-    } catch (error) {
-      console.error('Error updating preference:', error);
-      toast.error('Erro ao atualizar preferência');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Função removida pois não estava sendo utilizada
 
   const handleChatbotComplete = async (data: TravelPreferences) => {
     try {
@@ -69,7 +44,7 @@ export default function PreferencesSection() {
       await saveUserPreferences(data);
       setShowChatbot(false);
       toast.success('Preferências salvas com sucesso!');
-    } catch (error) {
+    } catch {
       console.error('Error saving preferences:', error);
       toast.error('Erro ao salvar preferências');
     } finally {
@@ -86,7 +61,7 @@ export default function PreferencesSection() {
         await removeUserPreferences();
         toast.success('Preferências removidas com sucesso');
         setHasPreferences(false);
-      } catch (error) {
+      } catch {
         console.error('Error removing preferences:', error);
         toast.error('Erro ao remover preferências');
       } finally {

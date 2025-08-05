@@ -77,7 +77,7 @@ export function useCreateReview() {
       toast.success("Avaliação enviada com sucesso!");
       return reviewId;
 
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao enviar avaliação";
       toast.error(errorMessage);
       throw error;
@@ -111,7 +111,7 @@ export function useVoteOnReview() {
       });
 
       toast.success(voteType === "helpful" ? "Marcado como útil!" : "Marcado como não útil!");
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Erro ao votar";
       toast.error(errorMessage);
       throw error;

@@ -28,7 +28,6 @@ import {
 import { TaxaPartnerModal } from "./TaxaPartnerModal";
 import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 
 interface TaxasPartnersListProps {
