@@ -3,7 +3,6 @@ import { use } from "react";
 
 import { notFound } from "next/navigation";
 import { usePublicEvent } from "@/lib/services/eventService";
-import { ChatButton } from "@/components/chat/ChatButton";
 import EventDetails from "@/components/cards/EventDetails";
 // Review components
 // Reviews components removidos (não utilizados)

@@ -41,39 +41,6 @@ function MasterDashboard() {
     );
   }
 
-  const systemActions = [
-    {
-      title: "Gestão de Usuários",
-      description: "Gerenciar partners, employees e travellers",
-      icon: Users,
-      actions: [
-        { label: "Ver Todos", href: "/admin/dashboard/usuarios", variant: "default" as const },
-        { label: "Partners", href: "/admin/dashboard/usuarios?role=partner", variant: "outline" as const }
-      ]
-    },
-    {
-      title: "Todos os Assets",
-      description: "Visualizar e gerenciar todos os assets do sistema",
-      icon: Database,
-      actions: [
-        { label: "Ver Todos", href: "/admin/dashboard/assets", variant: "default" as const },
-        { label: "Inativos", href: "/admin/dashboard/assets?active=false", variant: "outline" as const }
-      ]
-    },
-    {
-      title: "Suporte",
-      description: "Gerenciar mensagens de suporte dos usuários",
-      icon: MessageSquare,
-      actions: [
-        { 
-          label: "Gerenciar", 
-          href: "/admin/dashboard/suporte", 
-          variant: "default" as const,
-          badge: supportStats.urgent
-        }
-      ]
-    }
-  ];
 
   return (
     <div className="space-y-8">

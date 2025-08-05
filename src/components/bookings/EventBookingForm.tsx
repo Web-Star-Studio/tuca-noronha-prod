@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Ticket, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import { Ticket } from "lucide-react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -22,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { formStyles, badgeStyles } from "@/lib/ui-config";
+import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
@@ -331,7 +329,7 @@ export function EventBookingForm({
             <CouponValidator
               assetType="event"
               assetId={eventId}
-              baseAmount={getPrice()}
+              orderValue={getPrice()}
               onCouponApplied={handleCouponApplied}
               onCouponRemoved={handleCouponRemoved}
             />

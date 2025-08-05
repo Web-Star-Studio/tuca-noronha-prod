@@ -102,10 +102,10 @@ export function ChatTab({ requestId, requestDetails, requestMessages }: ChatTabP
             .sort((a, b) => a.createdAt - b.createdAt)
             .map((message) => {
               const isAdminMessage = message.senderEmail?.includes("admin") || 
-                                   message.senderEmail?.includes("tournarrays") ||
+                                   message.senderEmail?.includes("tucanoronha") ||
                                    (requestDetails && message.senderEmail !== requestDetails.customerInfo.email);
               
-              const senderName = isAdminMessage ? "Equipe Tournerray" : (message.senderName || "Cliente");
+              const senderName = isAdminMessage ? "Equipe Tuca Noronha" : (message.senderName || "Cliente");
 
               return (
                 <div 

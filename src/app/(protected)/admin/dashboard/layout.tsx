@@ -20,8 +20,6 @@ import {
   Utensils,
   UserCheck,
   Database,
-  BarChart3,
-  TrendingUp,
   DollarSign,
   Tag,
   QrCode,
@@ -230,10 +228,7 @@ function MasterSidebar() {
   ]
 
   const masterReportLinks = [
-    { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },
-    { href: "/admin/dashboard/reservas-admin", icon: Calendar, label: "Reservas Admin" },
-    { href: "/admin/dashboard/metricas", icon: BarChart3, label: "Métricas do Sistema" },
-    { href: "/admin/dashboard/relatorios", icon: TrendingUp, label: "Relatórios" },
+    { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },,
     { href: "/admin/dashboard/solicitacoes-pacotes", icon: Package, label: "Solicitações de Pacotes" },
     { href: "/admin/dashboard/propostas-pacotes", icon: FileText, label: "Propostas de Pacotes" },
   ]

@@ -5,12 +5,9 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Settings, Shield, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,7 +22,6 @@ export default function ReviewModerationSettingsPage() {
   const initializeSettings = useMutation(api["domains/reviews/mutations"].initializeDefaultModerationSettings);
 
   // Estados locais para o formulário - Reviews sempre aprovadas automaticamente
-  const autoApprove = true; // Sempre true agora
   const [minimumRating, setMinimumRating] = useState(settings?.minimumRating || "");
   const [bannedWords, setBannedWords] = useState(
     settings?.bannedWords?.join(", ") || ""

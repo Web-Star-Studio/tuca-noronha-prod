@@ -1,28 +1,30 @@
 "use client";
 
-import { useState, use } from "react";
+import { use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
-import { ArrowLeft, Heart, Share2, Star, Info, Calendar, Fuel, Users,  } from "lucide-react";
+import { ArrowLeft, Star, Calendar, Fuel, Users,  } from "lucide-react";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
 
 import { HelpSection } from "@/components/contact";
 
+// Review components
+import { ReviewStats, ReviewsList } from "@/components/reviews";
+import { useReviewStats } from "@/lib/hooks/useReviews";
+
 export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
-  const [isFavorite, setIsFavorite] = useState(false);
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   
@@ -32,6 +34,12 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
   // Fetch vehicle data from Convex
   const vehicle = useQuery(api.domains.vehicles.queries.getVehicle, {
     id: params.id as Id<"vehicles">
+  });
+
+  // Get review stats for this vehicle
+  const { data: reviewStats } = useReviewStats({
+    assetId: params.id,
+    assetType: 'vehicle'
   });
 
   // Handle 404 case
@@ -102,8 +110,12 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
               </h1>
               <div className="flex items-center gap-1 text-yellow-400 mb-4">
                 <Star className="h-5 w-5 fill-yellow-400" />
-                <span className="font-medium">4.8</span>
-                <span className="text-white/80 text-sm">(24 avaliações)</span>
+                <span className="font-medium">
+                  {reviewStats?.averageRating ? reviewStats.averageRating.toFixed(1) : '4.8'}
+                </span>
+                <span className="text-white/80 text-sm">
+                  ({reviewStats?.totalReviews || 0} avaliações)
+                </span>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
@@ -146,6 +158,12 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
                   >
                     Fotos
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="reviews"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent text-gray-600 data-[state=active]:text-blue-600 pb-3 pt-3 px-4 flex items-center justify-center"
+                  >
+                    Avaliações ({reviewStats?.totalReviews || 0})
                   </TabsTrigger>
                 </TabsList>
 
@@ -253,6 +271,29 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                       </div>
                     </div>
                   </div>
+                </TabsContent>
+
+                {/* Reviews tab */}
+                <TabsContent value="reviews" className="space-y-8 mt-2">
+                  <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
+                  
+                  {reviewStats && (
+                    <ReviewStats
+                      totalReviews={reviewStats.totalReviews}
+                      averageRating={reviewStats.averageRating}
+                      ratingDistribution={reviewStats.ratingDistribution}
+                      recommendationPercentage={reviewStats.recommendationPercentage}
+                      detailedAverages={reviewStats.detailedAverages}
+                      className="bg-white border border-gray-200 rounded-lg p-6"
+                    />
+                  )}
+                  
+                  <ReviewsList
+                    itemType="vehicle"
+                    itemId={params.id}
+                    showCreateForm={true}
+                    className="space-y-4"
+                  />
                 </TabsContent>
               </Tabs>
             </div>

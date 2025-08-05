@@ -11,15 +11,11 @@ import {
   ArrowLeft,
   CalendarCheck,
   Tag,
-  Heart,
-  Share2,
   Star,
-  MessageCircle,
 } from "lucide-react";
-import { formatDate, cn, formatCurrency } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
 import { EventBookingForm } from "@/components/bookings";
-import { useWhatsAppLink } from "@/lib/hooks/useSystemSettings";
 import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 
@@ -47,10 +43,8 @@ interface EventDetailsProps {
 export default function EventDetails({ event, reviewStats }: EventDetailsProps) {
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   // selectedTicketId removido (não utilizado)
-  const { generateWhatsAppLink } = useWhatsAppLink();
 
   // Format date for display
   const eventDate = new Date(event.date);

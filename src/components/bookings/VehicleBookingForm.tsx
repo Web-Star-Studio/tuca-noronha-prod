@@ -180,7 +180,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
 
       // Redirect to confirmation page or user bookings
       // router.push("/reservas");
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar reserva:", error);
       toast.error("Erro ao fazer reserva", {
         description: "Ocorreu um erro ao processar sua reserva. Por favor, tente novamente.",
@@ -334,7 +334,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
         <CouponValidator
           assetType="vehicle"
           assetId={vehicleId}
-          baseAmount={totalPrice}
+          orderValue={totalPrice}
           onCouponApplied={handleCouponApplied}
           onCouponRemoved={handleCouponRemoved}
         />

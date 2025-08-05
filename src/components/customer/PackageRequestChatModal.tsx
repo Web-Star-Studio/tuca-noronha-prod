@@ -14,7 +14,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { MessageSquare, Send, X } from "lucide-react";
+import { MessageSquare, Send } from "lucide-react";
 import { Id } from "@/../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { usePackageRequestQueries } from "@/hooks/usePackageRequestQueries";

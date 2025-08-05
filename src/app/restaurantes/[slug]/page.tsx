@@ -4,7 +4,7 @@ import { use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { MapPin, Clock, ArrowLeft, Share2, Star, UtensilsCrossed } from "lucide-react";
+import { MapPin, Clock, ArrowLeft, Star, UtensilsCrossed } from "lucide-react";
 import { useRestaurantBySlug, type Restaurant as RestaurantServiceType } from "@/lib/services/restaurantService";
 import { useConvexAuth } from "convex/react";
 import { cn } from "@/lib/utils";
@@ -13,8 +13,6 @@ import type { Id } from "@/../convex/_generated/dataModel";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
-import { ChatButton } from "@/components/chat/ChatButton";
-import { WishlistButton } from "@/components/ui/wishlist-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

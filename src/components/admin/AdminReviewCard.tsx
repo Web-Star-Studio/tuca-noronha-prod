@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { Check, X, Eye, Calendar, MapPin, Trash2, Reply } from "lucide-react";
+import { Eye, Calendar, MapPin, Trash2, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";

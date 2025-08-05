@@ -123,7 +123,7 @@ export function PackageProposalCreationForm({
     if (!isEditing && packageRequest && components.length === 0) {
       handleAnalyzeRequest();
     }
-  }, [packageRequest, isEditing]);
+  }, [packageRequest, isEditing, components.length, handleAnalyzeRequest]);
 
   // Update pricing when components change
   useEffect(() => {
@@ -372,7 +372,7 @@ export function PackageProposalCreationForm({
       case 4: return <StepReview formData={formData} components={components} pricing={pricing} />;
       default: return null;
     }
-  }, [currentStep, formData, components, pricing, newTag, newInclusion, newExclusion]);
+  }, [currentStep, formData, components, pricing, newTag, newInclusion, newExclusion, addTag, removeTag, addComponent, updateComponent, removeComponent, addInclusion, removeInclusion, addExclusion, removeExclusion, setFormData, setNewTag, setNewInclusion, setNewExclusion, setPricing]);
 
   return (
     <div className="space-y-8">
@@ -521,13 +521,6 @@ const StepBasicInfo = ({ formData, setFormData, newTag, setNewTag, addTag, remov
                   <SelectItem value="urgent">Urgente</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                 <Label>Requer aprovação?</Label>
-                 <p className="text-xs text-muted-foreground">Se ativo, a proposta precisará ser aprovada por um administrador antes do envio.</p>
-              </div>
-              <Switch checked={formData.requiresApproval} onCheckedChange={(c) => setFormData({ ...formData, requiresApproval: c })} />
             </div>
           </CardContent>
         </Card>

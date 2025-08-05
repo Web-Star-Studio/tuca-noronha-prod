@@ -979,6 +979,7 @@ export default defineSchema({
       bookingCode: v.optional(v.string()),
       travelerName: v.optional(v.string()),
       proposalTitle: v.optional(v.string()), // Added for package proposals
+      proposalNumber: v.optional(v.string()), // Added for package proposal number
     })),
     createdAt: v.number(),                      // When the notification was created
     readAt: v.optional(v.number()),             // When it was read (if applicable)
@@ -1290,6 +1291,7 @@ export default defineSchema({
       food: v.optional(v.number()), // Food quality (restaurants)
       organization: v.optional(v.number()), // Organization (activities/events)
       guide: v.optional(v.number()), // Guide quality (activities)
+      cleanliness: v.optional(v.number()), // Cleanliness/Condition (vehicles)
     })),
     
     // Additional info

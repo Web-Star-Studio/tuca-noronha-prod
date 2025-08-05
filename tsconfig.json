@@ -27,8 +27,7 @@
         "./src/*"
       ]
     },
-    "target": "ES2020",
-    "noStrictGenericChecks": true
+    "target": "ES2020"
   },
   "include": [
     "next-env.d.ts",

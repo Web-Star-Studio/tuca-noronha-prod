@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { buttonStyles, formStyles } from "@/lib/ui-config";
+import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
@@ -200,7 +200,7 @@ export function RestaurantReservationForm({
       setPartySize(2);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao fazer reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });
@@ -390,7 +390,7 @@ export function RestaurantReservationForm({
             <CouponValidator
               assetType="restaurant"
               assetId={restaurantId}
-              baseAmount={getPrice()}
+              orderValue={getPrice()}
               onCouponApplied={handleCouponApplied}
               onCouponRemoved={handleCouponRemoved}
             />

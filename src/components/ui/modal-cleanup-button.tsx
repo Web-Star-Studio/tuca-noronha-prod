@@ -1,14 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useForceModalCleanup } from "@/hooks/use-modal-cleanup";
 import { toast } from "@/hooks/use-toast";
 
 interface ModalCleanupButtonProps {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
-  className?: string;
   showIcon?: boolean;
   children?: React.ReactNode;
 }
@@ -59,11 +58,7 @@ export function ModalCleanupButton({
 /**
  * Versão de emergência do botão com aviso visual
  */
-export function EmergencyModalCleanupButton({ 
-  className 
-}: { 
-  className?: string 
-}) {
+export function EmergencyModalCleanupButton() {
   const { forceCleanup } = useForceModalCleanup();
 
   const handleEmergencyCleanup = () => {
@@ -87,11 +82,9 @@ export function EmergencyModalCleanupButton({
       variant="destructive"
       size="sm"
       onClick={handleEmergencyCleanup}
-      className={`bg-red-600 hover:bg-red-700 ${className}`}
-      title="Limpeza de emergência - usar apenas se a tela estiver travada"
     >
-      <AlertTriangle className="h-4 w-4 mr-1" />
-      Emergência
+      <Trash2 className="h-4 w-4 mr-2" />
+      Limpeza de Emergência
     </Button>
   );
 } 

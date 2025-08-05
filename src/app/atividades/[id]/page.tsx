@@ -1,21 +1,19 @@
 "use client";
 
-import { useState, use } from "react";
+import { use } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound, useRouter } from "next/navigation";
-import { Clock, Users, ArrowLeft, Info, Share2, Star, ShoppingBag, AlertTriangle, CheckCircle, XCircle, Compass, Gauge,  } from "lucide-react";
+import { notFound } from "next/navigation";
+import { Clock, Users, ArrowLeft, Info, Star, AlertTriangle, CheckCircle, XCircle, Gauge,  } from "lucide-react";
 import { usePublicActivity } from "@/lib/services/activityService";
 import { useConvexAuth } from "convex/react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ActivityBookingForm } from "@/components/bookings";
 
 // Shadcn components
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WishlistButton } from "@/components/ui/wishlist-button";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
@@ -25,9 +23,7 @@ import { HelpSection } from "@/components/contact/HelpSection";
 
 export default function ActivityPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
-  const [showBookingForm, setShowBookingForm] = useState(false);
   const { isAuthenticated } = useConvexAuth();
-  const router = useRouter();
   // Share modal removido
 
   const { activity, isLoading } = usePublicActivity(params.id);
@@ -59,33 +55,6 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
     );
   }
 
-  const shareUrl = `${window.location.origin}/atividades/${params.id}`;
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: activity.title,
-          text: activity.shortDescription,
-          url: shareUrl,
-        });
-      } catch {
-        console.log("Erro ao compartilhar:", error);
-      }
-    } else {
-      // Fallback: copiar URL para clipboard
-      navigator.clipboard.writeText(shareUrl);
-      alert("Link copiado para a área de transferência!");
-    }
-  };
-
-  const handleBookingClick = () => {
-    if (isAuthenticated) {
-      setShowBookingForm(!showBookingForm);
-    } else {
-      router.push("/sign-in");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -188,6 +157,12 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     </TabsTrigger>
                   )}
 
+                  <TabsTrigger
+                    value="reviews"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                  >
+                    Avaliações ({reviewStats?.totalReviews || 0})
+                  </TabsTrigger>
                   <TabsTrigger
                     value="policies"
                     className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
@@ -298,29 +273,6 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     </div>
                   )}
 
-                  {/* Avaliações Section */}
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Avaliações</h3>
-                    
-                    {/* Review Stats */}
-                    <div className="mb-8">
-                      <ReviewStats
-                        totalReviews={reviewStats?.totalReviews || 0}
-                        averageRating={reviewStats?.averageRating || 0}
-                        ratingDistribution={reviewStats?.ratingDistribution || {}}
-                        recommendationPercentage={reviewStats?.recommendationPercentage || 0}
-                        detailedAverages={reviewStats?.detailedAverages}
-                        className="bg-white border border-gray-200 rounded-lg p-6"
-                      />
-                    </div>
-
-                    {/* Reviews List */}
-                    <ReviewsList
-                      itemType="activities"
-                      itemId={params.id}
-                      className="space-y-4"
-                    />
-                  </div>
                 </TabsContent>
 
                 {/* Itinerary tab */}
@@ -385,6 +337,32 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     </div>
                   </TabsContent>
                 )}
+
+                {/* Reviews tab */}
+                <TabsContent value="reviews" className="space-y-6 mt-2">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-4">Avaliações</h2>
+                    
+                    {/* Review Stats */}
+                    <div className="mb-8">
+                      <ReviewStats
+                        totalReviews={reviewStats?.totalReviews || 0}
+                        averageRating={reviewStats?.averageRating || 0}
+                        ratingDistribution={reviewStats?.ratingDistribution || {}}
+                        recommendationPercentage={reviewStats?.recommendationPercentage || 0}
+                        detailedAverages={reviewStats?.detailedAverages}
+                        className="bg-white border border-gray-200 rounded-lg p-6"
+                      />
+                    </div>
+
+                    {/* Reviews List */}
+                    <ReviewsList
+                      itemType="activities"
+                      itemId={params.id}
+                      className="space-y-4"
+                    />
+                  </div>
+                </TabsContent>
 
                 {/* Policies tab */}
                 <TabsContent value="policies" className="space-y-6 mt-2">

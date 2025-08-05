@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Database, Search, Filter, Store, Calendar, Activity, Car, Building2, User,
-  Star, TrendingUp, CheckCircle, XCircle, Shield, Eye,
+  Star, TrendingUp, CheckCircle, XCircle, Shield,
   ExternalLink, MoreHorizontal, Info, AlertTriangle, Package
 } from "lucide-react";
 import {
@@ -133,9 +133,8 @@ const getAssetIcon = (assetType: string) => {
   };
 
 // Component for rendering assets in a table (Desktop)
-const AssetsTable = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: {
+const AssetsTable = ({ assets, handleNavigateToAsset }: {
   assets: Asset[];
-  handleViewAssetDetails: (asset: Asset) => void;
   handleNavigateToAsset: (asset: Asset) => void;
 }) => (
   <div className="rounded-md border">
@@ -212,9 +211,6 @@ const AssetsTable = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleViewAssetDetails(asset)}>
-                    <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleNavigateToAsset(asset)}>
                     <ExternalLink className="mr-2 h-4 w-4" /> Visitar Página
                   </DropdownMenuItem>
@@ -237,9 +233,8 @@ const AssetsTable = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: 
 );
 
 // Component for rendering assets in a grid (Mobile)
-const AssetsGrid = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: {
+const AssetsGrid = ({ assets, handleNavigateToAsset }: {
   assets: Asset[];
-  handleViewAssetDetails: (asset: Asset) => void;
   handleNavigateToAsset: (asset: Asset) => void;
 }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -272,9 +267,6 @@ const AssetsGrid = ({ assets, handleViewAssetDetails, handleNavigateToAsset }: {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleViewAssetDetails(asset)}>
-                <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleNavigateToAsset(asset)}>
                 <ExternalLink className="mr-2 h-4 w-4" /> Visitar Página
               </DropdownMenuItem>
@@ -389,7 +381,7 @@ export default function AssetsManagementPage() {
   const [selectedAssetType, setSelectedAssetType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [selectedAsset] = useState<Asset | null>(null);
   const [isAssetDetailsModalOpen, setIsAssetDetailsModalOpen] = useState(false);
 
   // Use optimized asset management hooks
@@ -455,11 +447,6 @@ export default function AssetsManagementPage() {
     );
   }
 
-  // Handler for viewing asset details
-  const handleViewAssetDetails = (asset: Asset) => {
-    setSelectedAsset(asset);
-    setIsAssetDetailsModalOpen(true);
-  };
 
   // Handler for navigating to asset-specific page
   const handleNavigateToAsset = (asset: Asset) => {
@@ -687,13 +674,11 @@ export default function AssetsManagementPage() {
             isMobile ? (
               <AssetsGrid
                 assets={filteredAssets}
-                handleViewAssetDetails={handleViewAssetDetails}
                 handleNavigateToAsset={handleNavigateToAsset}
                               />
                             ) : (
               <AssetsTable
                 assets={filteredAssets}
-                handleViewAssetDetails={handleViewAssetDetails}
                 handleNavigateToAsset={handleNavigateToAsset}
               />
             )

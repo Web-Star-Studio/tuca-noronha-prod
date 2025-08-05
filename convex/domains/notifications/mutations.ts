@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "../../_generated/server";
+import { mutation, internalMutation } from "../../_generated/server";
 import { getCurrentUserOrThrow } from "../users/helpers";
 import {
   createNotificationValidator,
@@ -11,6 +11,23 @@ import {
  * Create a new notification (system use)
  */
 export const createNotification = mutation({
+  args: createNotificationValidator,
+  returns: v.id("notifications"),
+  handler: async (ctx, args) => {
+    const notificationId = await ctx.db.insert("notifications", {
+      ...args,
+      isRead: false,
+      createdAt: Date.now(),
+    });
+
+    return notificationId;
+  },
+});
+
+/**
+ * Internal function to create notifications (for server-to-server calls)
+ */
+export const create = internalMutation({
   args: createNotificationValidator,
   returns: v.id("notifications"),
   handler: async (ctx, args) => {

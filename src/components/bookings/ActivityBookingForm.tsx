@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { buttonStyles, formStyles } from "@/lib/ui-config";
+import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
@@ -207,7 +207,7 @@ export function ActivityBookingForm({
         }
       }
 
-    } catch {
+    } catch (error) {
       toast.error("Erro ao criar reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });
@@ -394,7 +394,7 @@ export function ActivityBookingForm({
             <CouponValidator
               assetType="activity"
               assetId={activityId}
-              baseAmount={getPrice()}
+              orderValue={getPrice()}
               onCouponApplied={handleCouponApplied}
               onCouponRemoved={handleCouponRemoved}
             />

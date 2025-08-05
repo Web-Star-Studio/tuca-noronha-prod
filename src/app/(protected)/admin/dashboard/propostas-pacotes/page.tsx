@@ -54,7 +54,6 @@ export default function PackageProposalsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-
   // Queries
   const proposals = useQuery(api.domains.packageProposals.queries.listPackageProposals, {
     limit: 50,
@@ -119,7 +118,7 @@ export default function PackageProposalsPage() {
         customMessage: "Sua proposta personalizada está pronta! Confira todos os detalhes e entre em contato se tiver dúvidas.",
       });
       toast.success("Proposta enviada com sucesso!");
-    } catch {
+    } catch (error) {
       console.error("Error sending proposal:", error);
       toast.error("Erro ao enviar proposta");
     }
@@ -153,7 +152,7 @@ export default function PackageProposalsPage() {
       setShowDeleteDialog(false);
       setSelectedProposal(null);
       setDeleteReason("");
-    } catch {
+    } catch (error) {
       console.error("Error deleting proposal:", error);
       toast.error("Erro ao excluir proposta");
     } finally {
@@ -383,7 +382,7 @@ export default function PackageProposalsPage() {
                 </Select>
 
                 <div className="flex gap-2">
-                  <Button onClick={() => setShowCreateDialog(true)} className="flex-1">
+                  <Button onClick={() => window.open('/admin/dashboard/propostas-pacotes/criar', '_blank')} className="flex-1">
                     <PlusIcon className="h-4 w-4 mr-2" />
                     Nova Proposta
                   </Button>

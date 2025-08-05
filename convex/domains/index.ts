@@ -42,4 +42,7 @@ export * as email from "./email";
 export * as systemSettings from "./systemSettings";
 
 // Export subscriptions domain for guide subscription management
-export * as subscriptions from "./subscriptions"; 
+export * as subscriptions from "./subscriptions";
+
+// Export notifications domain for system notifications
+export * as notifications from "./notifications"; 

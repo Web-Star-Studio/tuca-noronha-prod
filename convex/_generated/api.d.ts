@@ -70,6 +70,7 @@ import type * as domains_media_queries from "../domains/media/queries.js";
 import type * as domains_media_types from "../domains/media/types.js";
 import type * as domains_media_utils from "../domains/media/utils.js";
 import type * as domains_notifications_actions from "../domains/notifications/actions.js";
+import type * as domains_notifications_index from "../domains/notifications/index.js";
 import type * as domains_notifications_mutations from "../domains/notifications/mutations.js";
 import type * as domains_notifications_queries from "../domains/notifications/queries.js";
 import type * as domains_notifications_types from "../domains/notifications/types.js";
@@ -246,6 +247,7 @@ declare const fullApi: ApiFromModules<{
   "domains/media/types": typeof domains_media_types;
   "domains/media/utils": typeof domains_media_utils;
   "domains/notifications/actions": typeof domains_notifications_actions;
+  "domains/notifications/index": typeof domains_notifications_index;
   "domains/notifications/mutations": typeof domains_notifications_mutations;
   "domains/notifications/queries": typeof domains_notifications_queries;
   "domains/notifications/types": typeof domains_notifications_types;

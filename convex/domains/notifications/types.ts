@@ -10,6 +10,7 @@ export const NOTIFICATION_TYPES = {
   BOOKING_REMINDER: "booking_reminder",
   PAYMENT_RECEIVED: "payment_received",
   SYSTEM_UPDATE: "system_update",
+  PACKAGE_PROPOSAL_SENT: "package_proposal_sent",
 } as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
@@ -22,6 +23,7 @@ export const RELATED_TYPES = {
   EVENT_BOOKING: "event_booking", 
   RESTAURANT_RESERVATION: "restaurant_reservation",
   VEHICLE_BOOKING: "vehicle_booking",
+  PACKAGE_PROPOSAL: "package_proposal",
 } as const;
 
 export type RelatedType = typeof RELATED_TYPES[keyof typeof RELATED_TYPES];
@@ -41,6 +43,8 @@ export const createNotificationValidator = v.object({
     bookingType: v.optional(v.string()),
     assetName: v.optional(v.string()),
     partnerName: v.optional(v.string()),
+    proposalTitle: v.optional(v.string()),
+    proposalNumber: v.optional(v.string()),
   })),
 });
 

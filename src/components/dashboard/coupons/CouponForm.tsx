@@ -211,6 +211,7 @@ export default function CouponForm({
         stackable: false,
         autoApply: false,
         notifyOnExpiration: false,
+        globalApplication: formData.globalApplication,
         applicableAssets: [],
         allowedUsers: [],
       };
