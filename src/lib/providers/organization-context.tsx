@@ -47,11 +47,13 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
 }
 
 // Hook para usar o contexto de organização (temporário - não implementado)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function useOrganization() {
   return {
     organizations: [] as Organization[],
     activeOrganization: null as Organization | null,
-    setActiveOrganization: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    setActiveOrganization: (org: Organization) => {},
     isLoading: false,
     error: null
   };

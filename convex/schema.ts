@@ -72,6 +72,18 @@ const partnerTransactions = defineTable({
   .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
   .index("by_status_and_createdAt", ["status", "createdAt"]);
 
+export const contactMessages = defineTable({
+  name: v.string(),
+  email: v.string(),
+  subject: v.string(),
+  message: v.string(),
+  status: v.union(
+    v.literal("new"),
+    v.literal("read"),
+    v.literal("archived")
+  ),
+}).index("by_status", ["status"]);
+
 export default defineSchema({
   authAccounts: defineTable({
     emailVerified: v.optional(v.string()),
@@ -1764,6 +1776,7 @@ export default defineSchema({
   // Tabelas para assinaturas do guia
   guideSubscriptions,
   subscriptionPayments,
+  contactMessages,
 
   // Tabela para o conteúdo do guia
   guideContent: defineTable({

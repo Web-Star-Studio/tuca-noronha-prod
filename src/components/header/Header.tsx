@@ -8,54 +8,43 @@ import { playfairDisplay } from "@/lib/fonts"
 import { usePathname } from "next/navigation"
 
 export default function Header() {
-    const [isTransparent, setIsTransparent] = useState(true)
     const pathname = usePathname()
-    
-    // Verifica se estamos em uma página de detalhe 
-    const isDetailPage = false // removido check de hospedagens
-    const isProfilePage = /^\/meu-painel/.test(pathname) // Incluindo subpáginas do meu-painel
-    const isReservationPage = /^\/reservas/.test(pathname) // Qualquer página dentro de /reservas
+    const [isScrolled, setIsScrolled] = useState(false)
+
+    // Determina se a página deve forçar um header opaco
+    const pagesWithOpaqueHeader = [
+      '/meu-painel',
+      '/reservas',
+      '/privacidade',
+      '/termos'
+    ]
+    const forceOpaque = pagesWithOpaqueHeader.some(page => pathname.startsWith(page))
 
     useEffect(() => {
       const handleScroll = () => {
-        // Se estiver em uma página de detalhes, reservas ou meu-painel, nunca usar transparência
-        if (isDetailPage || isReservationPage || isProfilePage) {
-          setIsTransparent(false)
-          return
-        }
-        
-        // Mudar o header para não transparente quando o scroll for maior que 50px
-        const scrollPosition = window.scrollY
-        setIsTransparent(scrollPosition <= 50)
+        setIsScrolled(window.scrollY > 50)
       }
-      
-      // Se estiver em páginas específicas, sempre definir como não transparente
-      if (isDetailPage || isReservationPage || isProfilePage) {
-        setIsTransparent(false)
-      } else {
-        // Adicionar evento de scroll
+
+      if (!forceOpaque) {
         window.addEventListener('scroll', handleScroll)
-        // Verificar posição inicial
-        handleScroll()
+        handleScroll() // Verifica o estado inicial
+      } else {
+        setIsScrolled(true); // Garante que seja opaco
       }
-      
-      // Limpar o event listener quando o componente for desmontado
+
       return () => {
         window.removeEventListener('scroll', handleScroll)
       }
-    }, [isDetailPage, isProfilePage, isReservationPage])
-    
-    // Determinar se deve usar texto branco (quando transparente E não está em páginas de detalhes/reservas/meu-painel)
-    const shouldUseWhiteText = isTransparent && !isDetailPage && !isReservationPage && !isProfilePage
+    }, [pathname, forceOpaque])
+
+    const isTransparent = !forceOpaque && !isScrolled;
     
     return (
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          shouldUseWhiteText
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isTransparent
             ? "bg-transparent text-white"
-            : `bg-white/80 backdrop-blur-lg text-gray-900 shadow-sm ${
-                isProfilePage ? "" : "border-b border-white/20"
-              }`
+            : "bg-white/80 backdrop-blur-lg text-gray-900 shadow-sm border-b border-gray-200/80"
         }`}
       >
         <div className="w-full px-4 sm:px-6 lg:px-12">
@@ -65,15 +54,15 @@ export default function Header() {
               href="/"
               className="text-2xl font-bold tracking-tighter"
             >
-              <span className={`${shouldUseWhiteText ? "text-white" : "text-gray-900"} ${playfairDisplay.className}`}>
+              <span className={`${isTransparent ? "text-white" : "text-gray-900"} ${playfairDisplay.className}`}>
                 Tuca Noronha
               </span>
             </Link>
 
             {/* User Menu and Navigation Dropdown */}
             <div className="flex items-center space-x-4">
-              <UserMenu isTransparent={shouldUseWhiteText} />
-              <DropdownNavigation isTransparent={shouldUseWhiteText} />
+              <UserMenu isTransparent={isTransparent} />
+              <DropdownNavigation isTransparent={isTransparent} />
             </div>
           </div>
         </div>

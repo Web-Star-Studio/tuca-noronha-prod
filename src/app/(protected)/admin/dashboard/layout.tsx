@@ -111,7 +111,7 @@ function OrganizationSwitcher() {
   // Função para trocar organização e redirecionar para o dashboard
   const handleOrganizationChange = (org: Organization) => {
     setActiveOrganization(org)
-    setOpen(false)
+    setOpen(false)  
     
     // Se estiver na página de reservas ou em qualquer página específica,
     // redirecionar para o dashboard principal da nova organização
