@@ -135,8 +135,9 @@ export default function AtividadesPage() {
           <div
             className="h-[60vh] bg-cover bg-center filter brightness-60"
             style={{
+              // Usa a imagem estática do projeto com fallback para o padrão existente
               backgroundImage:
-                "url('https://images.unsplash.com/photo-1559357711-e442ab604fdc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGZlcm5hbmRvJTIwZGUlMjBub3JvbmhhfGVufDB8fDB8fHww')",
+                "url('/images/when-to-go.png'), url('/images/bg-pattern.png')",
             }}
           />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
