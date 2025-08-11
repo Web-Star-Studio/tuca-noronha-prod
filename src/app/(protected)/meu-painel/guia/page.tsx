@@ -81,6 +81,66 @@ const guideSections = [
     quickInfo: "Melhor: Set-Fev • Surf: Jan-Mar",
     gradient: "from-yellow-400 to-orange-600",
     accentGradient: "from-yellow-500/20 to-orange-600/20"
+  },
+  {
+    id: "activities",
+    title: "O Que Fazer",
+    icon: Activity,
+    color: "emerald",
+    description: "Descubra as melhores atividades, passeios e experiências únicas em Fernando de Noronha",
+    quickInfo: "Mergulho, trilhas, passeios",
+    gradient: "from-emerald-400 to-teal-600",
+    accentGradient: "from-emerald-500/20 to-teal-600/20"
+  },
+  {
+    id: "culture-history",
+    title: "Cultura e História",
+    icon: Trophy,
+    color: "amber",
+    description: "Explore a rica história e cultura de Fernando de Noronha através de seus marcos históricos",
+    quickInfo: "Fortes, museus, patrimônio",
+    gradient: "from-amber-400 to-orange-600",
+    accentGradient: "from-amber-500/20 to-orange-600/20"
+  },
+  {
+    id: "sustainability",
+    title: "Sustentabilidade",
+    icon: Shield,
+    color: "green",
+    description: "Aprenda sobre preservação ambiental e como contribuir para manter a ilha sustentável",
+    quickInfo: "Lei do Plástico Zero, TPA",
+    gradient: "from-green-400 to-emerald-600",
+    accentGradient: "from-green-500/20 to-emerald-600/20"
+  },
+  {
+    id: "favorite-spots",
+    title: "Cantos Favoritos",
+    icon: Heart,
+    color: "pink",
+    description: "Conheça os lugares especiais e dicas exclusivas do Tuca para sua estadia",
+    quickInfo: "Dicas do Tuca exclusivas",
+    gradient: "from-pink-400 to-rose-600",
+    accentGradient: "from-pink-500/20 to-rose-600/20"
+  },
+  {
+    id: "stories-curiosities",
+    title: "Histórias e Curiosidades",
+    icon: Lightbulb,
+    color: "violet",
+    description: "Histórias engraçadas e curiosidades fascinantes sobre a ilha paradisíaca",
+    quickInfo: "1101 curiosidades",
+    gradient: "from-violet-400 to-purple-600",
+    accentGradient: "from-violet-500/20 to-purple-600/20"
+  },
+  {
+    id: "useful-contacts",
+    title: "Contatos Úteis",
+    icon: Phone,
+    color: "slate",
+    description: "Informações essenciais de contato para emergências e serviços importantes",
+    quickInfo: "Emergências, saúde, segurança",
+    gradient: "from-slate-400 to-gray-600",
+    accentGradient: "from-slate-500/20 to-gray-600/20"
   }
 ];
 
@@ -210,6 +270,66 @@ const colorMap = {
     lightBg: "bg-yellow-100",
     gradient: "from-yellow-600 to-yellow-700",
     shadowColor: "shadow-yellow-200"
+  },
+  emerald: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    icon: "text-emerald-600",
+    darkBg: "bg-emerald-600",
+    lightBg: "bg-emerald-100",
+    gradient: "from-emerald-600 to-emerald-700",
+    shadowColor: "shadow-emerald-200"
+  },
+  amber: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    icon: "text-amber-600",
+    darkBg: "bg-amber-600",
+    lightBg: "bg-amber-100",
+    gradient: "from-amber-600 to-amber-700",
+    shadowColor: "shadow-amber-200"
+  },
+  pink: {
+    bg: "bg-pink-50",
+    text: "text-pink-700",
+    border: "border-pink-200",
+    icon: "text-pink-600",
+    darkBg: "bg-pink-600",
+    lightBg: "bg-pink-100",
+    gradient: "from-pink-600 to-pink-700",
+    shadowColor: "shadow-pink-200"
+  },
+  violet: {
+    bg: "bg-violet-50",
+    text: "text-violet-700",
+    border: "border-violet-200",
+    icon: "text-violet-600",
+    darkBg: "bg-violet-600",
+    lightBg: "bg-violet-100",
+    gradient: "from-violet-600 to-violet-700",
+    shadowColor: "shadow-violet-200"
+  },
+  slate: {
+    bg: "bg-slate-50",
+    text: "text-slate-700",
+    border: "border-slate-200",
+    icon: "text-slate-600",
+    darkBg: "bg-slate-600",
+    lightBg: "bg-slate-100",
+    gradient: "from-slate-600 to-slate-700",
+    shadowColor: "shadow-slate-200"
+  },
+  red: {
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-200",
+    icon: "text-red-600",
+    darkBg: "bg-red-600",
+    lightBg: "bg-red-100",
+    gradient: "from-red-600 to-red-700",
+    shadowColor: "shadow-red-200"
   }
 };
 
@@ -1406,6 +1526,117 @@ function SectionContent({
             </div>
           </div>
         </motion.div>
+
+        {/* Conteúdo do Ebook da Tuca - Capítulo 2: Onde Ficar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+              <Home className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Dicas do Tuca sobre Hospedagem</h3>
+              <p className="text-gray-600">Conselhos exclusivos para escolher a melhor pousada</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Dicas principais */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Star className="w-5 h-5 text-purple-600" />
+                Dicas Essenciais do Tuca
+              </h4>
+              <div className="space-y-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <p className="text-gray-700 leading-relaxed">
+                    <strong>💡 Pesquise bem:</strong> Na mesma faixa de preço você pode encontrar opções bem diferentes. 
+                    Avalie o que é mais importante para você, seja a localização, o conforto ou os serviços oferecidos.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <p className="text-gray-700 leading-relaxed">
+                    <strong>⭐ Avaliações:</strong> Sempre confira as avaliações de outros hóspedes para garantir que a 
+                    pousada atenda às suas expectativas. Sites de viagem e redes sociais são ótimas fontes de informações e reviews.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <p className="text-gray-700 leading-relaxed">
+                    <strong>🏛️ Legalização:</strong> Procure sempre estabelecimentos legalizados pela administração de 
+                    Noronha. Isso garante que você terá uma estadia segura e sem imprevistos.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Importância da Localização */}
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h4 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-purple-600" />
+                  Importância da Localização
+                </h4>
+                <div className="space-y-3">
+                  <p className="text-gray-700 leading-relaxed">
+                    A localização da sua pousada pode fazer uma grande diferença na sua experiência em Fernando de Noronha. 
+                    Ficar perto das principais praias ou do centro pode facilitar o acesso às atrações e economizar tempo.
+                  </p>
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <p className="text-blue-800 text-sm">
+                      <strong>💡 Dica do Tuca:</strong> Se você quer explorar várias praias, ficar em uma área central pode ser mais conveniente. 
+                      Estar perto das praias pode proporcionar uma experiência mais intensa da beleza natural de Noronha.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-purple-600" />
+                  Variedade de Opções
+                </h4>
+                <div className="space-y-3">
+                  <p className="text-gray-700 leading-relaxed">
+                    Fernando de Noronha oferece uma variedade de pousadas que atendem a todos os gostos e orçamentos. 
+                    Desde as mais simples até as mais luxuosas, você encontrará o lugar perfeito para sua estadia na ilha.
+                  </p>
+                  <div className="bg-green-50 rounded-xl p-4">
+                    <p className="text-green-800 text-sm">
+                      Vale a pena explorar bem as opções, pois mesmo dentro da mesma faixa de preço, você pode encontrar 
+                      diferenças significativas em termos de conforto, serviços e localização.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mapa de Fernando de Noronha */}
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Map className="w-5 h-5 text-blue-600" />
+                Principais Regiões para Hospedagem
+              </h4>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Vila dos Remédios</h5>
+                  <p className="text-sm text-gray-700">Centro histórico, próximo a restaurantes e vida noturna</p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Floresta Nova</h5>
+                  <p className="text-sm text-gray-700">Área mais tranquila, boa para descanso</p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Próximo às Praias</h5>
+                  <p className="text-sm text-gray-700">Acesso facilitado às principais praias da ilha</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     ),
 
@@ -2345,6 +2576,790 @@ function SectionContent({
           </div>
         </motion.div>
       </div>
+    ),
+
+    // Novas seções baseadas no Ebook da Tuca
+    "activities": (
+      <div className="space-y-12">
+        {/* Conteúdo do Capítulo 3: O Que Fazer */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl">
+              <Activity className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">O Que Fazer em Fernando de Noronha</h3>
+              <p className="text-gray-600">Atividades imperdíveis na ilha paradisíaca</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Mergulho de Cilindro */}
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Fish className="w-6 h-6 text-blue-600" />
+                Mergulho de Cilindro
+              </h4>
+              <p className="text-gray-700 mb-4">
+                Fernando de Noronha é um paraíso para os amantes do mergulho com cilindro. Com águas claras e uma abundante vida marinha, você terá experiências inesquecíveis.
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Batismo</h5>
+                  <p className="text-sm text-gray-700 mb-2">Para iniciantes, com um instrutor por pessoa. Inclui aula no barco sobre uso de equipamentos e normas de segurança.</p>
+                  <p className="text-xs text-blue-600">📅 Horários: Manhã 7h30 / Tarde 13h45</p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Credenciado</h5>
+                  <p className="text-sm text-gray-700 mb-2">Para mergulhadores certificados, com dois mergulhos em diferentes pontos da ilha.</p>
+                  <p className="text-xs text-blue-600">📅 Horários: Manhã 7h30 / Tarde 13h45</p>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 rounded-xl p-4 mt-4">
+                <p className="text-emerald-800 text-sm">
+                  <strong>💡 Dica do Tuca:</strong> Mesmo se o tempo não estiver perfeito, o mergulho ainda vale muito a pena. 
+                  É uma experiência incrível. Não precisa saber nadar, pois você estará sempre acompanhado por um instrutor.
+                </p>
+              </div>
+            </div>
+
+            {/* Atividades Aquáticas */}
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Waves className="w-5 h-5 text-cyan-600" />
+                  Bike Aquática
+                </h4>
+                <p className="text-gray-700 mb-3">
+                  O passeio dura entre 45 minutos e 1 hora, começando na Praia do Porto e passando pelas faixas de areia da Biboca, Cachorro e Meio.
+                </p>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <p className="text-cyan-800 text-sm">
+                    <strong>💡 Dica do Tuca:</strong> Pela manhã, a chance de ver golfinhos é maior.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Navigation className="w-5 h-5 text-orange-600" />
+                  Canoa Havaiana
+                </h4>
+                <p className="text-gray-700 mb-3">
+                  Expedição que combina aventura e contemplação, com roteiro de 4 km saindo da Praia do Porto. Duração média de duas horas.
+                </p>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <p className="text-orange-800 text-sm">
+                    <strong>💡 Dica do Tuca:</strong> Tente ir no horário do nascer do sol. A chance de ver golfinhos de perto é alta e o visual é inesquecível.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* IlhaTour */}
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Car className="w-6 h-6 text-purple-600" />
+                IlhaTour - Conheça 70% da Ilha
+              </h4>
+              <p className="text-gray-700 mb-4">
+                Passeio guiado em veículo 4x4, passando pelos principais pontos turísticos e praias da ilha. 
+                Inclui regiões portuárias, mirantes, praias e termina com o pôr do sol no Mirante do Boldró.
+              </p>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">✅ Incluso</h5>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>• Traslado ida e volta</li>
+                    <li>• Guia experiente</li>
+                  </ul>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">❌ Não Incluso</h5>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>• Equipamento de mergulho</li>
+                    <li>• Almoço</li>
+                    <li>• Ingresso PARNAMAR</li>
+                  </ul>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <div className="bg-purple-50 rounded-xl p-3">
+                    <p className="text-purple-800 text-sm">
+                      <strong>💡 Dica do Tuca:</strong> Ideal para quem visita a ilha pela primeira vez e quer conhecer 70% desse paraíso em um dia.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "culture-history": (
+      <div className="space-y-12">
+        {/* Conteúdo do Capítulo 6: Cultura e História */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+              <Trophy className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Cultura e História</h3>
+              <p className="text-gray-600">Explore a rica herança histórica de Fernando de Noronha</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Forte de Nossa Senhora dos Remédios */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Shield className="w-6 h-6 text-amber-600" />
+                Forte de Nossa Senhora dos Remédios
+              </h4>
+              <p className="text-gray-700 mb-4">
+                Um dos principais pontos históricos da ilha, construído no século XVIII. É um dos maiores e mais bem preservados fortes da ilha, representando a arquitetura militar portuguesa.
+              </p>
+              <div className="bg-white/70 rounded-xl p-4">
+                <p className="text-amber-800 text-sm">
+                  <strong>💡 Dica do Tuca:</strong> Visite ao entardecer para capturar belas fotos do pôr do sol e tomar um drink. 
+                  Em vários pontos que você vai passar durante seus passeios poderá ver ruínas, sempre pergunte ao seu guia o que são elas.
+                </p>
+              </div>
+            </div>
+
+            {/* Grid de Pontos Históricos */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-blue-50 rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                  Museu do Tubarão
+                </h4>
+                <p className="text-gray-700 mb-3">
+                  Oferece uma visão sobre a fauna marinha local e a importância da preservação dos tubarões. 
+                  O museu tem exposições educativas sobre a vida marinha.
+                </p>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <p className="text-blue-800 text-sm">
+                    <strong>💡 Dica do Tuca:</strong> Ótimo lugar para aprender sobre a vida marinha. As crianças adoram e os adultos também se surpreendem com as curiosidades.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-green-50 rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Building className="w-5 h-5 text-green-600" />
+                  Palácio de São Miguel
+                </h4>
+                <p className="text-gray-700 mb-3">
+                  Sede administrativa da ilha, possui uma arquitetura colonial charmosa. Construído no século XVIII, 
+                  ainda hoje serve como importante edifício governamental.
+                </p>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <p className="text-green-800 text-sm">
+                    <strong>💡 Dica do Tuca:</strong> Vale a pena dar uma passada e apreciar a arquitetura colonial. 
+                    Muitas vezes você pode ver exposições temporárias e eventos culturais.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Outros Marcos Históricos */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-cyan-50 rounded-xl p-4">
+                <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-cyan-600" />
+                  Forte do Sueste
+                </h5>
+                <p className="text-sm text-gray-700 mb-2">
+                  Com vista privilegiada da Praia do Sueste, este forte fazia parte do sistema de defesa da ilha.
+                </p>
+                <p className="text-xs text-cyan-600">Excelente ponto para observar a vida marinha de cima</p>
+              </div>
+              
+              <div className="bg-indigo-50 rounded-xl p-4">
+                <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-indigo-600" />
+                  Museu do Terminal
+                </h5>
+                <p className="text-sm text-gray-700 mb-2">
+                  Oferece uma visão abrangente da história de Fernando de Noronha, desde sua descoberta até os dias atuais.
+                </p>
+                <p className="text-xs text-indigo-600">Exposições bem detalhadas e educativas</p>
+              </div>
+
+              <div className="bg-pink-50 rounded-xl p-4">
+                <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-pink-600" />
+                  Igreja dos Remédios
+                </h5>
+                <p className="text-sm text-gray-700 mb-2">
+                  Marco religioso e histórico importante da ilha, localizada na Vila dos Remédios.
+                </p>
+                <p className="text-xs text-pink-600">Arquitetura colonial preservada</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "sustainability": (
+      <div className="space-y-12">
+        {/* Conteúdo do Capítulo 10: Sustentabilidade e Preservação Ambiental */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+              <Shield className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Sustentabilidade e Preservação</h3>
+              <p className="text-gray-600">Como contribuir para manter Fernando de Noronha sustentável</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Lei do Plástico Zero */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Trash2 className="w-6 h-6 text-green-600" />
+                Lei do Plástico Zero
+              </h4>
+              <p className="text-gray-700 mb-4">
+                Em vigor desde 2019, a Lei do Plástico Zero proíbe o uso, a venda e a distribuição de plásticos descartáveis em Fernando de Noronha. 
+                Isso inclui canudos, copos, talheres, sacolas plásticas e outros itens similares.
+              </p>
+              
+              <div className="bg-white/70 rounded-xl p-4 mb-4">
+                <h5 className="font-semibold text-gray-900 mb-2">Objetivo da Lei</h5>
+                <p className="text-gray-700">Reduzir a poluição plástica na ilha, protegendo a vida marinha e os ecossistemas locais.</p>
+              </div>
+
+              <div className="bg-emerald-50 rounded-xl p-4">
+                <p className="text-emerald-800 text-sm">
+                  <strong>💡 Dica do Tuca:</strong> Apoie a Lei do Plástico Zero trazendo seus próprios utensílios reutilizáveis 
+                  e incentivando outros visitantes a fazerem o mesmo.
+                </p>
+              </div>
+            </div>
+
+            {/* Como Contribuir */}
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h4 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-green-600" />
+                  Dicas para Visitantes
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <h5 className="font-semibold text-blue-900 mb-2">♻️ Reduza Plásticos</h5>
+                    <p className="text-blue-800 text-sm">Traga garrafas reutilizáveis e sacolas de tecido</p>
+                  </div>
+                  <div className="bg-cyan-50 rounded-xl p-4">
+                    <h5 className="font-semibold text-cyan-900 mb-2">🐠 Respeite a Vida Marinha</h5>
+                    <p className="text-cyan-800 text-sm">Evite tocar nos corais e não alimente os animais</p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-xl p-4">
+                    <h5 className="font-semibold text-emerald-900 mb-2">🌿 Siga as Trilhas</h5>
+                    <p className="text-emerald-800 text-sm">Para proteger a vegetação nativa e evitar erosão</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-green-600" />
+                  Participação em Projetos
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-orange-50 rounded-xl p-4">
+                    <h5 className="font-semibold text-orange-900 mb-2">🤝 Voluntariado</h5>
+                    <p className="text-orange-800 text-sm">Participe de programas que ajudam na conservação da ilha</p>
+                  </div>
+                  <div className="bg-yellow-50 rounded-xl p-4">
+                    <h5 className="font-semibold text-yellow-900 mb-2">🏖️ Limpeza de Praias</h5>
+                    <p className="text-yellow-800 text-sm">Junte-se às iniciativas de limpeza para manter as praias livres de lixo</p>
+                  </div>
+                  <div className="bg-purple-50 rounded-xl p-4">
+                    <h5 className="font-semibold text-purple-900 mb-2">🏛️ Projeto Tamar</h5>
+                    <p className="text-purple-800 text-sm">Apoie a proteção das tartarugas marinhas</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tratamento de Lixo */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Zap className="w-6 h-6 text-blue-600" />
+                Tratamento de Lixo na Ilha
+              </h4>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">♻️ Reciclagem</h5>
+                  <p className="text-sm text-gray-700">
+                    Materiais recicláveis são enviados para o continente, onde são processados adequadamente.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">🌱 Compostagem</h5>
+                  <p className="text-sm text-gray-700">
+                    Resíduos orgânicos são compostados na própria ilha e utilizados como adubo.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">📚 Educação</h5>
+                  <p className="text-sm text-gray-700">
+                    Programas educativos conscientizam sobre a correta destinação dos resíduos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-green-50 rounded-xl p-4 mt-4">
+                <p className="text-green-800 text-sm">
+                  <strong>💡 Dica do Tuca:</strong> Faça sua parte separando corretamente os resíduos e participe dos 
+                  programas de educação ambiental para aprender mais sobre como proteger a ilha.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "favorite-spots": (
+      <div className="space-y-12">
+        {/* Conteúdo do Capítulo 9: Meus Cantos Favoritos */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl">
+              <Heart className="w-6 h-6 text-pink-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Meus Cantos Favoritos</h3>
+              <p className="text-gray-600">Lugares especiais e dicas exclusivas do Tuca</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Praias Favoritas */}
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Waves className="w-6 h-6 text-cyan-600" />
+                Praias Favoritas do Tuca
+              </h4>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🏖️ Praia da Conceição</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Ideal para pegar um cantinho no Duda Rei e reunir a turma para passar a tarde por lá. 
+                    Praia linda e com um &ldquo;movimento&rdquo; maior.
+                  </p>
+                  <div className="bg-cyan-50 rounded-lg p-2">
+                    <p className="text-cyan-800 text-xs">
+                      <strong>💡 Dica:</strong> Pegue um guarda-sol no bar do Duda Rei e faça dele a base da sua turma.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🌊 Baía do Sancho</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Perfeita para mergulho e snorkeling, frequentemente considerada uma das praias mais bonitas do mundo.
+                  </p>
+                  <div className="bg-blue-50 rounded-lg p-2">
+                    <p className="text-blue-800 text-xs">
+                      <strong>💡 Dica:</strong> Chegue cedo para pegar um cantinho embaixo da sombra da árvore no canto direito.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🐢 Praia do Leão</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Ótima para observar tartarugas, especialmente durante a temporada de desova.
+                  </p>
+                  <div className="bg-orange-50 rounded-lg p-2">
+                    <p className="text-orange-800 text-xs">
+                      <strong>💡 Dica:</strong> Leve guarda-sol porque é muito difícil achar uma sombra por lá.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vida Noturna */}
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Star className="w-6 h-6 text-purple-600" />
+                Vida Noturna Favorita
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🍻 Bar do Cachorro</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Ambiente animado com música ao vivo e uma atmosfera vibrante.
+                  </p>
+                  <div className="bg-purple-50 rounded-lg p-3">
+                    <p className="text-purple-800 text-sm">
+                      <strong>💡 Dica do Tuca:</strong> Para mim, o ambiente mais bacana que integra os visitantes com os ilhéus. 
+                      Veja o dia do forrozinho que é sempre mais animado.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🎉 Pousada Zé Maria</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Conhecida por suas noites temáticas e festas animadas, especialmente o famoso festival gastronômico.
+                  </p>
+                  <div className="bg-indigo-50 rounded-lg p-3">
+                    <p className="text-indigo-800 text-sm">
+                      <strong>💡 Dica do Tuca:</strong> Uma parada obrigatória é o Festival Gastronômico. 
+                      Marque com antecedência, sempre está cheio!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mirantes Especiais */}
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Camera className="w-6 h-6 text-amber-600" />
+                Mirante Secreto do Tuca
+              </h4>
+              
+              <div className="bg-white/70 rounded-xl p-4">
+                <h5 className="font-semibold text-gray-900 mb-3">🌅 Mirante dos Golfinhos + Trilha do Sancho</h5>
+                <p className="text-gray-700 mb-4">
+                  A grande maioria sempre faz a trilha e desce direto para o Sancho. Mas existe uma trilha maior e mais completa que eu particularmente adoro.
+                </p>
+                <p className="text-gray-700 mb-4">
+                  Ao invés de ir direto pela trilha que desce para o Sancho, eu sigo pela esquerda e vou antes ao Mirante dos Golfinhos. 
+                  É um lugar lindo de contemplar, e ainda tem chance de ver os golfinhos do alto.
+                </p>
+                <div className="bg-amber-50 rounded-lg p-4">
+                  <p className="text-amber-800 text-sm">
+                    <strong>🏆 Segredo do Tuca:</strong> Saindo do Mirante dos Golfinhos, tem uma trilha que vai margeando o paredão 
+                    com outros mirantes até chegar na descida do Sancho. É mais longa, mas vale cada passo!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "stories-curiosities": (
+      <div className="space-y-12">
+        {/* Conteúdo do Capítulo 11: Histórias Engraçadas e Curiosidades */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl">
+              <Lightbulb className="w-6 h-6 text-violet-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Histórias e Curiosidades</h3>
+              <p className="text-gray-600">Histórias engraçadas e curiosidades fascinantes da ilha</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Histórias Engraçadas */}
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Heart className="w-6 h-6 text-yellow-600" />
+                Histórias Engraçadas
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🐬 O Golfinho Guia Turístico</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Uma vez, um grupo de turistas foi seguido por um golfinho curioso durante um passeio de barco. 
+                    O golfinho parecia estar conduzindo o grupo, fazendo saltos acrobáticos como se fosse o &ldquo;guia turístico&rdquo; do dia.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🦀 O &ldquo;Canguru&rdquo; de Noronha</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Um visitante confundiu um grande caranguejo terrestre (guaiamum) com um canguru. 
+                    Alarmado, começou a avisar todos sobre o &ldquo;canguru&rdquo;, causando um alvoroço na praia!
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🛟 A Boia Fugitiva</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Em um dia ventoso, uma boia escapou e começou a flutuar em direção ao mar aberto. 
+                    A operação de &ldquo;salvamento&rdquo; foi cheia de risadas, com a boia parecendo escapar sempre que alguém se aproximava.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🐢 As Tartarugas Aventureiras</h5>
+                  <p className="text-gray-700 text-sm mb-3">
+                    Uma vez, uma tartaruga foi encontrada em um lugar improvável, no quintal de uma casa, 
+                    depois de ter se perdido durante sua jornada de desova.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Curiosidades Fascinantes */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Star className="w-6 h-6 text-blue-600" />
+                Curiosidades Fascinantes
+              </h4>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">🎬 Noronha e Hollywood</h5>
+                  <p className="text-gray-700 text-sm">
+                    A beleza cênica de Fernando de Noronha tem atraído cineastas do mundo todo. 
+                    Documentários da BBC e National Geographic frequentemente escolhem a ilha como cenário.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">🪨 A Pedra do Chapéu</h5>
+                  <p className="text-gray-700 text-sm">
+                    Uma formação rochosa que se assemelha a um chapéu gigante. Histórias variam desde lendas de piratas 
+                    até contos de amantes que a visitam para selar seu amor.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">🌊 A Música das Ondas</h5>
+                  <p className="text-gray-700 text-sm">
+                    Um fenômeno curioso ocorre quando as ondas batem nas cavernas subaquáticas, 
+                    produzindo um som melódico que os moradores chamam de &ldquo;música das ondas&rdquo;.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">✈️ A Lenda do Avião no Mar</h5>
+                  <p className="text-gray-700 text-sm">
+                    Há uma história sobre um antigo hidroavião que afundou perto da ilha. 
+                    Mergulhadores ainda procuram os destroços, tornando a história uma atração adicional.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">👻 O &ldquo;Corpo Seco&rdquo;</h5>
+                  <p className="text-gray-700 text-sm">
+                    Uma antiga brincadeira de susto entre os jovens da ilha envolve o &ldquo;Corpo Seco&rdquo;, 
+                    uma figura fictícia que supostamente aparece à noite.
+                  </p>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">🌽 Festival do Milho</h5>
+                  <p className="text-gray-700 text-sm">
+                    Uma das celebrações mais pitorescas de Noronha onde os moradores se reúnem para cozinhar 
+                    e compartilhar diversos pratos feitos à base de milho.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Agradecimento */}
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6">
+              <div className="text-center">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">📚 Fonte das Histórias</h4>
+                <p className="text-gray-700 mb-4">
+                  Agradecimento especial ao livro <strong>&ldquo;1101 Curiosidades sobre o Arquipélago de Fernando de Noronha&rdquo;</strong> 
+                  por fornecer essas histórias fascinantes.
+                </p>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <p className="text-indigo-800 text-sm">
+                    Se você quiser saber mais, recomendo fortemente a leitura deste livro para descobrir 
+                    ainda mais curiosidades sobre este pedaço especial do Brasil.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    ),
+
+    "useful-contacts": (
+      <div className="space-y-12">
+        {/* Conteúdo dos Contatos Úteis */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className={cn(ui.cards.base, "p-8")}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl">
+              <Phone className="w-6 h-6 text-slate-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Contatos Úteis</h3>
+              <p className="text-gray-600">Informações essenciais para sua segurança e conveniência</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Emergências e Saúde */}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+                Emergências e Saúde
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-red-500" />
+                    Hospital São Lucas
+                  </h5>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p><strong>📍 Endereço:</strong> BR-363, Fernando de Noronha, PE</p>
+                    <p><strong>📞 Telefone:</strong> +55 81 3619-0458</p>
+                    <p><strong>🕒 Funcionamento:</strong> 24 horas por dia, 7 dias por semana</p>
+                    <p><strong>⚕️ Serviços:</strong> Urgência, emergência, internação, primeiros socorros</p>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-blue-500" />
+                    Posto de Saúde
+                  </h5>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p><strong>📍 Endereço:</strong> Vila dos Remédios</p>
+                    <p><strong>📞 Telefone:</strong> +55 81 3619-1125</p>
+                    <p><strong>🕒 Funcionamento:</strong> Segunda a sexta, 8h às 17h</p>
+                    <p><strong>⚕️ Serviços:</strong> Atendimento básico, vacinação, consultas, odontologia</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Segurança */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Shield className="w-6 h-6 text-blue-600" />
+                Segurança
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🚔 Polícia Civil</h5>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p><strong>📍 Endereço:</strong> Vila dos Remédios</p>
+                    <p><strong>📞 Telefone:</strong> +55 81 3619-1124</p>
+                    <p><strong>🕒 Funcionamento:</strong> 24 horas por dia</p>
+                    <p><strong>⚖️ Serviços:</strong> Registro de ocorrências, investigação, atendimento ao cidadão</p>
+                  </div>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">🚨 Polícia Militar</h5>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p><strong>📍 Endereço:</strong> Vila dos Remédios</p>
+                    <p><strong>📞 Emergências:</strong> 190</p>
+                    <p><strong>🕒 Funcionamento:</strong> 24 horas por dia</p>
+                    <p><strong>🛡️ Serviços:</strong> Segurança pública, patrulhamento, emergências</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Farmácia */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Heart className="w-6 h-6 text-green-600" />
+                Farmácia
+              </h4>
+              
+              <div className="bg-white/70 rounded-xl p-4">
+                <h5 className="font-semibold text-gray-900 mb-3">💊 Farmácia Mix</h5>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p><strong>📍 Endereço:</strong> Vila dos Remédios</p>
+                  <p><strong>📞 Telefone:</strong> +55 81 3619-0450</p>
+                  <p><strong>🕒 Funcionamento:</strong> Segunda a sábado, 8h às 20h | Domingo, 8h às 13h</p>
+                  <p><strong>💊 Serviços:</strong> Medicamentos, produtos de higiene e cuidados pessoais</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Dicas Importantes */}
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Info className="w-6 h-6 text-amber-600" />
+                Dicas Importantes
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-amber-900 mb-2">📱 Tenha Sempre os Contatos</h5>
+                  <p className="text-amber-800 text-sm">
+                    Salve esses contatos no seu celular assim que chegar na ilha para ter acesso rápido em caso de necessidade.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-amber-900 mb-2">🏥 Emergências Médicas</h5>
+                  <p className="text-amber-800 text-sm">
+                    Para emergências graves que requerem evacuação médica, o hospital tem protocolo de transferência para o continente.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-amber-900 mb-2">💊 Medicamentos</h5>
+                  <p className="text-amber-800 text-sm">
+                    Traga medicamentos pessoais, pois nem todos estão disponíveis na farmácia local.
+                  </p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-amber-900 mb-2">🆘 Em Caso de Emergência</h5>
+                  <p className="text-amber-800 text-sm">
+                    Mantenha sempre identificação e informações de contato de emergência com você.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     )
   };
 
@@ -2367,6 +3382,12 @@ function getHeroImage(sectionId: string): string {
     "beaches": "/images/praias-hero.png", // Tropical beach
     "dining": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Restaurant with ocean view
     "monthly-guide": "/images/when-to-go.png", // Calendar or seasonal image
+    "activities": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Diving and water activities
+    "culture-history": "https://images.unsplash.com/photo-1574706137535-a6fa0b40d4d3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Historical fort or colonial architecture
+    "sustainability": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Environmental conservation
+    "favorite-spots": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Secret spots and viewpoints
+    "stories-curiosities": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Stories and curiosities
+    "useful-contacts": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Modern communication/emergency
     "default": "https://images.unsplash.com/photo-1501612780327-45045538742d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" // Default image
   };
   return unsplashImages[sectionId] || unsplashImages["default"];
