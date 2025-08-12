@@ -3433,12 +3433,12 @@ function GuiaPageContent() {
                     <Menu className="h-6 w-6" />
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent>
+                <DrawerContent className="max-h-[80vh]">
                   <DrawerHeader>
                     <DrawerTitle>Navegar pelo Guia</DrawerTitle>
                     <DrawerDescription>Selecione uma seção para explorar.</DrawerDescription>
                   </DrawerHeader>
-                  <div className="p-4">
+                  <div className="p-4 max-h-[65vh] overflow-y-auto">
                     <ul className="space-y-2">
                       {guideSections.map(section => {
                         const color = colorMap[section.color as keyof typeof colorMap];
