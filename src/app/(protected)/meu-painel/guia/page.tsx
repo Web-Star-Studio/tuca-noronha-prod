@@ -399,11 +399,25 @@ function SectionContent({
           transition={{ duration: 0.6, delay: 0.2 }}
           className={cn(ui.cards.base, "p-0 overflow-hidden")}
         >
-          <div className="relative p-8 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-purple-50">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl" />
+          <div className="relative">
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <Image
+                src="https://images.unsplash.com/photo-1614723268053-f32f936f13f9?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                alt="Fernando de Noronha - Vista panorâmica do paraíso"
+                fill
+                className="object-cover"
+                priority
+              />
+              {/* Overlay for better text readability */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-indigo-900/50 to-purple-900/60" />
+            </div>
             
-            <div className="relative">
+            <div className="relative p-8 z-10">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-400/10 to-pink-400/10 rounded-full blur-3xl" />
+              
+              <div className="relative">
               <motion.div 
                 className="inline-flex items-center gap-2 mb-6"
                 initial={{ opacity: 0, x: -20 }}
@@ -424,17 +438,17 @@ function SectionContent({
                 >
                   <Plane className="w-8 h-8 text-white" />
                 </motion.div>
-                <div className="h-16 w-0.5 bg-gradient-to-b from-blue-600 to-transparent" />
+                <div className="h-16 w-0.5 bg-gradient-to-b from-white/60 to-transparent" />
                 <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold text-white drop-shadow-lg">
                     Boas-vindas ao Paraíso
                   </h2>
-                  <p className="text-sm text-gray-600">Preparativos para uma experiência inesquecível</p>
+                  <p className="text-sm text-blue-100 drop-shadow">Preparativos para uma experiência inesquecível</p>
                 </div>
               </motion.div>
               
               <motion.p 
-                className="text-gray-700 leading-relaxed mb-6 text-lg"
+                className="text-white/90 leading-relaxed mb-6 text-lg drop-shadow"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
@@ -461,6 +475,7 @@ function SectionContent({
                     <span className="text-xs text-gray-500">{badge.year}</span>
                   </motion.div>
                 ))}
+              </div>
               </div>
             </div>
           </div>
@@ -765,47 +780,6 @@ function SectionContent({
           className="text-center space-y-4"
         >
 
-          {/* Video Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className={cn(ui.cards.base, "p-0 overflow-hidden group mb-8")}
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-pink-600/10 z-10" />
-              <div className="p-6 relative z-20">
-                <motion.div 
-                  className="flex items-center gap-3 mb-4"
-                  whileHover={{ x: 5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 group-hover:rotate-6 transition-transform duration-300">
-                    <Play className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">Dicas de Hospedagem</h3>
-                    <p className="text-sm text-gray-600">Saiba como escolher a melhor região para se hospedar</p>
-                  </div>
-                </motion.div>
-                <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center relative overflow-hidden group-hover:shadow-xl transition-shadow duration-300">
-                  <div className="absolute inset-0 bg-black/5 backdrop-blur-[1px]" />
-                  <motion.div
-                    className="relative z-10"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div className="w-16 h-16 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl cursor-pointer">
-                      <Play className="w-8 h-8 text-purple-600 ml-1" />
-                    </div>
-                  </motion.div>
-                  <p className="absolute bottom-3 left-3 text-xs text-gray-600 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full">
-                    Em breve
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </motion.div>
 
         {/* Accommodation Types Grid */}
@@ -1096,49 +1070,6 @@ function SectionContent({
 
     "transportation": (
       <div className="space-y-12">
-        {/* Video Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 to-emerald-600/10 z-10" />
-            <div className="p-8 relative z-20">
-              <motion.div 
-                className="flex items-center gap-3 mb-6"
-                whileHover={{ x: 5 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
-                  <Play className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Locomoção na Ilha</h3>
-                  <p className="text-gray-600">Veja como se mover em Noronha</p>
-                </div>
-              </motion.div>
-              
-              <div className="relative group">
-                <div className="aspect-video bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl flex items-center justify-center overflow-hidden">
-                  <motion.div
-                    className="text-center"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
-                      <Play className="w-12 h-12 text-green-600" />
-                    </div>
-                    <p className="text-gray-700 font-medium">Vídeo de Transporte em breve</p>
-                  </motion.div>
-                </div>
-                
-                <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Introduction */}
         <motion.div
@@ -1642,49 +1573,6 @@ function SectionContent({
 
     "beaches": (
       <div className="space-y-12">
-        {/* Video Section with Modern Design */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 z-10" />
-            <div className="p-8 relative z-20">
-              <motion.div 
-                className="flex items-center gap-3 mb-6"
-                whileHover={{ x: 5 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <div className="p-3 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl">
-                  <Play className="w-6 h-6 text-cyan-600" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Praias Paradisíacas</h3>
-                  <p className="text-gray-600">Descubra as joias do Atlântico</p>
-                </div>
-              </motion.div>
-              
-              <div className="relative group">
-                <div className="aspect-video bg-gradient-to-r from-cyan-100 to-blue-100 rounded-xl flex items-center justify-center overflow-hidden">
-                  <motion.div
-                    className="text-center"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
-                      <Play className="w-12 h-12 text-cyan-600" />
-                    </div>
-                    <p className="text-gray-700 font-medium">Vídeo das Praias em breve</p>
-                  </motion.div>
-                </div>
-                
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Introduction Section */}
         <motion.div
@@ -2043,47 +1931,6 @@ function SectionContent({
 
     "dining": (
       <div className="space-y-12">
-        {/* Video Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={cn(ui.cards.base, "p-0 overflow-hidden group")}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-amber-600/10 z-10" />
-            <div className="p-8 relative z-20">
-              <motion.div 
-                className="flex items-center gap-3 mb-6"
-                whileHover={{ x: 5 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <div className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl">
-                  <UtensilsCrossed className="w-6 h-6 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Sabores do Paraíso</h3>
-                  <p className="text-gray-600">Gastronomia e experiências únicas</p>
-                </div>
-              </motion.div>
-              
-              <div className="relative group">
-                <div className="aspect-video bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl flex items-center justify-center overflow-hidden">
-                  <motion.div
-                    className="text-center"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <div className="p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
-                      <Play className="w-12 h-12 text-orange-600" />
-                    </div>
-                    <p className="text-gray-700 font-medium">Vídeo Gastronômico em breve</p>
-                  </motion.div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Introduction */}
         <motion.div
@@ -2276,15 +2123,6 @@ function SectionContent({
 
     "monthly-guide": (
       <div className="space-y-8">
-        <div className={cn(cardStyles.base, "p-6 relative overflow-hidden")}>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-yellow-600" />
-            Assista ao Vídeo da Seção
-          </h3>
-          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500">[Vídeo em breve]</p>
-          </div>
-        </div>
         <div className={cn(cardStyles.base, "p-6")}>
           <h2 className="text-xl font-bold text-gray-900 mb-6">O Calendário de Noronha: A Melhor Época para a Sua Viagem Perfeita</h2>
           
@@ -3371,23 +3209,23 @@ function SectionContent({
         </div>
       )}
     </div>
-  );
+  );    
 }
 
 function getHeroImage(sectionId: string): string {
   const unsplashImages: Record<string, string> = {
-    "boas-vindas": "/images/welcome-hero.png", // Fernando de Noronha aerial view
+    "boas-vindas": "https://images.unsplash.com/photo-1614723268053-f32f936f13f9?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Fernando de Noronha aerial view
     "accommodation": "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Hotel room with a view
     "transportation": "/images/transfer-hero-guide.png", // Car on a scenic road
     "beaches": "/images/praias-hero.png", // Tropical beach
     "dining": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Restaurant with ocean view
     "monthly-guide": "/images/when-to-go.png", // Calendar or seasonal image
     "activities": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Diving and water activities
-    "culture-history": "https://images.unsplash.com/photo-1574706137535-a6fa0b40d4d3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Historical fort or colonial architecture
-    "sustainability": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Environmental conservation
-    "favorite-spots": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Secret spots and viewpoints
+    "culture-history": "https://imgmd.net/images/v1/guia/2663135/vila-dos-remedios.jpg", // Historical fort or colonial architecture
+    "sustainability": "https://blog.atalaianoronha.com.br/assets/uploads/2023/06/aves-atoba-scaled.jpg", // Environmental conservation
+    "favorite-spots": "https://www.civitatis.com/f/brasil/fernando-de-noronha/fernando-de-noronha.jpg", // Secret spots and viewpoints
     "stories-curiosities": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Stories and curiosities
-    "useful-contacts": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Modern communication/emergency
+    "useful-contacts": "https://www.viajenaviagem.com/wp-content/uploads/2019/02/onde-ficar-em-fernando-de-noronha-pousada-morena-1920x1080-1.jpg.webp", // Modern communication/emergency
     "default": "https://images.unsplash.com/photo-1501612780327-45045538742d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" // Default image
   };
   return unsplashImages[sectionId] || unsplashImages["default"];
