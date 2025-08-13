@@ -44,4 +44,7 @@ next-env.d.ts
 .env.sentry-build-plugin
 
 
-/docs/Ebook_Tuca.pdf
+/docs
+/screenshots
+/.kiro
+/.cursor
