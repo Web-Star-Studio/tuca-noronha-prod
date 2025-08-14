@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: process.env.CLERK_DOMAIN,
+      domain: "https://clerk.tucanoronha.com.br",
       applicationID: "convex",
     },
   ],

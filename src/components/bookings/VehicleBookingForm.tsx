@@ -79,6 +79,9 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
   // Create booking mutation - using the correct one from bookings domain
   const createBooking = useMutation(api.domains.bookings.mutations.createVehicleBooking);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
+  const createMpCheckoutPreference = useAction(
+    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
+  );
 
   const handleBooking = async () => {
     if (!startDate || !endDate) {
@@ -141,6 +144,31 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
             totalPrice,
           });
 
+          // Try Mercado Pago first
+          const mpPref = await createMpCheckoutPreference({
+            bookingId: result.bookingId,
+            assetType: "vehicle",
+            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+            cancelUrl: `${window.location.origin}/booking/cancel`,
+            customerEmail: customerInfo.email,
+            couponCode: appliedCoupon?.code,
+            discountAmount: getDiscountAmount(),
+            originalAmount: totalPrice,
+            finalAmount: getFinalPrice(),
+            currency: "BRL",
+          });
+
+          if (mpPref.success && mpPref.preferenceUrl) {
+            toast.success("Redirecionando para pagamento...", {
+              description: "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
+            });
+            setTimeout(() => {
+              window.location.href = mpPref.preferenceUrl;
+            }, 1200);
+            return;
+          }
+
+          // Fallback to Stripe
           const checkoutSession = await createCheckoutSession({
             bookingId: result.bookingId,
             assetType: "vehicle",
@@ -157,10 +185,9 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
               description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
             });
 
-            // Small delay to show the toast, then redirect
             setTimeout(() => {
               window.location.href = checkoutSession.sessionUrl;
-            }, 1500);
+            }, 1200);
 
             return; // Don't proceed further if redirecting
           } else {

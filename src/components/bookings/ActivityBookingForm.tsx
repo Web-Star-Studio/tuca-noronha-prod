@@ -71,6 +71,9 @@ export function ActivityBookingForm({
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
+  const createMpCheckoutPreference = useAction(
+    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
+  );
   
   // WhatsApp link generator removido (não utilizado)
 
@@ -144,14 +147,51 @@ export function ActivityBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. Create Stripe checkout session and redirect
+      // 2. Try Mercado Pago Checkout first; fallback to Stripe
       try {
-        console.log("🔄 Criando checkout session para:", {
+        console.log("🔄 Criando preferência de checkout Mercado Pago para:", {
           bookingId: result.bookingId,
           activityId,
           totalAmount: result.totalPrice,
         });
 
+        const mpPref = await createMpCheckoutPreference({
+          bookingId: result.bookingId,
+          assetType: "activity",
+          successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+          cancelUrl: `${window.location.origin}/booking/cancel`,
+          customerEmail: customerInfo.email,
+          couponCode: appliedCoupon?.code,
+          discountAmount: getDiscountAmount(),
+          originalAmount: getPrice(),
+          finalAmount: getFinalPrice(),
+          currency: "BRL",
+        });
+
+        console.log("💳 Resultado da preferência MP:", mpPref);
+
+        if (mpPref.success && mpPref.preferenceUrl) {
+          toast.success("Redirecionando para pagamento...", {
+            description:
+              "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
+          });
+
+          // Reset form before redirecting
+          setDate(undefined);
+          setTime("");
+          setParticipants(activity.minParticipants);
+          setSelectedTicketId(undefined);
+          setCustomerInfo({ name: "", email: "", phone: "" });
+          setSpecialRequests("");
+
+          setTimeout(() => {
+            window.location.href = mpPref.preferenceUrl;
+          }, 1200);
+          return;
+        }
+
+        // Fallback to Stripe if MP failed
+        console.warn("⚠️ Preferência MP falhou, tentando Stripe...");
         const checkoutSession = await createCheckoutSession({
           bookingId: result.bookingId,
           assetType: "activity",
@@ -163,16 +203,11 @@ export function ActivityBookingForm({
           finalAmount: getFinalPrice(),
         });
 
-        console.log("💳 Resultado do checkout session:", checkoutSession);
-
         if (checkoutSession.success && checkoutSession.sessionUrl) {
-          // Show success message with payment info
           toast.success("Redirecionando para pagamento...", {
-            description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
+            description:
+              "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
           });
-
-          console.log("✅ Checkout session criado com sucesso, redirecionando para:", checkoutSession.sessionUrl);
-
           // Reset form before redirecting
           setDate(undefined);
           setTime("");
@@ -181,23 +216,21 @@ export function ActivityBookingForm({
           setCustomerInfo({ name: "", email: "", phone: "" });
           setSpecialRequests("");
 
-          // Small delay to show the toast, then redirect
           setTimeout(() => {
             window.location.href = checkoutSession.sessionUrl;
-          }, 1500);
-
-          return; // Don't call onBookingSuccess here, only redirect
-
+          }, 1200);
+          return;
         } else {
-          console.error("❌ Checkout session falhou:", checkoutSession.error);
           throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
         }
       } catch (paymentError) {
-        console.error("💥 Erro ao criar payment link:", paymentError);
+        console.error("💥 Erro ao iniciar pagamento:", paymentError);
         toast.error("Reserva criada, mas erro no pagamento", {
-          description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
+          description:
+            paymentError instanceof Error
+              ? paymentError.message
+              : "Entre em contato conosco para finalizar o pagamento",
         });
-        
         // Still call onBookingSuccess since booking was created
         if (onBookingSuccess) {
           onBookingSuccess({

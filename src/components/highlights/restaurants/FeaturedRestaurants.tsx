@@ -2,7 +2,7 @@
 
 import { Restaurant, useFeaturedRestaurants } from "@/lib/services/restaurantService";
 import RestaurantCard from "@/components/cards/RestaurantCard";
-import { ArrowRight, Utensils, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,7 @@ export default function FeaturedRestaurants() {
   
   return (
     <section className="py-24 relative overflow-hidden">
-      {/* Background design elements */}
-      <div className="absolute top-0 right-0 -z-10 opacity-10">
-        <Utensils className="w-72 h-72 text-orange-200" />
-      </div>
+      {/* Background design elements (kept subtle and neutral) */}
       <div className="absolute bottom-20 left-10 -z-10 opacity-5">
         <Image 
           src="/images/bg-pattern.png" 
@@ -36,7 +33,7 @@ export default function FeaturedRestaurants() {
             viewport={{ once: true }}
             className="max-w-2xl"
           >
-            <h2 className="text-4xl md:text-5xl font-serif font-medium tracking-tight mb-4 bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-serif font-medium tracking-tight mb-4">
               Restaurantes em Destaque
             </h2>
             <p className="text-xl text-muted-foreground">
@@ -51,7 +48,7 @@ export default function FeaturedRestaurants() {
             viewport={{ once: true }}
             className="mt-6 md:mt-0"
           >
-            <Link href="/restaurantes" className="text-orange-600 font-medium flex items-center group hover:underline">
+            <Link href="/restaurantes" className="text-blue-600 font-medium flex items-center group hover:underline">
               Ver todos os restaurantes
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -60,7 +57,7 @@ export default function FeaturedRestaurants() {
 
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
+            <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
           </div>
         ) : (
           <motion.div 
@@ -90,7 +87,7 @@ export default function FeaturedRestaurants() {
                 </p>
                 <Link href="/restaurantes">
                   <Button
-                    className="bg-orange-500 hover:bg-orange-600"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     Ver todos os restaurantes
                   </Button>
@@ -110,7 +107,7 @@ export default function FeaturedRestaurants() {
           >
             <Link href="/restaurantes">
               <Button
-                className="rounded-full px-8 py-6 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white transition-all duration-300 group shadow-lg hover:shadow-xl"
+                className="rounded-full px-8 py-6 bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 group"
                 size="lg"
               >
                 <span className="font-medium">Ver Todos os Restaurantes</span>

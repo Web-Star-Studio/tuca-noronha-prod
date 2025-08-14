@@ -70,6 +70,9 @@ export function RestaurantReservationForm({
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
+  const createMpCheckoutPreference = useAction(
+    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
+  );
   
   // Gerar horários disponíveis entre 18h e 22h com intervalo de 30min
   const availableTimes = [
@@ -141,7 +144,7 @@ export function RestaurantReservationForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. If restaurant requires payment, create checkout session
+      // 2. If restaurant requires payment, try Mercado Pago first; fallback to Stripe
       if (restaurant.acceptsOnlinePayment && restaurant.requiresUpfrontPayment && restaurant.price && restaurant.price > 0) {
         try {
           console.log("🔄 Criando checkout session para restaurante:", {
@@ -150,6 +153,39 @@ export function RestaurantReservationForm({
             price: restaurant.price,
           });
 
+          // Try Mercado Pago first
+          const mpPref = await createMpCheckoutPreference({
+            bookingId: result.reservationId,
+            assetType: "restaurant",
+            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+            cancelUrl: `${window.location.origin}/booking/cancel`,
+            customerEmail: customerInfo.email,
+            couponCode: appliedCoupon?.code,
+            discountAmount: getDiscountAmount(),
+            originalAmount: getPrice(),
+            finalAmount: getFinalPrice(),
+            currency: "BRL",
+          });
+
+          if (mpPref.success && mpPref.preferenceUrl) {
+            toast.success("Redirecionando para pagamento...", {
+              description: "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
+            });
+
+            // Reset form before redirecting
+            setDate(undefined);
+            setTime("");
+            setPartySize(2);
+            setCustomerInfo({ name: "", email: "", phone: "" });
+            setSpecialRequests("");
+
+            setTimeout(() => {
+              window.location.href = mpPref.preferenceUrl;
+            }, 1200);
+            return; // Don't call onReservationSuccess here, only redirect
+          }
+
+          // Fallback to Stripe
           const checkoutSession = await createCheckoutSession({
             bookingId: result.reservationId,
             assetType: "restaurant",
@@ -173,10 +209,9 @@ export function RestaurantReservationForm({
             setCustomerInfo({ name: "", email: "", phone: "" });
             setSpecialRequests("");
 
-            // Small delay to show the toast, then redirect
             setTimeout(() => {
               window.location.href = checkoutSession.sessionUrl;
-            }, 1500);
+            }, 1200);
 
             return; // Don't call onReservationSuccess here, only redirect
           } else {

@@ -22,7 +22,7 @@ const Footer = () => {
             </p>
             <div className="flex space-x-5">
               <a
-                href="https://instagram.com/tucanoronha"
+                href="https://www.instagram.com/agenciatucanoronha/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-tuca-ocean-blue transition-colors"

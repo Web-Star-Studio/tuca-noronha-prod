@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { handleStripeWebhook, testWebhook } from "./domains/stripe/webhooks";
+import { handleMercadoPagoWebhook, testWebhook as testMpWebhook } from "./domains/mercadoPago/webhooks";
 
 // Tipo para os eventos do webhook Clerk
 type ClerkWebhookEvent = {
@@ -149,6 +150,19 @@ http.route({
   path: "/stripe/connect-webhook",
   method: "POST",
   handler: handleStripeWebhook, // Reutiliza o mesmo handler, mas pode ser configurado com eventos diferentes no Stripe Dashboard
+});
+
+// Mercado Pago webhook routes
+http.route({
+  path: "/mercadopago/webhook",
+  method: "POST",
+  handler: handleMercadoPagoWebhook,
+});
+
+http.route({
+  path: "/mercadopago/test-webhook",
+  method: "POST",
+  handler: testMpWebhook,
 });
 
 export default http;

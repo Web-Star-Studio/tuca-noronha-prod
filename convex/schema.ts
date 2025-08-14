@@ -643,6 +643,10 @@ export default defineSchema({
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripePaymentLinkId: v.optional(v.string()),
+    // Mercado Pago integration fields
+    mpPaymentId: v.optional(v.string()),
+    mpPreferenceId: v.optional(v.string()),
+    mpPaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -807,6 +811,10 @@ export default defineSchema({
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripePaymentLinkId: v.optional(v.string()),
+    // Mercado Pago integration fields
+    mpPaymentId: v.optional(v.string()),
+    mpPreferenceId: v.optional(v.string()),
+    mpPaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -854,6 +862,10 @@ export default defineSchema({
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripePaymentLinkId: v.optional(v.string()),
+    // Mercado Pago integration fields
+    mpPaymentId: v.optional(v.string()),
+    mpPreferenceId: v.optional(v.string()),
+    mpPaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -949,6 +961,10 @@ export default defineSchema({
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripePaymentLinkId: v.optional(v.string()),
+    // Mercado Pago integration fields
+    mpPaymentId: v.optional(v.string()),
+    mpPreferenceId: v.optional(v.string()),
+    mpPaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -1131,6 +1147,10 @@ export default defineSchema({
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     stripePaymentLinkId: v.optional(v.string()),
+    // Mercado Pago integration fields
+    mpPaymentId: v.optional(v.string()),
+    mpPreferenceId: v.optional(v.string()),
+    mpPaymentLinkId: v.optional(v.string()),
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
@@ -1750,6 +1770,38 @@ export default defineSchema({
   })
     .index("by_stripe_event_id", ["stripeEventId"])
     .index("by_event_type", ["eventType"])
+    .index("by_processed", ["processed"])
+    .index("by_booking", ["relatedBookingId"])
+    .index("by_asset", ["relatedAssetType", "relatedAssetId"])
+    .index("by_created_at", ["createdAt"]),
+
+  // Mercado Pago Integration Tables
+  mpWebhookEvents: defineTable({
+    mpEventId: v.string(),                                 // Mercado Pago event id (normalized to string)
+    type: v.optional(v.string()),                          // High-level type (e.g., "payment")
+    action: v.optional(v.string()),                        // Action (e.g., "payment.created")
+    processed: v.boolean(),                                // Whether processed
+    processedAt: v.optional(v.number()),                   // When processed
+    relatedBookingId: v.optional(v.string()),              // Related booking ID
+    relatedAssetType: v.optional(v.string()),              // asset type
+    relatedAssetId: v.optional(v.string()),                // asset id
+    eventData: v.object({                                  // Minimal normalized snapshot
+      id: v.optional(v.string()),
+      status: v.optional(v.string()),
+      paymentId: v.optional(v.string()),
+      amount: v.optional(v.number()),
+      currency: v.optional(v.string()),
+    }),
+    processingErrors: v.optional(v.array(v.object({
+      error: v.string(),
+      timestamp: v.number(),
+      retryCount: v.number(),
+    }))),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_mp_event_id", ["mpEventId"])
+    .index("by_type_action", ["type", "action"])
     .index("by_processed", ["processed"])
     .index("by_booking", ["relatedBookingId"])
     .index("by_asset", ["relatedAssetType", "relatedAssetId"])

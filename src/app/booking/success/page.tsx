@@ -75,6 +75,12 @@ export default function BookingSuccessPage() {
     }
   }, [bookingBySession, bookingByConfirmation, adminReservation, sessionId, retryCount, bookingType]);
 
+  // Normalize payment status for UI
+  const status = bookingData?.paymentStatus as string | undefined;
+  const isPaid = status === 'succeeded' || status === 'approved';
+  const isProcessing = status === 'processing' || status === 'pending' || status === 'in_process';
+  const isPendingLike = isProcessing;
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -146,7 +152,7 @@ export default function BookingSuccessPage() {
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
               <p className="text-lg font-medium mb-2">Processando pagamento...</p>
               <p className="text-sm text-gray-600">
-                Aguarde enquanto confirmamos seu pagamento com o Stripe
+                Aguarde enquanto confirmamos seu pagamento com o provedor de pagamento
               </p>
               <p className="text-xs text-gray-500 mt-4">
                 Tentativa {retryCount} de {maxRetries}
@@ -195,12 +201,10 @@ export default function BookingSuccessPage() {
         <div className="text-center mb-8">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {bookingData.paymentStatus === 'succeeded' ? 'Pagamento Confirmado!' : 'Reserva Registrada!'}
+            {isPaid ? 'Pagamento Confirmado!' : 'Reserva Registrada!'}
           </h1>
           <p className="text-gray-600">
-            {bookingData.paymentStatus === 'succeeded' 
-              ? 'Sua reserva foi processada com sucesso'
-              : 'Aguardando confirmação do pagamento'}
+            {isPaid ? 'Sua reserva foi processada com sucesso' : 'Aguardando confirmação do pagamento'}
           </p>
         </div>
 
@@ -282,18 +286,18 @@ export default function BookingSuccessPage() {
               {/* Payment Summary */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>Total {bookingData.paymentStatus === 'pending' ? 'a Pagar' : 'Pago'}</span>
-                  <span className={bookingData.paymentStatus === 'pending' ? 'text-orange-600' : 'text-green-600'}>
+                  <span>Total {isPendingLike ? 'a Pagar' : 'Pago'}</span>
+                  <span className={isPendingLike ? 'text-orange-600' : 'text-green-600'}>
                     {formatCurrency(bookingData.totalPrice || bookingData.totalAmount)}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
-                  {bookingData.paymentMethod === 'card' ? 'Pagamento processado via Stripe' : 
+                  {bookingData.paymentMethod === 'card' ? 'Pagamento processado online' : 
                    bookingData.paymentMethod === 'cash' ? 'Pagamento em dinheiro' :
                    bookingData.paymentMethod === 'transfer' ? 'Pagamento via transferência' :
                    'Pagamento diferido'}
                 </p>
-                {bookingData.paymentStatus === 'processing' && (
+                {isProcessing && (
                   <Badge variant="outline" className="mt-2">
                     <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     Processando pagamento...
@@ -307,7 +311,7 @@ export default function BookingSuccessPage() {
         {/* Action Buttons */}
         <div className="space-y-3">
           {/* Voucher Buttons */}
-          {bookingData.paymentStatus === 'succeeded' && bookingData.bookingId && (
+          {isPaid && bookingData.bookingId && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <VoucherDownloadButton
                 bookingId={bookingData.bookingId}

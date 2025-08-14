@@ -64,6 +64,9 @@ export function EventBookingForm({
 
   const createBooking = useMutation(api.domains.bookings.mutations.createEventBooking);
   const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
+  const createMpCheckoutPreference = useAction(
+    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
+  );
 
   // Calculate price
   const getPrice = () => {
@@ -122,7 +125,7 @@ export function EventBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. If event requires payment, create checkout session
+      // 2. If event requires payment, try Mercado Pago first; fallback to Stripe
       if (event.acceptsOnlinePayment && event.requiresUpfrontPayment && result.totalPrice > 0) {
         try {
           console.log("🔄 Criando checkout session para evento:", {
@@ -131,6 +134,38 @@ export function EventBookingForm({
             totalPrice: result.totalPrice,
           });
 
+          // Try Mercado Pago first
+          const mpPref = await createMpCheckoutPreference({
+            bookingId: result.bookingId,
+            assetType: "event",
+            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+            cancelUrl: `${window.location.origin}/booking/cancel`,
+            customerEmail: customerInfo.email,
+            couponCode: appliedCoupon?.code,
+            discountAmount: getDiscountAmount(),
+            originalAmount: getPrice(),
+            finalAmount: getFinalPrice(),
+            currency: "BRL",
+          });
+
+          if (mpPref.success && mpPref.preferenceUrl) {
+            toast.success("Redirecionando para pagamento...", {
+              description: "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
+            });
+
+            // Reset form before redirecting
+            setQuantity(1);
+            setSelectedTicketId(undefined);
+            setCustomerInfo({ name: "", email: "", phone: "" });
+            setSpecialRequests("");
+
+            setTimeout(() => {
+              window.location.href = mpPref.preferenceUrl;
+            }, 1200);
+            return; // Don't call onBookingSuccess here, only redirect
+          }
+
+          // Fallback to Stripe
           const checkoutSession = await createCheckoutSession({
             bookingId: result.bookingId,
             assetType: "event",
@@ -153,10 +188,9 @@ export function EventBookingForm({
             setCustomerInfo({ name: "", email: "", phone: "" });
             setSpecialRequests("");
 
-            // Small delay to show the toast, then redirect
             setTimeout(() => {
               window.location.href = checkoutSession.sessionUrl;
-            }, 1500);
+            }, 1200);
 
             return; // Don't call onBookingSuccess here, only redirect
           } else {
