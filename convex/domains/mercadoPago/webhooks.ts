@@ -10,9 +10,9 @@ export const handleMercadoPagoWebhook = httpAction(async (ctx, request) => {
   try {
     const rawBody = await request.text();
 
-    // Signature verification (permissive in utils for now)
+    // Signature verification (now strict; allows dev bypass if no secret set)
     const signature = request.headers.get("x-signature");
-    const valid = verifyWebhookSignature(signature, rawBody);
+    const valid = await verifyWebhookSignature(signature, request);
     if (!valid) {
       console.error("Invalid Mercado Pago webhook signature");
       return new Response("Invalid signature", { status: 400 });

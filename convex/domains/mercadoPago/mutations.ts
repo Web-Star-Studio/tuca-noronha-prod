@@ -91,6 +91,37 @@ export const addWebhookEventError = internalMutation({
 });
 
 /**
+ * Update relations for a webhook event (booking and asset linkage)
+ */
+export const updateWebhookEventRelations = internalMutation({
+  args: {
+    mpEventId: v.string(),
+    relatedBookingId: v.optional(v.string()),
+    relatedAssetType: v.optional(v.string()),
+    relatedAssetId: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const event = await ctx.db
+      .query("mpWebhookEvents")
+      .filter((q) => q.eq(q.field("mpEventId"), args.mpEventId))
+      .first();
+
+    if (!event) return null;
+
+    const patch: any = { updatedAt: Date.now() };
+    if (args.relatedBookingId) patch.relatedBookingId = args.relatedBookingId;
+    if (args.relatedAssetType) patch.relatedAssetType = args.relatedAssetType;
+    if (args.relatedAssetId) patch.relatedAssetId = args.relatedAssetId;
+
+    if (Object.keys(patch).length > 1) {
+      await ctx.db.patch(event._id, patch);
+    }
+    return null;
+  },
+});
+
+/**
  * Update booking Mercado Pago info and payment status
  */
 export const updateBookingMpInfo = internalMutation({

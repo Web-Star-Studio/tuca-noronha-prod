@@ -114,8 +114,8 @@ export const createCheckoutPreferenceForBooking = action({
   }),
   handler: async (ctx, args) => {
     try {
-      // 1) Fetch booking + asset info
-      const booking = await ctx.runQuery(internal.domains.stripe.queries.getBookingForCheckout, {
+      // 1) Fetch booking + asset info (provider-agnostic)
+      const booking = await ctx.runQuery(internal.domains.bookings.checkout.getBookingForCheckout, {
         bookingId: args.bookingId,
         assetType: args.assetType,
       });
@@ -351,6 +351,7 @@ export const processWebhookEvent = internalAction({
 
         const bookingId = payment.metadata?.bookingId;
         const assetType = payment.metadata?.assetType as any;
+        const assetId = payment.metadata?.assetId ? String(payment.metadata.assetId) : undefined;
 
         if (bookingId) {
           await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingPaymentStatus, {
@@ -367,6 +368,14 @@ export const processWebhookEvent = internalAction({
               mpPaymentId: String(payment.id),
             });
           }
+
+          // Enrich stored webhook event with relations for easier querying
+          await ctx.runMutation(internal.domains.mercadoPago.mutations.updateWebhookEventRelations, {
+            mpEventId: String(eventId),
+            relatedBookingId: String(bookingId),
+            relatedAssetType: assetType ? String(assetType) : undefined,
+            relatedAssetId: assetId,
+          });
         }
       }
 

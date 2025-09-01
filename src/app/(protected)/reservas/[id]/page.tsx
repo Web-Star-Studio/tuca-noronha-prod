@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ChatButton } from "@/components/chat/ChatButton";
+import RagChatButton from "@/components/chat/RagChatButton";
 import { VoucherDownloadButton } from "@/components/vouchers/VoucherDownloadButton";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -314,6 +315,14 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                     Carregando contato...
                   </Button>
                 )}
+
+                {/* AI RAG Assistant Button */}
+                <RagChatButton
+                  variant="outline"
+                  className="w-full h-12 text-base"
+                  showLabel
+                  customLabel="Tirar dúvidas com IA"
+                />
                 
                 {reservation.status === 'completed' && (
                   <Button variant="outline" className="w-full h-12 text-base">

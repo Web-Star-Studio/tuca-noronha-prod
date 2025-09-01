@@ -258,6 +258,13 @@ async function seedGuide() {
         content,
       });
       console.log(`Seeding section: ${sectionTitle}`);
+
+      // Also ingest into the RAG index so the AI can answer questions
+      await convex.action(api.guide.ingestGuideSectionToRAG, {
+        sectionTitle,
+        content,
+      });
+      console.log(`Ingested into RAG: ${sectionTitle}`);
     }
   }
 
@@ -265,3 +272,4 @@ async function seedGuide() {
 }
 
 seedGuide().catch(console.error);
+
