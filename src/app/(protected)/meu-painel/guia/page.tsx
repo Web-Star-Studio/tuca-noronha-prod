@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 // useGesture removido (não utilizado)
 // recharts imports removidos (não utilizados)
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RagChatButton } from "@/components/chat/RagChatButton";
 
 // glassStyles removido (não utilizado)
 
@@ -3514,18 +3515,25 @@ function GuiaPageContent() {
           </DialogContent>
         </Dialog>
 
+        <RagChatButton 
+          variant="floating" 
+          size="lg"
+          showLabel={false}
+          customLabel="Pergunte à IA do Tuca"
+        />
+
         {showScrollTop && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
+            exit={{ opacity: 0, scale: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => {
-              const heroElement = document.getElementById(`hero-${activeSection}`);
-              if (heroElement) {
-                heroElement.scrollIntoView({ 
-                  behavior: 'smooth', 
-                  block: 'start',
-                  inline: 'nearest'
+              if (typeof window !== 'undefined') {
+                window.scrollTo({
+                  top: 0,
+                  behavior: 'smooth'
                 });
               }
             }}

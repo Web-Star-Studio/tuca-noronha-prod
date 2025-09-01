@@ -70,7 +70,6 @@ export function ActivityBookingForm({
   });
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
-  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
   const createMpCheckoutPreference = useAction(
     api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
   );
@@ -147,7 +146,7 @@ export function ActivityBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. Try Mercado Pago Checkout first; fallback to Stripe
+      // 2. Create Mercado Pago Checkout
       try {
         console.log("🔄 Criando preferência de checkout Mercado Pago para:", {
           bookingId: result.bookingId,
@@ -173,7 +172,7 @@ export function ActivityBookingForm({
         if (mpPref.success && mpPref.preferenceUrl) {
           toast.success("Redirecionando para pagamento...", {
             description:
-              "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
+              "Você será levado para o checkout seguro do Mercado Pago. O pagamento será confirmado após processamento.",
           });
 
           // Reset form before redirecting
@@ -188,43 +187,11 @@ export function ActivityBookingForm({
             window.location.href = mpPref.preferenceUrl;
           }, 1200);
           return;
-        }
-
-        // Fallback to Stripe if MP failed
-        console.warn("⚠️ Preferência MP falhou, tentando Stripe...");
-        const checkoutSession = await createCheckoutSession({
-          bookingId: result.bookingId,
-          assetType: "activity",
-          successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/booking/cancel`,
-          couponCode: appliedCoupon?.code,
-          discountAmount: getDiscountAmount(),
-          originalAmount: getPrice(),
-          finalAmount: getFinalPrice(),
-        });
-
-        if (checkoutSession.success && checkoutSession.sessionUrl) {
-          toast.success("Redirecionando para pagamento...", {
-            description:
-              "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
-          });
-          // Reset form before redirecting
-          setDate(undefined);
-          setTime("");
-          setParticipants(activity.minParticipants);
-          setSelectedTicketId(undefined);
-          setCustomerInfo({ name: "", email: "", phone: "" });
-          setSpecialRequests("");
-
-          setTimeout(() => {
-            window.location.href = checkoutSession.sessionUrl;
-          }, 1200);
-          return;
         } else {
-          throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
+          throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
         }
       } catch (paymentError) {
-        console.error("💥 Erro ao iniciar pagamento:", paymentError);
+        console.error("💥 Erro ao iniciar pagamento Mercado Pago:", paymentError);
         toast.error("Reserva criada, mas erro no pagamento", {
           description:
             paymentError instanceof Error

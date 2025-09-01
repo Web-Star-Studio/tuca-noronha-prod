@@ -78,7 +78,6 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
 
   // Create booking mutation - using the correct one from bookings domain
   const createBooking = useMutation(api.domains.bookings.mutations.createVehicleBooking);
-  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
   const createMpCheckoutPreference = useAction(
     api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
   );
@@ -160,38 +159,14 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
 
           if (mpPref.success && mpPref.preferenceUrl) {
             toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
+              description: "Você será levado para o checkout seguro do Mercado Pago. O pagamento será confirmado após processamento.",
             });
             setTimeout(() => {
               window.location.href = mpPref.preferenceUrl;
             }, 1200);
             return;
-          }
-
-          // Fallback to Stripe
-          const checkoutSession = await createCheckoutSession({
-            bookingId: result.bookingId,
-            assetType: "vehicle",
-            successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/booking/cancel`,
-            couponCode: appliedCoupon?.code,
-            discountAmount: getDiscountAmount(),
-            originalAmount: totalPrice,
-            finalAmount: getFinalPrice(),
-          });
-
-          if (checkoutSession.success && checkoutSession.sessionUrl) {
-            toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
-            });
-
-            setTimeout(() => {
-              window.location.href = checkoutSession.sessionUrl;
-            }, 1200);
-
-            return; // Don't proceed further if redirecting
           } else {
-            throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
+            throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
           }
         } catch (paymentError) {
           console.error("💥 Erro ao criar payment link:", paymentError);
