@@ -32,11 +32,11 @@ export function WishlistButton({
   // Check if item is in wishlist
   const isInWishlist = useQuery(
     api.wishlist.isInWishlist,
-    {
+    userId && itemId && itemType ? {
       userId,
       itemType,
       itemId,
-    }
+    } : "skip"
   )
 
   // Mutations

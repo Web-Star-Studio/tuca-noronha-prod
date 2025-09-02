@@ -6,8 +6,10 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Heart, MapPin, Calendar, Star, Users, Car, Utensils, Camera, Package } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -15,12 +17,13 @@ import { formatCurrency } from "@/lib/utils"
 
 export default function WishlistPage() {
   const [activeTab, setActiveTab] = useState("all")
+  const isMobile = useIsMobile()
   const wishlistItems = useQuery(api.wishlist.getUserWishlist, {})
   const removeFromWishlist = useMutation(api.wishlist.removeFromWishlist)
 
   const handleRemoveFromWishlist = async (itemType: string, itemId: string) => {
     try {
-      await removeFromWishlist({ itemType, itemId })
+      await removeFromWishlist({ itemType, itemId, userId: "" })
       toast.success("Removido dos favoritos")
     } catch {
       toast.error("Não foi possível remover o item dos favoritos.")
@@ -235,73 +238,62 @@ export default function WishlistPage() {
           </div>
         </div>
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="all">
-              Todos ({itemCounts.all})
-            </TabsTrigger>
-            <TabsTrigger value="package">
-              Pacotes ({itemCounts.package})
-            </TabsTrigger>
-            <TabsTrigger value="accommodation">
-              Hospedagens ({itemCounts.accommodation})
-            </TabsTrigger>
-            <TabsTrigger value="activity">
-              Atividades ({itemCounts.activity})
-            </TabsTrigger>
-            <TabsTrigger value="restaurant">
-              Restaurantes ({itemCounts.restaurant})
-            </TabsTrigger>
-            <TabsTrigger value="event">
-              Eventos ({itemCounts.event})
-            </TabsTrigger>
-            <TabsTrigger value="vehicle">
-              Veículos ({itemCounts.vehicle})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("all").map(renderItemCard)}
+        <div>
+          {/* Mobile Filter Dropdown */}
+          {isMobile ? (
+            <div className="mb-6">
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filtrar por categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos ({itemCounts.all})</SelectItem>
+                  <SelectItem value="package">Pacotes ({itemCounts.package})</SelectItem>
+                  <SelectItem value="accommodation">Hospedagens ({itemCounts.accommodation})</SelectItem>
+                  <SelectItem value="activity">Atividades ({itemCounts.activity})</SelectItem>
+                  <SelectItem value="restaurant">Restaurantes ({itemCounts.restaurant})</SelectItem>
+                  <SelectItem value="event">Eventos ({itemCounts.event})</SelectItem>
+                  <SelectItem value="vehicle">Veículos ({itemCounts.vehicle})</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </TabsContent>
+          ) : (
+            /* Desktop Tabs */
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-7">
+                <TabsTrigger value="all">
+                  Todos ({itemCounts.all})
+                </TabsTrigger>
+                <TabsTrigger value="package">
+                  Pacotes ({itemCounts.package})
+                </TabsTrigger>
+                <TabsTrigger value="accommodation">
+                  Hospedagens ({itemCounts.accommodation})
+                </TabsTrigger>
+                <TabsTrigger value="activity">
+                  Atividades ({itemCounts.activity})
+                </TabsTrigger>
+                <TabsTrigger value="restaurant">
+                  Restaurantes ({itemCounts.restaurant})
+                </TabsTrigger>
+                <TabsTrigger value="event">
+                  Eventos ({itemCounts.event})
+                </TabsTrigger>
+                <TabsTrigger value="vehicle">
+                  Veículos ({itemCounts.vehicle})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
 
-          <TabsContent value="package" className="mt-6">
+          {/* Content Grid - Same for both mobile and desktop */}
+          <div className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("package").map(renderItemCard)}
+              {filterItemsByType(activeTab).map(renderItemCard)}
             </div>
-          </TabsContent>
+          </div>
+        </div>
 
-          <TabsContent value="accommodation" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("accommodation").map(renderItemCard)}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="activity" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("activity").map(renderItemCard)}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="restaurant" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("restaurant").map(renderItemCard)}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="event" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("event").map(renderItemCard)}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="vehicle" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filterItemsByType("vehicle").map(renderItemCard)}
-            </div>
-          </TabsContent>
-        </Tabs>
       )}
     </div>
   )

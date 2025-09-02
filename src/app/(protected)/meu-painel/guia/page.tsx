@@ -381,12 +381,17 @@ function SectionContent({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="w-20 h-20 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl cursor-pointer">
+                  <a 
+                    href="https://olecsfodp8.ufs.sh/f/5gHji80wXKiOMkMaUvAUBAfGbg3Hq7sFmNYVZrTIXh6O2Qxl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-20 h-20 bg-white/90 backdrop-blur-md rounded-full items-center justify-center shadow-2xl cursor-pointer hover:bg-white transition-colors"
+                  >
                     <Play className="w-10 h-10 text-blue-600 ml-1" />
-                  </div>
+                  </a>
                 </motion.div>
                 <p className="absolute bottom-4 left-4 text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full">
-                  Em breve
+                  Clique para assistir
                 </p>
               </div>
             </div>
