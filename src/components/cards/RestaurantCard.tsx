@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { forwardRef } from "react";
 import { Utensils, MapPin, Clock } from "lucide-react";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 // Tipo que funciona com ambos os tipos de Restaurant
 type RestaurantType = RestaurantService | RestaurantStore;
@@ -97,6 +98,17 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
             {/* Badge de categoria - tipo de cozinha */}
             <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
               {restaurant.cuisine[0] || 'Restaurante'}
+            </div>
+            {/* Wishlist button */}
+            <div className="absolute bottom-3 left-3" onClick={(e) => e.preventDefault()}>
+              <WishlistButton
+                itemType="restaurant"
+                itemId={restaurantId}
+                variant="outline"
+                size="icon"
+                className="bg-white/90 border-white/20 text-gray-700 hover:bg-white h-8 w-8 rounded-full shadow-sm"
+                showText={false}
+              />
             </div>
             {/* Badge de status - aberto/fechado */}
             {isOpen && (

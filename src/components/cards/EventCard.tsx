@@ -6,6 +6,7 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 export default function EventCard({ event }: { event: Event }) {
   // Format date for display
@@ -61,6 +62,17 @@ export default function EventCard({ event }: { event: Event }) {
           {/* Category badge */}
           <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-md">
             {event.category}
+          </div>
+          {/* Wishlist button */}
+          <div className="absolute bottom-3 left-3" onClick={(e) => e.preventDefault()}>
+            <WishlistButton
+              itemType="event"
+              itemId={event.id}
+              variant="outline"
+              size="icon"
+              className="bg-white/90 border-white/20 text-gray-700 hover:bg-white h-8 w-8 rounded-full shadow-sm"
+              showText={false}
+            />
           </div>
           {/* Special badges container */}
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">

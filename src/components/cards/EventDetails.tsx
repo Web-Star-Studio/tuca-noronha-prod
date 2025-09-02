@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
@@ -115,7 +116,7 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/90">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
                 <span>{formattedDate}</span>
@@ -133,6 +134,16 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               <div className="flex items-center gap-1.5">
                 <Users className="h-4 w-4" />
                 <span>{event.maxParticipants > 0 ? `${event.maxParticipants} vagas disponíveis` : 'Vagas ilimitadas'}</span>
+              </div>
+              <div className="ml-auto">
+                <WishlistButton
+                  itemType="event"
+                  itemId={event.id}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  showText={false}
+                />
               </div>
             </div>
           </div>

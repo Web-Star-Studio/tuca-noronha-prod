@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ChevronLeft, Users, Star, Heart, Share2, Clock, Check, X } from "lucide-react";
+import { ChevronLeft, Users, Star, Share2, Clock, Check, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,15 +29,6 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
   const packageData = useQuery(api.packages.getPackageBySlug, { 
     slug: params.slug 
   });
-
-  // Verificar se está nos favoritos
-  const isInWishlist = useQuery(
-    api.wishlist.isInWishlist,
-    userId && packageData ? {
-      itemType: "package",
-      itemId: packageData._id,
-    } : undefined
-  );
 
   // Verificar se está na comparação
   const isInComparison = useQuery(
@@ -66,8 +58,6 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
   );
 
   // Mutations
-  const addToWishlist = useMutation(api.wishlist.addToWishlist);
-  const removeFromWishlist = useMutation(api.wishlist.removeFromWishlist);
   const addToComparison = useMutation(api.packageComparison.addToComparison);
   const removeFromComparison = useMutation(api.packageComparison.removeFromComparison);
 
@@ -78,27 +68,6 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
     }
   }, [packageData]);
 
-  const handleToggleWishlist = async () => {
-    if (!userId || !packageData) return;
-
-    try {
-      if (isInWishlist) {
-        await removeFromWishlist({
-          itemType: "package",
-          itemId: packageData._id,
-        });
-        toast.success("Removido dos favoritos");
-      } else {
-        await addToWishlist({
-          itemType: "package",
-          itemId: packageData._id,
-        });
-        toast.success("Adicionado aos favoritos");
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
 
   const handleToggleComparison = async () => {
     if (!userId || !packageData) return;
@@ -214,20 +183,15 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
           
           {/* Action buttons */}
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToggleWishlist}
-              className="flex items-center gap-2"
-            >
-              <Heart
-                className={cn(
-                  "h-4 w-4",
-                  isInWishlist ? "fill-red-500 text-red-500" : "text-gray-600"
-                )}
+            {packageData && (
+              <WishlistButton
+                itemType="package"
+                itemId={packageData._id}
+                variant="outline"
+                size="sm"
+                showText={true}
               />
-              Favorito
-            </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Users, Fuel, Calendar, Car } from "lucide-react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 interface VehicleCardProps {
   vehicle: {
@@ -53,6 +54,18 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
             <span className="bg-white/90 backdrop-blur-sm text-xs font-medium px-3 py-1.5 rounded-full shadow-md">
               {vehicle.category}
             </span>
+          </div>
+          
+          {/* Wishlist button */}
+          <div className="absolute top-3 right-3" onClick={(e) => e.preventDefault()}>
+            <WishlistButton
+              itemType="vehicle"
+              itemId={vehicle._id}
+              variant="outline"
+              size="icon"
+              className="bg-white/90 border-white/20 text-gray-700 hover:bg-white h-8 w-8 rounded-full shadow-sm"
+              showText={false}
+            />
           </div>
           
           {/* Preço */}

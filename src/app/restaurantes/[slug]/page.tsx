@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 import { RestaurantReservationForm } from "@/components/bookings/RestaurantReservationForm";
 import { ReviewStats } from "@/components/reviews/ReviewStats";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
@@ -123,7 +124,7 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                   ({reviewStats?.totalReviews && reviewStats.totalReviews > 0 ? reviewStats.totalReviews : restaurant.rating.totalReviews} avaliações)
                 </span>
               </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" />
                   <span>{restaurant.address.neighborhood}, {restaurant.address.city}</span>
@@ -135,6 +136,16 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                 <div className="flex items-center gap-1.5">
                   <UtensilsCrossed className="h-4 w-4" />
                   <span>{restaurant.diningStyle}</span>
+                </div>
+                <div className="ml-auto">
+                  <WishlistButton
+                    itemType="restaurant"
+                    itemId={restaurant._id!}
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    showText={false}
+                  />
                 </div>
               </div>
             </div>

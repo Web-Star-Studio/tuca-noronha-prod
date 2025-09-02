@@ -14,6 +14,7 @@ import { ActivityBookingForm } from "@/components/bookings";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
@@ -112,7 +113,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                 </span>
               </div>
               
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
                   <span>{activity.duration}</span>
@@ -124,6 +125,16 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                 <div className="flex items-center gap-1.5">
                   <Gauge className="h-4 w-4" />
                   <span>Dificuldade: {activity.difficulty}</span>
+                </div>
+                <div className="ml-auto">
+                  <WishlistButton
+                    itemType="activity"
+                    itemId={activity._id}
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    showText={false}
+                  />
                 </div>
               </div>
             </div>
@@ -445,7 +456,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     activityId={params.id as Id<"activities">}
                     activity={activity}
                     onBookingSuccess={() => {
-                      setShowBookingForm(false);
+                      // Booking success handled
                     }}
                     className="border border-gray-200 shadow-sm"
                   />

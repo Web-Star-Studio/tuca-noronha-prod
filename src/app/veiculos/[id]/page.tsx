@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
 
@@ -117,7 +118,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                   ({reviewStats?.totalReviews || 0} avaliações)
                 </span>
               </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" />
                   <span>Ano {vehicle.year}</span>
@@ -129,6 +130,16 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                 <div className="flex items-center gap-1.5">
                   <Fuel className="h-4 w-4" />
                   <span>{vehicle.fuelType}</span>
+                </div>
+                <div className="ml-auto">
+                  <WishlistButton
+                    itemType="vehicle"
+                    itemId={vehicle._id}
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    showText={false}
+                  />
                 </div>
               </div>
             </div>

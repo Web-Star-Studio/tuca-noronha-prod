@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Clock, Users, ImageIcon } from "lucide-react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
+import { WishlistButton } from "@/components/ui/wishlist-button";
 
 export default function ActivitiesCard({activity}: {activity: Activity}) {
     // Get real review stats
@@ -37,6 +38,17 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                     {/* Badge de categoria */}
                     <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
                         {activity.category || 'Categoria'}
+                    </div>
+                    {/* Wishlist button */}
+                    <div className="absolute top-3 right-3" onClick={(e) => e.preventDefault()}>
+                        <WishlistButton
+                            itemType="activity"
+                            itemId={activity.id}
+                            variant="outline"
+                            size="icon"
+                            className="bg-white/90 border-white/20 text-gray-700 hover:bg-white h-8 w-8 rounded-full shadow-sm"
+                            showText={false}
+                        />
                     </div>
                 </div>
                 
