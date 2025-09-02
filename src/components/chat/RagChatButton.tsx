@@ -111,7 +111,7 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
 
   const buttonClasses =
     variant === "floating"
-      ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 border-none text-white ${className}`
+      ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 border-none text-white hidden md:flex ${className}`
       : className;
 
   const onAsk = async () => {
@@ -159,21 +159,21 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
 
   const renderMessage = (message: {role: 'user' | 'assistant', content: string}, index: number) => {
     return (
-      <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-        <div className={`flex gap-2 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+      <div key={index} className={`flex gap-2 sm:gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+        <div className={`flex gap-1 sm:gap-2 max-w-[85%] sm:max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+          <div className={`flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
             message.role === 'user' 
               ? 'bg-blue-500 text-white' 
               : 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white'
           }`}>
-            {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+            {message.role === 'user' ? <User className="w-3 h-3 sm:w-4 sm:h-4" /> : <Bot className="w-3 h-3 sm:w-4 sm:h-4" />}
           </div>
-          <div className={`rounded-lg px-4 py-2 ${
+          <div className={`rounded-lg px-3 py-2 sm:px-4 ${
             message.role === 'user'
               ? 'bg-blue-500 text-white ml-auto'
               : 'bg-gray-100 text-gray-900'
           }`}>
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
       </div>
@@ -207,7 +207,7 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
           size={getButtonSize()}
           className={
             variant === "floating"
-              ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-gray-400 to-gray-500 border-none text-white opacity-50 cursor-not-allowed ${className}`
+              ? `fixed bottom-8 right-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 bg-gradient-to-r from-gray-400 to-gray-500 border-none text-white opacity-50 cursor-not-allowed hidden md:flex ${className}`
               : `${className} opacity-50 cursor-not-allowed`
           }
           title="Faça login para usar o assistente"
@@ -219,7 +219,7 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
 
       <Authenticated>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-2xl sm:max-h-[80vh] flex flex-col">
+          <DialogContent className="w-full h-full sm:w-auto sm:h-auto sm:max-w-2xl sm:max-h-[80vh] max-w-none max-h-none m-0 p-4 sm:m-6 sm:p-6 flex flex-col rounded-none sm:rounded-lg">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -246,13 +246,13 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
 
             {/* Messages Area */}
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto p-2 space-y-4 min-h-[300px]">
+              <div className="flex-1 overflow-y-auto p-2 space-y-4 min-h-[200px] sm:min-h-[300px]">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
-                    <div className="text-center">
-                      <Bot className="w-12 h-12 mx-auto mb-4 text-violet-400" />
-                      <p className="text-sm">Olá! Sou o Tuca Noronha, seu assistente virtual.</p>
-                      <p className="text-xs mt-2">Pergunte qualquer coisa sobre Fernando de Noronha!</p>
+                    <div className="text-center px-4">
+                      <Bot className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-4 text-violet-400" />
+                      <p className="text-sm sm:text-base">Olá! Sou o Tuca Noronha, seu assistente virtual.</p>
+                      <p className="text-xs sm:text-sm mt-2">Pergunte qualquer coisa sobre Fernando de Noronha!</p>
                     </div>
                   </div>
                 ) : (
@@ -262,13 +262,13 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
                 {loading && (
                   <div className="flex gap-3 justify-start">
                     <div className="flex gap-2">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-violet-500 to-indigo-500 text-white">
-                        <Bot className="w-4 h-4" />
+                      <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-violet-500 to-indigo-500 text-white">
+                        <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
-                      <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2">
+                      <div className="bg-gray-100 text-gray-900 rounded-lg px-3 py-2 sm:px-4">
                         <div className="flex items-center space-x-1">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span className="text-sm">Tuca está pensando...</span>
+                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                          <span className="text-xs sm:text-sm">Tuca está pensando...</span>
                         </div>
                       </div>
                     </div>
@@ -278,13 +278,13 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
             </div>
 
             {/* Input Area */}
-            <div className="flex-shrink-0 border-t pt-4">
+            <div className="flex-shrink-0 border-t pt-3 sm:pt-4">
               <div className="flex gap-2">
                 <Input
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Pergunte sobre praias, restaurantes, atividades..."
-                  className="flex-1"
+                  className="flex-1 text-sm sm:text-base"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -295,12 +295,13 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
                 <Button 
                   onClick={onAsk} 
                   disabled={loading || !question.trim()}
-                  className="px-3"
+                  className="px-2 sm:px-3 min-w-[40px] sm:min-w-[44px]"
+                  size="sm"
                 >
                   {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
                 </Button>
               </div>
