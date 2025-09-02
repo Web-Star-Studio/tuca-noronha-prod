@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 // date-fns imports removidos (não utilizados)
 
-import { MapPin, Calendar, Utensils, Waves, Building, Star, Plane, Home, Car, UtensilsCrossed, Sun, Clock, Heart, Camera, CheckCircle, AlertCircle, Shirt, Wallet, Play, BarChart3, Lightbulb, Compass, Info, Thermometer, Users, Map, Navigation, Activity, Globe, Trophy, CloudRain, ArrowLeft, Menu, Search, ArrowUp, CreditCard, DollarSign, Droplets, FileText, Fish, Key, Phone, Shield, Trash2, TrendingDown, Wifi, Wind, Zap } from "lucide-react";
+import { MapPin, Calendar, Utensils, Waves, Building, Star, Plane, Home, Car, UtensilsCrossed, Sun, Clock, Heart, Camera, CheckCircle, AlertCircle, Shirt, Wallet, Play, BarChart3, Lightbulb, Compass, Info, Thermometer, Users, Map, Navigation, Activity, Globe, Trophy, CloudRain, ArrowLeft, Menu, ArrowUp, CreditCard, DollarSign, Droplets, FileText, Fish, Key, Phone, Shield, Trash2, TrendingDown, Wifi, Wind, Zap } from "lucide-react";
 import { cardStyles, decorativeBackgrounds, ui } from "@/lib/ui-config";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -3471,9 +3471,12 @@ function GuiaPageContent() {
                   </div>
                 </DrawerContent>
               </Drawer>
-              <Button variant="ghost" size="icon" className="rounded-full w-14 h-14" onClick={() => setOpenCommand(true)}>
-                <Search className="h-6 w-6" />
-              </Button>
+              <RagChatButton 
+                variant="ghost" 
+                size="lg" 
+                showLabel={false}
+                className="rounded-full w-14 h-14"
+              />
             </div>
           </motion.div>
         )}
