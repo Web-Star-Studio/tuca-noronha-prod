@@ -1,20 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { Sparkles } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Authenticated, Unauthenticated, useAction } from "convex/react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Loader2, Send, Bot, User, History, Sparkles } from "lucide-react";
+import { Authenticated, Unauthenticated } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs";
 
 interface RagChatButtonProps {
   variant?: "default" | "outline" | "ghost" | "floating";
@@ -26,18 +21,69 @@ interface RagChatButtonProps {
 
 export const RagChatButton: React.FC<RagChatButtonProps> = ({
   variant = "default",
-  size = "md",
+  size = "md", 
   showLabel = true,
   className = "",
   customLabel,
 }) => {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [context, setContext] = useState<any>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
 
+  const { user } = useUser();
+  const userId = user?.id;
+
+  // Actions for thread management
+  const createThread = useAction(api.guide.createThread);
+  const askGuideWithThread = useAction(api.guide.askGuideWithThread);
+  
+  // Legacy action for backwards compatibility
   const askGuide = useAction(api.guide.askGuide);
+  
+  // Query for loading thread messages
+  const threadMessages = useQuery(
+    api.guide.listThreadMessages,
+    threadId ? { threadId, paginationOpts: { numItems: 50 } } : "skip"
+  );
+
+  // Initialize thread when dialog opens
+  useEffect(() => {
+    if (open && !threadId && userId) {
+      initializeThread();
+    }
+  }, [open, threadId, userId]);
+
+  // Update messages when thread messages load
+  useEffect(() => {
+    if (threadMessages?.page) {
+      const formattedMessages = threadMessages.page
+        .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg: any) => ({
+          role: msg.role,
+          content: typeof msg.content === 'string' ? msg.content : msg.content?.[0]?.text || ''
+        }))
+        .reverse(); // Reverse to show latest first in our UI
+      
+      setMessages(formattedMessages);
+    }
+  }, [threadMessages]);
+
+  const initializeThread = async () => {
+    if (!userId) return;
+    
+    try {
+      const result = await createThread({
+        userId,
+        title: "Chat com Tuca Noronha"
+      });
+      setThreadId(result.threadId);
+    } catch (error) {
+      console.error("Erro ao criar thread:", error);
+      toast.error("Erro ao inicializar conversa");
+    }
+  };
 
   const getButtonSize = () => {
     switch (size) {
@@ -70,44 +116,74 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
 
   const onAsk = async () => {
     if (!question.trim()) return;
+    
     setLoading(true);
-    setAnswer(null);
-    setContext(null);
+    
+    // Add user message optimistically
+    const userMessage = { role: 'user' as const, content: question.trim() };
+    setMessages(prev => [...prev, userMessage]);
+    
+    const currentQuestion = question.trim();
+    setQuestion("");
+    
     try {
-      const res = await askGuide({ prompt: question.trim(), limit: 8 });
-      // res should be { answer: string, context: any }
-      setAnswer(res?.answer ?? null);
-      setContext(res?.context ?? null);
+      let response;
+      
+      if (threadId && userId) {
+        // Use enhanced thread-based conversation
+        response = await askGuideWithThread({
+          prompt: currentQuestion,
+          threadId,
+          userId,
+        });
+      } else {
+        // Fallback to legacy method
+        response = await askGuide({ prompt: currentQuestion });
+      }
+      
+      // Add assistant response
+      if (response?.answer) {
+        const assistantMessage = { role: 'assistant' as const, content: response.answer };
+        setMessages(prev => [...prev, assistantMessage]);
+      }
     } catch (err) {
       console.error("Erro ao consultar guia AI:", err);
       toast.error("Não foi possível obter a resposta da IA");
+      
+      // Remove the optimistic user message on error
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }
   };
 
-  const renderSources = () => {
-    // Try best-effort rendering for context (structure from @convex-dev/rag)
-    // Typical shape: context.chunks: Array<{ content: { text, metadata? }, score?, entryId?, key? }>
-    const chunks = (context && (context.chunks || context.results || context.sources)) ?? [];
-    if (!Array.isArray(chunks) || chunks.length === 0) return null;
+  const renderMessage = (message: {role: 'user' | 'assistant', content: string}, index: number) => {
     return (
-      <div className="mt-4 border-t pt-4">
-        <h4 className="text-sm font-semibold mb-2">Fontes relacionadas</h4>
-        <ul className="space-y-2 max-h-40 overflow-auto">
-          {chunks.map((c: any, idx: number) => {
-            const text: string = c?.content?.text || c?.text || "";
-            const key: string | undefined = c?.key || c?.content?.metadata?.key;
-            return (
-              <li key={idx} className="text-xs text-slate-600">
-                {key && <span className="font-medium mr-1">{key}:</span>}
-                <span>{text.slice(0, 160)}{text.length > 160 ? "…" : ""}</span>
-              </li>
-            );
-          })}
-        </ul>
+      <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+        <div className={`flex gap-2 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+            message.role === 'user' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white'
+          }`}>
+            {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+          </div>
+          <div className={`rounded-lg px-4 py-2 ${
+            message.role === 'user'
+              ? 'bg-blue-500 text-white ml-auto'
+              : 'bg-gray-100 text-gray-900'
+          }`}>
+            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          </div>
+        </div>
       </div>
     );
+  };
+
+  const clearConversation = () => {
+    setMessages([]);
+    setThreadId(null);
+    toast.success("Conversa limpa com sucesso");
   };
 
   return (
@@ -143,54 +219,88 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
 
       <Authenticated>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-2xl bg-white">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                <Sparkles className="w-5 h-5" />
-                <span>Assistente da Ilha (IA)</span>
+          <DialogContent className="sm:max-w-2xl sm:max-h-[80vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-violet-600" />
+                  Tuca Noronha - Assistente IA
+                </div>
+                <div className="flex items-center gap-2">
+                  {threadId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearConversation}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <History className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </DialogTitle>
-              <DialogDescription>
-                Faça perguntas sobre o guia e receba respostas com base no nosso conteúdo.
-              </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="rag-question">Sua pergunta</Label>
-                <Textarea
-                  id="rag-question"
+            {/* Messages Area */}
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-2 space-y-4 min-h-[300px]">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <Bot className="w-12 h-12 mx-auto mb-4 text-violet-400" />
+                      <p className="text-sm">Olá! Sou o Tuca Noronha, seu assistente virtual.</p>
+                      <p className="text-xs mt-2">Pergunte qualquer coisa sobre Fernando de Noronha!</p>
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((message, index) => renderMessage(message, index))
+                )}
+                
+                {loading && (
+                  <div className="flex gap-3 justify-start">
+                    <div className="flex gap-2">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-violet-500 to-indigo-500 text-white">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                      <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2">
+                        <div className="flex items-center space-x-1">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Tuca está pensando...</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Input Area */}
+            <div className="flex-shrink-0 border-t pt-4">
+              <div className="flex gap-2">
+                <Input
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Ex.: Como funciona a confirmação da minha reserva?"
-                  rows={3}
+                  placeholder="Pergunte sobre praias, restaurantes, atividades..."
+                  className="flex-1"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      onAsk();
+                    }
+                  }}
                 />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Fechar
-                </Button>
-                <Button onClick={onAsk} disabled={loading || !question.trim()}>
+                <Button 
+                  onClick={onAsk} 
+                  disabled={loading || !question.trim()}
+                  className="px-3"
+                >
                   {loading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Perguntando...
-                    </>
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    "Perguntar"
+                    <Send className="w-4 h-4" />
                   )}
                 </Button>
               </div>
-
-              {answer && (
-                <div className="mt-2 p-4 rounded-md bg-slate-50 border text-slate-800">
-                  <div className="text-sm whitespace-pre-wrap">{answer}</div>
-                  {renderSources()}
-                </div>
-              )}
             </div>
           </DialogContent>
         </Dialog>
