@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Loader2, Send, Bot, User, History, Sparkles } from "lucide-react";
 import { Authenticated, Unauthenticated } from "convex/react";
@@ -239,6 +239,9 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
                   )}
                 </div>
               </DialogTitle>
+              <DialogDescription>
+                Converse com o Tuca sobre Fernando de Noronha - praias, restaurantes, atividades e muito mais!
+              </DialogDescription>
             </DialogHeader>
 
             {/* Messages Area */}

@@ -83,7 +83,7 @@ export const createThread = action({
   },
 });
 
-// Continue a thread conversation
+// Continue a thread conversation (simplified approach to avoid validation issues)
 export const askGuideWithThread = action({
   args: {
     prompt: v.string(),
@@ -91,20 +91,47 @@ export const askGuideWithThread = action({
     userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { thread } = await tucaGuideAgent.continueThread(ctx, { 
-      threadId: args.threadId,
-      userId: args.userId,
-    });
+    try {
+      // Use direct RAG search instead of full agent to avoid validation issues
+      const context = await rag.search(ctx, { 
+        namespace: "tuca-guide", 
+        query: args.prompt,
+        limit: 8,
+        chunkContext: { before: 2, after: 1 }
+      });
 
-    const result = await thread.generateText({ 
-      prompt: args.prompt,
-    });
+      // Generate response using OpenAI directly with the retrieved context
+      const { generateText } = await import("ai");
+      const result = await generateText({
+        model: openai("gpt-4o-mini"),
+        system: `Você é Tuca Noronha, um assistente especializado no guia completo de Fernando de Noronha. 
+        
+Você tem acesso a informações detalhadas sobre:
+- Praias e atividades em Fernando de Noronha
+- Hospedagem e onde ficar
+- Gastronomia local e restaurantes
+- História e cultura da ilha
+- Dicas de planejamento de viagem
+- Trilhas e passeios
+- Mergulho e atividades aquáticas
 
-    return { 
-      answer: result.text, 
-      threadId: args.threadId,
-      success: true 
-    };
+Use o contexto fornecido para responder de forma calorosa, pessoal e com as "Dicas do Tuca" quando apropriado.
+Mantenha o tom amigável e local, como se fosse o próprio Tuca falando.
+
+Contexto do guia:
+${context.text || "Nenhum contexto específico encontrado."}`,
+        prompt: args.prompt,
+      });
+
+      return { 
+        answer: result.text, 
+        threadId: args.threadId,
+        success: true 
+      };
+    } catch (error) {
+      console.error("Error in askGuideWithThread:", error);
+      throw error;
+    }
   },
 });
 
