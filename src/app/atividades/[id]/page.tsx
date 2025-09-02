@@ -129,7 +129,7 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                 <div className="ml-auto">
                   <WishlistButton
                     itemType="activity"
-                    itemId={activity._id}
+                    itemId={activity.id}
                     variant="outline"
                     size="sm"
                     className="bg-white/10 border-white/20 text-white hover:bg-white/20"
