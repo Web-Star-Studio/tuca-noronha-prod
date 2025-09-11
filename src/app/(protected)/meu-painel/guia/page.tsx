@@ -173,7 +173,7 @@ function VideoPlayer() {
           <div 
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`
+              backgroundImage: `url('/images/Screenshot_2025-09-11_08-13-19.png')`
             }}
           />
           <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
@@ -201,7 +201,7 @@ function VideoPlayer() {
           ref={videoRef}
           className="w-full h-full object-cover rounded-xl"
           controls
-          poster="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+          poster="/images/Screenshot_2025-09-11_08-13-19.png"
         >
           <source src="https://olecsfodp8.ufs.sh/f/5gHji80wXKiOMkMaUvAUBAfGbg3Hq7sFmNYVZrTIXh6O2Qxl" type="video/mp4" />
           Seu navegador não suporta o elemento de vídeo.
