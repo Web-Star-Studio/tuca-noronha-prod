@@ -89,7 +89,7 @@ export default function BookingChatButton({
 
       // Redirecionar para a página de chat
       router.push(`/admin/dashboard/chats/${result._id}`);
-    } catch {
+    } catch (error: any) {
       console.error("Erro ao abrir chat:", error);
       toast.error("Erro ao abrir chat. Tente novamente.");
     } finally {

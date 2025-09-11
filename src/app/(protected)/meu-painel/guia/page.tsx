@@ -153,6 +153,64 @@ const guideSections = [
 
 // SearchableContent interface removida (não utilizada)
 
+// Componente VideoPlayer com thumbnail e reprodução inline
+function VideoPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+  };
+
+  return (
+    <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center relative overflow-hidden group-hover:shadow-xl transition-shadow duration-300">
+      {!isPlaying ? (
+        <>
+          {/* Thumbnail */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`
+            }}
+          />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+          
+          {/* Play Button */}
+          <motion.div
+            className="relative z-10"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <button 
+              onClick={handlePlay}
+              className="flex w-20 h-20 bg-white/90 backdrop-blur-md rounded-full items-center justify-center shadow-2xl cursor-pointer hover:bg-white transition-colors"
+            >
+              <Play className="w-10 h-10 text-blue-600 ml-1" />
+            </button>
+          </motion.div>
+          
+          <p className="absolute bottom-4 left-4 text-sm text-white bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
+            Clique para assistir
+          </p>
+        </>
+      ) : (
+        <video 
+          ref={videoRef}
+          className="w-full h-full object-cover rounded-xl"
+          controls
+          poster="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        >
+          <source src="https://olecsfodp8.ufs.sh/f/5gHji80wXKiOMkMaUvAUBAfGbg3Hq7sFmNYVZrTIXh6O2Qxl" type="video/mp4" />
+          Seu navegador não suporta o elemento de vídeo.
+        </video>
+      )}
+    </div>
+  );
+}
+
 // Componente para item da checklist (corrige hook rules violation)
 function ChecklistItem({ step, index }: { step: any; index: number }) {
   const [checked, setChecked] = useState(false);
@@ -374,26 +432,7 @@ function SectionContent({
                   <p className="text-sm text-gray-600">Conheça Fernando de Noronha em 5 minutos</p>
                 </div>
               </motion.div>
-              <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center relative overflow-hidden group-hover:shadow-xl transition-shadow duration-300">
-                <div className="absolute inset-0 bg-black/5 backdrop-blur-[1px]" />
-                <motion.div
-                  className="relative z-10"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <a 
-                    href="https://olecsfodp8.ufs.sh/f/5gHji80wXKiOMkMaUvAUBAfGbg3Hq7sFmNYVZrTIXh6O2Qxl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-20 h-20 bg-white/90 backdrop-blur-md rounded-full items-center justify-center shadow-2xl cursor-pointer hover:bg-white transition-colors"
-                  >
-                    <Play className="w-10 h-10 text-blue-600 ml-1" />
-                  </a>
-                </motion.div>
-                <p className="absolute bottom-4 left-4 text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full">
-                  Clique para assistir
-                </p>
-              </div>
+              <VideoPlayer />
             </div>
           </div>
         </motion.div>
