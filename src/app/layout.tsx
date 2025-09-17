@@ -6,7 +6,7 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TripNative",
+  title: "Tuca Noronha",
   description: "Experiências turísticas únicas e autênticas",
 };
 
