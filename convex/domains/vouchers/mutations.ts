@@ -58,7 +58,7 @@ export const generateVoucherInternal = internalMutation({
       case "activity":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.activityId) {
-          const activity = await ctx.db.get(booking.activityId);
+          const activity = await ctx.db.get(booking.activityId) as any;
           partnerId = activity?.partnerId;
           customerId = booking.userId;
         }
@@ -66,7 +66,7 @@ export const generateVoucherInternal = internalMutation({
       case "event":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.eventId) {
-          const event = await ctx.db.get(booking.eventId);
+          const event = await ctx.db.get(booking.eventId) as any;
           partnerId = event?.partnerId;
           customerId = booking.userId;
         }
@@ -74,7 +74,7 @@ export const generateVoucherInternal = internalMutation({
       case "restaurant":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.restaurantId) {
-          const restaurant = await ctx.db.get(booking.restaurantId);
+          const restaurant = await ctx.db.get(booking.restaurantId) as any;
           partnerId = restaurant?.partnerId;
           customerId = booking.userId;
         }
@@ -82,7 +82,7 @@ export const generateVoucherInternal = internalMutation({
       case "vehicle":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.vehicleId) {
-          const vehicle = await ctx.db.get(booking.vehicleId);
+          const vehicle = await ctx.db.get(booking.vehicleId) as any;
           partnerId = vehicle?.ownerId;
           customerId = booking.userId;
         }
