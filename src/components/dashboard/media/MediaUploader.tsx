@@ -150,7 +150,7 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
       if (onSuccess) {
         onSuccess()
       }
-    } catch {
+    } catch (error) {
       console.error("Erro ao fazer upload:", error)
       toast.error("Erro ao fazer upload do arquivo")
     } finally {

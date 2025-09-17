@@ -93,7 +93,7 @@ export default function MediaPage() {
       setIsDeleting(true)
       await deleteMedia(id)
       toast.success("Mídia excluída com sucesso!")
-    } catch {
+    } catch (error) {
       console.error("Erro ao excluir mídia:", error)
       toast.error("Erro ao excluir mídia")
     } finally {
@@ -127,7 +127,7 @@ export default function MediaPage() {
                 <p className="text-2xl font-bold text-foreground">{media?.length || 0}</p>
               </div>
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Image className="h-5 w-5 text-blue-600" alt="" />
+                <Image className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>

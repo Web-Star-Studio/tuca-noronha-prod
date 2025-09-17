@@ -34,7 +34,7 @@ export function ConvexImage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   
-  const refreshUrl = useMutation(api.media.refreshStorageUrl);
+  const refreshUrl = useMutation(api.domains.media.mutations.refreshMediaUrl);
   
   // Verificar e atualizar a URL da imagem se necessário
   useEffect(() => {
@@ -45,7 +45,7 @@ export function ConvexImage({
           const newUrl = await refreshUrl({ id: mediaId });
           setImageSrc(newUrl);
           setIsLoading(false);
-        } catch {
+        } catch (error) {
           console.error("Erro ao atualizar URL da imagem:", error);
           setHasError(true);
           setIsLoading(false);
@@ -125,7 +125,8 @@ export function ConvexImage({
         try {
           const newUrl = await refreshUrl({ id: mediaId });
           setImageSrc(newUrl);
-        } catch {
+        } catch (error) {
+          console.error("Erro ao atualizar URL da imagem:", error);
           setHasError(true);
           onError?.();
         }

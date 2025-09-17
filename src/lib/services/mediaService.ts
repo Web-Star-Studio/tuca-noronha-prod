@@ -210,7 +210,7 @@ export function useGetConvexUserId() {
       }
       const data = await response.json();
       return data.userId as Id<"users">;
-    } catch {
+    } catch (error) {
       console.error('Error getting Convex user ID:', error);
       return null;
     }

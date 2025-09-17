@@ -263,13 +263,13 @@ export const getBookingConfirmationTemplate = (data: any): string => {
             <p><strong>Importante:</strong> Guarde este código de confirmação. Você precisará dele no dia da sua experiência.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tuca-noronha.vercel.app/reservas" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/reservas" class="button">
                     Ver Minhas Reservas
                 </a>
             </div>
             
             <div style="text-align: center; margin: 1rem 0;">
-                <a href="https://tuca-noronha.vercel.app/voucher/${data.confirmationCode}" class="button" style="background-color: #10b981; margin-left: 10px;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/voucher/${data.confirmationCode}" class="button" style="background-color: #10b981; margin-left: 10px;">
                     📄 Acessar Voucher
                 </a>
             </div>
@@ -282,7 +282,7 @@ export const getBookingConfirmationTemplate = (data: any): string => {
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
         </div>
     </div>
   `;
@@ -339,7 +339,7 @@ export const getBookingCancelledTemplate = (data: any): string => {
             <p>Lamentamos qualquer inconveniente causado. Nossa equipe está sempre disponível para ajudá-lo a encontrar outras opções incríveis em Fernando de Noronha.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tuca-noronha.vercel.app" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}" class="button">
                     Explorar Outras Opções
                 </a>
             </div>
@@ -350,7 +350,7 @@ export const getBookingCancelledTemplate = (data: any): string => {
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
         </div>
     </div>
   `;
@@ -405,7 +405,7 @@ export const getPackageRequestReceivedTemplate = (data: any): string => {
             </ul>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tuca-noronha.vercel.app/meu-painel" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/meu-painel" class="button">
                     Acompanhar Solicitação
                 </a>
             </div>
@@ -418,7 +418,7 @@ export const getPackageRequestReceivedTemplate = (data: any): string => {
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
         </div>
     </div>
   `;
@@ -507,7 +507,7 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
             <p><strong>Ação necessária:</strong> Acesse o painel de parceiro para confirmar ou gerenciar esta reserva.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tuca-noronha.vercel.app/admin/dashboard/reservas/" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/admin/dashboard/reservas/" class="button">
                     Gerenciar Reserva
                 </a>
             </div>
@@ -518,7 +518,7 @@ export const getPartnerNewBookingTemplate = (data: any): string => {
         <div class="footer">
             <p>Tuca Noronha - Portal do Parceiro</p>
             <p>📧 parceiros@tucanoronha.com | 📱 (81) 979097547</p>
-            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
         </div>
     </div>
   `;
@@ -606,7 +606,7 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
             </div>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="https://tuca-noronha.vercel.app/${data.userRole === 'traveler' ? 'meu-painel' : 'admin/dashboard'}" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/${data.userRole === 'traveler' ? 'meu-painel' : 'admin/dashboard'}" class="button">
                     Acessar Plataforma
                 </a>
             </div>
@@ -619,7 +619,7 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
         </div>
     </div>
   `;
@@ -701,7 +701,7 @@ export const getPackageProposalTemplate = (data: any): string => {
         <div class="footer">
             <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
             <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="https://tuca-noronha.vercel.app">www.tuca-noronha.vercel.app</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
         </div>
     </div>
   `;

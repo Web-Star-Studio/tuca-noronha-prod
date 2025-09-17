@@ -77,7 +77,7 @@ export function MediaDetailsDialog({ media, open, onOpenChange }: MediaDetailsDi
           <Tabs defaultValue="preview" className="h-full flex flex-col">
             <TabsList className="flex-shrink-0 mb-4 grid grid-cols-2 w-full">
               <TabsTrigger value="preview" className="flex items-center gap-2">
-                <Image className="h-4 w-4" alt="" />
+                <Image className="h-4 w-4" />
                 <span>Visualização</span>
               </TabsTrigger>
               <TabsTrigger value="info" className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export function MediaDetailsDialog({ media, open, onOpenChange }: MediaDetailsDi
                       {media.width && media.height && (
                         <div className="space-y-1">
                           <span className="flex items-center gap-2 text-muted-foreground">
-                            <Image className="h-4 w-4" alt="" />
+                            <Image className="h-4 w-4" />
                             Dimensões
                           </span>
                           <Badge variant="outline">{media.width} × {media.height}px</Badge>

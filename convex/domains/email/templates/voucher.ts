@@ -1,7 +1,7 @@
 import type { VoucherEmailData } from "../types";
 
 export const voucherEmailTemplate = (data: VoucherEmailData): string => {
-  const voucherUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://tucanoronha.com"}/voucher/${data.confirmationCode}`;
+  const voucherUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/voucher/${data.confirmationCode}`;
   
   return `
 <!DOCTYPE html>
@@ -217,8 +217,8 @@ export const voucherEmailTemplate = (data: VoucherEmailData): string => {
         Em caso de dúvidas, entre em contato conosco através do site.
       </p>
       <p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tucanoronha.com"}">tucanoronha.com</a> | 
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tucanoronha.com"}/ajuda">Central de Ajuda</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "tuca-noronha.vercel.app"}</a> | 
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/ajuda">Central de Ajuda</a>
       </p>
       <p style="margin-top: 20px; font-size: 12px;">
         © ${new Date().getFullYear()} Tuca Noronha. Todos os direitos reservados.

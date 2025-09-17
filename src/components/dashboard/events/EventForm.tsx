@@ -478,7 +478,7 @@ export function EventForm({
             <div className="flex flex-wrap gap-2">
               {formData.galleryImages.map((url, idx) => (
                 <div key={idx} className="relative w-24 h-24 rounded overflow-hidden">
-                  <Image src={url} alt="" fill className="object-cover" />
+                  <Image src={url} alt={`Imagem ${idx + 1} da galeria do evento`} fill className="object-cover" />
                   <button
                     type="button"
                     className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"

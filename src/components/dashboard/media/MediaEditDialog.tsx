@@ -120,7 +120,7 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-gray-100">
-                  <Image className="h-8 w-8 text-gray-400" alt="" />
+                  <Image className="h-8 w-8 text-gray-400" />
                 </div>
               )}
             </div>

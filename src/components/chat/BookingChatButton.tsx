@@ -95,7 +95,7 @@ export default function BookingChatButton({
     } finally {
       setIsLoading(false);
     }
-  };
+  };  
 
   return (
     <Button
