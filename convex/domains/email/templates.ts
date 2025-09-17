@@ -269,7 +269,7 @@ export const getBookingConfirmationTemplate = (data: any): string => {
             </div>
             
             <div style="text-align: center; margin: 1rem 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/voucher/${data.confirmationCode}" class="button" style="background-color: #10b981; margin-left: 10px;">
+                <a href="https://tucanoronha.com.br/voucher/${data.confirmationCode}" class="button" style="background-color: #10b981; margin-left: 10px;">
                     📄 Acessar Voucher
                 </a>
             </div>
