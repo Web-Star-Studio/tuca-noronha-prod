@@ -383,7 +383,7 @@ export const approveBookingAndCapturePayment = action({
 
       // Generate voucher for confirmed booking
       try {
-        await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
+        await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucherInternal, {
           bookingId: args.bookingId,
           bookingType: args.assetType,
         });

@@ -19,6 +19,159 @@ import {
 } from "./utils";
 
 /**
+ * Internal mutation to generate a voucher for a booking (used by payment actions)
+ */
+export const generateVoucherInternal = internalMutation({
+  args: {
+    bookingId: v.string(),
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const { bookingId, bookingType } = args;
+    
+    // Check if voucher already exists for this booking
+    const existingVoucher = await ctx.db
+      .query("vouchers")
+      .withIndex("by_booking", (q) => 
+        q.eq("bookingId", bookingId).eq("bookingType", bookingType)
+      )
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (existingVoucher) {
+      console.log("Voucher already exists for booking:", bookingId);
+      return { voucherId: existingVoucher._id };
+    }
+
+    // Get booking details to find partner and customer IDs
+    let booking: any;
+    let partnerId: any;
+    let customerId: any;
+    
+    switch (bookingType) {
+      case "activity":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.activityId) {
+          const activity = await ctx.db.get(booking.activityId);
+          partnerId = activity?.partnerId;
+          customerId = booking.userId;
+        }
+        break;
+      case "event":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.eventId) {
+          const event = await ctx.db.get(booking.eventId);
+          partnerId = event?.partnerId;
+          customerId = booking.userId;
+        }
+        break;
+      case "restaurant":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.restaurantId) {
+          const restaurant = await ctx.db.get(booking.restaurantId);
+          partnerId = restaurant?.partnerId;
+          customerId = booking.userId;
+        }
+        break;
+      case "vehicle":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.vehicleId) {
+          const vehicle = await ctx.db.get(booking.vehicleId);
+          partnerId = vehicle?.ownerId;
+          customerId = booking.userId;
+        }
+        break;
+      case "package":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking) {
+          customerId = booking.userId;
+          // Package might not have a specific partner
+        }
+        break;
+    }
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    // Generate unique voucher number
+    let voucherNumber: string;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      voucherNumber = generateVoucherNumber();
+      const exists = await ctx.db
+        .query("vouchers")
+        .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+        .first();
+
+      if (!exists) break;
+      attempts++;
+    } while (attempts < maxAttempts);
+
+    if (attempts >= maxAttempts) {
+      throw new Error("Failed to generate unique voucher number");
+    }
+
+    // Calculate expiration 
+    const calculatedExpiration = calculateVoucherExpiration(bookingType);
+
+    // Generate verification token and QR code
+    const verificationToken = generateVerificationToken(voucherNumber, calculatedExpiration);
+    const qrCodeData = generateQRCodeData(voucherNumber, verificationToken, calculatedExpiration);
+    const qrCodeString = qrCodeDataToString(qrCodeData);
+
+    // Create voucher record
+    const now = Date.now();
+    const voucherId = await ctx.db.insert("vouchers", {
+      voucherNumber,
+      code: voucherNumber,  // For compatibility
+      qrCode: qrCodeString,
+      bookingId,
+      bookingType,
+      status: VOUCHER_STATUS.ACTIVE,
+      generatedAt: now,
+      expiresAt: calculatedExpiration,
+      emailSent: false,
+      downloadCount: 0,
+      verificationToken,
+      scanCount: 0,
+      partnerId: partnerId || undefined,
+      customerId: customerId || undefined,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Log voucher generation
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.GENERATED,
+      timestamp: now,
+      createdAt: now,
+      userType: USER_TYPES.ADMIN, // Using ADMIN as SYSTEM doesn't exist
+      userId: customerId || ("system" as any),
+      ipAddress: "internal",
+      metadata: JSON.stringify({
+        bookingId,
+        bookingType,
+        source: "internal_action"
+      }),
+    });
+
+    console.log("Voucher generated successfully:", voucherId);
+    return { voucherId };
+  },
+});
+
+/**
  * Generate a new voucher for a booking
  */
 export const generateVoucher = mutation({
