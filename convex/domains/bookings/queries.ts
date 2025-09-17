@@ -1171,10 +1171,31 @@ export const getActivityBookings = query({
         const bookingsWithDetails = await Promise.all(
           bookings.map(async (booking) => {
             return {
-              ...booking,
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              activityId: booking.activityId,
+              activityTitle: activity?.title || "Atividade não encontrada",
+              date: booking.date,
+              time: booking.time,
+              participants: booking.participants,
+              totalPrice: booking.totalPrice,
+              couponCode: booking.couponCode,
+              discountAmount: booking.discountAmount,
+              finalAmount: booking.finalAmount,
+              status: booking.status,
+              paymentStatus: booking.paymentStatus,
+              confirmationCode: booking.confirmationCode,
+              customerInfo: booking.customerInfo,
+              specialRequests: booking.specialRequests,
+              partnerNotes: booking.partnerNotes,
+              // Mercado Pago fields
+              mpPaymentId: booking.mpPaymentId,
+              mpPreferenceId: booking.mpPreferenceId,
+              mpPaymentLinkId: booking.mpPaymentLinkId,
+              paymentDetails: booking.paymentDetails,
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
-              activityTitle: activity?.title || "Atividade não encontrada",
+              userId: booking.userId,
             };
           })
         );
@@ -1206,10 +1227,31 @@ export const getActivityBookings = query({
             const bookingsWithDetails = await Promise.all(
               bookings.map(async (booking) => {
                 return {
-                  ...booking,
+                  _id: booking._id,
+                  _creationTime: booking._creationTime,
+                  activityId: booking.activityId,
+                  activityTitle: activity.title || "Atividade não encontrada",
+                  date: booking.date,
+                  time: booking.time,
+                  participants: booking.participants,
+                  totalPrice: booking.totalPrice,
+                  couponCode: booking.couponCode,
+                  discountAmount: booking.discountAmount,
+                  finalAmount: booking.finalAmount,
+                  status: booking.status,
+                  paymentStatus: booking.paymentStatus,
+                  confirmationCode: booking.confirmationCode,
+                  customerInfo: booking.customerInfo,
+                  specialRequests: booking.specialRequests,
+                  partnerNotes: booking.partnerNotes,
+                  // Mercado Pago fields
+                  mpPaymentId: booking.mpPaymentId,
+                  mpPreferenceId: booking.mpPreferenceId,
+                  mpPaymentLinkId: booking.mpPaymentLinkId,
+                  paymentDetails: booking.paymentDetails,
                   createdAt: booking.createdAt ?? booking._creationTime,
                   updatedAt: booking.updatedAt ?? booking._creationTime,
-                  activityTitle: activity.title || "Atividade não encontrada",
+                  userId: booking.userId,
                 };
               })
             );
@@ -1241,10 +1283,31 @@ export const getActivityBookings = query({
         result.page.map(async (booking) => {
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
-            ...booking,
+            _id: booking._id,
+            _creationTime: booking._creationTime,
+            activityId: booking.activityId,
+            activityTitle: activity?.title || "Atividade não encontrada",
+            date: booking.date,
+            time: booking.time,
+            participants: booking.participants,
+            totalPrice: booking.totalPrice,
+            couponCode: booking.couponCode,
+            discountAmount: booking.discountAmount,
+            finalAmount: booking.finalAmount,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            confirmationCode: booking.confirmationCode,
+            customerInfo: booking.customerInfo,
+            specialRequests: booking.specialRequests,
+            partnerNotes: booking.partnerNotes,
+            // Mercado Pago fields
+            mpPaymentId: booking.mpPaymentId,
+            mpPreferenceId: booking.mpPreferenceId,
+            mpPaymentLinkId: booking.mpPaymentLinkId,
+            paymentDetails: booking.paymentDetails,
             createdAt: booking.createdAt ?? booking._creationTime,
             updatedAt: booking.updatedAt ?? booking._creationTime,
-            activityTitle: activity?.title || "Atividade não encontrada",
+            userId: booking.userId,
           };
         })
       );
@@ -1277,10 +1340,31 @@ export const getActivityBookings = query({
         const bookingsWithDetails = await Promise.all(
           bookings.map(async (booking) => {
             return {
-              ...booking,
+              _id: booking._id,
+              _creationTime: booking._creationTime,
+              activityId: booking.activityId,
+              activityTitle: activity.title,
+              date: booking.date,
+              time: booking.time,
+              participants: booking.participants,
+              totalPrice: booking.totalPrice,
+              couponCode: booking.couponCode,
+              discountAmount: booking.discountAmount,
+              finalAmount: booking.finalAmount,
+              status: booking.status,
+              paymentStatus: booking.paymentStatus,
+              confirmationCode: booking.confirmationCode,
+              customerInfo: booking.customerInfo,
+              specialRequests: booking.specialRequests,
+              partnerNotes: booking.partnerNotes,
+              // Mercado Pago fields
+              mpPaymentId: booking.mpPaymentId,
+              mpPreferenceId: booking.mpPreferenceId,
+              mpPaymentLinkId: booking.mpPaymentLinkId,
+              paymentDetails: booking.paymentDetails,
               createdAt: booking.createdAt ?? booking._creationTime,
               updatedAt: booking.updatedAt ?? booking._creationTime,
-              activityTitle: activity.title,
+              userId: booking.userId,
             };
           })
         );
@@ -1357,10 +1441,31 @@ export const getActivityBookings = query({
         filteredBookings.map(async (booking) => {
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
-            ...booking,
+            _id: booking._id,
+            _creationTime: booking._creationTime,
+            activityId: booking.activityId,
+            activityTitle: activity?.title || "Atividade não encontrada",
+            date: booking.date,
+            time: booking.time,
+            participants: booking.participants,
+            totalPrice: booking.totalPrice,
+            couponCode: booking.couponCode,
+            discountAmount: booking.discountAmount,
+            finalAmount: booking.finalAmount,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            confirmationCode: booking.confirmationCode,
+            customerInfo: booking.customerInfo,
+            specialRequests: booking.specialRequests,
+            partnerNotes: booking.partnerNotes,
+            // Mercado Pago fields
+            mpPaymentId: booking.mpPaymentId,
+            mpPreferenceId: booking.mpPreferenceId,
+            mpPaymentLinkId: booking.mpPaymentLinkId,
+            paymentDetails: booking.paymentDetails,
             createdAt: booking.createdAt ?? booking._creationTime,
             updatedAt: booking.updatedAt ?? booking._creationTime,
-            activityTitle: activity?.title || "Atividade não encontrada",
+            userId: booking.userId,
           };
         })
       );
@@ -1413,10 +1518,31 @@ export const getActivityBookings = query({
         filteredBookings.map(async (booking) => {
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
-            ...booking,
+            _id: booking._id,
+            _creationTime: booking._creationTime,
+            activityId: booking.activityId,
+            activityTitle: activity?.title || "Atividade não encontrada",
+            date: booking.date,
+            time: booking.time,
+            participants: booking.participants,
+            totalPrice: booking.totalPrice,
+            couponCode: booking.couponCode,
+            discountAmount: booking.discountAmount,
+            finalAmount: booking.finalAmount,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            confirmationCode: booking.confirmationCode,
+            customerInfo: booking.customerInfo,
+            specialRequests: booking.specialRequests,
+            partnerNotes: booking.partnerNotes,
+            // Mercado Pago fields
+            mpPaymentId: booking.mpPaymentId,
+            mpPreferenceId: booking.mpPreferenceId,
+            mpPaymentLinkId: booking.mpPaymentLinkId,
+            paymentDetails: booking.paymentDetails,
             createdAt: booking.createdAt ?? booking._creationTime,
             updatedAt: booking.updatedAt ?? booking._creationTime,
-            activityTitle: activity?.title || "Atividade não encontrada",
+            userId: booking.userId,
           };
         })
       );
@@ -1443,10 +1569,31 @@ export const getActivityBookings = query({
         result.page.map(async (booking) => {
           const activity = await ctx.db.get(booking.activityId) as any;
           return {
-            ...booking,
+            _id: booking._id,
+            _creationTime: booking._creationTime,
+            activityId: booking.activityId,
+            activityTitle: activity?.title || "Atividade não encontrada",
+            date: booking.date,
+            time: booking.time,
+            participants: booking.participants,
+            totalPrice: booking.totalPrice,
+            couponCode: booking.couponCode,
+            discountAmount: booking.discountAmount,
+            finalAmount: booking.finalAmount,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            confirmationCode: booking.confirmationCode,
+            customerInfo: booking.customerInfo,
+            specialRequests: booking.specialRequests,
+            partnerNotes: booking.partnerNotes,
+            // Mercado Pago fields
+            mpPaymentId: booking.mpPaymentId,
+            mpPreferenceId: booking.mpPreferenceId,
+            mpPaymentLinkId: booking.mpPaymentLinkId,
+            paymentDetails: booking.paymentDetails,
             createdAt: booking.createdAt ?? booking._creationTime,
             updatedAt: booking.updatedAt ?? booking._creationTime,
-            activityTitle: activity?.title || "Atividade não encontrada",
+            userId: booking.userId,
           };
         })
       );
