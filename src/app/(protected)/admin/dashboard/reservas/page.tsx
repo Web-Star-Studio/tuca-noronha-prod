@@ -334,7 +334,8 @@ export default function AdminBookingsPage() {
 
   // Handle booking confirmation
   const handleConfirmBooking = async (booking: any) => {
-    if (!selectedAsset) return;
+    // Masters can confirm any booking, others need selectedAsset
+    if (!isMaster && !selectedAsset) return;
 
     try {
       // Check if booking has payment that requires capture
@@ -342,19 +343,47 @@ export default function AdminBookingsPage() {
                                  booking.status === "awaiting_confirmation";
       
       if (hasPaymentToCapture) {
+        // Determine asset type from booking
+        let assetType: "activity" | "event" | "restaurant" | "vehicle" | "package";
+        if (booking.activityId) {
+          assetType = "activity";
+        } else if (booking.eventId) {
+          assetType = "event";
+        } else if (booking.restaurantId) {
+          assetType = "restaurant";
+        } else if (booking.vehicleId) {
+          assetType = "vehicle";
+        } else {
+          assetType = "package";
+        }
+        
         // Use new manual capture flow
         await approveBooking({
           bookingId: booking._id,
-          assetType: getAssetTypeForAction(selectedAsset.assetType),
+          assetType: assetType,
           partnerNotes: partnerNotes || undefined,
         });
         
         toast.success("Reserva aprovada e pagamento capturado com sucesso!");
       } else {
         // Use legacy flow for bookings without payment capture
+        // Determine asset type from booking for masters
+        let assetTypeForQuery = selectedAsset?.assetType;
+        if (isMaster && !selectedAsset) {
+          if (booking.activityId) {
+            assetTypeForQuery = "activities";
+          } else if (booking.eventId) {
+            assetTypeForQuery = "events";
+          } else if (booking.restaurantId) {
+            assetTypeForQuery = "restaurants";
+          } else if (booking.vehicleId) {
+            assetTypeForQuery = "vehicles";
+          }
+        }
+        
         const assetDetails = await convex.query(api.domains.shared.queries.getAssetDetails, {
           assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId,
-          assetType: selectedAsset.assetType,
+          assetType: assetTypeForQuery,
         });
 
         if (!assetDetails) {
@@ -369,7 +398,7 @@ export default function AdminBookingsPage() {
           description: assetDetails.description,
         };
 
-        switch (selectedAsset.assetType) {
+        switch (assetTypeForQuery) {
           case "activities":
             await confirmActivityBooking({
               bookingId: booking._id,
@@ -415,7 +444,8 @@ export default function AdminBookingsPage() {
 
   // Handle booking cancellation
   const handleCancelBooking = async (booking: any) => {
-    if (!selectedAsset) return;
+    // Masters can cancel any booking, others need selectedAsset
+    if (!isMaster && !selectedAsset) return;
     
     try {
       // Check if booking has payment that requires cancellation
@@ -423,17 +453,45 @@ export default function AdminBookingsPage() {
                                 booking.status === "awaiting_confirmation";
       
       if (hasPaymentToCancel) {
+        // Determine asset type from booking
+        let assetType: "activity" | "event" | "restaurant" | "vehicle" | "package";
+        if (booking.activityId) {
+          assetType = "activity";
+        } else if (booking.eventId) {
+          assetType = "event";
+        } else if (booking.restaurantId) {
+          assetType = "restaurant";
+        } else if (booking.vehicleId) {
+          assetType = "vehicle";
+        } else {
+          assetType = "package";
+        }
+        
         // Use new payment cancellation flow
         await rejectBooking({
           bookingId: booking._id,
-          assetType: getAssetTypeForAction(selectedAsset.assetType),
-          cancellationReason: partnerNotes || "Cancelada pelo admin",
+          assetType: assetType,
+          reason: partnerNotes || "Cancelada pelo admin",
         });
         
         toast.success("Reserva cancelada e pagamento estornado com sucesso!");
       } else {
         // Use legacy flow for bookings without payment capture
-        switch (selectedAsset.assetType) {
+        // Determine asset type from booking for masters
+        let assetTypeForQuery = selectedAsset?.assetType;
+        if (isMaster && !selectedAsset) {
+          if (booking.activityId) {
+            assetTypeForQuery = "activities";
+          } else if (booking.eventId) {
+            assetTypeForQuery = "events";
+          } else if (booking.restaurantId) {
+            assetTypeForQuery = "restaurants";
+          } else if (booking.vehicleId) {
+            assetTypeForQuery = "vehicles";
+          }
+        }
+        
+        switch (assetTypeForQuery) {
           case "activities":
             await cancelActivityBooking({
               bookingId: booking._id,
