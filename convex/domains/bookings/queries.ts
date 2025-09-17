@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { Id } from "../../_generated/dataModel";
 import { mutation } from "../../_generated/server";
@@ -4202,8 +4202,21 @@ export const getBookingStatusStatistics = query({
   },
 });
 
-
-
-
-
+/**
+ * Internal query to get booking by ID from any table
+ */
+export const getBookingByIdInternal = internalQuery({
+  args: {
+    bookingId: v.string(),
+    tableName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const booking = await ctx.db.get(args.bookingId as any);
+      return booking;
+    } catch {
+      return null;
+    }
+  },
+});
 

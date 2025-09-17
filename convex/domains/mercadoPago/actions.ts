@@ -317,6 +317,193 @@ export const createRefund = internalAction({
 /**
  * Process Mercado Pago webhook events
  */
+/**
+ * Approve a booking and capture payment (if needed)
+ * Public action that can be called by partners/employees
+ */
+export const approveBookingAndCapturePayment = action({
+  args: {
+    bookingId: v.string(),
+    assetType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package")
+    ),
+    partnerNotes: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    // First, get the booking to find the payment info
+    const tables = [
+      "activityBookings",
+      "eventBookings",
+      "restaurantReservations",
+      "vehicleBookings",
+      "packageBookings"
+    ];
+
+    let booking: any;
+    for (const tableName of tables) {
+      booking = await ctx.runQuery(internal.domains.bookings.queries.getBookingByIdInternal, {
+        bookingId: args.bookingId,
+        tableName: tableName,
+      });
+      if (booking) break;
+    }
+
+    if (!booking) {
+      return { success: false, error: "Booking not found" };
+    }
+
+    try {
+      // If there's a Mercado Pago payment that needs capture
+      if (booking.mpPaymentId && booking.paymentStatus === "requires_capture") {
+        const captureResult = await ctx.runAction(internal.domains.mercadoPago.actions.capturePayment, {
+          paymentId: booking.mpPaymentId,
+        });
+
+        if (!captureResult.success) {
+          return { success: false, error: captureResult.error };
+        }
+      }
+
+      // Update booking status to confirmed
+      await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        status: "confirmed",
+        paymentStatus: booking.mpPaymentId ? "paid" : booking.paymentStatus,
+        partnerNotes: args.partnerNotes,
+      });
+
+      // Generate voucher for confirmed booking
+      try {
+        await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucher, {
+          bookingId: args.bookingId,
+          bookingType: args.assetType,
+        });
+      } catch (voucherError) {
+        console.error("Failed to generate voucher:", voucherError);
+      }
+
+      // Send confirmation email
+      try {
+        await ctx.runAction(internal.domains.email.actions.sendConfirmationEmail, {
+          bookingId: args.bookingId,
+          bookingType: args.assetType,
+        });
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error approving booking:", error);
+      return { success: false, error: "Failed to approve booking" };
+    }
+  },
+});
+
+/**
+ * Reject a booking and cancel payment
+ * Public action that can be called by partners/employees
+ */
+export const rejectBookingAndCancelPayment = action({
+  args: {
+    bookingId: v.string(),
+    assetType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package")
+    ),
+    reason: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    // First, get the booking to find the payment info
+    const tables = [
+      "activityBookings",
+      "eventBookings",
+      "restaurantReservations",
+      "vehicleBookings",
+      "packageBookings"
+    ];
+
+    let booking: any;
+    for (const tableName of tables) {
+      booking = await ctx.runQuery(internal.domains.bookings.queries.getBookingByIdInternal, {
+        bookingId: args.bookingId,
+        tableName: tableName,
+      });
+      if (booking) break;
+    }
+
+    if (!booking) {
+      return { success: false, error: "Booking not found" };
+    }
+
+    try {
+      // If there's a Mercado Pago payment, cancel or refund it
+      if (booking.mpPaymentId) {
+        if (booking.paymentStatus === "requires_capture" || booking.paymentStatus === "pending") {
+          // Cancel the payment
+          const cancelResult = await ctx.runAction(internal.domains.mercadoPago.actions.cancelPayment, {
+            paymentId: booking.mpPaymentId,
+          });
+
+          if (!cancelResult.success) {
+            console.error("Failed to cancel payment:", cancelResult.error);
+          }
+        } else if (booking.paymentStatus === "paid" || booking.paymentStatus === "succeeded") {
+          // Refund the payment
+          const refundResult = await ctx.runAction(internal.domains.mercadoPago.actions.refundPayment, {
+            paymentId: booking.mpPaymentId,
+          });
+
+          if (!refundResult.success) {
+            console.error("Failed to refund payment:", refundResult.error);
+          }
+        }
+      }
+
+      // Update booking status to canceled
+      await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        status: "canceled",
+        paymentStatus: "refunded",
+        partnerNotes: args.reason,
+      });
+
+      // Send cancellation email
+      try {
+        await ctx.runAction(internal.domains.email.actions.sendCancellationEmail, {
+          bookingId: args.bookingId,
+          bookingType: args.assetType,
+          reason: args.reason,
+        });
+      } catch (emailError) {
+        console.error("Failed to send cancellation email:", emailError);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error rejecting booking:", error);
+      return { success: false, error: "Failed to reject booking" };
+    }
+  },
+});
+
 export const processWebhookEvent = internalAction({
   args: processWebhookValidator,
   returns: v.object({ success: v.boolean(), processed: v.boolean(), error: v.optional(v.string()) }),

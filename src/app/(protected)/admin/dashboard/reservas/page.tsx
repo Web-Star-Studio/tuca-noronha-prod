@@ -136,8 +136,8 @@ export default function AdminBookingsPage() {
   const { selectedAsset } = useAsset();
 
   // Actions for booking approval/rejection with payment capture
-  const approveBooking = useAction(api.domains.stripe.bookingActions.approveBookingAndCapturePayment);
-  const rejectBooking = useAction(api.domains.stripe.bookingActions.rejectBookingAndCancelPayment);
+  const approveBooking = useAction(api.domains.mercadoPago.actions.approveBookingAndCapturePayment);
+  const rejectBooking = useAction(api.domains.mercadoPago.actions.rejectBookingAndCancelPayment);
   
   // Legacy mutations for backward compatibility
   const confirmActivityBooking = useMutation(api.domains.bookings.mutations.confirmActivityBooking);

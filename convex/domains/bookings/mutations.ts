@@ -1944,6 +1944,63 @@ export const updateBookingPaymentInitiated = mutation({
 });
 
 /**
+ * Internal version of updateBookingStatus for Mercado Pago actions
+ */
+export const updateBookingStatusInternal = internalMutation({
+  args: v.object({
+    bookingId: v.string(),
+    assetType: v.union(v.literal("activity"), v.literal("event"), v.literal("vehicle"), v.literal("restaurant"), v.literal("package")),
+    status: v.string(),
+    paymentStatus: v.optional(v.string()),
+    partnerNotes: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    let tableName: string;
+    switch (args.assetType) {
+      case "activity":
+        tableName = "activityBookings";
+        break;
+      case "event":
+        tableName = "eventBookings";
+        break;
+      case "vehicle":
+        tableName = "vehicleBookings";
+        break;
+      case "restaurant":
+        tableName = "restaurantReservations";
+        break;
+      case "package":
+        tableName = "packageBookings";
+        break;
+      default:
+        throw new Error("Invalid asset type");
+    }
+
+    const booking = await ctx.db.get(args.bookingId as any);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const updates: any = {
+      status: args.status,
+      updatedAt: Date.now(),
+    };
+
+    if (args.paymentStatus) {
+      updates.paymentStatus = args.paymentStatus;
+    }
+
+    if (args.partnerNotes) {
+      updates.partnerNotes = args.partnerNotes;
+    }
+
+    await ctx.db.patch(booking._id, updates);
+
+    return { success: true };
+  },
+});
+
+/**
  * Update booking status (for payment processing)
  * Called when payment is authorized but not captured yet
  */
