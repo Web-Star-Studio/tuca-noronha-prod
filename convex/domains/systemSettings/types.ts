@@ -102,7 +102,7 @@ export const DEFAULT_SETTINGS = {
     isPublic: true,
   },
   "ui.footer_text": {
-    value: "© 2025 Tuca Noronha Turismo. Todos os direitos reservados.",
+    value: "© 2025 Tuca Noronha Turismo. Todos os direitos reservados. Desenvolvido por Web Star Studio.",
     type: "string" as const,
     category: "ui" as const,
     description: "Texto do rodapé",

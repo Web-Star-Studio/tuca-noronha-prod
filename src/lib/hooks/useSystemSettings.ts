@@ -36,7 +36,7 @@ export function useSystemSettings() {
     supportPhone: settings?.support?.phone || "+5581979097547",
     companyName: settings?.business?.companyName || "Tuca Noronha Turismo",
     primaryColor: settings?.ui?.primaryColor || "#0066CC",
-    footerText: settings?.ui?.footerText || "© 2025 Tuca Noronha Turismo. Todos os direitos reservados.",
+    footerText: settings?.ui?.footerText || "© 2025 Tuca Noronha Turismo. Todos os direitos reservados. Desenvolvido por Web Star Studio.",
   };
 }
 

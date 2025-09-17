@@ -123,7 +123,7 @@ export const getPublicSettings = query({
       },
       ui: {
         primaryColor: "#0066CC",
-        footerText: "© 2025 Tuca Noronha Turismo. Todos os direitos reservados.",
+        footerText: "© 2025 Tuca Noronha Turismo. Todos os direitos reservados. Desenvolvido por Web Star Studio.",
       },
     };
 
