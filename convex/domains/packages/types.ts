@@ -250,6 +250,7 @@ export interface PackageRequestTripDetails {
   groupSize: number;
   companions: string;
   budgetFlexibility: string;
+  includesAirfare?: boolean;
 }
 
 export interface PackageRequestPreferences {
@@ -387,12 +388,15 @@ export const ACTIVITY_OPTIONS = [
 ];
 
 export const TRANSPORTATION_OPTIONS = [
+  { value: "aereo", label: "Avião" },
   { value: "carro", label: "Carro alugado" },
   { value: "buggy", label: "Buggy" },
   { value: "moto", label: "Moto" },
   { value: "bicicleta", label: "Bicicleta" },
   { value: "a_pe", label: "A pé" },
   { value: "transporte_publico", label: "Transporte público" },
+  { value: "transfer", label: "Transfer" },
+  { value: "onibus", label: "Ônibus" },
 ];
 
 export const FOOD_PREFERENCES_OPTIONS = [
@@ -429,6 +433,7 @@ export interface PackageRequestFormData {
     companions: string;
     budget: number;
     budgetFlexibility: string;
+    includesAirfare?: boolean;
   };
   preferences: {
   

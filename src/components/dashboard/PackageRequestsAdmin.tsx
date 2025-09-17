@@ -242,7 +242,7 @@ export default function PackageRequestsAdmin() {
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Mail className="h-4 w-4" />
                           <span>{request.customerInfo.name}</span>
@@ -258,6 +258,24 @@ export default function PackageRequestsAdmin() {
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-4 w-4" />
                           <span>{formatCurrency(request.tripDetails.budget)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                          <span className={`font-medium ${
+                            request.tripDetails.includesAirfare === true 
+                              ? 'text-green-600' 
+                              : request.tripDetails.includesAirfare === false
+                              ? 'text-red-600'
+                              : 'text-gray-400'
+                          }`}>
+                            {request.tripDetails.includesAirfare === true 
+                              ? 'Com Aéreo' 
+                              : request.tripDetails.includesAirfare === false
+                              ? 'Sem Aéreo'
+                              : 'N/D'}
+                          </span>
                         </div>
                       </div>
 

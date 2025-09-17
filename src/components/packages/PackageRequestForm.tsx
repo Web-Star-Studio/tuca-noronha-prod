@@ -50,6 +50,7 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
       companions: "",
       budget: 0,
       budgetFlexibility: "",
+      includesAirfare: false,
     },
     preferences: {
       accommodationType: [],
@@ -388,6 +389,47 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Incluir Passagem Aérea */}
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 p-6 rounded-xl border-2 border-blue-200">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">✈️ Passagem Aérea</h3>
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="includesAirfare"
+                          value="true"
+                          checked={formData.tripDetails.includesAirfare === true}
+                          onChange={() => updateFormData("tripDetails", "includesAirfare", true)}
+                          className="h-5 w-5 text-blue-600 border-2 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-base font-medium text-gray-700">Com Aéreo</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="includesAirfare"
+                          value="false"
+                          checked={formData.tripDetails.includesAirfare === false}
+                          onChange={() => updateFormData("tripDetails", "includesAirfare", false)}
+                          className="h-5 w-5 text-blue-600 border-2 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-base font-medium text-gray-700">Sem Aéreo</span>
+                      </label>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-3">
+                      💡 Informe se deseja incluir passagens aéreas no seu pacote de viagem
+                    </p>
+                  </div>
                 </div>
               </div>
 

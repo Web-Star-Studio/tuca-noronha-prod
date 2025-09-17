@@ -90,6 +90,28 @@ export function RequestDetailsContent({ request }: { request: any }) {
               <DetailItem icon={<Users className="h-4 w-4"/>} label="Tamanho do Grupo">
                 {request.tripDetails.groupSize} pessoas ({request.tripDetails.companions})
               </DetailItem>
+              <DetailItem 
+                icon={
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                } 
+                label="Passagem Aérea"
+              >
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  request.tripDetails.includesAirfare === true 
+                    ? 'bg-green-100 text-green-800' 
+                    : request.tripDetails.includesAirfare === false
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {request.tripDetails.includesAirfare === true 
+                    ? '✈️ Com Aéreo' 
+                    : request.tripDetails.includesAirfare === false
+                    ? '🚫 Sem Aéreo'
+                    : 'Não informado'}
+                </span>
+              </DetailItem>
                <DetailItem icon={<DollarSign className="h-4 w-4"/>} label="Orçamento">
                 {formatCurrency(request.tripDetails.budget)} ({request.tripDetails.budgetFlexibility})
               </DetailItem>
