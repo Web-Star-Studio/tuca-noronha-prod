@@ -1,3 +1,3 @@
-export function GET(request: Request) {
-    return new Response('Hello')
+export function GET(_request: Request) {
+    return new Response('Hello');
 }
