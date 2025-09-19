@@ -70,6 +70,7 @@ export function ActivityBookingForm({
   });
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
+  // Import Payment Service at top of file
   const createMpCheckoutPreference = useAction(
     api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
   );
