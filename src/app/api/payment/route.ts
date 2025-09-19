@@ -1,4 +1,4 @@
-export function GET(_request: Request) {
+export function GET() {
     return new Response('Hello from GET');
 }
 
