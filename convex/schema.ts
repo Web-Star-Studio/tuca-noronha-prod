@@ -2219,7 +2219,9 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("processing"),
       v.literal("requires_capture"),
+      v.literal("authorized"), // Pagamento autorizado, aguardando captura
       v.literal("succeeded"),
+      v.literal("paid"), // Status mapeado do MP "approved"
       v.literal("failed"),
       v.literal("completed"),
       v.literal("cash"),

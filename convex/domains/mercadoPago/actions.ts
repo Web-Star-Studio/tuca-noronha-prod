@@ -200,7 +200,7 @@ export const createPayment = internalAction({
         installments: args.installments,
         payer: args.payer,
         binary_mode: false,
-        capture: true,
+        capture: false, // Autorização apenas - captura manual quando admin confirmar
         metadata: {
           bookingId: args.bookingId,
           assetType: args.assetType,
@@ -253,9 +253,15 @@ export const capturePayment = internalAction({
   returns: v.object({ success: v.boolean(), status: v.optional(v.string()), error: v.optional(v.string()) }),
   handler: async (_ctx, args) => {
     try {
+      // Capturar o valor total autorizado (sem especificar amount para capturar tudo)
+      const body: any = { capture: true };
+      if (args.amount) {
+        body.transaction_amount = args.amount;
+      }
+      
       const res = await mpFetch<any>(`/v1/payments/${args.paymentId}`, {
         method: "PUT",
-        body: JSON.stringify({ capture: true, transaction_amount: args.amount }),
+        body: JSON.stringify(body),
       });
       return { success: true, status: res.status };
     } catch (error) {
@@ -315,6 +321,11 @@ export const createRefund = internalAction({
 });
 
 /**
+ * Alias for createRefund to maintain consistency with naming
+ */
+export const refundPayment = createRefund;
+
+/**
  * Process Mercado Pago webhook events
  */
 /**
@@ -361,23 +372,39 @@ export const approveBookingAndCapturePayment = action({
     }
 
     try {
-      // If there's a Mercado Pago payment that needs capture
-      if (booking.mpPaymentId && booking.paymentStatus === "requires_capture") {
-        const captureResult = await ctx.runAction(internal.domains.mercadoPago.actions.capturePayment, {
-          paymentId: booking.mpPaymentId,
-        });
+      let finalPaymentStatus = booking.paymentStatus;
 
-        if (!captureResult.success) {
-          return { success: false, error: captureResult.error };
+      // Capturar pagamento Mercado Pago autorizado
+      if (booking.mpPaymentId) {
+        // Verificar se é um pagamento que precisa de captura (autorizado)
+        if (booking.paymentStatus === "authorized" || booking.paymentStatus === "pending") {
+          console.log(`Capturing MP payment ${booking.mpPaymentId} for booking ${args.bookingId}`);
+          
+          const captureResult = await ctx.runAction(internal.domains.mercadoPago.actions.capturePayment, {
+            paymentId: booking.mpPaymentId,
+          });
+
+          if (!captureResult.success) {
+            console.error(`Failed to capture payment ${booking.mpPaymentId}:`, captureResult.error);
+            return { success: false, error: `Falha ao capturar pagamento: ${captureResult.error}` };
+          }
+          
+          finalPaymentStatus = "paid";
+          console.log(`Payment ${booking.mpPaymentId} captured successfully`);
+        } else if (booking.paymentStatus === "paid") {
+          // Pagamento já foi capturado anteriormente
+          finalPaymentStatus = "paid";
+        } else {
+          return { success: false, error: `Status de pagamento inválido para captura: ${booking.paymentStatus}` };
         }
       }
 
-      // Update booking status to confirmed
+      // Atualizar status da reserva para confirmado APENAS após captura bem-sucedida
       await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
         bookingId: args.bookingId,
         assetType: args.assetType,
         status: "confirmed",
-        paymentStatus: booking.mpPaymentId ? "paid" : booking.paymentStatus,
+        paymentStatus: finalPaymentStatus,
         partnerNotes: args.partnerNotes,
       });
 
@@ -453,16 +480,20 @@ export const rejectBookingAndCancelPayment = action({
     }
 
     try {
-      // If there's a Mercado Pago payment, cancel or refund it
+      // Processar cancelamento/estorno do pagamento Mercado Pago
       if (booking.mpPaymentId) {
-        if (booking.paymentStatus === "requires_capture" || booking.paymentStatus === "pending") {
-          // Cancel the payment
+        if (booking.paymentStatus === "authorized" || booking.paymentStatus === "pending") {
+          // Cancelar pagamento autorizado (libera valor no cartão sem cobrança)
+          console.log(`Canceling authorized payment ${booking.mpPaymentId} for booking ${args.bookingId}`);
+          
           const cancelResult = await ctx.runAction(internal.domains.mercadoPago.actions.cancelPayment, {
             paymentId: booking.mpPaymentId,
           });
 
           if (!cancelResult.success) {
-            console.error("Failed to cancel payment:", cancelResult.error);
+            console.error("Failed to cancel authorized payment:", cancelResult.error);
+          } else {
+            console.log(`Authorized payment ${booking.mpPaymentId} cancelled successfully`);
           }
         } else if (booking.paymentStatus === "paid" || booking.paymentStatus === "succeeded") {
           // Refund the payment
