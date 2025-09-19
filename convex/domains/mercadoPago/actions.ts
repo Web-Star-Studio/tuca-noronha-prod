@@ -65,6 +65,14 @@ export const createCheckoutPreference = internalAction({
           assetType: args.assetType,
           ...(args.metadata || {}),
         },
+        // Configurações para facilitar testes
+        payment_methods: {
+          excluded_payment_methods: [],
+          excluded_payment_types: [],
+          installments: 1, // Força parcelamento em 1x para simplificar
+        },
+        // Configurar para não solicitar login/cadastro desnecessário
+        purpose: "wallet_purchase",
       };
       if (args.backUrls) body.back_urls = args.backUrls;
       if (args.notificationUrl) body.notification_url = args.notificationUrl;
