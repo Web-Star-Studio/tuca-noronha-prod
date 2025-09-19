@@ -12,6 +12,10 @@ const nextConfig = {
   // Timeout de geração de páginas estáticas (em segundos)
   staticPageGenerationTimeout: 1000,
   images: {
+    domains: [
+      "calculating-sockeye-278.convex.cloud",
+      "wonderful-salmon-48.convex.cloud"
+    ],
     remotePatterns: [
       {
         protocol: "https",
@@ -44,7 +48,12 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "gregarious-civet-174.convex.cloud",
+        hostname: "calculating-sockeye-278.convex.cloud",
+        pathname: "/api/storage/**"
+      },
+      {
+        protocol: "https", 
+        hostname: "wonderful-salmon-48.convex.cloud",
         pathname: "/api/storage/**"
       },
       {
