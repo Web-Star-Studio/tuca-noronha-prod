@@ -319,18 +319,6 @@ export default function AdminBookingsPage() {
     return new Promise(resolve => setTimeout(resolve, 200));
   };
 
-  // Helper function to convert plural asset type to singular
-  const getAssetTypeForAction = (pluralAssetType: string) => {
-    const mapping: Record<string, string> = {
-      "activities": "activity",
-      "events": "event", 
-      "restaurants": "restaurant",
-      "accommodations": "accommodation",
-      "vehicles": "vehicle",
-      "packages": "package",
-    };
-    return mapping[pluralAssetType] || pluralAssetType;
-  };
 
   // Handle booking confirmation
   const handleConfirmBooking = async (booking: any) => {
