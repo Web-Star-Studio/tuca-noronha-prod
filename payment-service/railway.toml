@@ -1,0 +1,21 @@
+# Railway Configuration for Payment Service
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[env]
+NODE_ENV = "production"
+PORT = { value = "3001", priority = 10 }
+
+# Add custom domains support
+[[services]]
+name = "payment-service"
+port = 3001
