@@ -161,10 +161,14 @@ export const createCheckoutPreferenceForBooking = action({
         throw new Error(pref.error || "Failed to create Mercado Pago preference");
       }
 
+      // Always prioritize sandboxInitPoint if available (for test credentials)
+      // If only initPoint is available, use it (for production credentials)
+      const preferredUrl = pref.sandboxInitPoint || pref.initPoint;
+
       return {
         success: true,
         preferenceId: pref.id,
-        preferenceUrl: pref.initPoint || pref.sandboxInitPoint || "",
+        preferenceUrl: preferredUrl || "",
         initPoint: pref.initPoint,
         sandboxInitPoint: pref.sandboxInitPoint,
       };
