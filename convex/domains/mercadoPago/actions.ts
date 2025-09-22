@@ -432,7 +432,7 @@ export const approveBookingAndCapturePayment = action({
 
       // Send confirmation email
       try {
-        await ctx.runAction(internal.domains.email.actions.sendConfirmationEmail, {
+        await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmail, {
           bookingId: args.bookingId,
           bookingType: args.assetType,
         });
@@ -530,7 +530,7 @@ export const rejectBookingAndCancelPayment = action({
 
       // Send cancellation email
       try {
-        await ctx.runAction(internal.domains.email.actions.sendCancellationEmail, {
+        await ctx.runAction(internal.domains.email.actions.sendBookingCancelledEmail, {
           bookingId: args.bookingId,
           bookingType: args.assetType,
           reason: args.reason,
@@ -577,7 +577,16 @@ export const processWebhookEvent = internalAction({
       // If payment notification, fetch full payment
       if ((args.type === "payment" || args.action?.startsWith("payment.")) && args.data && (args as any).data.id) {
         const paymentId = (args as any).data.id;
-        const payment = await mpFetch<any>(`/v1/payments/${paymentId}`);
+        
+        // Handle test payments gracefully
+        let payment: any = null;
+        try {
+          payment = await mpFetch<any>(`/v1/payments/${paymentId}`);
+        } catch (error) {
+          console.warn(`Payment ${paymentId} not found (likely test payment):`, error instanceof Error ? error.message : String(error));
+          // For test payments or non-existent payments, still mark webhook as processed
+          return { success: true, processed: true };
+        }
 
         const bookingId = payment.metadata?.bookingId;
         const assetType = payment.metadata?.assetType as any;

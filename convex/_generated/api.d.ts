@@ -68,6 +68,7 @@ import type * as domains_media_types from "../domains/media/types.js";
 import type * as domains_media_utils from "../domains/media/utils.js";
 import type * as domains_mercadoPago_actions from "../domains/mercadoPago/actions.js";
 import type * as domains_mercadoPago_mutations from "../domains/mercadoPago/mutations.js";
+import type * as domains_mercadoPago_paymentService from "../domains/mercadoPago/paymentService.js";
 import type * as domains_mercadoPago_queries from "../domains/mercadoPago/queries.js";
 import type * as domains_mercadoPago_types from "../domains/mercadoPago/types.js";
 import type * as domains_mercadoPago_utils from "../domains/mercadoPago/utils.js";
@@ -259,6 +260,7 @@ declare const fullApi: ApiFromModules<{
   "domains/media/utils": typeof domains_media_utils;
   "domains/mercadoPago/actions": typeof domains_mercadoPago_actions;
   "domains/mercadoPago/mutations": typeof domains_mercadoPago_mutations;
+  "domains/mercadoPago/paymentService": typeof domains_mercadoPago_paymentService;
   "domains/mercadoPago/queries": typeof domains_mercadoPago_queries;
   "domains/mercadoPago/types": typeof domains_mercadoPago_types;
   "domains/mercadoPago/utils": typeof domains_mercadoPago_utils;

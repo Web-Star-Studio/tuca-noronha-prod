@@ -17,7 +17,7 @@ export const features: Feature[] = [
   {
     icon: <LifeBuoy className="h-8 w-8 text-tuca-ocean-blue" />,
     title: "Suporte Personalizado",
-    description: "Atendimento dedicado 24/7 durante toda a sua viagem para resolver qualquer necessidade."
+    description: "Atendimento dedicado em horário comercial de Segunda a Sexta durante toda a sua viagem para resolver qualquer necessidade."
   },
   {
     icon: <Calendar className="h-8 w-8 text-tuca-ocean-blue" />,

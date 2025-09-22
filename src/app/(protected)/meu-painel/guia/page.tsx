@@ -1838,7 +1838,7 @@ function SectionContent({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900 mb-1">Melhor Época</p>
-                        <p className="text-sm text-gray-600">Abril a Setembro</p>
+                        <p className="text-sm text-gray-600">Abril a Novembro</p>
                       </div>
                     </div>
                     
