@@ -99,24 +99,6 @@ const Footer = () => {
           </div>
 
           <div className="md:col-span-4">
-            <h3 className="text-sm font-medium tracking-tight uppercase mb-6">Newsletter</h3>
-            <p className="text-muted-foreground mb-4">
-              Receba em primeira mão nossas ofertas exclusivas.
-            </p>
-            <form className="flex mb-6">
-              <input
-                type="email"
-                placeholder="Seu e-mail"
-                className="flex-1 py-3 px-4 rounded-l-full bg-white border-0 focus:outline-none focus:ring-1 focus:ring-tuca-ocean-blue"
-              />
-              <button
-                type="submit"
-                className="bg-tuca-ocean-blue text-white rounded-r-full px-4 hover:bg-tuca-ocean-blue/90 transition-colors"
-                aria-label="Inscrever"
-              >
-                <ArrowRight size={20} />
-              </button>
-            </form>
             <div className="space-y-3">
               <div className="flex items-start">
                 <Mail size={18} className="mr-3 mt-1 text-muted-foreground" />
