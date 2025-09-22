@@ -37,11 +37,10 @@ export const getUserActivityBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
-      // Stripe integration fields
-      stripeCheckoutSessionId: v.optional(v.string()),
-      stripePaymentIntentId: v.optional(v.string()),
-      stripeCustomerId: v.optional(v.string()),
-      stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -134,11 +133,10 @@ export const getUserEventBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
-      // Stripe integration fields
-      stripeCheckoutSessionId: v.optional(v.string()),
-      stripePaymentIntentId: v.optional(v.string()),
-      stripeCustomerId: v.optional(v.string()),
-      stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -233,11 +231,10 @@ export const getUserRestaurantReservations = query({
       finalAmount: v.optional(v.number()),
       totalPrice: v.optional(v.number()),
       paymentStatus: v.optional(v.string()),
-      // Stripe integration fields
-      stripeCheckoutSessionId: v.optional(v.string()),
-      stripePaymentIntentId: v.optional(v.string()),
-      stripeCustomerId: v.optional(v.string()),
-      stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -339,11 +336,10 @@ export const getUserVehicleBookings = query({
       couponCode: v.optional(v.string()),
       discountAmount: v.optional(v.number()),
       finalAmount: v.optional(v.number()),
-      // Stripe integration fields
-      stripeCheckoutSessionId: v.optional(v.string()),
-      stripePaymentIntentId: v.optional(v.string()),
-      stripeCustomerId: v.optional(v.string()),
-      stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),

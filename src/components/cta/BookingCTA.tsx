@@ -120,10 +120,9 @@ export default function BookingCTA() {
           {/* Bottom stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 text-center">
             {[
-              { value: "98%", label: "Clientes satisfeitos" },
               { value: "20+", label: "Anos de experiência" },
               { value: "150+", label: "Pacotes exclusivos" },
-              { value: "5000+", label: "Viagens realizadas" }
+              { value: "35000+", label: "Viagens realizadas" }
             ].map((stat, index) => (
               <motion.div 
                 key={stat.label}
