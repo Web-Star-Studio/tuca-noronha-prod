@@ -5,9 +5,12 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN
 })
 
-export async function POST() {
+export async function GET(request: Request) {
     const preference = new Preference(client)
-    
+    const requestBody = await request.json()
+
+    console.log(requestBody)
+
     preference.create({
         body: {
             items: [
