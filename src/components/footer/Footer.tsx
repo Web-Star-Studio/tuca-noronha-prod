@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Instagram, Facebook, Twitter, Mail, Phone, ArrowRight } from "lucide-react";
+import { Instagram, Facebook, Twitter, Mail, Phone } from "lucide-react";
 import { useSystemSettings } from "@/lib/hooks/useSystemSettings";
 
 const Footer = () => {
