@@ -214,7 +214,7 @@ export function AdminReservationEditModal({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto space-y-6">
         <DialogHeader>
           <DialogTitle>Editar Reserva {reservation.confirmationCode}</DialogTitle>
           <DialogDescription>
@@ -222,174 +222,191 @@ export function AdminReservationEditModal({
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="details" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="details">Detalhes</TabsTrigger>
-            <TabsTrigger value="payment">Pagamento</TabsTrigger>
-            <TabsTrigger value="status">Status</TabsTrigger>
+        <Tabs defaultValue="details" className="space-y-5">
+          <TabsList className="grid w-full grid-cols-3 rounded-lg border border-slate-200 bg-slate-50 p-1">
+            <TabsTrigger value="details" className="rounded-md text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900">
+              Detalhes
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="rounded-md text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900">
+              Pagamento
+            </TabsTrigger>
+            <TabsTrigger value="status" className="rounded-md text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900">
+              Status
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="space-y-4">
-            <div>
-              <Label>Viajante</Label>
-              <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                <User className="w-4 h-4" />
-                <span>{reservation.traveler?.name} ({reservation.traveler?.email})</span>
+            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="space-y-2">
+                <Label>Viajante</Label>
+                <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                  <User className="h-4 w-4 text-slate-500" />
+                  <span>{reservation.traveler?.name} ({reservation.traveler?.email})</span>
+                </div>
               </div>
-            </div>
-            
-            {renderDateFields()}
-            
-            <div>
-              <Label>Número de Pessoas/Participantes</Label>
-              <Input
-                type="number"
-                value={reservationData.guests || reservationData.participants || ""}
-                onChange={(e) => setReservationData({
-                  ...reservationData,
-                  guests: parseInt(e.target.value) || 0,
-                  participants: parseInt(e.target.value) || 0
-                })}
-              />
-            </div>
-            
-            <div>
-              <Label>Solicitações Especiais</Label>
-              <Textarea
-                value={reservationData.specialRequests}
-                onChange={(e) => setReservationData({
-                  ...reservationData,
-                  specialRequests: e.target.value
-                })}
-                placeholder="Adicione solicitações especiais..."
-              />
+
+              {renderDateFields()}
+
+              <div className="grid gap-2">
+                <Label>Número de pessoas / participantes</Label>
+                <Input
+                  type="number"
+                  value={reservationData.guests || reservationData.participants || ""}
+                  onChange={(e) => setReservationData({
+                    ...reservationData,
+                    guests: parseInt(e.target.value) || 0,
+                    participants: parseInt(e.target.value) || 0
+                  })}
+                  min={1}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Solicitações especiais</Label>
+                <Textarea
+                  value={reservationData.specialRequests}
+                  onChange={(e) => setReservationData({
+                    ...reservationData,
+                    specialRequests: e.target.value
+                  })}
+                  placeholder="Registre orientações passadas pelo cliente"
+                  rows={4}
+                />
+              </div>
             </div>
           </TabsContent>
           
           <TabsContent value="payment" className="space-y-4">
-            <div>
-              <Label>Status do Pagamento</Label>
-              <Select
-                value={paymentData.paymentStatus}
-                onValueChange={(value) => setPaymentData({
-                  ...paymentData,
-                  paymentStatus: value
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="completed">Pago</SelectItem>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                  <SelectItem value="deferred">A Pagar</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Valor Total</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    className="pl-10"
-                    value={paymentData.totalAmount}
-                    onChange={(e) => setPaymentData({
-                      ...paymentData,
-                      totalAmount: parseFloat(e.target.value) || 0
-                    })}
-                  />
+            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="grid gap-2">
+                <Label>Status do pagamento</Label>
+                <Select
+                  value={paymentData.paymentStatus}
+                  onValueChange={(value) => setPaymentData({
+                    ...paymentData,
+                    paymentStatus: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="completed">Pago</SelectItem>
+                    <SelectItem value="cash">Dinheiro</SelectItem>
+                    <SelectItem value="transfer">Transferência</SelectItem>
+                    <SelectItem value="deferred">A pagar</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Valor total</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="pl-10"
+                      value={paymentData.totalAmount}
+                      onChange={(e) => setPaymentData({
+                        ...paymentData,
+                        totalAmount: parseFloat(e.target.value) || 0
+                      })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Valor pago</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="pl-10"
+                      value={paymentData.paidAmount}
+                      onChange={(e) => setPaymentData({
+                        ...paymentData,
+                        paidAmount: parseFloat(e.target.value) || 0
+                      })}
+                    />
+                  </div>
                 </div>
               </div>
-              
-              <div>
-                <Label>Valor Pago</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    className="pl-10"
-                    value={paymentData.paidAmount}
-                    onChange={(e) => setPaymentData({
-                      ...paymentData,
-                      paidAmount: parseFloat(e.target.value) || 0
-                    })}
-                  />
-                </div>
+
+              <div className="grid gap-2">
+                <Label>Método de pagamento</Label>
+                <Input
+                  value={paymentData.paymentMethod}
+                  onChange={(e) => setPaymentData({
+                    ...paymentData,
+                    paymentMethod: e.target.value
+                  })}
+                  placeholder="Ex.: cartão de crédito, PIX, transferência"
+                />
               </div>
-            </div>
-            
-            <div>
-              <Label>Método de Pagamento</Label>
-              <Input
-                value={paymentData.paymentMethod}
-                onChange={(e) => setPaymentData({
-                  ...paymentData,
-                  paymentMethod: e.target.value
-                })}
-                placeholder="Ex: Cartão de crédito, PIX, etc."
-              />
-            </div>
-            
-            <div>
-              <Label>Observações sobre Pagamento</Label>
-              <Textarea
-                value={paymentData.paymentNotes}
-                onChange={(e) => setPaymentData({
-                  ...paymentData,
-                  paymentNotes: e.target.value
-                })}
-                placeholder="Adicione observações sobre o pagamento..."
-              />
+
+              <div className="grid gap-2">
+                <Label>Observações</Label>
+                <Textarea
+                  value={paymentData.paymentNotes}
+                  onChange={(e) => setPaymentData({
+                    ...paymentData,
+                    paymentNotes: e.target.value
+                  })}
+                  placeholder="Registre combinações com o cliente ou exceções"
+                  rows={3}
+                />
+              </div>
             </div>
           </TabsContent>
           
           <TabsContent value="status" className="space-y-4">
-            <div>
-              <Label>Status da Reserva</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Rascunho</SelectItem>
-                  <SelectItem value="confirmed">Confirmada</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="completed">Concluída</SelectItem>
-                  <SelectItem value="cancelled">Cancelada</SelectItem>
-                  <SelectItem value="no_show">Não Compareceu</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label>Notas Administrativas</Label>
-              <Textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Adicione notas administrativas..."
-                rows={4}
-              />
+            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="grid gap-2">
+                <Label>Status da reserva</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Rascunho</SelectItem>
+                    <SelectItem value="confirmed">Confirmada</SelectItem>
+                    <SelectItem value="in_progress">Em andamento</SelectItem>
+                    <SelectItem value="completed">Concluída</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                    <SelectItem value="no_show">Não compareceu</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Notas administrativas</Label>
+                <Textarea
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  placeholder="Compartilhe detalhes relevantes com a equipe interna"
+                  rows={4}
+                />
+              </div>
             </div>
           </TabsContent>
         </Tabs>
         
-        <div className="mt-6">
-          <Label>Motivo da Alteração (obrigatório)</Label>
+        <div className="space-y-2">
+          <Label>Motivo da alteração</Label>
           <Textarea
             value={changeReason}
             onChange={(e) => setChangeReason(e.target.value)}
-            placeholder="Descreva o motivo desta alteração..."
-            className="mt-2"
+            placeholder="Informe o contexto que levou à atualização desta reserva"
             required
           />
+          <p className="text-xs text-slate-500">
+            Essa informação aparece no histórico para auditoria.
+          </p>
         </div>
         
         <DialogFooter>

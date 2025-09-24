@@ -2,7 +2,6 @@ import { Restaurant } from "@/lib/services/restaurantService";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Menu, Trash2 } from "lucide-react";
-import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { imageEffects } from "@/lib/ui-config";
+import { SmartMedia } from "@/components/ui/smart-media";
+import { parseMediaEntry } from "@/lib/media";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -32,6 +33,8 @@ export function RestaurantCard({
 }: RestaurantCardProps) {
   // Get restaurant ID from _id or id
   const restaurantId = restaurant._id?.toString() || restaurant.id || "";
+  const coverEntry = parseMediaEntry(restaurant.mainImage ?? "");
+  const hasCover = Boolean(coverEntry.url && coverEntry.url.trim() !== "");
 
   return (
     <motion.div
@@ -44,13 +47,33 @@ export function RestaurantCard({
       <Card variant="interactive" className="h-full relative group overflow-hidden">
         {/* Card header with image - Sem padding, ocupando toda a largura */}
         <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
-          <Image
-            src={restaurant.mainImage || "https://via.placeholder.com/300x200?text=No+Image"}
-            alt={restaurant.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className={`object-cover ${imageEffects.hover.scale}`}
-          />
+          {hasCover ? (
+            <SmartMedia
+              entry={coverEntry}
+              alt={restaurant.name}
+              className={`object-cover ${imageEffects.hover.scale}`}
+              imageProps={{
+                fill: true,
+                sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+              }}
+              videoProps={{
+                muted: true,
+                loop: true,
+                playsInline: true,
+                controls: false,
+              }}
+            />
+          ) : (
+            <SmartMedia
+              entry={{ url: "https://via.placeholder.com/300x200?text=No+Image", type: "image/png" }}
+              alt="Restaurante sem imagem"
+              className={`object-cover ${imageEffects.hover.scale}`}
+              imageProps={{
+                fill: true,
+                sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+              }}
+            />
+          )}
 
           {/* Overlay escuro sempre presente para melhor contraste */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>

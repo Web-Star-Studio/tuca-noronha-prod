@@ -30,7 +30,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
 
 interface RestaurantReservationFormProps {
@@ -69,7 +68,6 @@ export function RestaurantReservationForm({
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
-  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
   const createMpCheckoutPreference = useAction(
     api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
   );
@@ -94,6 +92,13 @@ export function RestaurantReservationForm({
   // Get discount amount
   const getDiscountAmount = () => {
     return appliedCoupon ? appliedCoupon.discountAmount : 0;
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   // Handle coupon application
@@ -144,16 +149,9 @@ export function RestaurantReservationForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. If restaurant requires payment, try Mercado Pago first; fallback to Stripe
+      // 2. If restaurant requires pagamento antecipado, gerar link através do Mercado Pago
       if (restaurant.acceptsOnlinePayment && restaurant.requiresUpfrontPayment && restaurant.price && restaurant.price > 0) {
         try {
-          console.log("🔄 Criando checkout session para restaurante:", {
-            reservationId: result.reservationId,
-            restaurantId,
-            price: restaurant.price,
-          });
-
-          // Try Mercado Pago first
           const mpPref = await createMpCheckoutPreference({
             bookingId: result.reservationId,
             assetType: "restaurant",
@@ -184,42 +182,11 @@ export function RestaurantReservationForm({
             }, 1200);
             return; // Don't call onReservationSuccess here, only redirect
           }
-
-          // Fallback to Stripe
-          const checkoutSession = await createCheckoutSession({
-            bookingId: result.reservationId,
-            assetType: "restaurant",
-            successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/booking/cancel`,
-            couponCode: appliedCoupon?.code,
-            discountAmount: getDiscountAmount(),
-            originalAmount: getPrice(),
-            finalAmount: getFinalPrice(),
-          });
-
-          if (checkoutSession.success && checkoutSession.sessionUrl) {
-            toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
-            });
-
-            // Reset form before redirecting
-            setDate(undefined);
-            setTime("");
-            setPartySize(2);
-            setCustomerInfo({ name: "", email: "", phone: "" });
-            setSpecialRequests("");
-
-            setTimeout(() => {
-              window.location.href = checkoutSession.sessionUrl;
-            }, 1200);
-
-            return; // Don't call onReservationSuccess here, only redirect
-          } else {
-            throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
-          }
+          
+          throw new Error(mpPref.error || "Não foi possível gerar o link de pagamento");
         } catch (paymentError) {
-          console.error("💥 Erro ao criar payment link:", paymentError);
-          toast.error("Reserva criada, mas erro no pagamento", {
+          console.error("💥 Erro ao gerar link de pagamento:", paymentError);
+          toast.error("Reserva criada, mas não foi possível gerar o link de pagamento", {
             description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
           });
         }
@@ -255,9 +222,6 @@ export function RestaurantReservationForm({
       setPartySize(partySize - 1);
     }
   };
-
-  // Helper para formatação de moeda
-  // formatCurrency removido (não utilizado);
 
   return (
     <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
@@ -431,13 +395,28 @@ export function RestaurantReservationForm({
             />
           )}
 
-          {/* Price summary with Stripe fees */}
+          {/* Price summary */}
           {restaurant.price && restaurant.price > 0 && (
-            <StripeFeesDisplay 
-              baseAmount={getPrice()}
-              discountAmount={getDiscountAmount()}
-              className="mt-4"
-            />
+            <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor base</span>
+                <span className="font-medium">{formatCurrency(getPrice())}</span>
+              </div>
+              {getDiscountAmount() > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-900">Total</span>
+                <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O pagamento será processado com nosso provedor e confirmado junto ao parceiro antes da cobrança definitiva.
+              </p>
+            </div>
           )}
 
           {/* Payment Info - show if requires payment */}

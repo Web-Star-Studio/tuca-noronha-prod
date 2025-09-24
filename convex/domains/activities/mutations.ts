@@ -19,6 +19,8 @@ export const create = mutationWithRole(["partner", "master"])({
     description: v.string(),
     shortDescription: v.string(),
     price: v.number(),
+    netRate: v.optional(v.number()),
+    availableTimes: v.optional(v.array(v.string())),
     category: v.string(),
     duration: v.string(),
     maxParticipants: v.number(),
@@ -53,6 +55,8 @@ export const create = mutationWithRole(["partner", "master"])({
     // Creating the activity
     const activityId = await ctx.db.insert("activities", {
       ...args,
+      netRate: args.netRate ?? args.price,
+      availableTimes: args.availableTimes ?? [],
       maxParticipants,
       minParticipants,
       hasMultipleTickets: args.hasMultipleTickets || false, // default é false
@@ -72,6 +76,8 @@ export const update = mutationWithRole(["partner", "master"])({
     description: v.optional(v.string()),
     shortDescription: v.optional(v.string()),
     price: v.optional(v.number()),
+    netRate: v.optional(v.number()),
+    availableTimes: v.optional(v.array(v.string())),
     category: v.optional(v.string()),
     duration: v.optional(v.string()),
     maxParticipants: v.optional(v.number()),
@@ -108,6 +114,8 @@ export const update = mutationWithRole(["partner", "master"])({
       description?: string;
       shortDescription?: string;
       price?: number;
+      netRate?: number;
+      availableTimes?: string[];
       category?: string;
       duration?: string;
       maxParticipants?: bigint;

@@ -58,3 +58,15 @@ Após configurar e fazer deploy:
 ✅ **Dashboard administrativo funcional**
 
 **Próximo passo**: Configurar as variáveis e fazer deploy em produção! 🚀
+
+## UploadThing (Uploads de Imagem e Vídeo)
+
+```bash
+# Credenciais do projeto UploadThing
+# Gere um único token no dashboard e reutilize em todas as plataformas
+UPLOADTHING_TOKEN=ut_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+- Gere as credenciais no [dashboard do UploadThing](https://uploadthing.com/dashboard).
+- Adicione o token no `.env.local` da aplicação Next.js e em `convex env set` para que as mutações de mídia consigam remover arquivos via API da UploadThing.
+- Sem esse token os uploads não funcionam e a exclusão de mídias falhará devido à falta de autorização.

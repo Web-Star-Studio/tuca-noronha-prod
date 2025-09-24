@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAction, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ const faqs = [
   },
   {
     question: "O pagamento é seguro?",
-    answer: "Totalmente! Usamos o Stripe, uma das plataformas de pagamento mais seguras do mundo. Não armazenamos dados do seu cartão."
+    answer: "Sim! Enviamos um link de pagamento através de um provedor certificado e não armazenamos dados do seu cartão."
   },
   {
     question: "Receberei atualizações do guia?",
@@ -105,9 +105,6 @@ export default function GuiaAssinaturaPage() {
     user ? {} : undefined
   );
 
-  // Create checkout session action
-  const createCheckoutSession = useAction(api.domains.subscriptions.actions.createCheckoutSession);
-
   useEffect(() => {
     if (!userLoading && !user) {
       router.push(`/sign-in?redirect=${encodeURIComponent(redirectUrl)}`);
@@ -127,23 +124,7 @@ export default function GuiaAssinaturaPage() {
     setIsProcessing(true);
     
     try {
-      const result = await createCheckoutSession({
-        userId: user._id,
-        userEmail: user.email || "",
-        userName: user.name,
-        successUrl: `${window.location.origin}/guia-assinatura/sucesso?redirect=${encodeURIComponent(redirectUrl)}`,
-        cancelUrl: window.location.href,
-      });
-
-      if (result.success && result.sessionUrl) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.sessionUrl;
-      } else {
-        toast.error(result.error || "Erro ao criar sessão de pagamento");
-      }
-    } catch {
-      console.error("Erro no checkout:", error);
-      toast.error("Erro ao processar pagamento");
+      router.push(`/contato?redirect=${encodeURIComponent(redirectUrl)}&assunto=guia-assinatura`);
     } finally {
       setIsProcessing(false);
     }
@@ -226,7 +207,7 @@ export default function GuiaAssinaturaPage() {
                 </Button>
 
                 <p className="text-xs text-gray-500 mt-4">
-                  Pagamento seguro via Stripe • Cancele quando quiser
+                  Pagamento seguro através de link enviado pela nossa equipe • Cancele quando quiser
                 </p>
               </div>
 

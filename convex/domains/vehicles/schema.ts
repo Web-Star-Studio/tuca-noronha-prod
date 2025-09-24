@@ -20,6 +20,7 @@ export default defineSchema({
     
     // Business details
     pricePerDay: v.number(),
+    netRate: v.optional(v.number()),
     description: v.optional(v.string()),
     features: v.array(v.string()),
     imageUrl: v.optional(v.string()),

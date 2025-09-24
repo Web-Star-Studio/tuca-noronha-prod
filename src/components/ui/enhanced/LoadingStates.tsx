@@ -194,7 +194,7 @@ export const Skeleton = ({
 // Enhanced Progress Bar
 interface ProgressBarProps {
   progress: number;
-  variant?: "default" | "gradient" | "striped";
+  variant?: "default" | "gradient" | "banded";
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
   label?: string;
@@ -219,8 +219,8 @@ export const ProgressBar = ({
     switch (variant) {
       case "gradient":
         return "bg-gradient-to-r from-blue-500 to-purple-600";
-      case "striped":
-        return "bg-blue-500 bg-stripes";
+      case "banded":
+        return "bg-gradient-to-r from-blue-500 to-blue-400";
       default:
         return "bg-blue-500";
     }

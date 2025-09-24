@@ -234,6 +234,10 @@ export const update = mutationWithRole(["partner", "master"])({
       isActive?: boolean;
       isFeatured?: boolean;
       partnerId?: Id<"users">;
+      price?: number;
+      netRate?: number;
+      acceptsOnlinePayment?: boolean;
+      requiresUpfrontPayment?: boolean;
     };
     
     // Create an object with all updated fields

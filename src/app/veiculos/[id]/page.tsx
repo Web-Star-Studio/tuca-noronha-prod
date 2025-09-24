@@ -7,7 +7,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
-import { ArrowLeft, Star, Calendar, Fuel, Users,  } from "lucide-react";
+import { ArrowLeft, Star, Calendar, Fuel, Users } from "lucide-react";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WishlistButton } from "@/components/ui/wishlist-button";
 import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 import { HelpSection } from "@/components/contact";
 
@@ -65,18 +67,42 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
     notFound();
   }
 
+  const galleryEntries = (vehicle?.galleryImages ?? []).map(parseMediaEntry);
+  const heroBaseEntry = parseMediaEntry(vehicle?.imageUrl ?? "");
+  const heroGalleryEntry = galleryEntries.find(
+    (entry) => entry.url === heroBaseEntry.url,
+  );
+  const heroEntry = heroGalleryEntry ?? heroBaseEntry;
+  const hasHeroMedia = Boolean(heroEntry.url && heroEntry.url.trim() !== "");
+
   return (
     <>
       <main className="pb-20">
         {/* Hero Image Section */}
         <div className="relative w-full h-[70vh] overflow-hidden">
-          <Image
-            src={vehicle.imageUrl || "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"}
-            alt={vehicle.name}
-            fill
-            className="object-cover brightness-[0.85]"
-            priority
-          />
+          {hasHeroMedia ? (
+            <SmartMedia
+              entry={heroEntry}
+              alt={vehicle.name}
+              className="h-full w-full object-cover brightness-[0.85]"
+              imageProps={{ fill: true, priority: true }}
+              videoProps={{
+                autoPlay: true,
+                loop: true,
+                muted: true,
+                playsInline: true,
+                controls: false,
+              }}
+            />
+          ) : (
+            <Image
+              src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+              alt={vehicle.name}
+              fill
+              className="object-cover brightness-[0.85]"
+              priority
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
@@ -246,41 +272,47 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                 {/* Photos tab */}
                 <TabsContent value="photos" className="space-y-10 mt-2">
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">Galeria de fotos</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="aspect-video relative rounded-lg overflow-hidden">
-                        <Image 
-                          src={vehicle.imageUrl || "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"}
-                          alt={`${vehicle.brand} ${vehicle.model}`}
-                          fill
-                          className="object-cover"
-                        />
+                    <h3 className="text-xl font-semibold mb-4">Galeria</h3>
+                    {galleryEntries.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {galleryEntries.map((mediaEntry, index) => (
+                          <div
+                            key={`${vehicle._id}-gallery-${index}`}
+                            className="relative aspect-video overflow-hidden rounded-lg"
+                          >
+                            <SmartMedia
+                              entry={mediaEntry}
+                              alt={`${vehicle.brand} ${vehicle.model} - Mídia ${index + 1}`}
+                              className="h-full w-full object-cover"
+                              imageProps={{ fill: true }}
+                              videoProps={{ controls: true, preload: "metadata" }}
+                            />
+                          </div>
+                        ))}
                       </div>
-                      <div className="aspect-video relative rounded-lg overflow-hidden">
-                        <Image 
-                          src="https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-                          alt="Interior do veículo"
-                          fill
-                          className="object-cover"
-                        />
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="relative aspect-video overflow-hidden rounded-lg">
+                          <Image
+                            src={
+                              vehicle.imageUrl ||
+                              "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+                            }
+                            alt={`${vehicle.brand} ${vehicle.model}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="relative aspect-video overflow-hidden rounded-lg">
+                          <Image
+                            src="https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
+                            alt="Interior do veículo"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                       </div>
-                      <div className="aspect-video relative rounded-lg overflow-hidden">
-                        <Image 
-                          src="https://images.unsplash.com/photo-1550355291-bbee04a92027?q=80&w=2076&auto=format&fit=crop&ixlib=rb-4.0.3"
-                          alt="Vista traseira"
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="aspect-video relative rounded-lg overflow-hidden">
-                        <Image 
-                          src="https://images.unsplash.com/photo-1541443131876-44b03de101c5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-                          alt="Detalhes do veículo"
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </TabsContent>
 

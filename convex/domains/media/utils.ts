@@ -40,6 +40,14 @@ export function isImageFile(mimeType: string): boolean {
 }
 
 /**
+ * Checks whether a media URL belongs to UploadThing storage
+ */
+export function isUploadThingUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("uploadthing") || url.includes("utfs.io");
+}
+
+/**
  * Validates that a media item belongs to the specified user
  */
 export async function validateMediaOwnership(

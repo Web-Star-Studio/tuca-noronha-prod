@@ -85,13 +85,13 @@ export function TaxaPartnerModal({ partnerId, open, onClose }: TaxaPartnerModalP
   const calculateExample = () => {
     const fee = parseFloat(feePercentage) || 0;
     const transactionAmount = 10000; // R$ 100,00
-    const stripeFee = 290 + Math.floor(transactionAmount * 0.029); // 2.9% + 29¢
+    const processingFee = 290 + Math.floor(transactionAmount * 0.029); // 2,9% + R$ 0,29 (provedor)
     const platformFee = Math.floor(transactionAmount * (fee / 100));
-    const partnerAmount = transactionAmount - platformFee - stripeFee;
+    const partnerAmount = transactionAmount - platformFee - processingFee;
     
     return {
       transaction: transactionAmount / 100,
-      stripeFee: stripeFee / 100,
+      processingFee: processingFee / 100,
       platformFee: platformFee / 100,
       partnerAmount: partnerAmount / 100,
     };
@@ -146,7 +146,7 @@ export function TaxaPartnerModal({ partnerId, open, onClose }: TaxaPartnerModalP
                 <p className="font-medium mb-2">Exemplo de cálculo:</p>
                 <div className="space-y-1 text-sm">
                   <p>Transação: {formatCurrency(example.transaction)}</p>
-                  <p>Taxa Stripe: -{formatCurrency(example.stripeFee)} (2.9% + R$ 0,29)</p>
+                  <p>Taxa do provedor: -{formatCurrency(example.processingFee)} (2,9% + R$ 0,29)</p>
                   <p>Taxa Plataforma: -{formatCurrency(example.platformFee)} ({feePercentage || 0}%)</p>
                   <p className="font-medium">
                     Parceiro recebe: {formatCurrency(example.partnerAmount)}

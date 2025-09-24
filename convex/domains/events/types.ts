@@ -11,6 +11,7 @@ export interface Event {
   location: string;
   address: string;
   price: number;
+  netRate?: number;
   category: string;
   maxParticipants: bigint;
   imageUrl: string;
@@ -62,6 +63,7 @@ export interface EventCreateInput {
   location: string;
   address: string;
   price: number;
+  netRate?: number;
   category: string;
   maxParticipants: number;
   imageUrl: string;
@@ -89,6 +91,7 @@ export interface EventUpdateInput {
   location?: string;
   address?: string;
   price?: number;
+  netRate?: number;
   category?: string;
   maxParticipants?: number;
   imageUrl?: string;

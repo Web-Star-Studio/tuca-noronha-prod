@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -25,6 +25,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WishlistButton } from "@/components/ui/wishlist-button";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
@@ -47,6 +49,19 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   // selectedTicketId removido (não utilizado)
 
+  const galleryEntries = (event.galleryImages ?? []).map(parseMediaEntry);
+  const heroBaseEntry = parseMediaEntry(event.imageUrl ?? "");
+  const heroGalleryEntry = galleryEntries.find(
+    (entry) => entry.url === heroBaseEntry.url,
+  );
+  const heroEntry = heroGalleryEntry ?? heroBaseEntry;
+  const heroHasMedia = Boolean(heroEntry.url && heroEntry.url.trim() !== "");
+  const heroIsLikelyImage = Boolean(heroEntry.type?.startsWith("image/"));
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [heroEntry.url]);
+
   // Format date for display
   const eventDate = new Date(event.date);
   const formattedDate = formatDate(eventDate);
@@ -55,21 +70,32 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
     <main className="pb-20">
       {/* Hero Image Section */}
       <div className="relative w-full h-[70vh] overflow-hidden">
-        {event.imageUrl && event.imageUrl.trim() !== '' ? (
-          <Image
-            src={event.imageUrl}
+        {heroHasMedia ? (
+          <SmartMedia
+            entry={heroEntry}
             alt={event.title}
-            fill
-            className={`object-cover brightness-[0.85] transition-opacity duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            priority
-            onLoad={() => setIsImageLoaded(true)}
+            className={`h-full w-full object-cover brightness-[0.85] transition-opacity duration-700 ${heroIsLikelyImage ? (isImageLoaded ? "opacity-100" : "opacity-0") : "opacity-100"}`}
+            imageProps={{
+              fill: true,
+              priority: true,
+              sizes: "100vw",
+              onLoad: () => setIsImageLoaded(true),
+              onLoadingComplete: () => setIsImageLoaded(true),
+            }}
+            videoProps={{
+              autoPlay: true,
+              loop: true,
+              muted: true,
+              playsInline: true,
+              controls: false,
+            }}
           />
         ) : (
           <div className="w-full h-full bg-gray-300 flex items-center justify-center">
             <Calendar className="h-24 w-24 text-gray-500" />
           </div>
         )}
-        {!isImageLoaded && event.imageUrl && event.imageUrl.trim() !== '' && (
+        {heroIsLikelyImage && heroHasMedia && !isImageLoaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
@@ -476,16 +502,23 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-3">Galeria</h3>
                 <div className="grid grid-cols-3 gap-2">
-                  {event.galleryImages.slice(0, 6).map((image, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-md overflow-hidden">
-                      <Image
-                        src={image}
-                        alt={`Imagem ${idx + 1} do evento`}
-                        fill
-                        className="object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ))}
+                  {event.galleryImages
+                    .map(parseMediaEntry)
+                    .slice(0, 6)
+                    .map((mediaEntry, idx) => (
+                      <div
+                        key={`${mediaEntry.url}-${idx}`}
+                        className="relative aspect-square overflow-hidden rounded-md"
+                      >
+                        <SmartMedia
+                          entry={mediaEntry}
+                          alt={`Mídia ${idx + 1} do evento`}
+                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                          imageProps={{ fill: true }}
+                          videoProps={{ controls: true, preload: "metadata" }}
+                        />
+                      </div>
+                    ))}
                 </div>
               </div>
             )}

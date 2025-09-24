@@ -95,7 +95,7 @@ export default function TaxasPage() {
         <InfoIcon className="h-4 w-4" />
         <AlertDescription>
           As taxas configuradas aqui determinam a porcentagem que a plataforma retém de cada transação. 
-          O valor restante (menos as taxas do Stripe) é transferido automaticamente para o parceiro.
+          O valor restante (menos as taxas do provedor de pagamento) é transferido automaticamente para o parceiro.
         </AlertDescription>
       </Alert>
 

@@ -29,6 +29,7 @@ export interface MediaCreateInput {
   uploadedBy: Id<"users">;
   isPublic: boolean;
   tags?: string[];
+  fileUrl?: string;
 }
 
 export interface MediaUpdateInput {

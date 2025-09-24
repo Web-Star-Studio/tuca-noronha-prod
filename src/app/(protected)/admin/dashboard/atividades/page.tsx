@@ -8,16 +8,18 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink, Clock } from "lucide-react"
+import { Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink, Clock, X } from "lucide-react"
 import Link from "next/link"
-import { useState, useMemo } from "react"
-import Image from "next/image"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useCreateActivity, useActivities, useUpdateActivity, useDeleteActivity, useToggleFeatured, useToggleActive } from "@/lib/services/activityService"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MediaSelector } from "@/components/dashboard/media";
+import type { Media } from "@/lib/services/mediaService";
+import { parseMediaEntry, serializeMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleActive }: { 
   activity: Activity; 
@@ -26,6 +28,10 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
   onToggleFeatured: (id: string, featured: boolean) => void;
   onToggleActive: (id: string, active: boolean) => void;
 }) {
+  const coverEntry = parseMediaEntry(activity.imageUrl);
+  const coverUrl = coverEntry.url;
+  const hasCover = coverUrl && coverUrl.trim() !== "";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -42,13 +48,21 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
         onClick={() => onEdit(activity)}
       >
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-          {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
-            <Image
-              src={activity.imageUrl}
+          {hasCover ? (
+            <SmartMedia
+              entry={coverEntry}
               alt={activity.title}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              imageProps={{
+                fill: true,
+                sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+              }}
+              videoProps={{
+                muted: true,
+                loop: true,
+                playsInline: true,
+                controls: false,
+              }}
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -130,22 +144,35 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
           </p>
           
           <div className="mt-auto space-y-3">
-            <div className="flex gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-gray-400" />
-                <span>{activity.duration}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="flex items-center">
-                  <span className="text-yellow-500 mr-1">★</span>
-                  <span>{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
-                </div>
+          <div className="flex gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-gray-400" />
+              <span>{activity.duration}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center">
+                <span className="text-yellow-500 mr-1">★</span>
+                <span>{activity.rating && typeof activity.rating === 'number' ? activity.rating.toFixed(1) : 'N/A'}</span>
               </div>
             </div>
-            
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                <span className="line-clamp-1">Dificuldade: {activity.difficulty}</span>
+          </div>
+
+          {activity.availableTimes && activity.availableTimes.length > 0 && (
+            <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+              {activity.availableTimes.slice(0, 4).map((time) => (
+                <span key={time} className="rounded-full border border-gray-200 px-2 py-0.5">
+                  {time}
+                </span>
+              ))}
+              {activity.availableTimes.length > 4 && (
+                <span className="text-gray-400">+{activity.availableTimes.length - 4}</span>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+              <span className="line-clamp-1">Dificuldade: {activity.difficulty}</span>
               </div>
               
               <button
@@ -173,6 +200,44 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
   );
 }
 
+const createEmptyActivity = (): Activity => ({
+  id: "",
+  title: "",
+  description: "",
+  shortDescription: "",
+  price: 0,
+  netRate: 0,
+  availableTimes: [],
+  category: "",
+  duration: "",
+  maxParticipants: 1,
+  minParticipants: 1,
+  difficulty: "Fácil",
+  rating: 5,
+  imageUrl: "",
+  galleryImages: [],
+  highlights: [],
+  includes: [],
+  itineraries: [],
+  excludes: [],
+  additionalInfo: [],
+  cancelationPolicy: [],
+  isFeatured: false,
+  isActive: true,
+  hasMultipleTickets: false,
+  tickets: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  partnerId: undefined,
+  creatorName: undefined,
+  creatorEmail: undefined,
+  creatorImage: undefined,
+  ticketTypes: undefined,
+  itinerary: undefined,
+  requirements: undefined,
+  safetyGuidelines: undefined,
+});
+
 function ActivityForm({ activity, onSave, onCancel }: { 
   activity?: Activity;
   onSave: (activity: Activity) => void;
@@ -182,39 +247,67 @@ function ActivityForm({ activity, onSave, onCancel }: {
   const { user, isAuthenticated } = useCurrentUser();
   const [mainMediaPickerOpen, setMainMediaPickerOpen] = useState(false);
   const [galleryMediaPickerOpen, setGalleryMediaPickerOpen] = useState(false);
+  const [tempAvailableTime, setTempAvailableTime] = useState("");
   
   const [activeTab, setActiveTab] = useState("basic");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [formData, setFormData] = useState<Activity>(
-    activity || {
-      id: "",
-      title: "",
-      description: "",
-      shortDescription: "",
-      price: 0,
-      category: "",
-      duration: "",
-      maxParticipants: 1,
-      minParticipants: 1,
-      difficulty: "Fácil",
-      rating: 5,
-      imageUrl: "",
-      galleryImages: [],
-      highlights: [],
-      includes: [],
-      itineraries: [],
-      excludes: [],
-      additionalInfo: [],
-      cancelationPolicy: [],
-      isFeatured: false,
-      isActive: true,
-      hasMultipleTickets: false,
-      tickets: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    } as Activity
+  const [formData, setFormData] = useState<Activity>(() =>
+    activity
+      ? {
+          ...activity,
+          netRate: activity.netRate ?? activity.price,
+          availableTimes: activity.availableTimes ?? [],
+        }
+      : createEmptyActivity()
   );
+
+  const galleryEntries = useMemo(
+    () => formData.galleryImages.map(parseMediaEntry),
+    [formData.galleryImages],
+  );
+
+  const heroEntry = useMemo(() => {
+    const baseEntry = parseMediaEntry(formData.imageUrl);
+    const matchingEntry = galleryEntries.find((entry) => entry.url === baseEntry.url);
+    return matchingEntry ?? baseEntry;
+  }, [formData.imageUrl, galleryEntries]);
+  const heroUrl = heroEntry.url;
+  const hasHeroMedia = Boolean(heroUrl && heroUrl.trim() !== "");
+
+  const handleAppendGalleryMedia = useCallback((items: Media[]) => {
+    setFormData((prev) => {
+      if (items.length === 0) return prev;
+
+      const existingEntries = prev.galleryImages.map(parseMediaEntry);
+      const existingUrls = new Set(existingEntries.map((entry) => entry.url));
+
+      const appended = items
+        .filter((item) => !existingUrls.has(item.url))
+        .map((item) =>
+          serializeMediaEntry({ url: item.url, type: item.fileType || undefined }),
+        );
+
+      if (appended.length === 0) return prev;
+
+      return {
+        ...prev,
+        galleryImages: [...prev.galleryImages, ...appended],
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    setFormData(
+      activity
+        ? {
+            ...activity,
+            netRate: activity.netRate ?? activity.price,
+            availableTimes: activity.availableTimes ?? [],
+          }
+        : createEmptyActivity()
+    );
+  }, [activity]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -245,6 +338,31 @@ function ActivityForm({ activity, onSave, onCancel }: {
     const newArray = [...(formData[fieldName] as string[])];
     newArray.splice(index, 1);
     setFormData({ ...formData, [fieldName]: newArray });
+  };
+
+  const handleAddAvailableTime = () => {
+    if (!tempAvailableTime) {
+      toast.error("Informe um horário válido");
+      return;
+    }
+
+    if (formData.availableTimes.includes(tempAvailableTime)) {
+      toast.error("Esse horário já foi adicionado");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      availableTimes: [...formData.availableTimes, tempAvailableTime].sort(),
+    });
+    setTempAvailableTime("");
+  };
+
+  const handleRemoveAvailableTime = (time: string) => {
+    setFormData({
+      ...formData,
+      availableTimes: formData.availableTimes.filter((t) => t !== time),
+    });
   };
 
   const goToNextTab = () => {
@@ -284,6 +402,16 @@ function ActivityForm({ activity, onSave, onCancel }: {
     
     if (!isAuthenticated || !user) {
       toast.error("Você precisa estar logado para criar uma atividade");
+      return;
+    }
+
+    if (formData.netRate < 0) {
+      toast.error("A tarifa net não pode ser negativa");
+      return;
+    }
+
+    if (formData.netRate > formData.price) {
+      toast.error("A tarifa net deve ser menor ou igual ao preço");
       return;
     }
     
@@ -368,6 +496,25 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 required 
               />
             </div>
+
+            <div>
+              <Label htmlFor="netRate" className="text-sm font-medium">Tarifa net (R$)</Label>
+              <Input
+                id="netRate"
+                name="netRate"
+                type="number"
+                value={formData.netRate}
+                onChange={handleNumberChange}
+                min="0"
+                step="0.01"
+                className="mt-1.5 bg-white shadow-sm"
+                placeholder="0.00"
+                required
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Valor líquido acordado com o fornecedor para cálculo do repasse.
+              </p>
+            </div>
             
             <div>
               <Label htmlFor="category" className="text-sm font-medium">Categoria</Label>
@@ -443,6 +590,46 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 className="mt-1.5 bg-white shadow-sm"
                 required 
               />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Horários disponíveis</Label>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                type="time"
+                value={tempAvailableTime}
+                onChange={(e) => setTempAvailableTime(e.target.value)}
+                className="bg-white shadow-sm sm:max-w-[180px]"
+              />
+              <Button type="button" variant="outline" onClick={handleAddAvailableTime}>
+                Adicionar horário
+              </Button>
+            </div>
+            <p className="text-xs text-slate-500">
+              Registre os horários do dia em que essa atividade estará disponível.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.availableTimes.length === 0 ? (
+                <span className="text-xs text-slate-400">Nenhum horário cadastrado.</span>
+              ) : (
+                formData.availableTimes.map((time) => (
+                  <span
+                    key={time}
+                    className="group flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                  >
+                    {time}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAvailableTime(time)}
+                      className="text-slate-400 transition-colors group-hover:text-slate-600"
+                      aria-label={`Remover horário ${time}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))
+              )}
             </div>
           </div>
             
@@ -524,13 +711,14 @@ function ActivityForm({ activity, onSave, onCancel }: {
                   Selecionar da Biblioteca
                 </Button>
               </div>
-              {formData.imageUrl && formData.imageUrl.trim() !== '' && (
-                <div className="mt-4 relative h-40 rounded-md overflow-hidden">
-                  <Image
-                    src={formData.imageUrl}
+            {hasHeroMedia && (
+                <div className="mt-4 relative h-40 overflow-hidden rounded-md">
+                  <SmartMedia
+                    entry={heroEntry}
                     alt="Preview"
-                    fill
-                    className="object-cover"
+                    className="h-full w-full object-cover"
+                    imageProps={{ fill: true }}
+                    videoProps={{ controls: true, preload: "metadata" }}
                   />
                 </div>
               )}
@@ -539,40 +727,64 @@ function ActivityForm({ activity, onSave, onCancel }: {
           <MediaSelector
             open={mainMediaPickerOpen}
             onOpenChange={setMainMediaPickerOpen}
-            initialSelected={formData.imageUrl ? [formData.imageUrl] : []}
-            onSelect={([url]) => setFormData({ ...formData, imageUrl: url })}
+            initialSelected={heroUrl ? [heroUrl] : []}
+            onSelect={() => {}}
+            onSelectMedia={([item]) => {
+              if (!item) return;
+              setFormData((prev) => {
+                const serialized = serializeMediaEntry({
+                  url: item.url,
+                  type: item.fileType || undefined,
+                });
+                const hasInGallery = prev.galleryImages.some(
+                  (entry) => parseMediaEntry(entry).url === item.url,
+                );
+                return {
+                  ...prev,
+                  imageUrl: item.url,
+                  galleryImages: hasInGallery
+                    ? prev.galleryImages
+                    : [...prev.galleryImages, serialized],
+                };
+              });
+            }}
           />
           <div className="mt-6">
-            <Label className="text-sm font-medium">Galeria de Imagens</Label>
+            <Label className="text-sm font-medium">Galeria</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {formData.galleryImages.map((url, idx) => (
-                <div key={idx} className="relative w-24 h-24 rounded overflow-hidden">
-                  <Image src={url} alt={`Imagem ${idx + 1} da galeria da atividade`} fill className="object-cover"/>
+              {galleryEntries.map((entry, idx) => (
+                <div key={`${entry.url}-${idx}`} className="relative h-24 w-24 overflow-hidden rounded">
+                  <SmartMedia
+                    entry={entry}
+                    alt={`Mídia ${idx + 1} da galeria da atividade`}
+                    className="h-full w-full object-cover"
+                    imageProps={{ fill: true }}
+                    videoProps={{ controls: true, preload: "metadata" }}
+                  />
                   <button
                     type="button"
-                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    className="absolute right-1 top-1 rounded-full bg-white p-1 shadow"
                     onClick={() => {
                       const newGallery = [...formData.galleryImages];
                       newGallery.splice(idx, 1);
                       setFormData({ ...formData, galleryImages: newGallery });
                     }}
                   >
-                    <Trash2 className="h-4 w-4 text-red-600"/>
+                    <Trash2 className="h-4 w-4 text-red-600" />
                   </button>
                 </div>
               ))}
               <Button type="button" onClick={() => setGalleryMediaPickerOpen(true)}>
-                Adicionar Imagem
+                Adicionar mídia
               </Button>
             </div>
           <MediaSelector
             open={galleryMediaPickerOpen}
             onOpenChange={setGalleryMediaPickerOpen}
             multiple
-            initialSelected={formData.galleryImages}
-            onSelect={(urls) =>
-              setFormData({ ...formData, galleryImages: [...formData.galleryImages, ...urls] })
-            }
+            initialSelected={galleryEntries.map((entry) => entry.url)}
+            onSelect={() => {}}
+            onSelectMedia={handleAppendGalleryMedia}
           />
           </div>
         </TabsContent>

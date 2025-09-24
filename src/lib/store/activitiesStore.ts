@@ -22,6 +22,8 @@ export interface Activity {
   description: string;
   shortDescription: string;
   price: number;
+  netRate: number;
+  availableTimes: string[];
   category: string;
   duration: string;
   maxParticipants: number;

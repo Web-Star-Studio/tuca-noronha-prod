@@ -17,9 +17,11 @@ export interface Vehicle {
   fuelType: string;
   transmission: string;
   pricePerDay: number;
+  netRate?: number;
   description?: string;
   features: string[];
   imageUrl?: string;
+  galleryImages?: string[];
   status: string;
   createdAt: number;
   updatedAt: number;

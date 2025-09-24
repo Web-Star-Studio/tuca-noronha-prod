@@ -1,10 +1,11 @@
 
 import Link from "next/link";
-import Image from "next/image";
 import { Users, Fuel, Calendar, Car } from "lucide-react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
 import { WishlistButton } from "@/components/ui/wishlist-button";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 interface VehicleCardProps {
   vehicle: {
@@ -30,18 +31,29 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
     assetType: 'vehicle'
   });
 
+  const coverEntry = parseMediaEntry(vehicle.imageUrl ?? "");
+  const hasCover = coverEntry.url && coverEntry.url.trim() !== "";
+
   return (
     <div className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
       <Link href={`/veiculos/${vehicle._id}`} className="flex flex-col h-full">
         {/* Imagem */}
         <div className="relative w-full aspect-[4/3] overflow-hidden">
-          {vehicle.imageUrl ? (
-            <Image
-              src={vehicle.imageUrl}
+          {hasCover ? (
+            <SmartMedia
+              entry={coverEntry}
               alt={`${vehicle.brand} ${vehicle.model}`}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              imageProps={{
+                fill: true,
+                sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+              }}
+              videoProps={{
+                muted: true,
+                loop: true,
+                playsInline: true,
+                controls: false,
+              }}
             />
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center">

@@ -44,8 +44,7 @@ export function TransactionsList({ partnerId, dateRange }: TransactionsListProps
 
   // Apply filters
   const filteredTransactions = transactions?.filter(transaction => {
-    const matchesSearch = transaction.bookingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.stripePaymentIntentId?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = transaction.bookingId.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || transaction.status === statusFilter;
     const matchesType = typeFilter === "all" || transaction.bookingType === typeFilter;

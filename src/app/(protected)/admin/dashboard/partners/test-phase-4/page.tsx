@@ -29,7 +29,7 @@ export default function TestPhase4Page() {
     try {
       // This would normally happen through the webhook
       toast.success("Transação simulada com sucesso!");
-      toast.info("Em produção, isto seria processado automaticamente via webhook do Stripe");
+      toast.info("Em produção, isto seria processado automaticamente via webhook do provedor de pagamentos");
     } finally {
       setIsProcessing(false);
     }
@@ -141,7 +141,7 @@ export default function TestPhase4Page() {
             <p className="text-sm text-muted-foreground">
               <AlertCircle className="h-4 w-4 inline mr-2" />
               <strong>Nota:</strong> Em produção, essas ações são processadas automaticamente 
-              através dos webhooks do Stripe. As simulações demonstram o comportamento esperado.
+              através dos webhooks do provedor de pagamentos. As simulações demonstram o comportamento esperado.
             </p>
           </div>
         </CardContent>
