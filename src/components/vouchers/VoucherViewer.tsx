@@ -104,6 +104,11 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
   const statusInfo = getStatusInfo();
 
   // Prepare voucher data for template with better null handling
+  const cancellationPolicyRaw = voucher.asset?.cancellationPolicy;
+  const cancellationPolicyText = Array.isArray(cancellationPolicyRaw)
+    ? cancellationPolicyRaw.join("\n")
+    : cancellationPolicyRaw || "Cancelamentos seguem as políticas do estabelecimento";
+
   const voucherData: VoucherTemplateData = {
     voucher: {
       voucherNumber: voucher.voucher?.voucherNumber || voucherNumber || "N/A",
@@ -124,6 +129,7 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       time: voucher.booking?.time,
       participants: voucher.booking?.participants || 1,
       totalAmount: voucher.booking?.totalAmount || 0,
+      guestNames: voucher.booking?.guestNames || [],
     },
     customer: {
       name: voucher.customer?.name || "Cliente",
@@ -135,6 +141,10 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       location: voucher.asset?.location || "Local a definir",
       description: voucher.asset?.description,
       type: voucher.booking?.type || "unknown",
+      highlights: voucher.asset?.highlights || [],
+      includes: voucher.asset?.includes || [],
+      additionalInfo: voucher.asset?.additionalInfo || [],
+      cancellationPolicy: cancellationPolicyRaw,
     },
     partner: {
       name: voucher.partner?.name || "Parceiro",
@@ -150,13 +160,13 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
     instructions: {
       checkIn: ["Chegue 15 minutos antes do horário", "Apresente este voucher"],
       preparation: ["Traga documento de identidade", "Siga as instruções do estabelecimento"],
-      cancellation: "Cancelamentos seguem as políticas do estabelecimento",
+      cancellation: cancellationPolicyText,
     },
     termsAndConditions: [
       "Este voucher é pessoal e intransferível",
       "Apresente este voucher no estabelecimento", 
       "Sujeito à disponibilidade e condições do estabelecimento",
-      "Em caso de cancelamento, siga as políticas do estabelecimento",
+      cancellationPolicyText,
     ].join(". "),
     confirmationInfo: voucher.confirmationInfo || undefined,
   };

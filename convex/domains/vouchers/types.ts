@@ -190,6 +190,7 @@ export interface VoucherDisplayData {
     time?: string;
     participants?: number;
     totalAmount?: number;
+    guestNames?: string[];
   };
   customer: {
     name: string;
@@ -201,6 +202,10 @@ export interface VoucherDisplayData {
     location?: string;
     description?: string;
     type: string;
+    highlights?: string[];
+    includes?: string[];
+    additionalInfo?: string[];
+    cancellationPolicy?: string | string[];
   };
   partner: {
     name: string;

@@ -20,6 +20,7 @@ import {
   FOOD_PREFERENCES_OPTIONS,
   type PackageRequestFormData 
 } from "../../../convex/domains/packages/types";
+import { toast } from "sonner";
 
 interface PackageRequestFormProps {
   onSuccess?: (requestNumber: string) => void;
@@ -51,6 +52,7 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
       budget: 0,
       budgetFlexibility: "",
       includesAirfare: false,
+      travelerNames: [""],
     },
     preferences: {
       accommodationType: [],
@@ -65,13 +67,64 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
   });
 
   const updateFormData = (section: keyof PackageRequestFormData, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
+    setFormData(prev => {
+      let updatedTravelerNames: string[] | undefined;
+
+      const nextSection = {
         ...(prev[section] as any),
-        [field]: value
+        [field]: value,
+      };
+
+      if (section === "tripDetails" && field === "groupSize") {
+        const required = Math.max(Number(value) || 0, 0);
+        const existing = (prev.tripDetails.travelerNames ?? []).slice();
+        updatedTravelerNames = existing.slice(0, required);
+        while (updatedTravelerNames.length < required) {
+          updatedTravelerNames.push("");
+        }
       }
-    }));
+
+      if (section === "customerInfo" && field === "name") {
+        const existing = (prev.tripDetails.travelerNames ?? []).slice();
+        if (existing.length > 0 && (!existing[0] || existing[0] === prev.customerInfo.name)) {
+          existing[0] = value;
+          updatedTravelerNames = existing;
+        }
+      }
+
+      const nextState: PackageRequestFormData = {
+        ...prev,
+        [section]: nextSection as any,
+      };
+
+      if (updatedTravelerNames) {
+        nextState.tripDetails = {
+          ...nextState.tripDetails,
+          travelerNames: updatedTravelerNames,
+        };
+      }
+
+      return nextState;
+    });
+  };
+
+  const updateTravelerName = (index: number, value: string) => {
+    setFormData(prev => {
+      const currentNames = (prev.tripDetails.travelerNames ?? []).slice();
+      const required = Math.max(prev.tripDetails.groupSize, currentNames.length);
+      while (currentNames.length < required) {
+        currentNames.push("");
+      }
+      currentNames[index] = value;
+
+      return {
+        ...prev,
+        tripDetails: {
+          ...prev.tripDetails,
+          travelerNames: currentNames,
+        },
+      };
+    });
   };
 
   const toggleArrayValue = (section: "preferences", field: string, value: string) => {
@@ -110,7 +163,28 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
     setIsLoading(true);
     
     try {
-      const result = await createRequest(formData);
+      const requiredTravelers = formData.tripDetails.groupSize;
+      const sanitizedTravelerNames = (formData.tripDetails.travelerNames ?? [])
+        .map((name) => name.trim());
+
+      if (
+        requiredTravelers > 0 &&
+        (sanitizedTravelerNames.length < requiredTravelers || sanitizedTravelerNames.some((name) => !name))
+      ) {
+        toast.error("Informe o nome completo de todos os viajantes");
+        setIsLoading(false);
+        return;
+      }
+
+      const payload: PackageRequestFormData = {
+        ...formData,
+        tripDetails: {
+          ...formData.tripDetails,
+          travelerNames: sanitizedTravelerNames,
+        },
+      };
+
+      const result = await createRequest(payload);
       setRequestNumber(result.requestNumber);
       setIsSubmitted(true);
       onSuccess?.(result.requestNumber);
@@ -391,6 +465,29 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
                   </select>
                 </div>
               </div>
+
+              {formData.tripDetails.groupSize > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    🧾 Nome dos Viajantes
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    Informe o nome completo de cada viajante. O primeiro campo corresponde ao responsável pela solicitação.
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {Array.from({ length: formData.tripDetails.groupSize }).map((_, index) => (
+                      <Input
+                        key={`traveler-${index}`}
+                        value={formData.tripDetails.travelerNames?.[index] ?? ""}
+                        onChange={(e) => updateTravelerName(index, e.target.value)}
+                        placeholder={`Viajante ${index + 1}`}
+                        className="h-11 border-2 border-gray-200 focus:border-emerald-400 rounded-xl"
+                        required
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Incluir Passagem Aérea */}
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 p-6 rounded-xl border-2 border-blue-200">

@@ -24,6 +24,7 @@ export const getBookingForCheckout = internalQuery({
       userId: v.string(),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
+      confirmationCode: v.string(),
     }),
     v.null()
   ),
@@ -69,6 +70,7 @@ export const getBookingForCheckout = internalQuery({
         userId: String(booking.userId),
         status: booking.status,
         paymentStatus: booking.paymentStatus,
+        confirmationCode: booking.confirmationCode,
       };
     } catch (error) {
       console.error("Error fetching booking for checkout:", error);

@@ -150,12 +150,12 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
           });
 
           // Try Mercado Pago first
-          const mpPref = await createMpCheckoutPreference({
-            bookingId: result.bookingId,
-            assetType: "vehicle",
-            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
-            cancelUrl: `${window.location.origin}/booking/cancel`,
-            customerEmail: customerInfo.email,
+        const mpPref = await createMpCheckoutPreference({
+          bookingId: result.bookingId,
+          assetType: "vehicle",
+          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
+          cancelUrl: `${window.location.origin}/booking/cancel`,
+          customerEmail: customerInfo.email,
             couponCode: appliedCoupon?.code,
             discountAmount: getDiscountAmount(),
             originalAmount: totalPrice,

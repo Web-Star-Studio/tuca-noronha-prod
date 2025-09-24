@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {formatCurrency} from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
@@ -56,6 +56,7 @@ export function ActivityBookingForm({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
   const [participants, setParticipants] = useState(activity.minParticipants);
+  const [additionalParticipantNames, setAdditionalParticipantNames] = useState<string[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"activityTickets"> | undefined>(undefined);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +69,17 @@ export function ActivityBookingForm({
   const tickets = useQuery(api.domains.activities.queries.getActivityTickets, {
     activityId,
   });
+
+  useEffect(() => {
+    const required = Math.max(participants - 1, 0);
+    setAdditionalParticipantNames((prev) => {
+      const next = prev.slice(0, required);
+      while (next.length < required) {
+        next.push("");
+      }
+      return next;
+    });
+  }, [participants]);
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
   // Import Payment Service at top of file
@@ -130,6 +142,14 @@ export function ActivityBookingForm({
       return;
     }
 
+    if (participants > 1) {
+      const hasEmptyName = additionalParticipantNames.some((name) => !name.trim());
+      if (hasEmptyName) {
+        toast.error("Informe o nome completo de todos os participantes adicionais");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -140,6 +160,7 @@ export function ActivityBookingForm({
         date: format(date, "yyyy-MM-dd"),
         time: time || undefined,
         participants,
+        additionalParticipants: additionalParticipantNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
         couponCode: appliedCoupon?.code,
@@ -162,7 +183,7 @@ export function ActivityBookingForm({
         const mpPref = await createMpCheckoutPreference({
           bookingId: result.bookingId,
           assetType: "activity",
-          successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
           cancelUrl: `${window.location.origin}/booking/cancel`,
           customerEmail: customerInfo.email,
           couponCode: appliedCoupon?.code,
@@ -184,6 +205,7 @@ export function ActivityBookingForm({
           setDate(undefined);
           setTime("");
           setParticipants(activity.minParticipants);
+          setAdditionalParticipantNames([]);
           setSelectedTicketId(undefined);
           setCustomerInfo({ name: "", email: "", phone: "" });
           setSpecialRequests("");
@@ -350,6 +372,30 @@ export function ActivityBookingForm({
               Mín: {activity.minParticipants} | Máx: {activity.maxParticipants}
             </p>
           </div>
+
+          {participants > 1 && (
+            <div className="space-y-2">
+              <Label>Nomes dos participantes adicionais</Label>
+              <p className="text-xs text-gray-500">
+                Informe o nome completo de cada pessoa além do responsável pela reserva.
+              </p>
+              <div className="space-y-2">
+                {additionalParticipantNames.map((value, index) => (
+                  <Input
+                    key={`participant-${index}`}
+                    value={value}
+                    onChange={(e) => {
+                      const next = [...additionalParticipantNames];
+                      next[index] = e.target.value;
+                      setAdditionalParticipantNames(next);
+                    }}
+                    placeholder={`Participante ${index + 2}`}
+                    className={formStyles.input.base}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Customer Information */}
           <div className="space-y-4 pt-4 border-t">

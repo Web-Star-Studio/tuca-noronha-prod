@@ -17,6 +17,9 @@ interface BookingData {
   date: string;
   time?: string;
   participants?: number;
+  additionalParticipants?: string[];
+  participantNames?: string[];
+  guestNames?: string[];
   customerInfo: {
     name: string;
     email: string;
@@ -62,6 +65,7 @@ export function useBookingPayment(options: UseBookingPaymentOptions) {
             date: bookingData.date,
             time: bookingData.time,
             participants: bookingData.participants || 1,
+            additionalParticipants: bookingData.additionalParticipants,
             customerInfo: bookingData.customerInfo,
             specialRequests: bookingData.specialRequests,
             couponCode: bookingData.couponCode,
@@ -75,8 +79,8 @@ export function useBookingPayment(options: UseBookingPaymentOptions) {
           booking = await createEventBooking({
             eventId: bookingData.eventId,
             ticketId: bookingData.ticketId,
-            date: bookingData.date,
-            participants: bookingData.participants || 1,
+            quantity: bookingData.participants || 1,
+            participantNames: bookingData.participantNames,
             customerInfo: bookingData.customerInfo,
             specialRequests: bookingData.specialRequests,
             couponCode: bookingData.couponCode,
@@ -92,6 +96,7 @@ export function useBookingPayment(options: UseBookingPaymentOptions) {
             date: bookingData.date,
             time: bookingData.time || '',
             partySize: bookingData.participants || 1,
+            guestNames: bookingData.guestNames,
             customerInfo: bookingData.customerInfo,
             specialRequests: bookingData.specialRequests,
             couponCode: bookingData.couponCode,

@@ -147,6 +147,27 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
     throw new Error("Reserva ou ativo não encontrado");
   }
 
+  const guestNames = (() => {
+    switch (voucher.bookingType) {
+      case "activity":
+        return booking.additionalParticipants || [];
+      case "event":
+        return booking.participantNames || [];
+      case "restaurant":
+        return booking.guestNames || [];
+      default:
+        return [];
+    }
+  })();
+
+  const cancellationPolicy =
+    asset.cancelationPolicy || asset.cancellationPolicy ||
+    (Array.isArray(asset.terms) ? asset.terms : undefined);
+
+  const highlights = asset.highlights || asset.features || [];
+  const includes = asset.includes || asset.services || [];
+  const additionalInfo = asset.additionalInfo || asset.notes || [];
+
   // Return formatted voucher data
   return {
     voucher: {
@@ -170,6 +191,7 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       participants: booking.participants || booking.guestCount || booking.quantity || booking.partySize,
       totalAmount: booking.totalAmount,
       specialRequests: booking.specialRequests,
+      guestNames,
     },
     customer: {
       name: customer.name,
@@ -181,6 +203,10 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       location: asset.location || asset.address?.street,
       description: asset.description,
       type: voucher.bookingType,
+      highlights,
+      includes,
+      additionalInfo,
+      cancellationPolicy,
     },
     partner: {
       name: partner.name,

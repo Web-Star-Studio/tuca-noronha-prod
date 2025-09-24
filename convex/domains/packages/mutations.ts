@@ -711,6 +711,8 @@ const tripDetailsValidator = v.object({
   companions: v.string(),
   budget: v.number(),
   budgetFlexibility: v.string(),
+  includesAirfare: v.optional(v.boolean()),
+  travelerNames: v.optional(v.array(v.string())),
 });
 
 // Preferences validator
@@ -808,13 +810,27 @@ export const createPackageRequest = mutation({
       throw new Error("Group size must be a positive number");
     }
 
+    const sanitizedTravelerNames = (args.tripDetails.travelerNames ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (args.tripDetails.groupSize > 0 && sanitizedTravelerNames.length < args.tripDetails.groupSize) {
+      throw new Error("Informe o nome de todos os viajantes");
+    }
+
+    const normalizedTripDetails = {
+      ...args.tripDetails,
+      includesAirfare: args.tripDetails.includesAirfare ?? false,
+      travelerNames: sanitizedTravelerNames,
+    };
+
     const requestNumber = generateRequestNumber(args.customerInfo.name, args.tripDetails.startDate);
-    
+
     const packageRequestId = await ctx.db.insert("packageRequests", {
       requestNumber,
       userId, // Include userId if available
       customerInfo: args.customerInfo,
-      tripDetails: args.tripDetails,
+      tripDetails: normalizedTripDetails,
       preferences: args.preferences,
       specialRequirements: args.specialRequirements,
       status: "pending",
@@ -834,7 +850,7 @@ export const createPackageRequest = mutation({
       budget: args.tripDetails.budget,
       destination: args.tripDetails.destination,
       requestDetails: {
-        tripDetails: args.tripDetails,
+        tripDetails: normalizedTripDetails,
         preferences: args.preferences,
         specialRequirements: args.specialRequirements,
       },
@@ -851,7 +867,7 @@ export const createPackageRequest = mutation({
       destination: args.tripDetails.destination,
       requestDetails: {
         customerInfo: args.customerInfo,
-        tripDetails: args.tripDetails,
+        tripDetails: normalizedTripDetails,
         preferences: args.preferences,
         specialRequirements: args.specialRequirements,
       },

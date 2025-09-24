@@ -156,7 +156,62 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       {/* Booking Details */}
       <div className="border-t-2 border-gray-200 pt-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Detalhes da Reserva</h2>
+        <div className="space-y-4 text-gray-700">
+          {voucherData.booking.guestNames && voucherData.booking.guestNames.length > 0 && (
+            <div>
+              <p className="font-medium">Participantes adicionais</p>
+              <ul className="list-disc list-inside text-sm space-y-1 mt-1">
+                {voucherData.booking.guestNames.map((name, index) => (
+                  <li key={`${name}-${index}`}>{name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
+          {voucherData.asset.highlights && voucherData.asset.highlights.length > 0 && (
+            <div>
+              <p className="font-medium">Destaques do serviço</p>
+              <ul className="list-disc list-inside text-sm space-y-1 mt-1">
+                {voucherData.asset.highlights.map((highlight, index) => (
+                  <li key={`${highlight}-${index}`}>{highlight}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {voucherData.asset.includes && voucherData.asset.includes.length > 0 && (
+            <div>
+              <p className="font-medium">Inclusões</p>
+              <ul className="list-disc list-inside text-sm space-y-1 mt-1">
+                {voucherData.asset.includes.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {voucherData.asset.additionalInfo && voucherData.asset.additionalInfo.length > 0 && (
+            <div>
+              <p className="font-medium">Informações adicionais</p>
+              <ul className="list-disc list-inside text-sm space-y-1 mt-1">
+                {voucherData.asset.additionalInfo.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {voucherData.asset.cancellationPolicy && (
+            <div>
+              <p className="font-medium">Política de cancelamento</p>
+              <div className="text-sm space-y-1 mt-1 whitespace-pre-line">
+                {Array.isArray(voucherData.asset.cancellationPolicy)
+                  ? voucherData.asset.cancellationPolicy.join("\n")
+                  : voucherData.asset.cancellationPolicy}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Terms and Conditions */}
@@ -236,6 +291,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               <p>{details.specialRequests}</p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -293,6 +349,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -336,6 +393,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               <p>{details.specialRequests}</p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -391,6 +449,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -459,10 +518,28 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
     default:
       return <p>Detalhes da reserva não disponíveis.</p>;
   }
-} 
+}
+
+function renderGuestNames(guestNames?: string[]) {
+  if (!guestNames || guestNames.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="md:col-span-2">
+      <p className="font-medium">Participantes adicionais:</p>
+      <ul className="list-disc list-inside text-gray-600 space-y-1 mt-1">
+        {guestNames.map((name, index) => (
+          <li key={`${name}-${index}`}>{name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}

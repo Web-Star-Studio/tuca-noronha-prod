@@ -3621,6 +3621,7 @@ export const getUserReservations = query({
     checkIn: v.optional(v.string()),
     checkOut: v.optional(v.string()),
     guests: v.optional(v.number()),
+    guestNames: v.optional(v.array(v.string())),
     status: v.string(),
     location: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
@@ -3658,6 +3659,7 @@ export const getUserReservations = query({
           name: activity.title,
           date: booking.date,
           guests: booking.participants,
+          guestNames: booking.additionalParticipants,
           status: booking.status,
           location: "Fernando de Noronha",
           imageUrl: activity.imageUrl,
@@ -3681,6 +3683,7 @@ export const getUserReservations = query({
           name: event.title,
           date: event.date,
           guests: booking.quantity,
+          guestNames: booking.participantNames,
           status: booking.status,
           location: event.location,
           imageUrl: event.imageUrl,
@@ -3704,6 +3707,7 @@ export const getUserReservations = query({
           name: restaurant.name,
           date: reservation.date,
           guests: reservation.partySize,
+          guestNames: reservation.guestNames,
           status: reservation.status,
           location: restaurant.address?.city || "Fernando de Noronha",
           imageUrl: restaurant.mainImage,
@@ -4215,4 +4219,3 @@ export const getBookingByIdInternal = internalQuery({
     }
   },
 });
-

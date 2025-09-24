@@ -108,6 +108,14 @@ export const createActivityBooking = mutation({
       throw new Error("Máximo de " + activity.maxParticipants + " participantes");
     }
 
+    const normalizedAdditionalParticipants = (args.additionalParticipants ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (args.participants > 1 && normalizedAdditionalParticipants.length < args.participants - 1) {
+      throw new Error("Informe o nome completo de todos os participantes adicionais");
+    }
+
     // Calculate price
     let totalPrice = activity.price;
     if (args.ticketId) {
@@ -156,6 +164,7 @@ export const createActivityBooking = mutation({
       paymentStatus: initialPaymentStatus,
       confirmationCode,
       customerInfo,
+      additionalParticipants: normalizedAdditionalParticipants,
       specialRequests: args.specialRequests,
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
@@ -181,6 +190,7 @@ export const createActivityBooking = mutation({
         bookingDetails: {
           activityId: activity._id,
           participants: args.participants,
+          participantNames: normalizedAdditionalParticipants,
           date: args.date,
           specialRequests: args.specialRequests,
         },
@@ -203,6 +213,7 @@ export const createActivityBooking = mutation({
           bookingDetails: {
             activityId: activity._id,
             participants: args.participants,
+            participantNames: normalizedAdditionalParticipants,
             date: args.date,
             specialRequests: args.specialRequests,
           },
@@ -272,6 +283,14 @@ export const createEventBooking = mutation({
       throw new Error("Evento não está disponível");
     }
 
+    const normalizedParticipantNames = (args.participantNames ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (args.quantity > 1 && normalizedParticipantNames.length < args.quantity - 1) {
+      throw new Error("Informe o nome completo dos participantes adicionais");
+    }
+
     // Calculate price
     let totalPrice = event.price;
     if (args.ticketId) {
@@ -318,6 +337,7 @@ export const createEventBooking = mutation({
       paymentStatus: initialPaymentStatus,
       confirmationCode,
       customerInfo,
+      participantNames: normalizedParticipantNames,
       specialRequests: args.specialRequests,
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
@@ -340,6 +360,7 @@ export const createEventBooking = mutation({
         bookingDetails: {
           eventId: event._id,
           participants: args.quantity,
+          participantNames: normalizedParticipantNames,
           date: event.date,
           specialRequests: args.specialRequests,
         },
@@ -362,6 +383,7 @@ export const createEventBooking = mutation({
           bookingDetails: {
             eventId: event._id,
             participants: args.quantity,
+            participantNames: normalizedParticipantNames,
             date: event.date,
             specialRequests: args.specialRequests,
           },
@@ -439,6 +461,14 @@ export const createRestaurantReservation = mutation({
       throw new Error("Máximo de " + restaurant.maximumPartySize + " pessoas por reserva");
     }
 
+    const normalizedGuestNames = (args.guestNames ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (args.partySize > 1 && normalizedGuestNames.length < args.partySize - 1) {
+      throw new Error("Informe o nome completo de todos os acompanhantes");
+    }
+
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
 
     // Get restaurant price for calculating totalPrice
@@ -451,6 +481,7 @@ export const createRestaurantReservation = mutation({
       date: args.date,
       time: args.time,
       partySize: args.partySize,
+      guestNames: normalizedGuestNames,
       name: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -476,6 +507,7 @@ export const createRestaurantReservation = mutation({
       bookingDetails: {
         restaurantId: restaurant._id,
         partySize: args.partySize,
+        guestNames: normalizedGuestNames,
         date: args.date,
         time: args.time,
         specialRequests: args.specialRequests,
@@ -498,6 +530,7 @@ export const createRestaurantReservation = mutation({
         bookingDetails: {
           restaurantId: restaurant._id,
           partySize: args.partySize,
+          guestNames: normalizedGuestNames,
           date: args.date,
           time: args.time,
           specialRequests: args.specialRequests,

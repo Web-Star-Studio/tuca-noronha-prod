@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Users, Clock, Plus, Minus, MapPin, Calendar as CalendarIcon } from "lucide-react";
@@ -60,6 +60,7 @@ export function RestaurantReservationForm({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
   const [partySize, setPartySize] = useState(2);
+  const [additionalGuestNames, setAdditionalGuestNames] = useState<string[]>([]);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -78,6 +79,17 @@ export function RestaurantReservationForm({
     "20:00", "20:30", "21:00", "21:30", "22:00"
   ]
   
+  useEffect(() => {
+    const required = Math.max(partySize - 1, 0);
+    setAdditionalGuestNames((prev) => {
+      const next = prev.slice(0, required);
+      while (next.length < required) {
+        next.push("");
+      }
+      return next;
+    });
+  }, [partySize]);
+
   // Calculate price
   const getPrice = () => {
     return restaurant.price || 0;
@@ -124,6 +136,14 @@ export function RestaurantReservationForm({
       return;
     }
 
+    if (partySize > 1) {
+      const hasEmptyName = additionalGuestNames.some((name) => !name.trim());
+      if (hasEmptyName) {
+        toast.error("Informe o nome completo de todos os acompanhantes");
+        return;
+      }
+    }
+
     if (!restaurant.acceptsReservations) {
       toast.error("Este restaurante não aceita reservas");
       return;
@@ -138,6 +158,7 @@ export function RestaurantReservationForm({
         date: format(date, "yyyy-MM-dd"),
         time,
         partySize,
+        guestNames: additionalGuestNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
         couponCode: appliedCoupon?.code,
@@ -155,7 +176,7 @@ export function RestaurantReservationForm({
           const mpPref = await createMpCheckoutPreference({
             bookingId: result.reservationId,
             assetType: "restaurant",
-            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
             cancelUrl: `${window.location.origin}/booking/cancel`,
             customerEmail: customerInfo.email,
             couponCode: appliedCoupon?.code,
@@ -174,6 +195,7 @@ export function RestaurantReservationForm({
             setDate(undefined);
             setTime("");
             setPartySize(2);
+            setAdditionalGuestNames([]);
             setCustomerInfo({ name: "", email: "", phone: "" });
             setSpecialRequests("");
 
@@ -200,6 +222,7 @@ export function RestaurantReservationForm({
       setDate(undefined);
       setTime("");
       setPartySize(2);
+      setAdditionalGuestNames([]);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
     } catch (error) {
@@ -329,6 +352,28 @@ export function RestaurantReservationForm({
               Máximo: {restaurant.maximumPartySize} pessoas
             </p>
           </div>
+
+        {partySize > 1 && (
+          <div className="space-y-2">
+            <Label>Nomes dos acompanhantes</Label>
+            <p className="text-xs text-gray-500">Informe o nome completo de cada pessoa além do responsável pela reserva.</p>
+            <div className="space-y-2">
+              {additionalGuestNames.map((value, index) => (
+                <Input
+                  key={`guest-${index}`}
+                  value={value}
+                  onChange={(e) => {
+                    const next = [...additionalGuestNames];
+                    next[index] = e.target.value;
+                    setAdditionalGuestNames(next);
+                  }}
+                  placeholder={`Acompanhante ${index + 2}`}
+                  className={formStyles.input.base}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
           {/* Customer Information */}
           <div className="space-y-4 pt-4 border-t">

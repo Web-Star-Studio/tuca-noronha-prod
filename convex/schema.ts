@@ -627,6 +627,7 @@ export default defineSchema({
     date: v.string(),                                   // Data da reserva (YYYY-MM-DD)
     time: v.string(),                                   // Horário da reserva (HH:MM)
     partySize: v.number(),                              // Número de pessoas
+    guestNames: v.optional(v.array(v.string())),        // Nomes dos demais participantes
     name: v.string(),                                   // Nome do responsável pela reserva
     email: v.string(),                                  // Email de contato
     phone: v.string(),                                  // Telefone de contato
@@ -794,6 +795,7 @@ export default defineSchema({
     date: v.string(),                              // Date for the activity (YYYY-MM-DD)
     time: v.optional(v.string()),                  // Specific time if applicable
     participants: v.number(),                      // Number of participants
+    additionalParticipants: v.optional(v.array(v.string())), // Names of additional participants
     totalPrice: v.number(),                        // Total price for booking
     status: v.string(),                            // pending, confirmed, canceled, completed, refunded
     paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
@@ -845,6 +847,7 @@ export default defineSchema({
     userId: v.id("users"),
     ticketId: v.optional(v.id("eventTickets")),    // If event has multiple tickets
     quantity: v.number(),                          // Number of tickets
+    participantNames: v.optional(v.array(v.string())), // Names of other attendees
     totalPrice: v.number(),                        // Total price for booking
     status: v.string(),                            // pending, confirmed, canceled, completed, refunded
     paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
@@ -1228,6 +1231,8 @@ export default defineSchema({
       companions: v.string(), // family, friends, couple, solo, business
       budget: v.number(),
       budgetFlexibility: v.string(), // strict, somewhat_flexible, very_flexible
+      includesAirfare: v.optional(v.boolean()),
+      travelerNames: v.optional(v.array(v.string())),
     }),
     
     // Preferences

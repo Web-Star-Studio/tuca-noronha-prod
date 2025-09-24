@@ -251,6 +251,7 @@ export interface PackageRequestTripDetails {
   companions: string;
   budgetFlexibility: string;
   includesAirfare?: boolean;
+  travelerNames?: string[];
 }
 
 export interface PackageRequestPreferences {
@@ -434,6 +435,7 @@ export interface PackageRequestFormData {
     budget: number;
     budgetFlexibility: string;
     includesAirfare?: boolean;
+    travelerNames?: string[];
   };
   preferences: {
   

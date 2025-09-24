@@ -12,6 +12,7 @@ import {
   createCheckoutPreferenceForBookingValidator,
 } from "./types";
 import { mpFetch } from "./utils";
+import { pickCheckoutPreferenceUrl } from "./helpers";
 
 /**
  * Create a Checkout Preference (Checkout Pro)
@@ -73,6 +74,7 @@ export const createCheckoutPreference = internalAction({
         },
         // Configurar para não solicitar login/cadastro desnecessário
         purpose: "wallet_purchase",
+        auto_return: "approved",
       };
       if (args.backUrls) body.back_urls = args.backUrls;
       if (args.notificationUrl) body.notification_url = args.notificationUrl;
@@ -139,8 +141,27 @@ export const createCheckoutPreferenceForBooking = action({
       const _hasCoupon = Boolean(args.couponCode && discountAmount > 0);
 
       // 3) Build URLs
-      const successUrl = args.successUrl;
-      const cancelUrl = args.cancelUrl;
+      const successUrl = args.successUrl?.trim();
+      const cancelUrl = args.cancelUrl?.trim();
+      const configuredBaseUrl = (process.env.MP_RETURN_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.CONVEX_SITE_URL || "").replace(/\/$/, "");
+      const fallbackSuccessPath = booking.confirmationCode
+        ? `/reservas/?booking_id=${encodeURIComponent(booking.confirmationCode)}`
+        : "/reservas/";
+      const normalizedSuccessUrl = successUrl && successUrl.length > 0
+        ? successUrl
+        : configuredBaseUrl
+        ? `${configuredBaseUrl}${fallbackSuccessPath}`
+        : undefined;
+      const normalizedCancelUrl = cancelUrl && cancelUrl.length > 0
+        ? cancelUrl
+        : configuredBaseUrl
+        ? `${configuredBaseUrl}/booking/cancel`
+        : undefined;
+
+      if (!normalizedSuccessUrl) {
+        throw new Error("Mercado Pago API error (setup): successUrl ausente. Configure NEXT_PUBLIC_APP_URL ou informe successUrl na chamada.");
+      }
+
       const siteUrl = (process.env.CONVEX_SITE_URL || "").replace(/\/$/, "");
       const notificationUrl = siteUrl ? `${siteUrl}/mercadopago/webhook` : undefined;
 
@@ -156,11 +177,12 @@ export const createCheckoutPreferenceForBooking = action({
           assetId: String(booking.assetId),
           userId: String(booking.userId),
           bookingId: String(args.bookingId),
+          confirmationCode: booking.confirmationCode,
         },
         backUrls: {
-          success: successUrl,
-          pending: successUrl,
-          failure: cancelUrl,
+          success: normalizedSuccessUrl,
+          pending: normalizedSuccessUrl,
+          failure: normalizedCancelUrl || normalizedSuccessUrl,
         },
         notificationUrl,
       });
@@ -169,9 +191,11 @@ export const createCheckoutPreferenceForBooking = action({
         throw new Error(pref.error || "Failed to create Mercado Pago preference");
       }
 
-      // Always prioritize sandboxInitPoint if available (for test credentials)
-      // If only initPoint is available, use it (for production credentials)
-      const preferredUrl = pref.sandboxInitPoint || pref.initPoint;
+      const preferredUrl = pickCheckoutPreferenceUrl({
+        id: pref.id,
+        initPoint: pref.initPoint,
+        sandboxInitPoint: pref.sandboxInitPoint,
+      });
 
       return {
         success: true,
