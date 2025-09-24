@@ -138,24 +138,6 @@ export function PartnerTransactionDetails({
                   </Button>
                 </div>
               </div>
-              {transaction.stripePaymentIntentId && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Stripe Payment Intent</span>
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {transaction.stripePaymentIntentId.slice(0, 20)}...
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => copyToClipboard(transaction.stripePaymentIntentId!, "Payment Intent ID")}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -291,19 +273,20 @@ export function PartnerTransactionDetails({
           <Button variant="outline" onClick={onClose}>
             Fechar
           </Button>
-          {transaction.stripePaymentIntentId && (
+          {transaction.paymentDetails?.receiptUrl ? (
             <Button
               variant="default"
               className="gap-2"
               onClick={() => {
-                window.open(
-                  `https://dashboard.stripe.com/payments/${transaction.stripePaymentIntentId}`,
-                  "_blank"
-                );
+                window.open(transaction.paymentDetails!.receiptUrl!, "_blank");
               }}
             >
               <ExternalLink className="h-4 w-4" />
-              Ver no Stripe
+              Ver comprovante
+            </Button>
+          ) : (
+            <Button variant="outline" disabled>
+              Comprovante indisponível
             </Button>
           )}
         </div>

@@ -57,6 +57,7 @@ export interface Restaurant {
   isFeatured: boolean;
   partnerId: Id<"users">;
   price?: number;
+  netRate?: number;
   acceptsOnlinePayment?: boolean;
   requiresUpfrontPayment?: boolean;
 }
@@ -127,6 +128,7 @@ export interface RestaurantCreateInput {
   isFeatured: boolean;
   partnerId: Id<"users">;
   price?: number;
+  netRate?: number;
   acceptsOnlinePayment?: boolean;
   requiresUpfrontPayment?: boolean;
 }
@@ -187,6 +189,7 @@ export interface RestaurantUpdateInput {
   isFeatured?: boolean;
   partnerId?: Id<"users">;
   price?: number;
+  netRate?: number;
   acceptsOnlinePayment?: boolean;
   requiresUpfrontPayment?: boolean;
 } 

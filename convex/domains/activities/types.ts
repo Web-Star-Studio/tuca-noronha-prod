@@ -7,6 +7,8 @@ export interface Activity {
   description: string;
   shortDescription: string;
   price: number;
+  netRate?: number;
+  availableTimes?: string[];
   category: string;
   duration: string;
   maxParticipants: bigint;
@@ -57,6 +59,8 @@ export interface ActivityCreateInput {
   description: string;
   shortDescription: string;
   price: number;
+  netRate?: number;
+  availableTimes?: string[];
   category: string;
   duration: string;
   maxParticipants: number;
@@ -83,6 +87,8 @@ export interface ActivityUpdateInput {
   description?: string;
   shortDescription?: string;
   price?: number;
+  netRate?: number;
+  availableTimes?: string[];
   category?: string;
   duration?: string;
   maxParticipants?: number;

@@ -21,15 +21,16 @@ export interface ConvexImageProps extends React.ImgHTMLAttributes<HTMLImageEleme
  * - Fornece um fallback em caso de falha
  */
 export function ConvexImage({
-
+  storageId: _storageId,
   mediaId,
   src,
   alt,
   className,
   fallbackText,
   onError,
-  ...props
+  ...imageProps
 }: ConvexImageProps) {
+  void _storageId;
   const [imageSrc, setImageSrc] = useState<string | null>(src as string);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -91,7 +92,6 @@ export function ConvexImage({
           "bg-muted flex items-center justify-center", 
           className
         )}
-        {...props}
       >
         <div className="animate-pulse w-8 h-8 rounded-full bg-muted-foreground/20" />
       </div>
@@ -105,7 +105,6 @@ export function ConvexImage({
           "bg-muted flex items-center justify-center text-muted-foreground text-sm", 
           className
         )}
-        {...props}
       >
         {fallbackText || "Imagem não disponível"}
       </div>
@@ -131,7 +130,7 @@ export function ConvexImage({
           onError?.();
         }
       }}
-      {...props}
+      {...imageProps}
     />
   );
-} 
+}

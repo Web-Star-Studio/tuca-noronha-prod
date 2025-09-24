@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
 
 interface EventBookingFormProps {
@@ -124,16 +123,9 @@ export function EventBookingForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. If event requires payment, try Mercado Pago first; fallback to Stripe
+      // 2. If o evento exige pagamento antecipado, gerar link de pagamento pelo Mercado Pago
       if (event.acceptsOnlinePayment && event.requiresUpfrontPayment && result.totalPrice > 0) {
         try {
-          console.log("🔄 Criando checkout session para evento:", {
-            bookingId: result.bookingId,
-            eventId,
-            totalPrice: result.totalPrice,
-          });
-
-          // Try Mercado Pago first
           const mpPref = await createMpCheckoutPreference({
             bookingId: result.bookingId,
             assetType: "event",
@@ -166,8 +158,8 @@ export function EventBookingForm({
             throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
           }
         } catch (paymentError) {
-          console.error("💥 Erro ao criar payment link:", paymentError);
-          toast.error("Reserva criada, mas erro no pagamento", {
+          console.error("💥 Erro ao gerar link de pagamento:", paymentError);
+          toast.error("Reserva criada, mas não foi possível gerar o link de pagamento", {
             description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
           });
           
@@ -338,13 +330,28 @@ export function EventBookingForm({
             />
           )}
 
-          {/* Price summary with Stripe fees */}
+          {/* Price summary */}
           {!isEventPast && getPrice() > 0 && (
-            <StripeFeesDisplay 
-              baseAmount={getPrice()}
-              discountAmount={getDiscountAmount()}
-              className="mt-4"
-            />
+            <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor base</span>
+                <span className="font-medium">{formatCurrency(getPrice())}</span>
+              </div>
+              {getDiscountAmount() > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-900">Total</span>
+                <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Confirmaremos o pagamento com o organizador antes da cobrança definitiva.
+              </p>
+            </div>
           )}
 
           {/* Payment Info - show if requires payment */}

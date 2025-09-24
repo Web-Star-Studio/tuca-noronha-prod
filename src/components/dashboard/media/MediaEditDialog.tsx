@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import NextImage from "next/image"
 import type { Media } from "@/lib/services/mediaService"
 import { useUpdateMedia } from "@/lib/services/mediaService"
 import {
@@ -29,6 +28,8 @@ import { toast } from "sonner"
 import { buttonStyles, formStyles, transitionEffects, typography, cardStyles } from "@/lib/ui-config"
 import { cn } from "@/lib/utils"
 import { Save, PencilLine, Image } from "lucide-react"
+import { SmartMedia } from "@/components/ui/smart-media"
+import type { MediaEntry } from "@/lib/media"
 
 const MEDIA_CATEGORIES = [
   { value: "restaurant", label: "Restaurantes" },
@@ -110,13 +111,13 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
         <form onSubmit={handleSubmit} className="space-y-4 py-4 overflow-hidden">
           <div className="flex items-center gap-4 p-3 bg-muted rounded-md">
             <div className="h-16 w-16 flex-shrink-0 rounded-md overflow-hidden bg-background">
-              {media.fileType.startsWith("image/") ? (
-                <NextImage 
-                  src={media.url} 
+              {media.fileType.startsWith("image/") || media.fileType.startsWith("video/") ? (
+                <SmartMedia
+                  entry={{ url: media.url, type: media.fileType } as MediaEntry}
                   alt={media.fileName}
                   className="h-full w-full object-cover"
-                  width={64}
-                  height={64}
+                  imageProps={{ width: 64, height: 64 }}
+                  videoProps={{ muted: true, loop: true, playsInline: true }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-gray-100">

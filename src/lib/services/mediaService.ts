@@ -3,6 +3,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useCallback } from "react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { uploadFiles } from "@/lib/uploadthing";
 
 // Type definitions for media files
 export type Media = {
@@ -137,7 +138,6 @@ export function useVerifyMediaUrls() {
 // Hook to upload a media file
 export function useUploadMedia() {
   const { user } = useCurrentUser();
-  const generateUploadUrl = useMutation(api.domains.media.mutations.generateUploadUrl);
   const storeMedia = useMutation(api.domains.media.mutations.createMedia);
   
   const uploadMedia = useCallback(
@@ -158,41 +158,39 @@ export function useUploadMedia() {
         throw new Error("Usuário não autenticado");
       }
 
-      // Gerar URL para upload
-      const uploadUrl = await generateUploadUrl();
-      
-      // Upload do arquivo para o Convex Storage
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": file.type,
-        },
-        body: file,
+      const uploadResponse = await uploadFiles("mediaUploader", {
+        files: [file],
       });
-      
-      if (!result.ok) {
+
+      const uploadedFile = uploadResponse?.[0];
+      if (!uploadedFile) {
         throw new Error("Falha ao fazer upload do arquivo");
       }
-      
-      // Obter o storageId do resultado
-      const { storageId } = await result.json();
-      
+
+      const fileUrl =
+        uploadedFile.serverData?.fileUrl ?? uploadedFile.ufsUrl ?? uploadedFile.url;
+      const fileKey = uploadedFile.serverData?.fileKey ?? uploadedFile.key;
+      const fileNameFromServer = uploadedFile.serverData?.fileName ?? uploadedFile.name;
+      const fileTypeFromServer = uploadedFile.serverData?.fileType ?? uploadedFile.type;
+      const fileSizeFromServer = uploadedFile.serverData?.fileSize ?? uploadedFile.size;
+
       // Armazenar os metadados no banco de dados
       const mediaId = await storeMedia({
-        storageId,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: BigInt(file.size),
+        storageId: fileKey,
+        fileName: fileNameFromServer ?? file.name,
+        fileType: fileTypeFromServer ?? file.type,
+        fileSize: BigInt(fileSizeFromServer ?? file.size),
         description,
         category,
         uploadedBy: user._id,
         isPublic: isPublic ?? true,
         tags,
+        fileUrl,
       });
 
       return mediaId;
     },
-    [generateUploadUrl, storeMedia, user?._id]
+    [storeMedia, user?._id]
   );
 
   return uploadMedia;

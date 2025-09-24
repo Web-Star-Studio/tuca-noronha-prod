@@ -24,7 +24,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
 
 interface VehicleBookingFormProps {
@@ -64,6 +63,13 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
   // Get discount amount
   const getDiscountAmount = () => {
     return appliedCoupon ? appliedCoupon.discountAmount : 0;
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   // Handle coupon application
@@ -342,13 +348,28 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
         />
       )}
 
-      {/* Price summary with Stripe fees */}
-      {startDate && endDate && (
-        <StripeFeesDisplay 
-          baseAmount={totalPrice}
-          discountAmount={getDiscountAmount()}
-          className="mt-4"
-        />
+      {/* Price summary */}
+      {startDate && endDate && totalPrice > 0 && (
+        <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+          <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Valor base</span>
+            <span className="font-medium">{formatCurrency(totalPrice)}</span>
+          </div>
+          {getDiscountAmount() > 0 && (
+            <div className="flex items-center justify-between text-sm text-green-600">
+              <span>Desconto aplicado</span>
+              <span>-{formatCurrency(getDiscountAmount())}</span>
+            </div>
+          )}
+          <div className="border-t pt-3 flex items-center justify-between text-sm">
+            <span className="font-semibold text-gray-900">Total</span>
+            <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            A cobrança final acontece somente após a confirmação com o parceiro.
+          </p>
+        </div>
       )}
 
       {/* Payment Info - show if requires payment */}

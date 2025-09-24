@@ -16,34 +16,25 @@ import React from 'react';
 export default function BookingSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const sessionId = searchParams.get('session_id');
-  const bookingId = searchParams.get('booking_id') || searchParams.get('bookingId');
+  const bookingCode = searchParams.get('booking_id') || searchParams.get('bookingId');
   const bookingType = searchParams.get('type');
   const [bookingData, setBookingData] = useState<any>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 20; // Máximo de 20 tentativas (20 segundos)
-
-  // Query to get booking details based on session ID or booking ID
-  const shouldQuerySession = sessionId && bookingType !== 'admin';
-  const shouldQueryConfirmation = bookingId && bookingType !== 'admin';
-  
-  const bookingBySession = useQuery(
-    api.domains.stripe.queries.getBookingBySessionId,
-    shouldQuerySession ? { sessionId } : "skip"
-  );
 
   const bookingByConfirmation = useQuery(
-    api.domains.stripe.queries.getBookingByConfirmationCode,
-    shouldQueryConfirmation ? { confirmationCode: bookingId } : "skip"
+    api.domains.bookings.queries.getBookingByConfirmationCode,
+    bookingType !== 'admin' && bookingCode ? { confirmationCode: bookingCode } : "skip"
   );
 
-  // Add query for admin reservations
-  const shouldQueryAdmin = bookingType === 'admin' && bookingId;
+  const shouldQueryAdmin = bookingType === 'admin' && bookingCode;
   
   const adminReservation = useQuery(
     api.domains.adminReservations.queries.getAdminReservationById,
-    shouldQueryAdmin ? { id: bookingId as Id<"adminReservations"> } : "skip"
+    shouldQueryAdmin ? { id: bookingCode as Id<"adminReservations"> } : "skip"
   );
+
+  const isLoading = bookingType === 'admin'
+    ? adminReservation === undefined
+    : bookingByConfirmation === undefined;
 
 
   // Get booking data from appropriate source
@@ -60,20 +51,13 @@ export default function BookingSuccessPage() {
         bookingDate: new Date(adminReservation.date).toLocaleDateString('pt-BR'),
         assetType: adminReservation.assetType,
       });
-    } else if (bookingBySession) {
-      setBookingData(bookingBySession);
-    } else if (bookingByConfirmation) {
-      setBookingData(bookingByConfirmation);
-    } else if (sessionId) {
-      // Retry logic for session-based bookings
-      if (retryCount < maxRetries) {
-        const timer = setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
+      return;
     }
-  }, [bookingBySession, bookingByConfirmation, adminReservation, sessionId, retryCount, bookingType]);
+
+    if (bookingByConfirmation) {
+      setBookingData(bookingByConfirmation);
+    }
+  }, [bookingType, adminReservation, bookingByConfirmation]);
 
   // Normalize payment status for UI
   const status = bookingData?.paymentStatus as string | undefined;
@@ -125,7 +109,7 @@ export default function BookingSuccessPage() {
     router.push('/meu-painel/reservas');
   };
 
-  if (!sessionId && !bookingId) {
+  if (!bookingCode && bookingType !== 'admin') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -142,20 +126,16 @@ export default function BookingSuccessPage() {
     );
   }
 
-  // Se ainda está procurando a reserva e não excedeu o limite de tentativas
-  if (!bookingData && retryCount < maxRetries) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-lg font-medium mb-2">Processando pagamento...</p>
+              <p className="text-lg font-medium mb-2">Carregando detalhes da reserva...</p>
               <p className="text-sm text-gray-600">
-                Aguarde enquanto confirmamos seu pagamento com o provedor de pagamento
-              </p>
-              <p className="text-xs text-gray-500 mt-4">
-                Tentativa {retryCount} de {maxRetries}
+                Estamos confirmando o status do seu pagamento. Isso leva apenas alguns instantes.
               </p>
             </div>
           </CardContent>
@@ -164,19 +144,17 @@ export default function BookingSuccessPage() {
     );
   }
 
-  // Se excedeu o limite de tentativas sem encontrar a reserva
-  if (!bookingData && retryCount >= maxRetries) {
+  if (!bookingData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-orange-600 mb-4">
-                O processamento está demorando mais que o esperado.
+                Não encontramos detalhes dessa reserva ainda.
               </p>
               <p className="text-sm text-gray-600 mb-6">
-                Não se preocupe! Se o pagamento foi processado, você receberá um email de confirmação.
-                Você também pode verificar o status em &quot;Minhas Reservas&quot;.
+                Se o pagamento foi concluído, você receberá um e-mail com a confirmação. Você também pode consultar o status em &quot;Minhas Reservas&quot;.
               </p>
               <div className="space-y-3">
                 <Button onClick={handleViewBookings} className="w-full">

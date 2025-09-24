@@ -18,6 +18,7 @@ export const createVehicle = mutation({
     fuelType: v.string(),
     transmission: v.string(),
     pricePerDay: v.number(),
+    netRate: v.optional(v.number()),
     description: v.optional(v.string()),
     features: v.array(v.string()),
     imageUrl: v.optional(v.string()),
@@ -51,6 +52,7 @@ export const createVehicle = mutation({
     }
     const vehicleId = await ctx.db.insert("vehicles", {
       ...args,
+      netRate: args.netRate ?? args.pricePerDay,
       createdAt: currentTime,
       updatedAt: currentTime,
       ownerId: currentUserId, // Set owner to current user
@@ -89,6 +91,7 @@ export const updateVehicle = mutation({
     fuelType: v.optional(v.string()),
     transmission: v.optional(v.string()),
     pricePerDay: v.optional(v.number()),
+    netRate: v.optional(v.number()),
     description: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
     imageUrl: v.optional(v.string()),

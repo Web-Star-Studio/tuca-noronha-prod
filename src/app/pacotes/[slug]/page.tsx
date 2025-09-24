@@ -18,12 +18,15 @@ import { api } from "../../../../convex/_generated/api";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { parseMediaEntry } from "@/lib/media";
+import type { MediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 export default function PackageDetailPage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
   const { userId } = useAuth();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [allImages, setAllImages] = useState<string[]>([]);
+  const [allImages, setAllImages] = useState<MediaEntry[]>([]);
 
   // Buscar dados do pacote
   const packageData = useQuery(api.packages.getPackageBySlug, { 
@@ -63,8 +66,11 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
 
   useEffect(() => {
     if (packageData) {
-      const images = [packageData.mainImage, ...(packageData.galleryImages || [])];
-      setAllImages(images);
+      const galleryEntries = (packageData.galleryImages || []).map(parseMediaEntry);
+      const mainEntry: MediaEntry[] = packageData.mainImage
+        ? [parseMediaEntry(packageData.mainImage)]
+        : [];
+      setAllImages([...mainEntry, ...galleryEntries]);
     }
   }, [packageData]);
 
@@ -231,11 +237,12 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 h-96 relative rounded-xl overflow-hidden">
             {allImages.length > 0 && (
-              <Image
-                src={allImages[activeImageIndex]}
-                alt={packageData.name}
-                fill
-                className="object-cover"
+              <SmartMedia
+                entry={allImages[activeImageIndex]}
+                alt={`${packageData.name} - mídia ${activeImageIndex + 1}`}
+                className="h-full w-full object-cover"
+                imageProps={{ fill: true }}
+                videoProps={{ controls: true, preload: "metadata" }}
               />
             )}
           </div>
@@ -243,15 +250,22 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
             {allImages.slice(1, 5).map((image, index) => (
               <Button
                 key={`image-${index + 1}`}
+                type="button"
                 className="h-[11.5rem] relative rounded-xl overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 p-0"
                 onClick={() => handleImageChange(index + 1)}
                 variant="ghost"
               >
-                <Image
-                  src={image}
-                  alt={`${packageData.name} - imagem ${index + 2}`}
-                  fill
-                  className="object-cover hover:scale-110 transition-transform duration-300"
+                <SmartMedia
+                  entry={image}
+                  alt={`${packageData.name} - mídia ${index + 2}`}
+                  className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+                  imageProps={{ fill: true }}
+                  videoProps={{
+                    muted: true,
+                    loop: true,
+                    playsInline: true,
+                    preload: "metadata",
+                  }}
                 />
               </Button>
             ))}

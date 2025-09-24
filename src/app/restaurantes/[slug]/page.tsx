@@ -8,6 +8,8 @@ import { MapPin, Clock, ArrowLeft, Star, UtensilsCrossed } from "lucide-react";
 import { useRestaurantBySlug, type Restaurant as RestaurantServiceType } from "@/lib/services/restaurantService";
 import { useConvexAuth } from "convex/react";
 import { cn } from "@/lib/utils";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 import type { Id } from "@/../convex/_generated/dataModel";
 
@@ -71,19 +73,43 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
     return restaurant.hours[today]?.join(" e ") || "Fechado hoje";
   };
 
+  const galleryEntries = (restaurant?.galleryImages ?? []).map(parseMediaEntry);
+  const heroBaseEntry = parseMediaEntry(restaurant?.mainImage ?? "");
+  const heroGalleryEntry = galleryEntries.find(
+    (entry) => entry.url === heroBaseEntry.url,
+  );
+  const heroEntry = heroGalleryEntry ?? heroBaseEntry;
+  const hasHeroMedia = Boolean(heroEntry.url && heroEntry.url.trim() !== "");
+
   return (
     <>
       <main className="pb-20">
         {/* Hero Image Section */}
         <div className="relative w-full h-[70vh] overflow-hidden">
-          <Image
-            src={restaurant.mainImage}
-            alt={restaurant.name}
-            fill
-            className="object-cover brightness-[0.85]"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+          {hasHeroMedia ? (
+            <SmartMedia
+              entry={heroEntry}
+              alt={restaurant.name}
+              className="h-full w-full object-cover brightness-[0.85]"
+              imageProps={{ fill: true, priority: true }}
+              videoProps={{
+                autoPlay: true,
+                loop: true,
+                muted: true,
+                playsInline: true,
+                controls: false,
+              }}
+            />
+          ) : (
+            <Image
+              src="/images/bg-pattern.png"
+              alt={restaurant.name}
+              fill
+              className="object-cover brightness-[0.85]"
+              priority
+            />
+          )}
+         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
             <div className="max-w-3xl">
@@ -250,19 +276,29 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                 </TabsContent>
 
                 <TabsContent value="photos">
-                  <h2 className="text-2xl font-semibold mb-4">Fotos do local</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {restaurant.galleryImages.map((src, index) => (
-                      <div key={`${restaurant.id}-gallery-${index}`} className="relative aspect-video rounded-lg overflow-hidden">
-                        <Image
-                          src={src}
-                          alt={`Galeria ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <h2 className="text-2xl font-semibold mb-4">Galeria</h2>
+                  {galleryEntries.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                      {galleryEntries.map((mediaEntry, index) => (
+                        <div
+                          key={`${restaurant.id}-gallery-${index}`}
+                          className="relative aspect-video overflow-hidden rounded-lg"
+                        >
+                          <SmartMedia
+                            entry={mediaEntry}
+                            alt={`Mídia ${index + 1}`}
+                            className="h-full w-full object-cover"
+                            imageProps={{ fill: true }}
+                            videoProps={{ controls: true, preload: "metadata" }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma mídia cadastrada para este local ainda.
+                    </p>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="reviews" className="space-y-8">

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
-import Image from "next/image"
+import { useState, useRef, useEffect } from "react"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
 import { useUploadMedia } from "@/lib/services/mediaService"
 import { Button } from "@/components/ui/button"
@@ -20,6 +19,8 @@ import {
 import { cn } from "@/lib/utils"
 import { Check, Upload, X } from "lucide-react"
 import { buttonStyles } from "@/lib/ui-config"
+import { SmartMedia } from "@/components/ui/smart-media"
+import type { MediaEntry } from "@/lib/media"
 
 const MEDIA_CATEGORIES = [
   { value: "restaurant", label: "Restaurantes" },
@@ -29,13 +30,7 @@ const MEDIA_CATEGORIES = [
   { value: "general", label: "Geral" },
 ]
 
-const ALLOWED_FILE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/svg+xml",
-]
+const ACCEPTED_FILE_TYPES = ["image/*", "video/*"]
 
 export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
   const { user } = useCurrentUser()
@@ -43,7 +38,7 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
   const uploadMedia = useUploadMedia()
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [filePreview, setFilePreview] = useState<string | null>(null)
+  const [filePreview, setFilePreview] = useState<{ url: string; type: "image" | "video" } | null>(null)
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState<string>("general")
   const [isPublic, setIsPublic] = useState(true)
@@ -51,22 +46,45 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
   const [uploading, setUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
 
+  useEffect(() => {
+    return () => {
+      if (filePreview?.type === "video") {
+        URL.revokeObjectURL(filePreview.url)
+      }
+    }
+  }, [filePreview])
+
+  const preparePreview = (file: File) => {
+    if (file.type.startsWith("video/")) {
+      const previewUrl = URL.createObjectURL(file)
+      setFilePreview({ type: "video", url: previewUrl })
+      return
+    }
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setFilePreview({ type: "image", url: event.target?.result as string })
+      }
+      reader.readAsDataURL(file)
+      return
+    }
+
+    setFilePreview(null)
+  }
+
   // File selection handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
       
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        toast.error("Tipo de arquivo não suportado. Por favor, selecione uma imagem válida.")
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+        toast.error("Tipo de arquivo não suportado. Selecione uma imagem ou vídeo válido.")
         return
       }
       
       setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setFilePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+      preparePreview(file)
     }
   }
   
@@ -89,17 +107,13 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
       
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        toast.error("Tipo de arquivo não suportado. Por favor, selecione uma imagem válida.")
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+        toast.error("Tipo de arquivo não suportado. Selecione uma imagem ou vídeo válido.")
         return
       }
       
       setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setFilePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+      preparePreview(file)
     }
   }
   
@@ -176,19 +190,22 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept={ALLOWED_FILE_TYPES.join(",")}
+          accept={ACCEPTED_FILE_TYPES.join(",")}
           onChange={handleFileChange}
           className="hidden"
         />
         
         {filePreview ? (
           <div className="relative">
-            <Image 
-              src={filePreview} 
-              alt="Preview" 
-              className="h-48 max-w-full mx-auto object-contain rounded-md" 
-              width={300}
-              height={192}
+            <SmartMedia
+              entry={{
+                url: filePreview.url,
+                type: filePreview.type === "image" ? "image/*" : "video/*",
+              } as MediaEntry}
+              alt="Preview"
+              className="h-48 max-w-full mx-auto object-contain rounded-md"
+              imageProps={{ width: 300, height: 192 }}
+              videoProps={{ controls: true }}
             />
             <div className="flex items-center justify-center gap-2 mt-2 px-2">
               <div className="flex items-center text-sm text-green-600 min-w-0 flex-1 justify-center">
@@ -214,9 +231,9 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
         ) : (
           <div className="flex flex-col items-center justify-center py-4">
             <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-            <p className="text-sm font-medium">Arraste uma imagem ou clique para selecionar</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              PNG, JPG, WEBP, GIF ou SVG (máx. 10MB)
+            <p className="text-sm font-medium">Arraste uma imagem ou vídeo ou clique para selecionar</p>
+            <p className="text-xs text-muted-foreground mt-1 text-center">
+              Imagens (PNG, JPG, WEBP, GIF, SVG) até 16MB ou vídeos (MP4, MOV, WEBM, MPEG) até 512MB
             </p>
           </div>
         )}

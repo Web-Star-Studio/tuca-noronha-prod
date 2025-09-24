@@ -8,15 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Store, AlertCircle } from "lucide-react";
-import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { Media } from "@/lib/services/mediaService";
+import { parseMediaEntry, serializeMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 export type WeekDay = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
 export type WeekdayHours = Record<WeekDay, string[]>;
@@ -56,6 +58,7 @@ export function RestaurantForm({
     
     return {
       ...restaurant,
+      netRate: restaurant.netRate ?? restaurant.price ?? undefined,
       maximumPartySize: Number(restaurant.maximumPartySize) || 8,
       rating: {
         ...restaurant.rating,
@@ -87,6 +90,37 @@ export function RestaurantForm({
   const [galleryImages, setGalleryImages] = useState<string[]>(preparedRestaurant?.galleryImages || []);
   const [menuImages, setMenuImages] = useState<string[]>(preparedRestaurant?.menuImages || []);
   const [currentTab, setCurrentTab] = useState(isEmbedded ? "basic" : "basic");
+
+  const galleryEntries = useMemo(
+    () => galleryImages.map(parseMediaEntry),
+    [galleryImages],
+  );
+
+  const mainImageValue = watch("mainImage") ?? "";
+  const mainImageEntry = parseMediaEntry(mainImageValue);
+  const mainImageGalleryEntry = galleryEntries.find(
+    (entry) => entry.url === mainImageEntry.url,
+  );
+  const mainImageUrl = mainImageGalleryEntry?.url ?? mainImageEntry.url;
+  const previewMainEntry = mainImageGalleryEntry ?? mainImageEntry;
+  const hasMainImage = Boolean(previewMainEntry.url && previewMainEntry.url.trim() !== "");
+
+  const handleAppendGalleryMedia = useCallback((items: Media[]) => {
+    setGalleryImages((prev) => {
+      if (items.length === 0) return prev;
+
+      const existingUrls = new Set(prev.map((entry) => parseMediaEntry(entry).url));
+      const appended = items
+        .filter((item) => !existingUrls.has(item.url))
+        .map((item) => serializeMediaEntry({ url: item.url, type: item.fileType || undefined }));
+
+      if (appended.length === 0) return prev;
+
+      const next = [...prev, ...appended];
+      setValue("galleryImages", next);
+      return next;
+    });
+  }, [setValue]);
   
   // Estados para inputs temporários
   const [tempCuisine, setTempCuisine] = useState("");
@@ -178,6 +212,7 @@ export function RestaurantForm({
       isActive: true,
       isFeatured: false,
       price: undefined,
+      netRate: undefined,
       acceptsOnlinePayment: false,
       requiresUpfrontPayment: false,
     },
@@ -245,12 +280,20 @@ export function RestaurantForm({
   };
 
   const addGalleryImage = () => {
-    if (tempGalleryImage && !galleryImages.includes(tempGalleryImage)) {
-      const newGalleryImages = [...galleryImages, tempGalleryImage];
+    if (!tempGalleryImage) return;
+
+    const serialized = serializeMediaEntry({ url: tempGalleryImage });
+    const exists = galleryImages.some(
+      (image) => parseMediaEntry(image).url === tempGalleryImage,
+    );
+
+    if (!exists) {
+      const newGalleryImages = [...galleryImages, serialized];
       setGalleryImages(newGalleryImages);
       setValue("galleryImages", newGalleryImages);
-      setTempGalleryImage("");
     }
+
+    setTempGalleryImage("");
   };
 
   const removeGalleryImage = (url: string) => {
@@ -546,8 +589,13 @@ export function RestaurantForm({
           <MediaSelector
             open={mainMediaPickerOpen}
             onOpenChange={setMainMediaPickerOpen}
-            initialSelected={watch("mainImage") ? [watch("mainImage")] : []}
-            onSelect={([url]) => setValue("mainImage", url)}
+            initialSelected={mainImageUrl ? [mainImageUrl] : []}
+            onSelect={() => {}}
+            onSelectMedia={([item]) => {
+              if (!item) return;
+              setValue("mainImage", item.url);
+              handleAppendGalleryMedia([item]);
+            }}
           />
           {/* Mostrar campos de descrição apenas quando não estiver no modo embedded ou quando estiver editando */}
           {(!isEmbedded || isEditing) && (
@@ -693,13 +741,14 @@ export function RestaurantForm({
               </Button>
             </div>
             {errors.mainImage && <p className="text-sm text-red-500">{errors.mainImage.message}</p>}
-            {watch("mainImage") && (
+            {hasMainImage && (
               <div className="mt-2 relative h-40 w-full overflow-hidden rounded-md">
-                <Image
-                  src={watch("mainImage")!}
+                <SmartMedia
+                  entry={previewMainEntry}
                   alt="Preview"
-                  className="object-cover"
-                  fill
+                  className="h-full w-full object-cover"
+                  imageProps={{ fill: true }}
+                  videoProps={{ controls: true, preload: "metadata" }}
                 />
               </div>
             )}
@@ -909,28 +958,64 @@ export function RestaurantForm({
             <h3 className="text-lg font-semibold">Configurações de Reserva e Pagamento</h3>
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="price">Preço por Reserva (R$)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Ex: 50.00"
-                  {...register("price", { 
-                    valueAsNumber: true,
-                    validate: (value) => {
-                      if (value !== undefined && value < 0) {
-                        return "O preço não pode ser negativo";
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Preço por Reserva (R$)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ex: 50.00"
+                    {...register("price", { 
+                      valueAsNumber: true,
+                      validate: (value) => {
+                        if (value !== undefined && value < 0) {
+                          return "O preço não pode ser negativo";
+                        }
+                        return true;
                       }
-                      return true;
-                    }
-                  })}
-                />
-                <p className="text-xs text-gray-500">
-                  Deixe em branco se o restaurante não cobra por reserva
-                </p>
-                {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
+                    })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Deixe em branco se o restaurante não cobra por reserva
+                  </p>
+                  {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="netRate">Tarifa net (R$)</Label>
+                  <Input
+                    id="netRate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ex: 35.00"
+                    {...register("netRate", {
+                      valueAsNumber: true,
+                      validate: (value) => {
+                        const priceValue = watch("price");
+                        if (value === undefined || Number.isNaN(value)) {
+                          if (priceValue !== undefined && !Number.isNaN(priceValue)) {
+                            return "Informe a tarifa net";
+                          }
+                          return true;
+                        }
+                        if (value < 0) {
+                          return "A tarifa net não pode ser negativa";
+                        }
+                        if (priceValue !== undefined && !Number.isNaN(priceValue) && value > priceValue) {
+                          return "A tarifa net deve ser menor ou igual ao preço";
+                        }
+                        return true;
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Valor líquido do fornecedor; usamos essa base para calcular o repasse.
+                  </p>
+                  {errors.netRate && <p className="text-sm text-red-500">{errors.netRate.message}</p>}
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -938,7 +1023,7 @@ export function RestaurantForm({
                   <div className="space-y-0.5">
                     <Label htmlFor="acceptsOnlinePayment">Aceita Pagamento Online</Label>
                     <p className="text-xs text-gray-500">
-                      Permite pagamento via Stripe
+                      Permite pagamento online
                     </p>
                   </div>
                   <Switch
@@ -1107,10 +1192,10 @@ export function RestaurantForm({
         {/* Tab de mídia */}
           <TabsContent value="media" className="space-y-4">
           <div className="space-y-2">
-            <Label>Galeria de Imagens</Label>
+            <Label>Galeria</Label>
             <div className="flex gap-2">
               <Input
-                placeholder="URL da imagem da galeria"
+                placeholder="URL da mídia da galeria"
                 value={tempGalleryImage}
                 onChange={(e) => setTempGalleryImage(e.target.value)}
                 className="flex-1"
@@ -1122,31 +1207,34 @@ export function RestaurantForm({
                 Selecionar da Biblioteca
               </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-              {galleryImages.map((url, index) => (
-                <Card key={index} className="overflow-hidden relative group">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 mt-2">
+              {galleryEntries.map((entry, index) => (
+                <Card key={`${entry.url}-${index}`} className="relative overflow-hidden group">
                   <div className="relative h-40 w-full">
-                    <div className="relative w-full h-full">
-                      <Image 
-                        src={url} 
-                        alt={`Galeria ${index + 1}`}
-                        className="object-cover"
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    <div className="relative h-full w-full">
+                      <SmartMedia
+                        entry={entry}
+                        alt={`Mídia ${index + 1}`}
+                        className="h-full w-full object-cover"
+                        imageProps={{
+                          fill: true,
+                          sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+                        }}
+                        videoProps={{ controls: true, preload: "metadata" }}
                       />
                     </div>
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="h-7 w-7 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeGalleryImage(url)}
+                      className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => removeGalleryImage(galleryImages[index])}
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                   <CardContent className="p-2">
-                    <p className="text-xs text-gray-500 truncate">{url}</p>
+                    <p className="truncate text-xs text-gray-500">{entry.url}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -1174,12 +1262,15 @@ export function RestaurantForm({
                 <Card key={index} className="overflow-hidden relative group">
                   <div className="relative h-40 w-full">
                     <div className="relative w-full h-full">
-                      <Image 
-                        src={url} 
+                      <SmartMedia
+                        entry={parseMediaEntry(url)}
                         alt={`Menu ${index + 1}`}
-                        className="object-cover"
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="h-full w-full object-cover"
+                        imageProps={{
+                          fill: true,
+                          sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+                        }}
+                        videoProps={{ controls: true, preload: "metadata" }}
                       />
                     </div>
                     <Button
@@ -1201,19 +1292,14 @@ export function RestaurantForm({
           </div>
           </TabsContent>
           {/* Seletor de mídia para galeria e menu */}
-          <MediaSelector
-            open={galleryPickerOpen}
-            onOpenChange={setGalleryPickerOpen}
-            multiple
-            initialSelected={galleryImages}
-            onSelect={(urls) => {
-              // Remove duplicatas e adiciona apenas URLs novas
-              setGalleryImages(prev => {
-                const newUrls = urls.filter(url => !prev.includes(url));
-                return [...prev, ...newUrls];
-              });
-            }}
-          />
+        <MediaSelector
+          open={galleryPickerOpen}
+          onOpenChange={setGalleryPickerOpen}
+          multiple
+          initialSelected={galleryEntries.map((entry) => entry.url)}
+          onSelect={() => {}}
+          onSelectMedia={handleAppendGalleryMedia}
+        />
           <MediaSelector
             open={menuPickerOpen}
             onOpenChange={setMenuPickerOpen}

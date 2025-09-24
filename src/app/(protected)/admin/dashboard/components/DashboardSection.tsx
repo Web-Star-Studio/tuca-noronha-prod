@@ -33,32 +33,30 @@ export function DashboardSection({
   return (
     <div className={cn(getVariantStyles(), className)}>
       <div className={cn(
-        "flex items-center justify-between mb-6",
-        variant !== 'default' && "p-6 pb-4"
+        "flex flex-col gap-2 border-b border-slate-100 pb-4",
+        variant !== 'default' ? "px-6 pt-6" : "px-4 pt-4"
       )}>
-        <div className="flex items-center gap-3">
-          {Icon && (
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-              <Icon className="h-5 w-5 text-blue-600" />
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+              {Icon && <Icon className="h-4 w-4" />}
+              <span className="uppercase tracking-wide">{title}</span>
             </div>
-          )}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
             {description && (
-              <p className="text-gray-500 text-sm mt-0.5">{description}</p>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {description}
+              </p>
             )}
           </div>
+          {headerActions && (
+            <div className="flex items-center gap-2">
+              {headerActions}
+            </div>
+          )}
         </div>
-        {headerActions && (
-          <div className="flex items-center gap-2">
-            {headerActions}
-          </div>
-        )}
       </div>
       
-      <div className={cn(variant !== 'default' && "px-6 pb-6")}>
-        {children}
-      </div>
+      <div className={cn(variant !== 'default' ? "px-6 py-6" : "px-4 py-4")}>{children}</div>
     </div>
   );
-} 
+}

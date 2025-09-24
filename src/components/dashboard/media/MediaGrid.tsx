@@ -12,7 +12,8 @@ import { MediaDetailsDialog } from "@/components/dashboard/media/MediaDetailsDia
 import { AnimatePresence, motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { cardStyles, badgeStyles } from "@/lib/ui-config"
-import { ConvexImage } from "@/components/ui/convex-image"
+import { SmartMedia } from "@/components/ui/smart-media"
+import type { MediaEntry } from "@/lib/media"
 import {
   Dialog,
   DialogContent,
@@ -108,7 +109,7 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
             Nenhuma mídia encontrada
           </h3>
           <p className="text-muted-foreground">
-            Faça upload de imagens para começar a criar sua biblioteca de mídia
+            Faça upload de imagens ou vídeos para começar a criar sua biblioteca de mídia
           </p>
         </CardContent>
       </Card>
@@ -129,14 +130,18 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
             >
               <Card className={cn("overflow-hidden group h-full flex flex-col", cardStyles.base, cardStyles.hover.scale)}>
                 <div className="relative aspect-square bg-muted overflow-hidden">
-                  {item.fileType.startsWith("image/") ? (
-                    <ConvexImage
-                      src={item.url}
+                  {item.fileType.startsWith("image/") || item.fileType.startsWith("video/") ? (
+                    <SmartMedia
+                      entry={{ url: item.url, type: item.fileType } as MediaEntry}
                       alt={item.description || item.fileName}
                       className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      mediaId={item._id}
-                      storageId={item.storageId}
-                      fallbackText={item.fileName}
+                      imageProps={{ fill: true }}
+                      videoProps={{
+                        muted: true,
+                        loop: true,
+                        playsInline: true,
+                        preload: "metadata",
+                      }}
                     />
                   ) : (
                     getFileIcon(item.fileType)
@@ -247,15 +252,14 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
           
           {mediaToDelete && (
             <div className="flex items-center gap-3 my-2 p-3 bg-muted rounded-md">
-              {mediaToDelete.fileType.startsWith("image/") ? (
+              {mediaToDelete.fileType.startsWith("image/") || mediaToDelete.fileType.startsWith("video/") ? (
                 <div className="h-14 w-14 rounded overflow-hidden flex-shrink-0">
-                  <ConvexImage
-                    src={mediaToDelete.url}
+                  <SmartMedia
+                    entry={{ url: mediaToDelete.url, type: mediaToDelete.fileType } as MediaEntry}
                     alt={mediaToDelete.description || mediaToDelete.fileName}
                     className="w-full h-full object-cover"
-                    mediaId={mediaToDelete._id}
-                    storageId={mediaToDelete.storageId}
-                    fallbackText={mediaToDelete.fileName}
+                    imageProps={{ fill: true }}
+                    videoProps={{ controls: true, preload: "metadata" }}
                   />
                 </div>
               ) : (

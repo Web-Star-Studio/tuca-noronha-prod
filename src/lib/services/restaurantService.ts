@@ -60,6 +60,8 @@ export type Restaurant = {
   isActive: boolean;
   isFeatured: boolean;
   partnerId?: Id<"users">;
+  price?: number;
+  netRate?: number;
   creator?: {
     id: string;
     name?: string;

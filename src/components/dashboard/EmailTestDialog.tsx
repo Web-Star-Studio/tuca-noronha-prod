@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -42,21 +43,21 @@ export function EmailTestDialog() {
       
       if (result.success) {
         toast({
-          title: "✅ Email de teste enviado!",
-          description: "Verifique sua caixa de entrada (pode levar alguns minutos)",
+          title: "Email de teste enviado",
+          description: "Verifique sua caixa de entrada. O envio pode levar alguns minutos.",
         });
         setIsOpen(false);
         setTestEmail("");
       } else {
         toast({
-          title: "❌ Falha no envio",
+          title: "Falha no envio",
           description: result.message,
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: "💥 Erro inesperado",
+        title: "Erro inesperado",
         description: "Não foi possível enviar o email de teste",
         variant: "destructive",
       });
@@ -73,7 +74,7 @@ export function EmailTestDialog() {
           Testar Email
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5" />
@@ -90,25 +91,25 @@ export function EmailTestDialog() {
             <Input
               id="test-email"
               type="email"
-              placeholder="seu-email@exemplo.com"
+              placeholder="nome@empresa.com"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendTest()}
               disabled={isLoading}
             />
           </div>
-          
-          <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
-            <p className="font-medium mb-1">💡 Dicas:</p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
-              <li>Verifique também a pasta de spam</li>
-              <li>Em desenvolvimento, use o console para ver URLs de preview</li>
-              <li>Emails podem levar alguns minutos para chegar</li>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            <p className="font-medium text-slate-700">Antes de enviar</p>
+            <ul className="mt-2 space-y-1">
+              <li>Confirme a ortografia do endereço informado.</li>
+              <li>Verifique a caixa de spam caso não veja a mensagem em alguns minutos.</li>
+              <li>Em desenvolvimento, consulte o console para pré-visualizar links.</li>
             </ul>
           </div>
         </div>
-        
-        <div className="flex justify-end gap-2">
+
+        <DialogFooter>
           <Button 
             variant="outline" 
             onClick={() => setIsOpen(false)}
@@ -123,17 +124,17 @@ export function EmailTestDialog() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Enviando...
+                Enviando
               </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Enviar Teste
+                Enviar teste
               </>
             )}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-} 
+}

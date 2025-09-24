@@ -53,6 +53,8 @@ export type ActivityFromConvex = {
   description: string;
   shortDescription: string;
   price: number;
+  netRate?: number;
+  availableTimes?: string[];
   category: string;
   duration: string;
   maxParticipants: bigint;
@@ -87,6 +89,8 @@ export const mapConvexActivity = (activity: ActivityFromConvex): Activity => {
     description: activity.description,
     shortDescription: activity.shortDescription,
     price: activity.price,
+    netRate: typeof activity.netRate === "number" ? activity.netRate : activity.price,
+    availableTimes: activity.availableTimes ?? [],
     category: activity.category,
     duration: activity.duration,
     maxParticipants: Number(activity.maxParticipants),
@@ -157,6 +161,8 @@ export const mapActivityToConvex = (activity: Activity, convexUserId: Id<"users"
     isFeatured: activity.isFeatured,
     isActive: activity.isActive,
     hasMultipleTickets: activity.hasMultipleTickets,
+    netRate: activity.netRate,
+    availableTimes: activity.availableTimes || [],
     partnerId: convexUserId,
   };
 };

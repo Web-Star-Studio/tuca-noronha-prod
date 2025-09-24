@@ -2,11 +2,12 @@ import type { Restaurant as RestaurantService } from "@/lib/services/restaurantS
 import type { Restaurant as RestaurantStore } from "@/lib/store/restaurantsStore";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
-import Image from "next/image";
 import Link from "next/link";
 import React, { forwardRef } from "react";
 import { Utensils, MapPin, Clock } from "lucide-react";
 import { WishlistButton } from "@/components/ui/wishlist-button";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 // Tipo que funciona com ambos os tipos de Restaurant
 type RestaurantType = RestaurantService | RestaurantStore;
@@ -72,19 +73,29 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
     };
     
     const { isOpen, status } = getCurrentStatus();
-    
+    const heroEntry = parseMediaEntry(restaurant.mainImage ?? "");
+    const hasHero = heroEntry.url && heroEntry.url.trim() !== "";
+
     return (
       <div ref={ref} className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
         <Link href={`/restaurantes/${restaurant.slug}`} className="flex flex-col h-full w-full">
           {/* Imagem principal - sem padding no topo */}
           <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-            {restaurant.mainImage && restaurant.mainImage.trim() !== '' ? (
-              <Image
-                src={restaurant.mainImage}
+            {hasHero ? (
+              <SmartMedia
+                entry={heroEntry}
                 alt={restaurant.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                imageProps={{
+                  fill: true,
+                  sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+                }}
+                videoProps={{
+                  muted: true,
+                  loop: true,
+                  playsInline: true,
+                  controls: false,
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">

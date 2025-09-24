@@ -99,8 +99,8 @@ export default function ConfiguracoesAdminPage() {
               <p className="font-medium text-green-600">Conectado</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Status do Stripe</p>
-              <p className="font-medium text-green-600">Configurado</p>
+              <p className="text-sm text-muted-foreground">Status de Pagamentos</p>
+              <p className="font-medium text-green-600">Operacional</p>
             </div>
           </div>
         </CardContent>

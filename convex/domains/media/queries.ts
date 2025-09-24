@@ -4,6 +4,7 @@ import type { Id } from "../../_generated/dataModel";
 import type { Media } from "./types";
 import { queryWithRole } from "../../domains/rbac";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess, verifyEmployeeAccess } from "../../domains/rbac";
+import { isUploadThingUrl } from "./utils";
 
 /**
  * Get all media files
@@ -203,7 +204,20 @@ export const getMediaUrl = query({
     storageId: v.string(),
   },
   handler: async (ctx, args) => {
+    const media = await ctx.db
+      .query("media")
+      .withIndex("by_storageId", (q) => q.eq("storageId", args.storageId))
+      .first();
+
+    if (!media) {
+      return null;
+    }
+
+    if (isUploadThingUrl(media.url)) {
+      return media.url;
+    }
+
     const url = await ctx.storage.getUrl(args.storageId);
     return url;
   },
-}); 
+});

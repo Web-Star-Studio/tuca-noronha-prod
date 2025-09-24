@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,8 @@ import {
   Clock
 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { SmartMedia } from "@/components/ui/smart-media";
+import { parseMediaEntry } from "@/lib/media";
 
 interface AssetSelection {
   assetType: string;
@@ -246,6 +247,8 @@ export default function CouponAssetSelection({
                     <div className="space-y-2">
                       {assets.map((asset) => {
                         const isSelected = isAssetSelected(type, asset.id);
+                        const mediaEntry = parseMediaEntry(asset.image ?? "");
+                        const hasMedia = Boolean(mediaEntry.url && mediaEntry.url.trim() !== "");
                         
                         return (
                           <div
@@ -257,13 +260,13 @@ export default function CouponAssetSelection({
                             }`}
                           >
                             {/* Imagem do asset */}
-                            {asset.image ? (
-                              <Image
-                                src={asset.image}
+                            {hasMedia ? (
+                              <SmartMedia
+                                entry={mediaEntry}
                                 alt={asset.name}
                                 className="h-12 w-12 rounded object-cover"
-                                width={48}
-                                height={48}
+                                imageProps={{ width: 48, height: 48 }}
+                                videoProps={{ muted: true, loop: true, playsInline: true }}
                               />
                             ) : (
                               <div className={`h-12 w-12 rounded ${config.bgColor} flex items-center justify-center`}>

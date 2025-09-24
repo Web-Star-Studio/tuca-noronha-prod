@@ -17,7 +17,8 @@ import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
 
-import { ConvexImage } from "@/components/ui/convex-image"
+import { SmartMedia } from "@/components/ui/smart-media"
+import type { MediaEntry } from "@/lib/media"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type MediaDetailsDialogProps = {
@@ -90,14 +91,13 @@ export function MediaDetailsDialog({ media, open, onOpenChange }: MediaDetailsDi
               <TabsContent value="preview" className="space-y-4 mt-0">
                 <div className="bg-muted rounded-lg overflow-hidden">
                   <div className="aspect-video w-full">
-                    {media.fileType.startsWith("image/") ? (
-                      <ConvexImage
-                        src={media.url}
+                    {media.fileType.startsWith("image/") || media.fileType.startsWith("video/") ? (
+                      <SmartMedia
+                        entry={{ url: media.url, type: media.fileType } as MediaEntry}
                         alt={media.description || media.fileName}
-                        className="w-full h-full object-contain"
-                        mediaId={media._id}
-                        storageId={media.storageId}
-                        fallbackText={media.fileName}
+                        className="w-full h-full object-contain bg-black"
+                        imageProps={{ fill: true, style: { objectFit: "contain" } }}
+                        videoProps={{ controls: true, preload: "metadata" }}
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full bg-gray-100">

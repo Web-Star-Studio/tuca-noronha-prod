@@ -426,6 +426,8 @@ export default defineSchema({
     description: v.string(),
     shortDescription: v.string(),
     price: v.float64(),
+    netRate: v.optional(v.float64()),
+    availableTimes: v.optional(v.array(v.string())),
     category: v.string(),
     duration: v.string(),
     maxParticipants: v.int64(),
@@ -483,6 +485,7 @@ export default defineSchema({
     location: v.string(),    // Location name
     address: v.string(),     // Full address
     price: v.float64(),      // Base price (pode ser o ingresso mais barato) 
+    netRate: v.optional(v.float64()),
     category: v.string(),
     maxParticipants: v.int64(),
     imageUrl: v.string(),
@@ -599,6 +602,7 @@ export default defineSchema({
     isFeatured: v.boolean(),                            // Status destacado
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
     price: v.optional(v.number()),                       // Preço por reserva (opcional)
+    netRate: v.optional(v.number()),                     // Tarifa net (opcional)
     // Stripe integration fields
     stripeProductId: v.optional(v.string()),
     stripePriceId: v.optional(v.string()),
@@ -903,6 +907,7 @@ export default defineSchema({
     
     // Business details
     pricePerDay: v.number(),
+    netRate: v.optional(v.number()),
     description: v.optional(v.string()),
     features: v.array(v.string()),
     imageUrl: v.optional(v.string()),

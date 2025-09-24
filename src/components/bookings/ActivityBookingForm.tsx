@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
 
 
 interface ActivityBookingFormProps {
@@ -42,6 +41,7 @@ interface ActivityBookingFormProps {
     minParticipants: number;
     maxParticipants: number;
     hasMultipleTickets?: boolean;
+    availableTimes?: string[];
   };
   onBookingSuccess?: (booking: { confirmationCode: string; totalPrice: number }) => void;
   className?: string;
@@ -77,11 +77,10 @@ export function ActivityBookingForm({
   
   // WhatsApp link generator removido (não utilizado)
 
-  // Available times (customize based on activity)
-  const availableTimes = [
-    "08:00", "09:00", "10:00", "11:00",
-    "14:00", "15:00", "16:00", "17:00",
-  ];
+  // Available times configured for the activity
+  const availableTimes = activity.availableTimes && activity.availableTimes.length > 0
+    ? activity.availableTimes
+    : [];
 
   // Calculate price
   const getPrice = () => {
@@ -118,6 +117,11 @@ export function ActivityBookingForm({
 
     if (!date) {
       toast.error("Selecione uma data");
+      return;
+    }
+
+    if (availableTimes.length > 0 && !time) {
+      toast.error("Selecione um horário");
       return;
     }
 
@@ -263,10 +267,16 @@ export function ActivityBookingForm({
 
           {/* Time Selection */}
           <div className="space-y-2">
-            <Label>Horário (opcional)</Label>
-            <Select value={time} onValueChange={setTime}>
+            <Label>Horário</Label>
+            <Select
+              value={time}
+              onValueChange={setTime}
+              disabled={availableTimes.length === 0}
+            >
               <SelectTrigger className={formStyles.select.base}>
-                <SelectValue placeholder="Selecione um horário" />
+                <SelectValue
+                  placeholder={availableTimes.length === 0 ? "Nenhum horário disponível" : "Selecione um horário"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {availableTimes.map((timeOption) => (
@@ -276,6 +286,11 @@ export function ActivityBookingForm({
                 ))}
               </SelectContent>
             </Select>
+            {availableTimes.length === 0 && (
+              <p className="text-xs text-gray-500">
+                Este fornecedor ainda não definiu horários para reservas online.
+              </p>
+            )}
           </div>
 
           {/* Ticket Selection (if multiple tickets) */}
@@ -401,13 +416,28 @@ export function ActivityBookingForm({
             />
           )}
 
-          {/* Price summary with Stripe fees */}
+          {/* Price summary */}
           {getPrice() > 0 && (
-            <StripeFeesDisplay 
-              baseAmount={getPrice()}
-              discountAmount={getDiscountAmount()}
-              className="mt-4"
-            />
+            <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor base</span>
+                <span className="font-medium">{formatCurrency(getPrice())}</span>
+              </div>
+              {getDiscountAmount() > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-900">Total</span>
+                <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Confirmaremos o pagamento com o parceiro antes da cobrança definitiva.
+              </p>
+            </div>
           )}
 
           {/* Payment Info */}

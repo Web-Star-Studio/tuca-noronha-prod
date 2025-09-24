@@ -2,8 +2,27 @@ import { v } from "convex/values";
 import { mutation, action } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
 import type { MediaCreateInput, MediaUpdateInput, ImageDimensions } from "./types";
-import { mutationWithRole } from "../../domains/rbac";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess } from "../../domains/rbac";
+import { isUploadThingUrl } from "./utils";
+import { UTApi } from "uploadthing/server";
+
+let cachedUtApi: UTApi | null = null;
+
+function getUtApi() {
+  if (cachedUtApi) return cachedUtApi;
+
+  const token = process.env.UPLOADTHING_TOKEN ?? process.env.UPLOADTHING_SECRET;
+
+  if (!token) {
+    console.warn(
+      "UploadThing token ausente: defina UPLOADTHING_TOKEN (ou mantenha UPLOADTHING_SECRET para retrocompatibilidade) para permitir deletar arquivos remotos.",
+    );
+    return null;
+  }
+
+  cachedUtApi = new UTApi({ token });
+  return cachedUtApi;
+}
 
 /**
  * Generate an upload URL for the client
@@ -50,6 +69,7 @@ export const createMedia = mutation({
     uploadedBy: v.optional(v.id("users")),
     isPublic: v.boolean(),
     tags: v.optional(v.array(v.string())),
+    fileUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Verificar se o usuário está autenticado
@@ -73,10 +93,10 @@ export const createMedia = mutation({
     // Garantir que o uploadedBy seja sempre o usuário atual (segurança)
     const uploadedBy = currentUserId;
 
-    // Gerar URL para a mídia
-    const url = await ctx.storage.getUrl(args.storageId);
+    // Usar URL fornecida (UploadThing) ou gerar via Convex Storage
+    const url = args.fileUrl ?? (await ctx.storage.getUrl(args.storageId));
     if (!url) {
-      throw new Error("Falha ao gerar URL para a mídia");
+      throw new Error("Falha ao obter URL para a mídia");
     }
 
     // Criar o registro da mídia
@@ -151,9 +171,20 @@ export const deleteMedia = mutation({
       throw new Error("Não autorizado a deletar esta mídia");
     }
 
-    // Excluir o arquivo do storage
+    // Excluir o arquivo do storage apropriado
     try {
-      await ctx.storage.delete(media.storageId);
+      if (isUploadThingUrl(media.url)) {
+        const utApi = getUtApi();
+        if (!utApi) {
+          throw new Error(
+            "UploadThing token não configurado. Configure UPLOADTHING_TOKEN para remover arquivos remotos.",
+          );
+        }
+
+        await utApi.deleteFiles(media.storageId);
+      } else {
+        await ctx.storage.delete(media.storageId);
+      }
     } catch (error) {
       console.error("Erro ao excluir arquivo do storage:", error);
       // Continua mesmo se houver erro no storage
@@ -309,6 +340,10 @@ export const refreshMediaUrl = mutation({
 
     if (!canRefresh) {
       throw new Error("Não autorizado a atualizar esta mídia");
+    }
+
+    if (isUploadThingUrl(media.url)) {
+      return media.url;
     }
 
     const url = await ctx.storage.getUrl(media.storageId);

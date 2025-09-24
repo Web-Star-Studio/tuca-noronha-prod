@@ -1,10 +1,11 @@
 import { Activity } from "@/lib/store/activitiesStore";
 import Link from "next/link";
-import Image from "next/image";
 import { Clock, Users, ImageIcon } from "lucide-react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
 import { WishlistButton } from "@/components/ui/wishlist-button";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 export default function ActivitiesCard({activity}: {activity: Activity}) {
     // Get real review stats
@@ -12,19 +13,30 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
       assetId: activity.id,
       assetType: 'activity'
     });
+    const coverEntry = parseMediaEntry(activity.imageUrl);
+    const coverUrl = coverEntry.url;
+    const hasCover = coverUrl && coverUrl.trim() !== '';
     
     return (
         <div className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
             <Link href={`/atividades/${activity.id}`} className="flex flex-col h-full w-full">
                 {/* Imagem principal - sem padding no topo */}
                 <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-                    {activity.imageUrl && activity.imageUrl.trim() !== '' ? (
-                        <Image  
-                            src={activity.imageUrl} 
+                    {hasCover ? (
+                        <SmartMedia
+                            entry={coverEntry}
                             alt={activity.title}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            imageProps={{
+                                fill: true,
+                                sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+                            }}
+                            videoProps={{
+                                muted: true,
+                                loop: true,
+                                playsInline: true,
+                                controls: false,
+                            }}
                         />
                     ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">

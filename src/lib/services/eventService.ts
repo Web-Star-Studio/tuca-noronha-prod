@@ -47,6 +47,7 @@ export type EventFromConvex = {
   location: string;
   address: string;
   price: number;
+  netRate?: number;
   category: string;
   maxParticipants: bigint;
   imageUrl: string;
@@ -96,6 +97,7 @@ export type Event = {
   location: string;
   address: string;
   price: number;
+  netRate: number;
   category: string;
   maxParticipants: number;
   imageUrl: string;
@@ -146,6 +148,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     location: event.location,
     address: event.address,
     price: event.price,
+    netRate: typeof event.netRate === "number" ? event.netRate : event.price,
     category: event.category,
     maxParticipants: Number(event.maxParticipants),
     imageUrl: event.imageUrl,
@@ -209,6 +212,7 @@ export const mapEventToConvex = (event: Event, convexUserId: Id<"users"> | null)
     location: event.location,
     address: event.address,
     price: event.price,
+    netRate: event.netRate ?? event.price,
     category: event.category,
     maxParticipants: event.maxParticipants,
     imageUrl: event.imageUrl,

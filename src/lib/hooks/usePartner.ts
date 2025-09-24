@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
@@ -19,10 +19,6 @@ export function usePartner() {
   );
 
   // Actions
-  const createStripeAccount = useAction(api.domains.partners.actions.createStripeConnectedAccount);
-  const refreshOnboardingLink = useAction(api.domains.partners.actions.refreshOnboardingLink);
-  const createDashboardLink = useAction(api.domains.partners.actions.createDashboardLink);
-
   // Mutations
   const updatePartnerFee = useMutation(api.domains.partners.mutations.updatePartnerFee);
   const togglePartnerActive = useMutation(api.domains.partners.mutations.togglePartnerActive);
@@ -41,9 +37,6 @@ export function usePartner() {
     isOnboardingComplete,
     isOnboardingInProgress,
     needsOnboarding,
-    createStripeAccount,
-    refreshOnboardingLink,
-    createDashboardLink,
     updatePartnerFee,
     togglePartnerActive,
     currentUser, // Expor também o usuário atual para debug

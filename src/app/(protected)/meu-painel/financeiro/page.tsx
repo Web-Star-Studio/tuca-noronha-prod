@@ -73,7 +73,7 @@ export default function FinanceiroPage() {
   }
 
   // Partner onboarding check
-  if (!partner || partner.stripeAccountStatus !== "complete") {
+  if (!partner || partner.onboardingStatus !== "completed") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px]">
         <CreditCard className="h-12 w-12 text-blue-600 mb-4" />
