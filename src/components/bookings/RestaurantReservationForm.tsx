@@ -320,7 +320,7 @@ export function RestaurantReservationForm({
             </Label>
             <ParticipantSelector
               adults={adults}
-              children={children}
+              childrenCount={children}
               onAdultsChange={(value) => {
                 const nextAdults = Math.min(value, restaurant.maximumPartySize);
                 const remaining = restaurant.maximumPartySize - nextAdults;
@@ -339,7 +339,7 @@ export function RestaurantReservationForm({
               maxTotal={restaurant.maximumPartySize}
             />
             <p className="text-xs text-gray-500">
-              Máximo: {restaurant.maximumPartySize} participantes. Crianças até 5 anos entram em "Crianças".
+              Máximo: {restaurant.maximumPartySize} participantes. Crianças até 5 anos entram na categoria Crianças.
             </p>
           </div>
 

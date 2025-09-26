@@ -268,9 +268,9 @@ export function EventBookingForm({
           )}
 
           {/* Participants */}
-          <ParticipantSelector
-            adults={adults}
-            children={children}
+        <ParticipantSelector
+          adults={adults}
+          childrenCount={children}
             onAdultsChange={setAdults}
             onChildrenChange={setChildren}
             minAdults={1}

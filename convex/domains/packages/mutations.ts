@@ -816,10 +816,6 @@ export const createPackageRequest = mutation({
       .map((name) => name.trim())
       .filter((name) => name.length > 0);
 
-    if (args.tripDetails.groupSize > 0 && sanitizedTravelerNames.length < args.tripDetails.groupSize) {
-      throw new Error("Informe o nome de todos os viajantes");
-    }
-
     const adultsCount = args.tripDetails.adults ?? args.tripDetails.groupSize;
     const childrenCount = args.tripDetails.children ?? Math.max(args.tripDetails.groupSize - adultsCount, 0);
     const normalizedTripDetails = {
@@ -828,7 +824,7 @@ export const createPackageRequest = mutation({
       children: childrenCount,
       groupSize: adultsCount + childrenCount,
       includesAirfare: args.tripDetails.includesAirfare ?? false,
-      travelerNames: sanitizedTravelerNames,
+      travelerNames: sanitizedTravelerNames.length > 0 ? sanitizedTravelerNames : undefined,
     };
 
     const requestNumber = generateRequestNumber(args.customerInfo.name, args.tripDetails.startDate);

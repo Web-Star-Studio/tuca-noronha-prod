@@ -246,6 +246,8 @@ export interface PackageRequestTripDetails {
   endMonth?: string;
   flexibleDates?: boolean;
   duration: number;
+  adults?: number;
+  children?: number;
   budget: number;
   groupSize: number;
   companions: string;
@@ -255,11 +257,11 @@ export interface PackageRequestTripDetails {
 }
 
 export interface PackageRequestPreferences {
-  accommodationType?: string;
-  activities?: string;
-  transportPreference?: string;
-  foodPreference?: string;
-  specialRequirements?: string;
+  accommodationType?: string[];
+  activities: string[];
+  transportation: string[];
+  foodPreferences: string[];
+  accessibility?: string[];
 }
 
 export interface PackageRequestAdditionalInfo {
@@ -288,6 +290,7 @@ export interface PackageRequest {
   preferences: PackageRequestPreferences;
   additionalInfo: PackageRequestAdditionalInfo;
   status: PackageRequestStatus;
+  userId?: Id<"users">;
   assignedTo?: Id<"users">;
   adminNotes?: PackageRequestAdminNote[];
   createdAt: number;
@@ -430,6 +433,8 @@ export interface PackageRequestFormData {
     endMonth?: string;
     flexibleDates?: boolean;
     duration: number;
+    adults: number;
+    children: number;
     groupSize: number;
     companions: string;
     budget: number;
@@ -438,7 +443,7 @@ export interface PackageRequestFormData {
     travelerNames?: string[];
   };
   preferences: {
-  
+    accommodationType: string[];
     activities: string[];
     transportation: string[];
     foodPreferences: string[];

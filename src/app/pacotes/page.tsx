@@ -793,7 +793,7 @@ export default function PackagesPage() {
                 <div>
                   <ParticipantSelector
                     adults={formData.adults}
-                    children={formData.children}
+                    childrenCount={formData.children}
                     onAdultsChange={(value) => handleParticipantsChange("adults", value)}
                     onChildrenChange={(value) => handleParticipantsChange("children", value)}
                     minAdults={1}

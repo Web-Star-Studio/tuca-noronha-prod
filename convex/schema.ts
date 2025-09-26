@@ -1268,6 +1268,8 @@ export default defineSchema({
       endMonth: v.optional(v.string()),
       flexibleDates: v.optional(v.boolean()),
       duration: v.number(), // in days
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
       groupSize: v.number(),
       companions: v.string(), // family, friends, couple, solo, business
       budget: v.number(),

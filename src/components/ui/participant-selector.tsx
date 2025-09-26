@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 interface ParticipantSelectorProps {
   adults: number
-  children: number
+  childrenCount: number
   onAdultsChange: (adults: number) => void
   onChildrenChange: (children: number) => void
   minAdults?: number
@@ -24,7 +24,7 @@ interface ParticipantSelectorProps {
 
 export function ParticipantSelector({
   adults,
-  children,
+  childrenCount,
   onAdultsChange,
   onChildrenChange,
   minAdults = 1,
@@ -38,12 +38,12 @@ export function ParticipantSelector({
   showSummary = true,
   showLimits = true,
 }: ParticipantSelectorProps) {
-  const totalParticipants = adults + children
+  const totalParticipants = adults + childrenCount
 
   const canDecreaseAdults = adults > minAdults && (!minTotal || totalParticipants > minTotal)
   const canIncreaseAdults = adults < maxAdults && (!maxTotal || totalParticipants < maxTotal)
-  const canDecreaseChildren = children > 0
-  const canIncreaseChildren = children < maxChildren && (!maxTotal || totalParticipants < maxTotal)
+  const canDecreaseChildren = childrenCount > 0
+  const canIncreaseChildren = childrenCount < maxChildren && (!maxTotal || totalParticipants < maxTotal)
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -107,20 +107,20 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onChildrenChange(children - 1)}
+            onClick={() => onChildrenChange(childrenCount - 1)}
             disabled={!canDecreaseChildren}
           >
             -
           </Button>
           <div className="flex items-center justify-center w-8 h-8 border rounded-md bg-white">
-            <span className="text-sm font-medium">{children}</span>
+            <span className="text-sm font-medium">{childrenCount}</span>
           </div>
           <Button
             type="button"
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onChildrenChange(children + 1)}
+            onClick={() => onChildrenChange(childrenCount + 1)}
             disabled={!canIncreaseChildren}
           >
             +

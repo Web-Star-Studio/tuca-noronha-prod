@@ -765,6 +765,7 @@ export const getMyPackageRequests = query({
     _id: v.id("packageRequests"),
     _creationTime: v.number(),
     requestNumber: v.string(),
+    userId: v.optional(v.id("users")),
     customerInfo: v.object({
       name: v.string(),
       email: v.string(),
@@ -783,16 +784,21 @@ export const getMyPackageRequests = query({
       endMonth: v.optional(v.string()),
       flexibleDates: v.optional(v.boolean()),
       duration: v.number(),
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
       groupSize: v.number(),
       companions: v.string(),
       budget: v.number(),
       budgetFlexibility: v.string(),
+      includesAirfare: v.optional(v.boolean()),
+      travelerNames: v.optional(v.array(v.string())),
     }),
     preferences: v.object({
       activities: v.array(v.string()),
       transportation: v.array(v.string()),
       foodPreferences: v.array(v.string()),
       accessibility: v.optional(v.array(v.string())),
+      accommodationType: v.optional(v.array(v.string())),
     }),
     specialRequirements: v.optional(v.string()),
     status: v.string(),
@@ -966,4 +972,3 @@ export const getPackageRequestMessages = query({
     return messages;
   },
 });
-
