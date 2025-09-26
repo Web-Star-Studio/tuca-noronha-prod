@@ -21,6 +21,7 @@ import {
   type PackageRequestFormData 
 } from "../../../convex/domains/packages/types";
 import { toast } from "sonner";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 interface PackageRequestFormProps {
   onSuccess?: (requestNumber: string) => void;
@@ -47,12 +48,14 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
       startDate: "",
       endDate: "",
       duration: 0,
-      groupSize: 1,
+      adults: 2,
+      children: 0,
+      groupSize: 2,
       companions: "",
       budget: 0,
       budgetFlexibility: "",
       includesAirfare: false,
-      travelerNames: [""],
+      travelerNames: ["", ""],
     },
     preferences: {
       accommodationType: [],
@@ -75,12 +78,20 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
         [field]: value,
       };
 
-      if (section === "tripDetails" && field === "groupSize") {
-        const required = Math.max(Number(value) || 0, 0);
+      if (section === "tripDetails" && (field === "groupSize" || field === "adults" || field === "children")) {
+        const nextAdults = field === "adults" ? Number(value) : prev.tripDetails.adults || 0;
+        const nextChildren = field === "children" ? Number(value) : prev.tripDetails.children || 0;
+        const nextGroupSize = field === "groupSize" ? Math.max(Number(value) || 0, 0) : Math.max(nextAdults + nextChildren, 0);
+        const required = nextGroupSize;
         const existing = (prev.tripDetails.travelerNames ?? []).slice();
         updatedTravelerNames = existing.slice(0, required);
         while (updatedTravelerNames.length < required) {
           updatedTravelerNames.push("");
+        }
+        if (field !== "groupSize") {
+          nextSection.groupSize = nextGroupSize;
+          nextSection.adults = field === "adults" ? nextAdults : Math.min(nextAdults, nextGroupSize);
+          nextSection.children = field === "children" ? nextChildren : Math.max(nextGroupSize - (nextSection.adults || 0), 0);
         }
       }
 
@@ -180,6 +191,7 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
         ...formData,
         tripDetails: {
           ...formData.tripDetails,
+          groupSize: formData.tripDetails.adults + formData.tripDetails.children,
           travelerNames: sanitizedTravelerNames,
         },
       };
@@ -428,22 +440,26 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="groupSize" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    👥 Número de Pessoas *
+                  <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    👥 Número de Participantes *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="groupSize"
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={formData.tripDetails.groupSize}
-                      onChange={(e) => updateFormData("tripDetails", "groupSize", parseInt(e.target.value))}
-                      className="pl-12 h-12 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors"
-                      required
-                    />
-                    <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
+                  <ParticipantSelector
+                    adults={formData.tripDetails.adults}
+                    children={formData.tripDetails.children}
+                    onAdultsChange={(value) => {
+                      updateFormData("tripDetails", "adults", value);
+                      updateFormData("tripDetails", "groupSize", value + (formData.tripDetails.children || 0));
+                    }}
+                    onChildrenChange={(value) => {
+                      updateFormData("tripDetails", "children", value);
+                      updateFormData("tripDetails", "groupSize", (formData.tripDetails.adults || 0) + value);
+                    }}
+                    minAdults={1}
+                    maxAdults={20}
+                    maxChildren={10}
+                    minTotal={1}
+                    maxTotal={30}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="companions" className="text-sm font-semibold text-gray-700 flex items-center gap-2">

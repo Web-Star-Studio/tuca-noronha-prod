@@ -191,6 +191,7 @@ export interface VoucherDisplayData {
     participants?: number;
     totalAmount?: number;
     guestNames?: string[];
+    specialRequests?: string;
   };
   customer: {
     name: string;

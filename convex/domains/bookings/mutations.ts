@@ -100,11 +100,18 @@ export const createActivityBooking = mutation({
       throw new Error("Atividade não está disponível");
     }
 
+    const participants = args.participants;
+    const adultsCount = Math.max(1, Math.min(args.adults ?? participants, participants));
+    let childrenCount = Math.max(0, Math.min(args.children ?? (participants - adultsCount), participants - adultsCount));
+    if (adultsCount + childrenCount !== participants) {
+      childrenCount = Math.max(0, participants - adultsCount);
+    }
+
     // Check participant limits
-    if (args.participants < activity.minParticipants) {
+    if (participants < activity.minParticipants) {
       throw new Error("Mínimo de " + activity.minParticipants + " participantes");
     }
-    if (args.participants > activity.maxParticipants) {
+    if (participants > activity.maxParticipants) {
       throw new Error("Máximo de " + activity.maxParticipants + " participantes");
     }
 
@@ -112,7 +119,7 @@ export const createActivityBooking = mutation({
       .map((name) => name.trim())
       .filter((name) => name.length > 0);
 
-    if (args.participants > 1 && normalizedAdditionalParticipants.length < args.participants - 1) {
+    if (participants > 1 && normalizedAdditionalParticipants.length < participants - 1) {
       throw new Error("Informe o nome completo de todos os participantes adicionais");
     }
 
@@ -126,7 +133,7 @@ export const createActivityBooking = mutation({
       totalPrice = ticket.price;
     }
 
-    const calculatedPrice = calculateActivityBookingPrice(totalPrice, args.participants);
+    const calculatedPrice = calculateActivityBookingPrice(totalPrice, participants);
     // Use finalAmount if coupon is applied, otherwise use calculated price
     const finalPrice = args.finalAmount ?? calculatedPrice;
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
@@ -158,7 +165,9 @@ export const createActivityBooking = mutation({
       ticketId: args.ticketId,
       date: args.date,
       time: args.time,
-      participants: args.participants,
+      participants,
+      adults: adultsCount,
+      children: childrenCount,
       totalPrice: finalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
@@ -177,7 +186,13 @@ export const createActivityBooking = mutation({
     await recordRateLimitAttempt(ctx, user._id, "CREATE_BOOKING");
 
     // Only send confirmation emails if payment is not required or not upfront
-    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !activity.requiresUpfrontPayment) {
+    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    const shouldSendEmailNow = (
+      initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
+      !activity.requiresUpfrontPayment
+    );
+    
+    if (shouldSendEmailNow) {
       // Send email confirmation to customer
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
@@ -189,7 +204,9 @@ export const createActivityBooking = mutation({
         totalPrice: finalPrice,
         bookingDetails: {
           activityId: activity._id,
-          participants: args.participants,
+          participants,
+          adults: adultsCount,
+          children: childrenCount,
           participantNames: normalizedAdditionalParticipants,
           date: args.date,
           specialRequests: args.specialRequests,
@@ -212,7 +229,9 @@ export const createActivityBooking = mutation({
           totalPrice: finalPrice,
           bookingDetails: {
             activityId: activity._id,
-            participants: args.participants,
+            participants,
+            adults: adultsCount,
+            children: childrenCount,
             participantNames: normalizedAdditionalParticipants,
             date: args.date,
             specialRequests: args.specialRequests,
@@ -283,11 +302,18 @@ export const createEventBooking = mutation({
       throw new Error("Evento não está disponível");
     }
 
+    const quantity = args.quantity;
+    const adultsCount = Math.max(1, Math.min(args.adults ?? quantity, quantity));
+    let childrenCount = Math.max(0, Math.min(args.children ?? (quantity - adultsCount), quantity - adultsCount));
+    if (adultsCount + childrenCount !== quantity) {
+      childrenCount = Math.max(0, quantity - adultsCount);
+    }
+
     const normalizedParticipantNames = (args.participantNames ?? [])
       .map((name) => name.trim())
       .filter((name) => name.length > 0);
 
-    if (args.quantity > 1 && normalizedParticipantNames.length < args.quantity - 1) {
+    if (quantity > 1 && normalizedParticipantNames.length < quantity - 1) {
       throw new Error("Informe o nome completo dos participantes adicionais");
     }
 
@@ -301,7 +327,7 @@ export const createEventBooking = mutation({
       totalPrice = ticket.price;
     }
 
-    const calculatedPrice = calculateEventBookingPrice(totalPrice, args.quantity);
+    const calculatedPrice = calculateEventBookingPrice(totalPrice, quantity);
     // Use finalAmount if coupon is applied, otherwise use calculated price
     const finalPrice = args.finalAmount ?? calculatedPrice;
     const confirmationCode = generateConfirmationCode(event.date, customerInfo.name);
@@ -331,7 +357,9 @@ export const createEventBooking = mutation({
       eventId: args.eventId,
       userId: user._id,
       ticketId: args.ticketId,
-      quantity: args.quantity,
+      quantity,
+      adults: adultsCount,
+      children: childrenCount,
       totalPrice: finalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
@@ -347,7 +375,13 @@ export const createEventBooking = mutation({
     });
 
     // Only send confirmation emails if payment is not required or not upfront
-    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !event.requiresUpfrontPayment) {
+    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    const shouldSendEmailNow = (
+      initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
+      !event.requiresUpfrontPayment
+    );
+    
+    if (shouldSendEmailNow) {
       // Send email confirmation to customer
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
@@ -359,7 +393,8 @@ export const createEventBooking = mutation({
         totalPrice: finalPrice,
         bookingDetails: {
           eventId: event._id,
-          participants: args.quantity,
+          adults: adultsCount,
+          children: childrenCount,
           participantNames: normalizedParticipantNames,
           date: event.date,
           specialRequests: args.specialRequests,
@@ -382,7 +417,9 @@ export const createEventBooking = mutation({
           totalPrice: finalPrice,
           bookingDetails: {
             eventId: event._id,
-            participants: args.quantity,
+            participants: quantity,
+            adults: adultsCount,
+            children: childrenCount,
             participantNames: normalizedParticipantNames,
             date: event.date,
             specialRequests: args.specialRequests,
@@ -496,23 +533,28 @@ export const createRestaurantReservation = mutation({
     });
 
     // Send email confirmation to customer
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: customerInfo.email,
-      customerName: customerInfo.name,
-      assetName: restaurant.name,
-      bookingType: "restaurant",
-      confirmationCode,
-      bookingDate: args.date + " às " + args.time,
-      totalPrice: totalPrice,
-      bookingDetails: {
-        restaurantId: restaurant._id,
-        partySize: args.partySize,
-        guestNames: normalizedGuestNames,
-        date: args.date,
-        time: args.time,
-        specialRequests: args.specialRequests,
-      },
-    });
+    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    const shouldSendEmailNow = (totalPrice === 0); // Only send immediately if no payment required
+    
+    if (shouldSendEmailNow) {
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+        customerEmail: customerInfo.email,
+        customerName: customerInfo.name,
+        assetName: restaurant.name,
+        bookingType: "restaurant",
+        confirmationCode,
+        bookingDate: args.date + " às " + args.time,
+        totalPrice: totalPrice,
+        bookingDetails: {
+          restaurantId: restaurant._id,
+          partySize: args.partySize,
+          guestNames: normalizedGuestNames,
+          date: args.date,
+          time: args.time,
+          specialRequests: args.specialRequests,
+        },
+      });
+    }
 
     // Send notification to partner about new booking
     const partner = await ctx.db.get(restaurant.partnerId);
@@ -672,7 +714,13 @@ export const createVehicleBooking = mutation({
     });
 
     // Only send confirmation emails if payment is not required or not upfront
-    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !vehicle.requiresUpfrontPayment) {
+    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    const shouldSendEmailNow = (
+      initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
+      !vehicle.requiresUpfrontPayment
+    );
+    
+    if (shouldSendEmailNow) {
       // Send email confirmation to customer
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
@@ -2273,8 +2321,9 @@ export const updateBookingPaymentSuccess = mutation({
       // Don't throw - voucher generation failure shouldn't fail the payment update
     }
 
-    // Send confirmation emails
-    await sendBookingPaymentConfirmationEmails(ctx, { ...booking, assetType: bookingType });
+    // NOTE: Confirmation emails are now sent ONLY after admin approval via approveBookingAndCapturePayment
+    // This prevents emails being sent for payments that are only authorized (not captured)
+    console.log(`[BOOKING] Skipping auto-email for ${bookingType} booking ${booking._id} - email will be sent after admin approval`);
   },
 });
 
@@ -2385,23 +2434,9 @@ async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: a
       console.error("Error getting asset name for payment confirmation email:", error);
     }
 
-    // Send booking confirmation email
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: customerEmail,
-      customerName: customerName || "Cliente",
-      assetName,
-      bookingType: booking.assetType,
-      confirmationCode: booking.confirmationCode,
-      bookingDate: bookingDate || new Date().toISOString(),
-      totalPrice: booking.totalPrice,
-      bookingDetails: {
-        bookingId: booking._id,
-        assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId || booking.accommodationId,
-        participants: booking.participants || booking.quantity,
-        date: bookingDate || new Date().toISOString(),
-        specialRequests: booking.specialRequests,
-      },
-    });
+    // NOTE: Confirmation emails are now sent ONLY after admin approval via approveBookingAndCapturePayment
+    // This prevents emails being sent for payments that are only authorized (not captured)
+    console.log(`[BOOKING HELPER] Skipping auto-email for ${booking.assetType} booking ${booking._id} - email will be sent after admin approval`);
   }
 
   // Send notification email to partner

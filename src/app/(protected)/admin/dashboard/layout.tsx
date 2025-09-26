@@ -29,7 +29,8 @@ import {
   Shield,
   Home,
   ChevronLeft,
-  Search
+  Search,
+  Building2
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -221,6 +222,7 @@ function MasterSidebar() {
 
   const masterAssetLinks = [
     { href: "/admin/dashboard/assets", icon: Database, label: "Todos os Assets" },
+    { href: "/admin/dashboard/fornecedores", icon: Building2, label: "Fornecedores" },
     { href: "/admin/dashboard/restaurantes", icon: Utensils, label: "Restaurantes" },
     { href: "/admin/dashboard/eventos", icon: Calendar, label: "Eventos" },
     { href: "/admin/dashboard/atividades", icon: Activity, label: "Atividades" },

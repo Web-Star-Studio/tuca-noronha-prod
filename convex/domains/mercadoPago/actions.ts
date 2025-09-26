@@ -46,6 +46,7 @@ export const createCheckoutPreference = internalAction({
     }),
     notificationUrl: v.optional(v.string()),
     metadata: v.optional(v.any()),
+    captureMode: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
   },
   handler: async (ctx, args) => {
     try {
@@ -55,7 +56,7 @@ export const createCheckoutPreference = internalAction({
       }
 
       // Build Mercado Pago preference body
-      const body = {
+      const body: any = {
         items: [
           {
             title: args.title,
@@ -70,12 +71,28 @@ export const createCheckoutPreference = internalAction({
         metadata: {
           bookingId: args.bookingId,
           assetType: args.assetType,
+          captureMode: args.captureMode || "manual", // Default to manual capture
           ...(args.metadata || {}),
         },
         payment_methods: {
           installments: 1,
         },
       };
+
+      // Configure capture mode for authorization without automatic capture
+      if (args.captureMode === "manual") {
+        // For manual capture, use binary_mode false to allow authorization without capture
+        body.binary_mode = false;
+        body.additional_info = {
+          capture: false // Don't capture automatically
+        };
+        // Log that we're using manual capture mode
+        console.log("[MP] Using MANUAL capture mode - payment will be AUTHORIZED only, requiring admin approval to capture");
+      } else {
+        // For automatic capture (default MP behavior)
+        body.binary_mode = true;
+        console.log("[MP] Using AUTOMATIC capture mode - payment will be captured immediately");
+      }
 
       console.log("[MP] Sending preference to API:", {
         back_urls: body.back_urls,
@@ -189,7 +206,7 @@ export const createCheckoutPreferenceForBooking = action({
         failure: failureUrl,
       });
 
-      // Create preference
+      // Create preference with MANUAL capture mode (authorization only)
       const result = await ctx.runAction(internal.domains.mercadoPago.actions.createCheckoutPreference, {
         bookingId: args.bookingId,
         assetType: args.assetType,
@@ -203,6 +220,7 @@ export const createCheckoutPreferenceForBooking = action({
           failure: failureUrl,
         },
         notificationUrl,
+        captureMode: "manual", // Always use manual capture - require admin approval
         metadata: {
           assetId: String(booking.assetId),
           userId: String(booking.userId),
@@ -424,14 +442,17 @@ export const approveBookingAndCapturePayment = action({
         console.error("Failed to generate voucher:", voucherError);
       }
 
-      // Send confirmation email
+      // Send confirmation email ONLY after admin approval and successful payment capture
       try {
-        await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmail, {
+        console.log(`[MP] Sending confirmation email for approved booking ${args.bookingId}`);
+        await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmailById, {
           bookingId: args.bookingId,
           bookingType: args.assetType,
         });
+        console.log(`[MP] Confirmation email sent successfully for booking ${args.bookingId}`);
       } catch (emailError) {
         console.error("Failed to send confirmation email:", emailError);
+        // Don't fail the entire approval if email fails
       }
 
       return { success: true };
@@ -573,16 +594,20 @@ export const processWebhookEvent = internalAction({
         eventData: args.data || {},
       });
 
-      // If payment notification, fetch full payment
-      if ((args.type === "payment" || args.action?.startsWith("payment.")) && args.data && (args as any).data.id) {
-        const paymentId = (args as any).data.id;
+      // If payment notification, fetch full payment details
+      // Following MP best practices: first acknowledge receipt, then fetch payment details
+      if ((args.type === "payment" || args.action?.startsWith("payment.")) && args.data && args.data.id) {
+        const paymentId = args.data.id;
         
-        // Handle test payments gracefully
+        console.log(`[MP] Processing payment notification for payment ID: ${paymentId}`);
+        
+        // Handle test payments gracefully - they may not exist in MP API
         let payment: any = null;
         try {
           payment = await mpFetch<any>(`/v1/payments/${paymentId}`);
+          console.log(`[MP] Payment ${paymentId} fetched successfully, status: ${payment.status}`);
         } catch (error) {
-          console.warn(`Payment ${paymentId} not found (likely test payment):`, error instanceof Error ? error.message : String(error));
+          console.warn(`[MP] Payment ${paymentId} not found (likely test payment):`, error instanceof Error ? error.message : String(error));
           // For test payments or non-existent payments, still mark webhook as processed
           return { success: true, processed: true };
         }
@@ -592,6 +617,8 @@ export const processWebhookEvent = internalAction({
         const assetId = payment.metadata?.assetId ? String(payment.metadata.assetId) : undefined;
 
         if (bookingId) {
+          console.log(`[MP] Updating booking ${bookingId} with payment status: ${payment.status}`);
+          
           await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingPaymentStatus, {
             bookingId: String(bookingId),
             paymentStatus: payment.status,
@@ -614,6 +641,10 @@ export const processWebhookEvent = internalAction({
             relatedAssetType: assetType ? String(assetType) : undefined,
             relatedAssetId: assetId,
           });
+          
+          console.log(`[MP] Booking ${bookingId} updated successfully`);
+        } else {
+          console.warn(`[MP] Payment ${paymentId} has no associated bookingId in metadata`);
         }
       }
 

@@ -190,7 +190,7 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       time: booking.time,
       participants: booking.participants || booking.guestCount || booking.quantity || booking.partySize,
       totalAmount: booking.totalAmount,
-      specialRequests: booking.specialRequests,
+      specialRequests: booking.specialRequests || booking.notes || booking.comments,
       guestNames,
     },
     customer: {

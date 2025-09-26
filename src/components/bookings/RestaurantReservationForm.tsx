@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Users, Clock, Plus, Minus, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import { Users, Clock, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 
 interface RestaurantReservationFormProps {
@@ -59,7 +60,8 @@ export function RestaurantReservationForm({
 }: RestaurantReservationFormProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
-  const [partySize, setPartySize] = useState(2);
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
   const [additionalGuestNames, setAdditionalGuestNames] = useState<string[]>([]);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,7 +82,7 @@ export function RestaurantReservationForm({
   ]
   
   useEffect(() => {
-    const required = Math.max(partySize - 1, 0);
+    const required = Math.max(adults + children - 1, 0);
     setAdditionalGuestNames((prev) => {
       const next = prev.slice(0, required);
       while (next.length < required) {
@@ -123,6 +125,8 @@ export function RestaurantReservationForm({
     setAppliedCoupon(null);
   };
   
+  const totalGuests = adults + children;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -136,7 +140,7 @@ export function RestaurantReservationForm({
       return;
     }
 
-    if (partySize > 1) {
+    if (totalGuests > 1) {
       const hasEmptyName = additionalGuestNames.some((name) => !name.trim());
       if (hasEmptyName) {
         toast.error("Informe o nome completo de todos os acompanhantes");
@@ -157,7 +161,9 @@ export function RestaurantReservationForm({
         restaurantId,
         date: format(date, "yyyy-MM-dd"),
         time,
-        partySize,
+        partySize: totalGuests,
+        adults,
+        children,
         guestNames: additionalGuestNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
@@ -194,7 +200,8 @@ export function RestaurantReservationForm({
             // Reset form before redirecting
             setDate(undefined);
             setTime("");
-            setPartySize(2);
+            setAdults(2);
+            setChildren(0);
             setAdditionalGuestNames([]);
             setCustomerInfo({ name: "", email: "", phone: "" });
             setSpecialRequests("");
@@ -221,7 +228,8 @@ export function RestaurantReservationForm({
       // Reset form
       setDate(undefined);
       setTime("");
-      setPartySize(2);
+      setAdults(2);
+      setChildren(0);
       setAdditionalGuestNames([]);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
@@ -231,18 +239,6 @@ export function RestaurantReservationForm({
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const incrementGuests = () => {
-    if (partySize < restaurant.maximumPartySize) {
-      setPartySize(partySize + 1);
-    }
-  };
-
-  const decrementGuests = () => {
-    if (partySize > 1) {
-      setPartySize(partySize - 1);
     }
   };
 
@@ -318,42 +314,36 @@ export function RestaurantReservationForm({
 
           {/* Party Size */}
           <div className="space-y-2">
-            <Label>Número de pessoas</Label>
-            <div className="flex items-center justify-between p-3 border rounded-md">
-              <div className="flex items-center">
-                <Users className="mr-2 h-4 w-4 text-gray-500" />
-                <span className="text-sm">Pessoas</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={decrementGuests}
-                  disabled={partySize <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-8 text-center font-medium">{partySize}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={incrementGuests}
-                  disabled={partySize >= restaurant.maximumPartySize}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <Label className="flex items-center gap-2 text-sm text-gray-600">
+              <Users className="h-4 w-4 text-gray-500" />
+              Número de participantes
+            </Label>
+            <ParticipantSelector
+              adults={adults}
+              children={children}
+              onAdultsChange={(value) => {
+                const nextAdults = Math.min(value, restaurant.maximumPartySize);
+                const remaining = restaurant.maximumPartySize - nextAdults;
+                const nextChildren = Math.min(children, remaining);
+                setAdults(Math.max(nextAdults, 1));
+                setChildren(nextChildren);
+              }}
+              onChildrenChange={(value) => {
+                const nextChildren = Math.min(value, restaurant.maximumPartySize - adults);
+                setChildren(Math.max(nextChildren, 0));
+              }}
+              minAdults={1}
+              maxAdults={restaurant.maximumPartySize}
+              maxChildren={Math.max(restaurant.maximumPartySize - adults, 0)}
+              minTotal={1}
+              maxTotal={restaurant.maximumPartySize}
+            />
             <p className="text-xs text-gray-500">
-              Máximo: {restaurant.maximumPartySize} pessoas
+              Máximo: {restaurant.maximumPartySize} participantes. Crianças até 5 anos entram em "Crianças".
             </p>
           </div>
 
-        {partySize > 1 && (
+        {totalGuests > 1 && (
           <div className="space-y-2">
             <Label>Nomes dos acompanhantes</Label>
             <p className="text-xs text-gray-500">Informe o nome completo de cada pessoa além do responsável pela reserva.</p>

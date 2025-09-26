@@ -707,6 +707,8 @@ const tripDetailsValidator = v.object({
   endMonth: v.optional(v.string()),
   flexibleDates: v.optional(v.boolean()),
   duration: v.number(),
+  adults: v.optional(v.number()),
+  children: v.optional(v.number()),
   groupSize: v.number(),
   companions: v.string(),
   budget: v.number(),
@@ -818,8 +820,13 @@ export const createPackageRequest = mutation({
       throw new Error("Informe o nome de todos os viajantes");
     }
 
+    const adultsCount = args.tripDetails.adults ?? args.tripDetails.groupSize;
+    const childrenCount = args.tripDetails.children ?? Math.max(args.tripDetails.groupSize - adultsCount, 0);
     const normalizedTripDetails = {
       ...args.tripDetails,
+      adults: adultsCount,
+      children: childrenCount,
+      groupSize: adultsCount + childrenCount,
       includesAirfare: args.tripDetails.includesAirfare ?? false,
       travelerNames: sanitizedTravelerNames,
     };
@@ -846,7 +853,9 @@ export const createPackageRequest = mutation({
       customerName: args.customerInfo.name,
       requestNumber,
       duration: args.tripDetails.duration,
-      guests: args.tripDetails.groupSize,
+      guests: normalizedTripDetails.groupSize,
+      adults: normalizedTripDetails.adults,
+      children: normalizedTripDetails.children,
       budget: args.tripDetails.budget,
       destination: args.tripDetails.destination,
       requestDetails: {

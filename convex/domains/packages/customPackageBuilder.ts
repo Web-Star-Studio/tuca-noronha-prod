@@ -648,7 +648,7 @@ function generateDefaultTerms(): any {
     inclusions: [
       "Hospedagem conforme especificado",
       "Atividades incluídas no pacote",
-      "Suporte 24h durante a viagem",
+      "Suporte durante toda a viagem",
       "Seguro básico de viagem",
     ],
     exclusions: [

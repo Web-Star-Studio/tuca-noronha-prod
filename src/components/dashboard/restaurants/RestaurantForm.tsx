@@ -82,6 +82,91 @@ export function RestaurantForm({
   // Prepare restaurant data with BigInt converted to numbers
   const preparedRestaurant = useMemo(() => prepareRestaurantForForm(restaurant), [restaurant]);
 
+  // Função para gerar slug automaticamente
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[àáâãäå]/g, "a")
+      .replace(/[èéêë]/g, "e")
+      .replace(/[ìíîï]/g, "i")
+      .replace(/[òóôõö]/g, "o")
+      .replace(/[ùúûü]/g, "u")
+      .replace(/[ç]/g, "c")
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  };
+
+  // Form setup - needs to be initialized before using watch
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<Restaurant>({
+    defaultValues: preparedRestaurant || {
+      name: initialData?.name || "",
+      slug: initialData?.name ? generateSlug(initialData.name) : "",
+      description: initialData?.description || "",
+      description_long: initialData?.description || "",
+      address: {
+        street: "",
+        city: "Fernando de Noronha",
+        state: "Pernambuco",
+        zipCode: "",
+        neighborhood: "",
+        coordinates: {
+          latitude: -3.8549,
+          longitude: -32.4238,
+        },
+      },
+      phone: initialData?.phone || "",
+      website: initialData?.website || "",
+      cuisine: [],
+      priceRange: "$$",
+      diningStyle: "Casual",
+      features: [],
+      dressCode: "",
+      paymentOptions: [],
+      parkingDetails: "",
+      mainImage: "",
+      galleryImages: [],
+      menuImages: [],
+      rating: {
+        overall: 0,
+        food: 0,
+        service: 0,
+        ambience: 0,
+        value: 0,
+        noiseLevel: "Quiet",
+        totalReviews: 0,
+      },
+      acceptsReservations: true,
+      maximumPartySize: 8,
+      hours: {
+        Monday: [],
+        Tuesday: [],
+        Wednesday: [],
+        Thursday: [],
+        Friday: [],
+        Saturday: [],
+        Sunday: [],
+      },
+      status: "draft",
+      netRate: undefined,
+      tags: [],
+      location: "Fernando de Noronha",
+      isActive: true,
+      isFeatured: false,
+      executiveChef: "",
+      privatePartyInfo: "",
+      price: undefined,
+      acceptsOnlinePayment: false,
+      requiresUpfrontPayment: false,
+    },
+  });
+
   // Estados para arrays e objetos complexos
   const [cuisineTypes, setCuisineTypes] = useState<string[]>(preparedRestaurant?.cuisine || []);
   const [features, setFeatures] = useState<string[]>(preparedRestaurant?.features || []);
@@ -143,80 +228,6 @@ export function RestaurantForm({
   }), []);
 
   const [hours, setHours] = useState(preparedRestaurant?.hours || defaultHours);
-  
-  // Função para gerar slug automaticamente
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[àáâãäå]/g, "a")
-      .replace(/[èéêë]/g, "e")
-      .replace(/[ìíîï]/g, "i")
-      .replace(/[òóôõö]/g, "o")
-      .replace(/[ùúûü]/g, "u")
-      .replace(/[ç]/g, "c")
-      .replace(/[^a-z0-9]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-  };
-  
-  // Form setup
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<Restaurant>({
-    defaultValues: preparedRestaurant || {
-      name: initialData?.name || "",
-      slug: initialData?.name ? generateSlug(initialData.name) : "",
-      description: initialData?.description || "",
-      description_long: initialData?.description || "",
-      address: {
-        street: "",
-        city: "Fernando de Noronha",
-        state: "Pernambuco",
-        zipCode: "",
-        neighborhood: "",
-        coordinates: {
-          latitude: -3.8549,
-          longitude: -32.4238,
-        },
-      },
-      phone: initialData?.phone || "",
-      website: initialData?.website || "",
-      cuisine: [],
-      priceRange: "$$",
-      diningStyle: "Casual",
-      features: [],
-      dressCode: "",
-      paymentOptions: [],
-      parkingDetails: "",
-      mainImage: "",
-      galleryImages: [],
-      menuImages: [],
-      rating: {
-        overall: 0,
-        food: 0,
-        service: 0,
-        ambience: 0,
-        value: 0,
-        noiseLevel: "Quiet",
-        totalReviews: 0,
-      },
-      acceptsReservations: true,
-      maximumPartySize: 8,
-      tags: [],
-      executiveChef: "",
-      privatePartyInfo: "",
-      isActive: true,
-      isFeatured: false,
-      price: undefined,
-      netRate: undefined,
-      acceptsOnlinePayment: false,
-      requiresUpfrontPayment: false,
-    },
-  });
 
   // Arrays e objetos manipuladores
   const addCuisineType = () => {

@@ -144,6 +144,10 @@ import type * as domains_subscriptions_actions from "../domains/subscriptions/ac
 import type * as domains_subscriptions_index from "../domains/subscriptions/index.js";
 import type * as domains_subscriptions_mutations from "../domains/subscriptions/mutations.js";
 import type * as domains_subscriptions_queries from "../domains/subscriptions/queries.js";
+import type * as domains_suppliers_index from "../domains/suppliers/index.js";
+import type * as domains_suppliers_mutations from "../domains/suppliers/mutations.js";
+import type * as domains_suppliers_queries from "../domains/suppliers/queries.js";
+import type * as domains_suppliers_types from "../domains/suppliers/types.js";
 import type * as domains_support_mutations from "../domains/support/mutations.js";
 import type * as domains_support_queries from "../domains/support/queries.js";
 import type * as domains_systemSettings_actions from "../domains/systemSettings/actions.js";
@@ -337,6 +341,10 @@ declare const fullApi: ApiFromModules<{
   "domains/subscriptions/index": typeof domains_subscriptions_index;
   "domains/subscriptions/mutations": typeof domains_subscriptions_mutations;
   "domains/subscriptions/queries": typeof domains_subscriptions_queries;
+  "domains/suppliers/index": typeof domains_suppliers_index;
+  "domains/suppliers/mutations": typeof domains_suppliers_mutations;
+  "domains/suppliers/queries": typeof domains_suppliers_queries;
+  "domains/suppliers/types": typeof domains_suppliers_types;
   "domains/support/mutations": typeof domains_support_mutations;
   "domains/support/queries": typeof domains_support_queries;
   "domains/systemSettings/actions": typeof domains_systemSettings_actions;

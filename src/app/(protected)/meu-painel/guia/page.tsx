@@ -1470,11 +1470,11 @@ function SectionContent({
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-start gap-2">
                   <span className="text-amber-500 mt-0.5">•</span>
-                  Gasolina: R$ 7-8/litro
+                  Gasolina: R$ 10/litro
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-amber-500 mt-0.5">•</span>
-                  Poucos postos na ilha
+                  Apenas 1 posto de combustível na ilha
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-amber-500 mt-0.5">•</span>

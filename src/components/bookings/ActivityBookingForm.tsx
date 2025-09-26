@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 
 interface ActivityBookingFormProps {
@@ -55,7 +56,8 @@ export function ActivityBookingForm({
 }: ActivityBookingFormProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
-  const [participants, setParticipants] = useState(activity.minParticipants);
+  const [adults, setAdults] = useState(Math.max(1, activity.minParticipants));
+  const [children, setChildren] = useState(0);
   const [additionalParticipantNames, setAdditionalParticipantNames] = useState<string[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"activityTickets"> | undefined>(undefined);
   const [specialRequests, setSpecialRequests] = useState("");
@@ -64,6 +66,9 @@ export function ActivityBookingForm({
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
+
+  // Calculate total participants
+  const participants = adults + children;
 
   // Get activity tickets if available
   const tickets = useQuery(api.domains.activities.queries.getActivityTickets, {
@@ -160,6 +165,8 @@ export function ActivityBookingForm({
         date: format(date, "yyyy-MM-dd"),
         time: time || undefined,
         participants,
+        adults,
+        children,
         additionalParticipants: additionalParticipantNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
@@ -204,7 +211,8 @@ export function ActivityBookingForm({
           // Reset form before redirecting
           setDate(undefined);
           setTime("");
-          setParticipants(activity.minParticipants);
+          setAdults(Math.max(1, activity.minParticipants));
+          setChildren(0);
           setAdditionalParticipantNames([]);
           setSelectedTicketId(undefined);
           setCustomerInfo({ name: "", email: "", phone: "" });
@@ -343,35 +351,17 @@ export function ActivityBookingForm({
           )}
 
           {/* Participants */}
-          <div className="space-y-2">
-            <Label htmlFor="participants">Número de participantes</Label>
-            <div className="flex items-center space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setParticipants(Math.max(activity.minParticipants, participants - 1))}
-                disabled={participants <= activity.minParticipants}
-              >
-                -
-              </Button>
-              <div className="flex items-center justify-center w-12 h-10 border rounded-md">
-                <span className="text-sm font-medium">{participants}</span>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setParticipants(Math.min(activity.maxParticipants, participants + 1))}
-                disabled={participants >= activity.maxParticipants}
-              >
-                +
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500">
-              Mín: {activity.minParticipants} | Máx: {activity.maxParticipants}
-            </p>
-          </div>
+          <ParticipantSelector
+            adults={adults}
+            children={children}
+            onAdultsChange={setAdults}
+            onChildrenChange={setChildren}
+            minAdults={1}
+            maxAdults={activity.maxParticipants}
+            maxChildren={Math.max(0, activity.maxParticipants - 1)}
+            minTotal={activity.minParticipants}
+            maxTotal={activity.maxParticipants}
+          />
 
           {participants > 1 && (
             <div className="space-y-2">

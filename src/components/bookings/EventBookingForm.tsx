@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Ticket } from "lucide-react";
 import { useMutation, useQuery, useAction } from "convex/react";
+import { formatCurrency } from "@/lib/utils";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 
 interface EventBookingFormProps {
@@ -46,7 +48,8 @@ export function EventBookingForm({
   onBookingSuccess,
   className,
 }: EventBookingFormProps) {
-  const [quantity, setQuantity] = useState(1);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
   const [additionalAttendeeNames, setAdditionalAttendeeNames] = useState<string[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"eventTickets"> | undefined>(undefined);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -56,6 +59,9 @@ export function EventBookingForm({
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
+
+  // Calculate total quantity
+  const quantity = adults + children;
   
   // Get event tickets if available
   const tickets = useQuery(api.domains.events.queries.getEventTickets, {
@@ -132,6 +138,8 @@ export function EventBookingForm({
         eventId,
         ticketId: selectedTicketId,
         quantity,
+        adults,
+        children,
         participantNames: additionalAttendeeNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
@@ -166,7 +174,8 @@ export function EventBookingForm({
             });
 
             // Reset form before redirecting
-            setQuantity(1);
+            setAdults(1);
+            setChildren(0);
             setAdditionalAttendeeNames([]);
             setSelectedTicketId(undefined);
             setCustomerInfo({ name: "", email: "", phone: "" });
@@ -199,7 +208,8 @@ export function EventBookingForm({
       }
 
       // Reset form if not redirecting
-      setQuantity(1);
+      setAdults(1);
+      setChildren(0);
       setAdditionalAttendeeNames([]);
       setSelectedTicketId(undefined);
       setCustomerInfo({ name: "", email: "", phone: "" });
@@ -257,36 +267,17 @@ export function EventBookingForm({
             </div>
           )}
 
-          {/* Quantity */}
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantidade de ingressos</Label>
-            <div className="flex items-center space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
-              >
-                -
-              </Button>
-              <div className="flex items-center justify-center w-12 h-10 border rounded-md">
-                <span className="text-sm font-medium">{quantity}</span>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(quantity + 1)}
-                disabled={quantity >= 10} // Max 10 tickets per order
-              >
-                +
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500">
-              Máximo 10 ingressos por pedido
-            </p>
-          </div>
+          {/* Participants */}
+          <ParticipantSelector
+            adults={adults}
+            children={children}
+            onAdultsChange={setAdults}
+            onChildrenChange={setChildren}
+            minAdults={1}
+            maxAdults={10}
+            maxChildren={9}
+            maxTotal={10}
+          />
 
           {quantity > 1 && (
             <div className="space-y-2">

@@ -72,6 +72,39 @@ const partnerTransactions = defineTable({
   .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
   .index("by_status_and_createdAt", ["status", "createdAt"]);
 
+const suppliers = defineTable({
+  name: v.string(),
+  phone: v.optional(v.string()),
+  email: v.optional(v.string()),
+  bankDetails: v.optional(
+    v.object({
+      bankName: v.optional(v.string()),
+      accountType: v.optional(v.string()),
+      accountNumber: v.optional(v.string()),
+      agencyNumber: v.optional(v.string()),
+      holderName: v.optional(v.string()),
+      holderDocument: v.optional(v.string()),
+      pixKey: v.optional(v.string()),
+    })
+  ),
+  notes: v.optional(v.string()),
+  assetAssociations: v.array(
+    v.object({
+      assetId: v.string(),
+      assetType: v.string(),
+      assetName: v.optional(v.string()),
+    })
+  ),
+  createdBy: v.id("users"),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  isActive: v.boolean(),
+})
+  .index("by_email", ["email"])
+  .index("by_name", ["name"])
+  .index("by_active", ["isActive", "name"])
+  .index("by_createdBy", ["createdBy"]);
+
 export const contactMessages = defineTable({
   name: v.string(),
   email: v.string(),
@@ -174,6 +207,8 @@ export default defineSchema({
     .index("by_partner", ["partnerId"]) // Add missing index
     .index("by_employee", ["employeeId"]) // Add missing index
     .index("by_employee_partner", ["employeeId", "partnerId"]), // Add missing index
+
+  suppliers,
 
   // Employee creation requests for partners
   employeeCreationRequests: defineTable({
@@ -627,6 +662,8 @@ export default defineSchema({
     date: v.string(),                                   // Data da reserva (YYYY-MM-DD)
     time: v.string(),                                   // Horário da reserva (HH:MM)
     partySize: v.number(),                              // Número de pessoas
+    adults: v.optional(v.number()),                     // Número de adultos
+    children: v.optional(v.number()),                   // Número de crianças (até 5 anos)
     guestNames: v.optional(v.array(v.string())),        // Nomes dos demais participantes
     name: v.string(),                                   // Nome do responsável pela reserva
     email: v.string(),                                  // Email de contato
@@ -795,6 +832,8 @@ export default defineSchema({
     date: v.string(),                              // Date for the activity (YYYY-MM-DD)
     time: v.optional(v.string()),                  // Specific time if applicable
     participants: v.number(),                      // Number of participants
+    adults: v.optional(v.number()),                // Number of adults
+    children: v.optional(v.number()),              // Number of children (0-5 anos)
     additionalParticipants: v.optional(v.array(v.string())), // Names of additional participants
     totalPrice: v.number(),                        // Total price for booking
     status: v.string(),                            // pending, confirmed, canceled, completed, refunded
@@ -847,6 +886,8 @@ export default defineSchema({
     userId: v.id("users"),
     ticketId: v.optional(v.id("eventTickets")),    // If event has multiple tickets
     quantity: v.number(),                          // Number of tickets
+    adults: v.optional(v.number()),                // Number of adults
+    children: v.optional(v.number()),              // Number of children (0-5 anos)
     participantNames: v.optional(v.array(v.string())), // Names of other attendees
     totalPrice: v.number(),                        // Total price for booking
     status: v.string(),                            // pending, confirmed, canceled, completed, refunded
