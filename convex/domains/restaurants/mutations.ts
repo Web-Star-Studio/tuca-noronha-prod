@@ -12,7 +12,6 @@ export const create = mutationWithRole(["partner", "master"])({
     name: v.string(),
     slug: v.string(),
     description: v.string(),
-    description_long: v.string(),
     address: v.object({
       street: v.string(),
       city: v.string(),
@@ -29,18 +28,9 @@ export const create = mutationWithRole(["partner", "master"])({
     cuisine: v.array(v.string()),
     priceRange: v.string(),
     diningStyle: v.string(),
-    hours: v.object({
-      Monday: v.array(v.string()),
-      Tuesday: v.array(v.string()),
-      Wednesday: v.array(v.string()),
-      Thursday: v.array(v.string()),
-      Friday: v.array(v.string()),
-      Saturday: v.array(v.string()),
-      Sunday: v.array(v.string()),
-    }),
     features: v.array(v.string()),
     dressCode: v.optional(v.string()),
-    paymentOptions: v.array(v.string()),
+    paymentOptions: v.optional(v.array(v.string())),
     parkingDetails: v.optional(v.string()),
     mainImage: v.string(),
     galleryImages: v.array(v.string()),
@@ -55,7 +45,6 @@ export const create = mutationWithRole(["partner", "master"])({
       totalReviews: v.number(),
     }),
     acceptsReservations: v.boolean(),
-    maximumPartySize: v.number(),
     tags: v.array(v.string()),
     executiveChef: v.optional(v.string()),
     privatePartyInfo: v.optional(v.string()),
@@ -65,6 +54,18 @@ export const create = mutationWithRole(["partner", "master"])({
     price: v.optional(v.number()),
     acceptsOnlinePayment: v.optional(v.boolean()),
     requiresUpfrontPayment: v.optional(v.boolean()),
+    restaurantType: v.union(v.literal("internal"), v.literal("external")),
+    operatingDays: v.object({
+      Monday: v.boolean(),
+      Tuesday: v.boolean(),
+      Wednesday: v.boolean(),
+      Thursday: v.boolean(),
+      Friday: v.boolean(),
+      Saturday: v.boolean(),
+      Sunday: v.boolean(),
+    }),
+    openingTime: v.string(),
+    closingTime: v.string(),
   },
   handler: async (ctx, args) => {
     // Verify that the partner creating the restaurant is the logged in user (unless master)
@@ -76,12 +77,12 @@ export const create = mutationWithRole(["partner", "master"])({
       }
     }
     // Convert numbers to appropriate types for the database
-    const maximumPartySize = BigInt(args.maximumPartySize);
     const totalReviews = BigInt(args.rating.totalReviews);
     
     // Creating the restaurant
     const restaurantId = await ctx.db.insert("restaurants", {
       ...args,
+      paymentOptions: args.paymentOptions || [],
       address: {
         ...args.address,
         coordinates: {
@@ -98,7 +99,6 @@ export const create = mutationWithRole(["partner", "master"])({
         value: args.rating.value,
         totalReviews,
       },
-      maximumPartySize,
     });
     
     return restaurantId;
@@ -114,7 +114,6 @@ export const update = mutationWithRole(["partner", "master"])({
     name: v.optional(v.string()),
     slug: v.optional(v.string()),
     description: v.optional(v.string()),
-    description_long: v.optional(v.string()),
     address: v.optional(v.object({
       street: v.string(),
       city: v.string(),
@@ -131,15 +130,6 @@ export const update = mutationWithRole(["partner", "master"])({
     cuisine: v.optional(v.array(v.string())),
     priceRange: v.optional(v.string()),
     diningStyle: v.optional(v.string()),
-    hours: v.optional(v.object({
-      Monday: v.array(v.string()),
-      Tuesday: v.array(v.string()),
-      Wednesday: v.array(v.string()),
-      Thursday: v.array(v.string()),
-      Friday: v.array(v.string()),
-      Saturday: v.array(v.string()),
-      Sunday: v.array(v.string()),
-    })),
     features: v.optional(v.array(v.string())),
     dressCode: v.optional(v.string()),
     paymentOptions: v.optional(v.array(v.string())),
@@ -157,7 +147,6 @@ export const update = mutationWithRole(["partner", "master"])({
       totalReviews: v.number(),
     })),
     acceptsReservations: v.optional(v.boolean()),
-    maximumPartySize: v.optional(v.number()),
     tags: v.optional(v.array(v.string())),
     executiveChef: v.optional(v.string()),
     privatePartyInfo: v.optional(v.string()),
@@ -167,6 +156,18 @@ export const update = mutationWithRole(["partner", "master"])({
     price: v.optional(v.number()),
     acceptsOnlinePayment: v.optional(v.boolean()),
     requiresUpfrontPayment: v.optional(v.boolean()),
+    restaurantType: v.optional(v.union(v.literal("internal"), v.literal("external"))),
+    operatingDays: v.optional(v.object({
+      Monday: v.boolean(),
+      Tuesday: v.boolean(),
+      Wednesday: v.boolean(),
+      Thursday: v.boolean(),
+      Friday: v.boolean(),
+      Saturday: v.boolean(),
+      Sunday: v.boolean(),
+    })),
+    openingTime: v.optional(v.string()),
+    closingTime: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
@@ -177,14 +178,13 @@ export const update = mutationWithRole(["partner", "master"])({
         throw new Error("Unauthorized: cannot update restaurant not owned by user");
       }
     }
-    const { id, maximumPartySize, rating, address, ...otherFields } = args;
+    const { id, rating, address, ...otherFields } = args;
     
     // Define a more specific type for the updates
     type Updates = {
       name?: string;
       slug?: string;
       description?: string;
-      description_long?: string;
       address?: {
         street: string;
         city: string;
@@ -201,15 +201,6 @@ export const update = mutationWithRole(["partner", "master"])({
       cuisine?: string[];
       priceRange?: string;
       diningStyle?: string;
-      hours?: {
-        Monday: string[];
-        Tuesday: string[];
-        Wednesday: string[];
-        Thursday: string[];
-        Friday: string[];
-        Saturday: string[];
-        Sunday: string[];
-      };
       features?: string[];
       dressCode?: string;
       paymentOptions?: string[];
@@ -227,7 +218,6 @@ export const update = mutationWithRole(["partner", "master"])({
         totalReviews: bigint;
       };
       acceptsReservations?: boolean;
-      maximumPartySize?: bigint;
       tags?: string[];
       executiveChef?: string;
       privatePartyInfo?: string;
@@ -238,6 +228,18 @@ export const update = mutationWithRole(["partner", "master"])({
       netRate?: number;
       acceptsOnlinePayment?: boolean;
       requiresUpfrontPayment?: boolean;
+      restaurantType?: string;
+      operatingDays?: {
+        Monday: boolean;
+        Tuesday: boolean;
+        Wednesday: boolean;
+        Thursday: boolean;
+        Friday: boolean;
+        Saturday: boolean;
+        Sunday: boolean;
+      };
+      openingTime?: string;
+      closingTime?: string;
     };
     
     // Create an object with all updated fields
@@ -253,10 +255,6 @@ export const update = mutationWithRole(["partner", "master"])({
     }
     
     // Convert number values to appropriate types if provided
-    if (maximumPartySize !== undefined) {
-      updates.maximumPartySize = BigInt(maximumPartySize);
-    }
-    
     if (rating !== undefined) {
       updates.rating = {
         ...rating,

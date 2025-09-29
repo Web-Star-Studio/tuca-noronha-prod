@@ -1036,25 +1036,27 @@ const restaurantAssetValidator = v.object({
   ...baseAssetFields,
   assetType: v.literal("restaurants"),
   slug: v.string(),
-  description_long: v.string(),
   address: addressValidator,
   phone: v.string(),
   website: v.optional(v.string()),
   cuisine: v.array(v.string()),
   priceRange: v.string(),
   diningStyle: v.string(),
-  hours: v.object({
-    Monday: v.array(v.string()),
-    Tuesday: v.array(v.string()),
-    Wednesday: v.array(v.string()),
-    Thursday: v.array(v.string()),
-    Friday: v.array(v.string()),
-    Saturday: v.array(v.string()),
-    Sunday: v.array(v.string()),
+  restaurantType: v.union(v.literal("internal"), v.literal("external")),
+  operatingDays: v.object({
+    Monday: v.boolean(),
+    Tuesday: v.boolean(),
+    Wednesday: v.boolean(),
+    Thursday: v.boolean(),
+    Friday: v.boolean(),
+    Saturday: v.boolean(),
+    Sunday: v.boolean(),
   }),
+  openingTime: v.string(),
+  closingTime: v.string(),
   features: v.array(v.string()),
   dressCode: v.optional(v.string()),
-  paymentOptions: v.array(v.string()),
+  paymentOptions: v.optional(v.array(v.string())),
   parkingDetails: v.optional(v.string()),
   mainImage: v.optional(v.string()),
   menuImages: v.optional(v.array(v.string())),
@@ -1071,7 +1073,6 @@ const restaurantAssetValidator = v.object({
     })
   ),
   acceptsReservations: v.boolean(),
-  maximumPartySize: v.optional(v.number()),
   executiveChef: v.optional(v.string()),
   privatePartyInfo: v.optional(v.string()),
   additionalInfo: v.optional(v.array(v.string())),
@@ -1373,7 +1374,7 @@ export const listAllRestaurants = query({
           partnerEmail: partner?.email,
           bookingsCount: 0, // TODO: Implement booking counting
           rating: transformedRating,
-          maximumPartySize: restaurant.maximumPartySize ? Number(restaurant.maximumPartySize) : undefined,
+          // maximumPartySize field removed from restaurant model
         };
       })
     );

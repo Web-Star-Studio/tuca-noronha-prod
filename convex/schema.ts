@@ -586,7 +586,6 @@ export default defineSchema({
     name: v.string(),                                   // Nome do restaurante
     slug: v.string(),                                   // Slug para URL
     description: v.string(),                            // Descrição curta
-    description_long: v.string(),                       // Descrição longa
     address: v.object({                                 // Objeto com informações de endereço
       street: v.string(),                               // Rua
       city: v.string(),                                 // Cidade
@@ -603,18 +602,9 @@ export default defineSchema({
     cuisine: v.array(v.string()),                       // Array com tipos de cozinha
     priceRange: v.string(),                             // Faixa de preço (ex: "$", "$$", "$$$")
     diningStyle: v.string(),                            // Estilo (ex: "Casual", "Fine Dining")
-    hours: v.object({                                   // Horário de funcionamento por dia
-      Monday: v.array(v.string()),                      // Array com horários - pode ser vazio
-      Tuesday: v.array(v.string()),
-      Wednesday: v.array(v.string()),
-      Thursday: v.array(v.string()),
-      Friday: v.array(v.string()),
-      Saturday: v.array(v.string()),
-      Sunday: v.array(v.string()),
-    }),
     features: v.array(v.string()),                      // Características especiais
     dressCode: v.optional(v.string()),                  // Código de vestimenta (opcional)
-    paymentOptions: v.array(v.string()),                // Opções de pagamento
+    paymentOptions: v.optional(v.array(v.string())),    // Opções de pagamento (opcional)
     parkingDetails: v.optional(v.string()),             // Informações sobre estacionamento (opcional)
     mainImage: v.string(),                              // Imagem principal
     galleryImages: v.array(v.string()),                 // Imagens da galeria
@@ -629,7 +619,6 @@ export default defineSchema({
       totalReviews: v.int64(),                          // Total de avaliações
     }),
     acceptsReservations: v.boolean(),                   // Aceita reservas
-    maximumPartySize: v.int64(),                        // Tamanho máximo de grupo
     tags: v.array(v.string()),                          // Tags para busca
     executiveChef: v.optional(v.string()),              // Chef executivo (opcional)
     privatePartyInfo: v.optional(v.string()),           // Informações para eventos privados (opcional)
@@ -650,6 +639,18 @@ export default defineSchema({
       createdAt: v.number(),
       updatedAt: v.number(),
     })),
+    restaurantType: v.union(v.literal("internal"), v.literal("external")),
+    operatingDays: v.object({
+      Monday: v.boolean(),
+      Tuesday: v.boolean(),
+      Wednesday: v.boolean(),
+      Thursday: v.boolean(),
+      Friday: v.boolean(),
+      Saturday: v.boolean(),
+      Sunday: v.boolean(),
+    }),
+    openingTime: v.string(),
+    closingTime: v.string(),
   })
     .index("by_slug", ["slug"])                         // Índice por slug (URL)
     .index("by_partner", ["partnerId"])                 // Índice por parceiro
@@ -1300,6 +1301,7 @@ export default defineSchema({
       v.literal("proposal_sent"),
       v.literal("confirmed"),
       v.literal("cancelled"),
+      v.literal("requires_revision"),
       v.literal("approved"),
       v.literal("rejected"),
       v.literal("completed")
@@ -2433,6 +2435,18 @@ export default defineSchema({
     negotiationRounds: v.number(),                // Number of negotiation rounds
     customerFeedback: v.optional(v.string()),     // Customer feedback
     adminResponse: v.optional(v.string()),        // Admin response
+    rejectedAt: v.optional(v.number()),           // When rejected
+    lastRevisionRequest: v.optional(v.number()),  // Last revision request timestamp
+    revisionNotes: v.optional(v.string()),        // Notes for revision request
+    
+    // Participants data (stored when proposal is accepted)
+    participantsData: v.optional(v.array(v.object({
+      fullName: v.string(),
+      birthDate: v.string(),
+      cpf: v.string(),
+      email: v.optional(v.string()),
+      phone: v.optional(v.string()),
+    }))),
     
     // Approval Workflow
     requiresApproval: v.boolean(),                // Whether requires approval

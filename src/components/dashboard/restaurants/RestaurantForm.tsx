@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Restaurant } from "@/lib/services/restaurantService";
+import { Restaurant, OperatingDays } from "@/lib/services/restaurantService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,8 +20,15 @@ import type { Media } from "@/lib/services/mediaService";
 import { parseMediaEntry, serializeMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
 
-export type WeekDay = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
-export type WeekdayHours = Record<WeekDay, string[]>;
+const createEmptyOperatingDays = (): OperatingDays => ({
+  Monday: false,
+  Tuesday: false,
+  Wednesday: false,
+  Thursday: false,
+  Friday: false,
+  Saturday: false,
+  Sunday: false,
+});
 
 interface RestaurantFormProps {
   restaurant?: Restaurant | null;
@@ -55,11 +62,10 @@ export function RestaurantForm({
   // Convert BigInt values from Convex to regular numbers for the form
   const prepareRestaurantForForm = (restaurant: Restaurant | null | undefined) => {
     if (!restaurant) return null;
-    
+
     return {
       ...restaurant,
       netRate: restaurant.netRate ?? restaurant.price ?? undefined,
-      maximumPartySize: Number(restaurant.maximumPartySize) || 8,
       rating: {
         ...restaurant.rating,
         overall: Number(restaurant.rating.overall) || 0,
@@ -109,7 +115,6 @@ export function RestaurantForm({
       name: initialData?.name || "",
       slug: initialData?.name ? generateSlug(initialData.name) : "",
       description: initialData?.description || "",
-      description_long: initialData?.description || "",
       address: {
         street: "",
         city: "Fernando de Noronha",
@@ -143,20 +148,8 @@ export function RestaurantForm({
         totalReviews: 0,
       },
       acceptsReservations: true,
-      maximumPartySize: 8,
-      hours: {
-        Monday: [],
-        Tuesday: [],
-        Wednesday: [],
-        Thursday: [],
-        Friday: [],
-        Saturday: [],
-        Sunday: [],
-      },
-      status: "draft",
       netRate: undefined,
       tags: [],
-      location: "Fernando de Noronha",
       isActive: true,
       isFeatured: false,
       executiveChef: "",
@@ -164,6 +157,10 @@ export function RestaurantForm({
       price: undefined,
       acceptsOnlinePayment: false,
       requiresUpfrontPayment: false,
+      restaurantType: "internal" as const,
+      openingTime: "18:00",
+      closingTime: "23:00",
+      operatingDays: createEmptyOperatingDays(),
     },
   });
 
@@ -174,7 +171,8 @@ export function RestaurantForm({
   const [paymentOptions, setPaymentOptions] = useState<string[]>(preparedRestaurant?.paymentOptions || []);
   const [galleryImages, setGalleryImages] = useState<string[]>(preparedRestaurant?.galleryImages || []);
   const [menuImages, setMenuImages] = useState<string[]>(preparedRestaurant?.menuImages || []);
-  const [currentTab, setCurrentTab] = useState(isEmbedded ? "basic" : "basic");
+  const [currentTab, setCurrentTab] = useState("basic");
+  const restaurantType = watch("restaurantType") || "internal";
 
   const galleryEntries = useMemo(
     () => galleryImages.map(parseMediaEntry),
@@ -227,7 +225,19 @@ export function RestaurantForm({
     Sunday: [] as string[],
   }), []);
 
-  const [hours, setHours] = useState(preparedRestaurant?.hours || defaultHours);
+  const [operatingDays, setOperatingDays] = useState<OperatingDays>(
+    preparedRestaurant?.operatingDays ?? {
+      Monday: false,
+      Tuesday: false,
+      Wednesday: false,
+      Thursday: false,
+      Friday: false,
+      Saturday: false,
+      Sunday: false,
+    }
+  );
+  const [openingTime, setOpeningTime] = useState(preparedRestaurant?.openingTime || "18:00");
+  const [closingTime, setClosingTime] = useState(preparedRestaurant?.closingTime || "23:00");
 
   // Arrays e objetos manipuladores
   const addCuisineType = () => {
@@ -328,45 +338,24 @@ export function RestaurantForm({
     setValue("menuImages", newMenuImages);
   };
 
-  // Função para atualizar horários
-  const updateHours = (day: keyof typeof hours, type: "open" | "close", index: number, value: string) => {
-    const newHours = { ...hours };
-    
-    // Certificar-se de que o array de horários do dia existe
-    if (!newHours[day][index]) {
-      newHours[day][index] = "";
-    }
-    
-    // Formato "HH:MM-HH:MM"
-    const hourParts = newHours[day][index]?.split("-") || ["", ""];
-    
-    if (type === "open") {
-      hourParts[0] = value;
-    } else {
-      hourParts[1] = value;
-    }
-    
-    // Atualizar o valor do horário
-    newHours[day][index] = hourParts.join("-");
-    
-    setHours(newHours);
-    setValue("hours", newHours);
+  const toggleOperatingDay = (day: keyof OperatingDays, checked: boolean | "indeterminate") => {
+    const value = checked === true;
+    setOperatingDays((prev) => {
+      const updated = { ...prev, [day]: value };
+      setValue("operatingDays", updated);
+      return updated;
+    });
   };
 
-  // Adicionar período de horário para um dia
-  const addHourPeriod = (day: keyof typeof hours) => {
-    const newHours = { ...hours };
-    newHours[day].push("00:00-00:00");
-    setHours(newHours);
-    setValue("hours", newHours);
-  };
-
-  // Remover período de horário
-  const removeHourPeriod = (day: keyof typeof hours, index: number) => {
-    const newHours = { ...hours };
-    newHours[day].splice(index, 1);
-    setHours(newHours);
-    setValue("hours", newHours);
+  // Days translation to Portuguese
+  const daysInPortuguese: Record<keyof OperatingDays, string> = {
+    Monday: "Segunda-feira",
+    Tuesday: "Terça-feira", 
+    Wednesday: "Quarta-feira",
+    Thursday: "Quinta-feira",
+    Friday: "Sexta-feira",
+    Saturday: "Sábado",
+    Sunday: "Domingo"
   };
 
   // Watch para nome do restaurante para gerar slug automaticamente
@@ -387,7 +376,17 @@ export function RestaurantForm({
       setPaymentOptions(restaurant.paymentOptions || []);
       setGalleryImages(restaurant.galleryImages || []);
       setMenuImages(restaurant.menuImages || []);
-      setHours(restaurant.hours || defaultHours);
+      setOpeningTime(restaurant.openingTime || "18:00");
+      setClosingTime(restaurant.closingTime || "23:00");
+      setOperatingDays(restaurant.operatingDays || {
+        Monday: false,
+        Tuesday: false,
+        Wednesday: false,
+        Thursday: false,
+        Friday: false,
+        Saturday: false,
+        Sunday: false,
+      });
     }
   }, [restaurant, defaultHours]);
 
@@ -402,14 +401,13 @@ export function RestaurantForm({
     setValidationError(null);
     
     // Validação básica
-    if (!data.name || !data.slug || !data.description || !data.description_long) {
-      const error = "Por favor, preencha todos os campos obrigatórios: Nome, Slug, Descrição e Descrição Completa.";
+    if (!data.name || !data.slug || !data.description) {
+      const error = "Por favor, preencha todos os campos obrigatórios: Nome, Slug e Descrição.";
       setValidationError(error);
       console.error("Missing required fields:", {
         name: data.name,
         slug: data.slug,
         description: data.description,
-        description_long: data.description_long
       });
       return;
     }
@@ -420,17 +418,12 @@ export function RestaurantForm({
       return;
     }
 
-    if (paymentOptions.length === 0) {
-      setValidationError("Por favor, adicione pelo menos uma forma de pagamento.");
-      console.error("No payment options selected");
-      return;
-    }
-
-    if (!data.mainImage) {
-      setValidationError("Por favor, selecione uma imagem principal para o restaurante.");
-      console.error("No main image selected");
-      return;
-    }
+    // Payment options are now optional
+    // if (paymentOptions.length === 0) {
+    //   setValidationError("Por favor, adicione pelo menos uma forma de pagamento.");
+    //   console.error("No payment options selected");
+    //   return;
+    // }
 
     if (!data.address?.street || !data.address?.neighborhood || !data.address?.zipCode) {
       setValidationError("Por favor, preencha todos os campos de endereço: Rua, Bairro e CEP.");
@@ -452,16 +445,15 @@ export function RestaurantForm({
       phone: data.phone || initialData?.phone || "",
       website: data.website || initialData?.website || "",
       description: data.description || initialData?.description || "",
-      description_long: data.description_long || initialData?.description || "",
       cuisine: cuisineTypes,
       features: features,
       tags: tags,
       paymentOptions: paymentOptions,
       galleryImages: galleryImages,
       menuImages: menuImages,
-      hours: hours,
-      // Convert string values to numbers
-      maximumPartySize: Number(data.maximumPartySize) || 8,
+      operatingDays,
+      openingTime,
+      closingTime,
       address: {
         ...data.address,
         city: "Fernando de Noronha",
@@ -502,11 +494,9 @@ export function RestaurantForm({
       )}
       
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-4">
+        <TabsList className="grid grid-cols-3 w-full max-w-3xl mb-4">
           <TabsTrigger value="basic">{isEmbedded ? "Config. Base" : "Básico"}</TabsTrigger>
-          <TabsTrigger value="details">Detalhes</TabsTrigger>
           <TabsTrigger value="address">Endereço</TabsTrigger>
-          <TabsTrigger value="hours">Horários</TabsTrigger>
           <TabsTrigger value="media">Mídia</TabsTrigger>
         </TabsList>
 
@@ -530,6 +520,32 @@ export function RestaurantForm({
 
         {/* Tab de informações básicas */}
         <TabsContent value="basic" className="space-y-4">
+          <div className="space-y-2">
+            <Label>Tipo de Restaurante *</Label>
+            <Select
+              value={restaurantType}
+              onValueChange={(value) => {
+                setValue("restaurantType", value as "internal" | "external");
+                if (value === "external") {
+                  setPaymentOptions([]);
+                  setFeatures([]);
+                  setTags([]);
+                  setGalleryImages([]);
+                  setMenuImages([]);
+                  setValue("phone", "");
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="internal">Restaurante Interno</SelectItem>
+                <SelectItem value="external">Restaurante Externo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Mostrar campos de nome apenas quando não estiver no modo embedded ou quando estiver editando */}
           {(!isEmbedded || isEditing) && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -608,34 +624,17 @@ export function RestaurantForm({
               handleAppendGalleryMedia([item]);
             }}
           />
-          {/* Mostrar campos de descrição apenas quando não estiver no modo embedded ou quando estiver editando */}
-          {(!isEmbedded || isEditing) && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição Curta *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Breve descrição do restaurante"
-                  {...register("description", { required: "Descrição é obrigatória" })}
-                  error={errors.description?.message}
-                  rows={2}
-                />
-                {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description_long">Descrição Completa *</Label>
-                <Textarea
-                  id="description_long"
-                  placeholder="Descrição detalhada do restaurante"
-                  {...register("description_long", { required: "Descrição completa é obrigatória" })}
-                  error={errors.description_long?.message}
-                  rows={4}
-                />
-                {errors.description_long && <p className="text-sm text-red-500">{errors.description_long.message}</p>}
-              </div>
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição *</Label>
+            <Textarea
+              id="description"
+              placeholder="Descrição do restaurante"
+              {...register("description", { required: "Descrição é obrigatória" })}
+              error={errors.description?.message}
+              rows={restaurantType === "internal" ? 4 : 3}
+            />
+            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+          </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -739,7 +738,7 @@ export function RestaurantForm({
           )}
           
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Imagem Principal *</Label>
+            <Label className="text-sm font-medium">Imagem Principal (opcional)</Label>
             <div className="flex items-center gap-2">
               <Input
                 readOnly
@@ -770,26 +769,10 @@ export function RestaurantForm({
               <Switch 
                 id="acceptsReservations" 
                 variant="default"
-                checked={watch("acceptsReservations")} 
+                checked={watch("acceptsReservations")}
                 onCheckedChange={(checked) => setValue("acceptsReservations", checked)} 
               />
               <Label htmlFor="acceptsReservations">Aceita Reservas</Label>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="maximumPartySize">Tamanho Máximo de Grupo *</Label>
-              <Input
-                id="maximumPartySize"
-                type="number"
-                min="1"
-                max="100"
-                {...register("maximumPartySize", { 
-                  required: "Tamanho máximo é obrigatório",
-                  min: { value: 1, message: "Deve ser pelo menos 1" },
-                })}
-                error={errors.maximumPartySize?.message}
-              />
-              {errors.maximumPartySize && <p className="text-sm text-red-500">{errors.maximumPartySize.message}</p>}
             </div>
           </div>
 
@@ -812,6 +795,61 @@ export function RestaurantForm({
                 onCheckedChange={(checked) => setValue("isFeatured", checked)} 
               />
               <Label htmlFor="isFeatured">Destacar na Home</Label>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Dias e Horários de Funcionamento */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Dias de Funcionamento</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {Object.entries(operatingDays).map(([day, isOpen]) => (
+                  <div key={day} className="flex items-center gap-2 rounded-md border p-3 hover:bg-gray-50">
+                    <Switch
+                      id={`operating-${day}`}
+                      checked={isOpen}
+                      onCheckedChange={(checked) => toggleOperatingDay(day as keyof OperatingDays, checked)}
+                    />
+                    <Label htmlFor={`operating-${day}`} className="text-sm font-medium cursor-pointer">
+                      {daysInPortuguese[day as keyof OperatingDays]}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selecione os dias em que o restaurante funciona
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Horário de Funcionamento</Label>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="openingTime" className="text-sm font-medium text-gray-700">Horário de Abertura</Label>
+                  <Input
+                    id="openingTime"
+                    type="time"
+                    value={openingTime}
+                    onChange={(event) => setOpeningTime(event.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="closingTime" className="text-sm font-medium text-gray-700">Horário de Fechamento</Label>
+                  <Input
+                    id="closingTime"
+                    type="time"
+                    value={closingTime}
+                    onChange={(event) => setClosingTime(event.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Este horário será aplicado para todos os dias selecionados acima.
+                </p>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -881,7 +919,7 @@ export function RestaurantForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Formas de Pagamento *</Label>
+            <Label>Formas de Pagamento</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Ex: Visa"
@@ -910,9 +948,10 @@ export function RestaurantForm({
               ))}
             </div>
             {!paymentOptions.length && (
-              <p className="text-sm text-amber-600">Adicione pelo menos uma forma de pagamento</p>
+              <p className="text-sm text-gray-500">Nenhuma forma de pagamento adicionada</p>
             )}
           </div>
+
 
           <div className="space-y-2">
             <Label htmlFor="dressCode">Código de Vestimenta</Label>
@@ -1137,68 +1176,6 @@ export function RestaurantForm({
 
         </TabsContent>
 
-        {/* Tab de horários */}
-        <TabsContent value="hours" className="space-y-4">
-          <div className="border rounded-lg p-4 space-y-6 bg-gray-50">
-            <h3 className="font-medium">Horários de Funcionamento</h3>
-            <p className="text-sm text-gray-500">Defina os horários de abertura e fechamento para cada dia da semana. Deixe em branco para dias fechados.</p>
-            
-            {Object.entries(hours).map(([day, periods]) => (
-              <div key={day} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label className="font-medium">{day}</Label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => addHourPeriod(day as keyof typeof hours)}
-                    className="h-8 text-xs"
-                  >
-                    + Horário
-                  </Button>
-                </div>
-                
-                {periods.length === 0 ? (
-                  <div className="flex items-center p-2 bg-gray-100 rounded">
-                    <p className="text-sm text-gray-500 italic">Fechado</p>
-                  </div>
-                ) : (
-                  periods.map((period: string, index: number) => {
-                    const [openTime, closeTime] = period.split("-");
-                    return (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="flex flex-1 items-center gap-2">
-                          <Input
-                            type="time"
-                            value={openTime}
-                            onChange={(e) => updateHours(day as keyof typeof hours, "open", index, e.target.value)}
-                            className="w-32"
-                          />
-                          <span>até</span>
-                          <Input
-                            type="time"
-                            value={closeTime}
-                            onChange={(e) => updateHours(day as keyof typeof hours, "close", index, e.target.value)}
-                            className="w-32"
-                          />
-                        </div>
-                        <Button 
-                          type="button" 
-                          variant="ghost"
-                          size="icon" 
-                          onClick={() => removeHourPeriod(day as keyof typeof hours, index)}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            ))}
-          </div>
-        </TabsContent>
 
         {/* Tab de mídia */}
           <TabsContent value="media" className="space-y-4">
@@ -1345,13 +1322,26 @@ export function RestaurantForm({
               setValue("name", "Restaurante Teste");
               setValue("slug", "restaurante-teste");
               setValue("description", "Descrição curta do restaurante teste");
-              setValue("description_long", "Descrição longa e detalhada do restaurante teste para validação do formulário");
               setValue("phone", "+55 81 99999-9999");
               setValue("mainImage", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4");
               setValue("address.street", "Rua Teste, 123");
               setValue("address.neighborhood", "Centro");
               setValue("address.zipCode", "53990-000");
-              setCuisineTypes(["Brasileira", "Internacional"]);
+              const filledDays: OperatingDays = {
+                Monday: true,
+                Tuesday: true,
+                Wednesday: true,
+                Thursday: true,
+                Friday: true,
+                Saturday: true,
+                Sunday: true,
+              };
+              setOperatingDays(filledDays);
+              setValue("operatingDays", filledDays);
+              setOpeningTime("08:00");
+              setClosingTime("22:00");
+              setValue("openingTime", "08:00");
+              setValue("closingTime", "22:00");
               setPaymentOptions(["Dinheiro", "Cartão de Crédito", "Pix"]);
               console.log("Test data filled");
             }}
@@ -1366,7 +1356,7 @@ export function RestaurantForm({
             disabled={loading}
             onClick={() => {
               // Avançar para o próximo tab
-              const tabs = ["basic", "details", "address", "hours", "media"];
+              const tabs = ["basic", "details", "address", "media"];
               const currentIndex = tabs.indexOf(currentTab);
               if (currentIndex < tabs.length - 1) {
                 setCurrentTab(tabs[currentIndex + 1]);

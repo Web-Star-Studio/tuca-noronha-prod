@@ -12,8 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalDocumentManager } from '../ProposalDocumentManager';
+import { ProposalDetailsView } from './ProposalDetailsView';
+import { SimpleProposalModal } from './SimpleProposalModal';
 
-import { FileText, Plus, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon } from "lucide-react";
+import { FileText, Plus, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit } from "lucide-react";
 
 import { formatCurrency, formatDate } from './helpers';
 
@@ -21,6 +23,7 @@ interface ProposalsTabProps {
   requestId: Id<"packageRequests">;
   requestDetails: any;
   proposals: any[];
+  showHeader?: boolean;
 }
 
 const statusConfig: { [key: string]: { label: string; color: string; icon: React.ReactNode } } = {
@@ -35,9 +38,10 @@ const statusConfig: { [key: string]: { label: string; color: string; icon: React
   withdrawn: { label: "Retirada", color: "bg-gray-100 text-gray-500", icon: <X className="h-3 w-3" /> },
 };
 
-export function ProposalsTab({ requestId, requestDetails, proposals }: ProposalsTabProps) {
+export function ProposalsTab({ requestId, requestDetails, proposals, showHeader = true }: ProposalsTabProps) {
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState("proposals");
 
   const sendProposal = useMutation(api.domains.packageProposals.mutations.sendPackageProposal);
@@ -51,20 +55,27 @@ export function ProposalsTab({ requestId, requestDetails, proposals }: Proposals
         customMessage: "Sua proposta personalizada está pronta! Confira todos os detalhes e entre em contato se tiver dúvidas.",
       });
       toast.success("Proposta enviada com sucesso!");
-    } catch {
+    } catch (error) {
       console.error("Error sending proposal:", error);
       toast.error("Erro ao enviar proposta");
     }
   };
 
+  const handleEditSuccess = () => {
+    setShowEditDialog(false);
+    // Data will refetch automatically via Convex
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold">Propostas de Pacote</h3>
-        <p className="text-sm text-gray-600">
-          Gerencie propostas e documentos para a solicitação #{requestDetails.requestNumber}
-        </p>
-      </div>
+      {showHeader && (
+        <div>
+          <h3 className="text-lg font-semibold">Propostas de Pacote</h3>
+          <p className="text-sm text-gray-600">
+            Gerencie propostas e documentos para a solicitação #{requestDetails.requestNumber}
+          </p>
+        </div>
+      )}
 
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList className="grid w-full grid-cols-2">
@@ -79,17 +90,6 @@ export function ProposalsTab({ requestId, requestDetails, proposals }: Proposals
         </TabsList>
 
         <TabsContent value="proposals" className="space-y-6 mt-4">
-          <div className="flex justify-end gap-2">
-            <Button 
-              onClick={() => window.open(`/admin/dashboard/propostas-pacotes/criar/${requestId}`, '_blank')}
-              variant="default"
-              className="flex items-center gap-2 group"
-            >
-              <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
-              Criar Proposta Completa
-            </Button>
-          </div>
-
           {proposals.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="py-8 text-center">
@@ -154,7 +154,7 @@ export function ProposalsTab({ requestId, requestDetails, proposals }: Proposals
 
                         <div className="flex flex-col gap-2 ml-4">
                           <Button
-                            variant="default"
+                            variant="secondary"
                             size="sm"
                             onClick={() => {
                               setSelectedProposal(proposal);
@@ -164,11 +164,22 @@ export function ProposalsTab({ requestId, requestDetails, proposals }: Proposals
                             <Eye className="h-4 w-4 mr-2" />
                             Detalhes
                           </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedProposal(proposal);
+                              setShowEditDialog(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
                           
                           {proposal.status === "draft" && (
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="secondary"
                               onClick={() => handleSendProposal(proposal._id)}
                             >
                               <SendIcon className="h-4 w-4 mr-2" />
@@ -227,11 +238,21 @@ export function ProposalsTab({ requestId, requestDetails, proposals }: Proposals
               <DialogTitle>{selectedProposal.title}</DialogTitle>
               <DialogDescription>Proposta #{selectedProposal.proposalNumber}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-6">
-                {/* ... (conteúdo do diálogo de visualização da proposta) ... */}
-            </div>
+            <ProposalDetailsView proposal={selectedProposal} />
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Edit Proposal Dialog */}
+      {selectedProposal && (
+        <SimpleProposalModal
+          isOpen={showEditDialog}
+          onClose={() => setShowEditDialog(false)}
+          packageRequestId={requestId}
+          onSuccess={handleEditSuccess}
+          isEditing={true}
+          existingProposal={selectedProposal}
+        />
       )}
     </div>
   );

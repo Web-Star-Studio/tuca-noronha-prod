@@ -6,7 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Search, Plus, Package, MapPin, Calendar, Users, DollarSign, MessageCircle, Eye } from "lucide-react";
+import { Search, Plus, Package, MapPin, Calendar, Users, DollarSign, MessageCircle, Eye, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -48,24 +48,6 @@ const PackageRequestsSection: React.FC = () => {
 
   // Get all user package requests
   const myPackageRequests = useQuery(api.packages.getMyPackageRequests);
-  
-  // Fallback: Try to get requests by user matching (name similarity)
-  const myPackageRequestsByMatch = useQuery(api.packages.getMyPackageRequestsByUserMatch);
-  
-  // Debug: Get all package requests to see if any exist
-  const allPackageRequests = useQuery(api.packages.getAllPackageRequests);
-
-  // Use the main query result, but if empty, fallback to the match-based query
-  const finalPackageRequests = React.useMemo(() => {
-    if (myPackageRequests && myPackageRequests.length > 0) {
-      return myPackageRequests;
-    }
-    if (myPackageRequestsByMatch && myPackageRequestsByMatch.length > 0) {
-      console.log("🔄 Usando requests encontradas por correspondência:", myPackageRequestsByMatch);
-      return myPackageRequestsByMatch;
-    }
-    return myPackageRequests || [];
-  }, [myPackageRequests, myPackageRequestsByMatch]);
 
   // Debug logs
   React.useEffect(() => {
@@ -75,14 +57,6 @@ const PackageRequestsSection: React.FC = () => {
       length: myPackageRequests?.length
     });
   }, [myPackageRequests]);
-
-  React.useEffect(() => {
-    console.log("🔍 PackageRequestsSection: allPackageRequests state changed:", {
-      isLoading: allPackageRequests === undefined,
-      data: allPackageRequests,
-      length: allPackageRequests?.length
-    });
-  }, [allPackageRequests]);
 
   const getPackageRequestByNumber = useQuery(
     api.packages.getPackageRequestByNumber,
@@ -109,32 +83,6 @@ const PackageRequestsSection: React.FC = () => {
     }
   };
 
-  // Component to render proposal button for a request
-  const ProposalButton: React.FC<{ requestId: string }> = ({ requestId }) => {
-    const proposals = useQuery(
-      api.domains.packageProposals.queries.getProposalsForRequest,
-      requestId && requestId.trim() && requestId !== "" ? { packageRequestId: requestId as Id<"packageRequests"> } : "skip"
-    );
-
-    if (!proposals || !Array.isArray(proposals) || proposals.length === 0) {
-      return null;
-    }
-
-    // Get the most recent proposal
-    const latestProposal = proposals[0];
-
-    const handleViewProposal = () => {
-      // Navigate to the proposal page
-      window.open(`/propostas/${latestProposal._id}`, '_blank');
-    };
-
-    return (
-      <Button size="sm" onClick={handleViewProposal}>
-        <Eye className="w-4 h-4 mr-2" />
-        Ver Proposta
-      </Button>
-    );
-  };
 
   useEffect(() => {
     if (getPackageRequestByNumber && trackingNumber.trim()) {
@@ -172,6 +120,7 @@ const PackageRequestsSection: React.FC = () => {
       case "in_review": return "bg-blue-100 text-blue-800";
       case "proposal_sent": return "bg-purple-100 text-purple-800";
       case "confirmed": return "bg-green-100 text-green-800";
+      case "requires_revision": return "bg-orange-100 text-orange-800";
       case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
@@ -182,7 +131,8 @@ const PackageRequestsSection: React.FC = () => {
       case "pending": return "Pendente";
       case "in_review": return "Em Análise";
       case "proposal_sent": return "Proposta Enviada";
-      case "confirmed": return "Confirmado";  
+      case "confirmed": return "Confirmado";
+      case "requires_revision": return "Requer Revisão";
       case "cancelled": return "Cancelado";
       default: return status;
     }
@@ -224,18 +174,12 @@ const PackageRequestsSection: React.FC = () => {
     }
   };
 
-  if (myPackageRequests === undefined && myPackageRequestsByMatch === undefined) {
+  if (myPackageRequests === undefined) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando suas solicitações...</p>
-          <p className="text-xs text-gray-400 mt-2">
-            {allPackageRequests === undefined 
-              ? "Conectando ao banco de dados..." 
-              : `${allPackageRequests?.length || 0} solicitações no total`
-            }
-          </p>
         </div>
       </div>
     );
@@ -302,19 +246,19 @@ const PackageRequestsSection: React.FC = () => {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm text-gray-600">Total</span>
                   <Badge variant="secondary" className="bg-gray-100 text-gray-600">
-                    {finalPackageRequests?.length || 0}
+                    {myPackageRequests?.length || 0}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm text-gray-600">Pendentes</span>
                   <Badge variant="secondary" className="bg-yellow-100 text-yellow-600">
-                    {finalPackageRequests?.filter(r => r.status === 'pending').length || 0}
+                    {myPackageRequests?.filter(r => r.status === 'pending').length || 0}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm text-gray-600">Em Análise</span>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-600">
-                    {finalPackageRequests?.filter(r => r.status === 'in_review').length || 0}
+                    {myPackageRequests?.filter(r => r.status === 'in_review').length || 0}
                   </Badge>
                 </div>
               </div>
@@ -389,6 +333,16 @@ const PackageRequestsSection: React.FC = () => {
                 {/* Actions */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <Button 
+                    asChild
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Link href={`/meu-painel/solicitacao/${searchResults._id}`}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver Detalhes
+                    </Link>
+                  </Button>
+                  <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => openChatModal(searchResults._id, searchResults.requestNumber)}
@@ -396,9 +350,6 @@ const PackageRequestsSection: React.FC = () => {
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Chat
                   </Button>
-                  {searchResults.status === "proposal_sent" && (
-                    <ProposalButton requestId={searchResults._id} />
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -408,9 +359,9 @@ const PackageRequestsSection: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Minhas Solicitações</h3>
             
-            {finalPackageRequests && finalPackageRequests.length > 0 ? (
+            {myPackageRequests && myPackageRequests.length > 0 ? (
               <div className="space-y-4">
-                {finalPackageRequests.map((request) => (
+                {myPackageRequests.map((request) => (
                   <Card key={request._id} className="bg-white shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <CardHeader className="pb-4">
                       <div className="flex justify-between items-center">
@@ -463,6 +414,16 @@ const PackageRequestsSection: React.FC = () => {
                       {/* Actions */}
                       <div className="flex gap-3 pt-4 border-t border-gray-200">
                         <Button 
+                          asChild
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Link href={`/meu-painel/solicitacao/${request._id}`}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Detalhes
+                          </Link>
+                        </Button>
+                        <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => openChatModal(request._id, request.requestNumber)}
@@ -470,9 +431,6 @@ const PackageRequestsSection: React.FC = () => {
                           <MessageCircle className="w-4 h-4 mr-2" />
                           Chat
                         </Button>
-                        {request.status === "proposal_sent" && (
-                          <ProposalButton requestId={request._id} />
-                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -480,31 +438,6 @@ const PackageRequestsSection: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Email mismatch warning */}
-                {allPackageRequests && allPackageRequests.length > 0 && (
-                  <Card className="border-orange-200 bg-orange-50">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <MessageCircle className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-orange-900 mb-1">
-                            Solicitações feitas com outro email?
-                          </p>
-                          <p className="text-sm text-orange-700 mb-3">
-                            Encontramos {allPackageRequests.length} solicitação{allPackageRequests.length !== 1 ? 'ões' : ''} no sistema, 
-                            mas elas podem ter sido feitas com um email diferente.
-                          </p>
-                          <p className="text-xs text-orange-600">
-                            Entre em contato conosco para vinculá-las à sua conta.
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
                 <Card className="border-dashed border-2 border-gray-300">
                   <CardContent className="text-center py-12">
                     <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />

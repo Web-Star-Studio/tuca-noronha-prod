@@ -897,6 +897,7 @@ export const updatePackageRequestStatus = mutation({
       v.literal("proposal_sent"),
       v.literal("confirmed"),
       v.literal("cancelled"),
+      v.literal("requires_revision"),
       v.literal("approved"),
       v.literal("rejected"),
       v.literal("completed")

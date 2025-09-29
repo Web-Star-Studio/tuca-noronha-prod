@@ -182,6 +182,7 @@ export default function PackageRequestChatModal({
       case "in_review": return "bg-blue-100 text-blue-800";
       case "proposal_sent": return "bg-purple-100 text-purple-800";
       case "confirmed": return "bg-green-100 text-green-800";
+      case "requires_revision": return "bg-orange-100 text-orange-800";
       case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
@@ -193,6 +194,7 @@ export default function PackageRequestChatModal({
       case "in_review": return "Em Análise";
       case "proposal_sent": return "Proposta Enviada";
       case "confirmed": return "Confirmado";  
+      case "requires_revision": return "Requer Revisão";
       case "cancelled": return "Cancelado";
       default: return status;
     }

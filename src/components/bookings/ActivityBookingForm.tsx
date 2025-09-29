@@ -487,7 +487,7 @@ export function ActivityBookingForm({
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isSubmitting || !date}
             >
-              {isSubmitting ? "Processando..." : "Reservar atividade"}
+              {isSubmitting ? "Processando..." : "Solicitar Reserva"}
             </Button>
           </form>
         </div>

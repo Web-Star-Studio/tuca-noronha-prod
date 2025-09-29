@@ -540,6 +540,7 @@ export const getPackageRequestStats = query({
     proposalSent: v.number(),
     confirmed: v.number(),
     cancelled: v.number(),
+    requiresRevision: v.number(),
   }),
   handler: async (ctx) => {
     const requests = await ctx.db.query("packageRequests").collect();
@@ -551,6 +552,7 @@ export const getPackageRequestStats = query({
       proposalSent: requests.filter(r => r.status === "proposal_sent").length,
       confirmed: requests.filter(r => r.status === "confirmed").length,
       cancelled: requests.filter(r => r.status === "cancelled").length,
+      requiresRevision: requests.filter(r => r.status === "requires_revision").length,
     };
     
     return stats;
@@ -569,6 +571,7 @@ export const listPackageRequests = query({
       v.literal("proposal_sent"),
       v.literal("confirmed"),
       v.literal("cancelled"),
+      v.literal("requires_revision"),
       v.literal("approved"),
       v.literal("rejected"),
       v.literal("completed")

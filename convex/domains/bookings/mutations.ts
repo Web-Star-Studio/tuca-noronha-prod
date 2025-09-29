@@ -494,9 +494,7 @@ export const createRestaurantReservation = mutation({
       throw new Error("Restaurante não aceita reservas");
     }
 
-    if (args.partySize > restaurant.maximumPartySize) {
-      throw new Error("Máximo de " + restaurant.maximumPartySize + " pessoas por reserva");
-    }
+    // No maximum party size restriction for now - can be implemented per restaurant if needed
 
     const normalizedGuestNames = (args.guestNames ?? [])
       .map((name) => name.trim())
@@ -1582,7 +1580,6 @@ export const seedTestReservations = mutation({
         name: "Sol & Mar Noronha",
         slug: "sol-e-mar-noronha",
         description: "Restaurante de frutos do mar com vista panorâmica para o oceano",
-        description_long: "Localizado na Vila dos Remédios, oferece pratos da culinária regional com ingredientes frescos locais",
         address: {
           street: "Vila dos Remédios, s/n",
           city: "Fernando de Noronha",
@@ -1595,18 +1592,20 @@ export const seedTestReservations = mutation({
         cuisine: ["frutos do mar", "regional"],
         priceRange: "moderate",
         diningStyle: "Casual",
-        hours: {
-          Monday: ["11:30-15:00", "18:00-22:00"],
-          Tuesday: ["11:30-15:00", "18:00-22:00"],
-          Wednesday: ["11:30-15:00", "18:00-22:00"],
-          Thursday: ["11:30-15:00", "18:00-22:00"],
-          Friday: ["11:30-15:00", "18:00-23:00"],
-          Saturday: ["11:30-15:00", "18:00-23:00"],
-          Sunday: ["11:30-15:00", "18:00-22:00"],
-        },
         paymentOptions: ["dinheiro", "cartao", "pix"],
         acceptsReservations: true,
-        maximumPartySize: BigInt(8),
+        restaurantType: "internal" as const,
+        operatingDays: {
+          Monday: true,
+          Tuesday: true,
+          Wednesday: true,
+          Thursday: true,
+          Friday: true,
+          Saturday: true,
+          Sunday: true,
+        },
+        openingTime: "18:00",
+        closingTime: "23:00",
         mainImage: "/images/restaurant-sol-mar.jpg",
         galleryImages: ["/images/restaurant-sol-mar-1.jpg"],
         rating: {

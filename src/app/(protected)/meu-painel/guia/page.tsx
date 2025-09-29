@@ -536,7 +536,11 @@ function SectionContent({
               details: "A partir de R$ 101,33 por dia",
               color: "green",
               gradient: "from-green-600 to-emerald-600",
-              tips: ["Crianças < 5 anos: isentas", "Pague online antecipadamente", "Desconto para estadias longas"]
+              tips: ["Crianças < 5 anos: isentas", "Pague online antecipadamente", "Desconto para estadias longas"],
+              link: {
+                href: "https://www.noronha.pe.gov.br/catalogo-de-servicos/taxa-de-preservacao-ambiental-tpa/",
+                label: "Emitir TPA no site oficial"
+              }
             },
             {
               icon: Shield,
@@ -545,7 +549,11 @@ function SectionContent({
               details: "R$ 186,50 (Brasileiros)",
               color: "purple",
               gradient: "from-purple-600 to-pink-600",
-              tips: ["Válido por 10 dias", "Compre no ICMBio", "Estrangeiros: R$ 373"]
+              tips: ["Válido por 10 dias", "Compre no ICMBio", "Estrangeiros: R$ 373"],
+              link: {
+                href: "https://www.parnanoronha.com.br/",
+                label: "Comprar ingresso no PARNAMAR"
+              }
             },
             {
               icon: Plane,
@@ -575,7 +583,7 @@ function SectionContent({
                 )}>
                   {/* Decorative gradient background */}
                   <div className={cn(
-                    "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-xl",
+                    "pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-xl",
                     item.gradient
                   )} />
                   
@@ -595,6 +603,17 @@ function SectionContent({
                   {/* Content */}
                   <h3 className="font-bold text-gray-900 mb-2 text-lg">{item.title}</h3>
                   <p className="text-sm text-gray-600 mb-3">{item.description}</p>
+                  {item.link ? (
+                    <a
+                      href={item.link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                    >
+                      <span>{item.link.label}</span>
+                      <span aria-hidden className="text-xs">↗</span>
+                    </a>
+                  ) : null}
                   
                   {/* Price/Details badge */}
                   <div className={cn(

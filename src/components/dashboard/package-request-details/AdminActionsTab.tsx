@@ -1,48 +1,53 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useMutation } from 'convex/react';
-import { api } from '@/../convex/_generated/api';
-import { Id } from '@/../convex/_generated/dataModel';
-import { toast } from 'sonner';
+import React, { useEffect, useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/../convex/_generated/api";
+import { Id } from "@/../convex/_generated/dataModel";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import {
-  Clock,
-  Mail,
-  CheckCircle,
-  XCircle,
-  ShieldCheck,
-  Info
-} from 'lucide-react';
+import { ShieldCheck, Info } from "lucide-react";
 
-import { formatDateTime } from './helpers';
+import { formatDateTime } from "./helpers";
 
 interface AdminActionsTabProps {
   requestId: Id<"packageRequests">;
   requestDetails: any;
 }
 
-const statusActions = [
-  { status: "in_review", label: "Em Análise", icon: <Clock className="h-5 w-5" /> },
-  { status: "proposal_sent", label: "Proposta Enviada", icon: <Mail className="h-5 w-5" /> },
-  { status: "confirmed", label: "Confirmado", icon: <CheckCircle className="h-5 w-5" /> },
-  { status: "cancelled", label: "Cancelado", icon: <XCircle className="h-5 w-5" /> },
-  { status: "completed", label: "Concluído", icon: <ShieldCheck className="h-5 w-5" /> },
+const statusOptions = [
+  { value: "in_review", label: "Em Análise" },
+  { value: "proposal_sent", label: "Proposta Enviada" },
+  { value: "confirmed", label: "Confirmado" },
+  { value: "requires_revision", label: "Requer Revisão" },
+  { value: "cancelled", label: "Cancelado" },
+  { value: "completed", label: "Concluído" },
 ];
 
 export function AdminActionsTab({ requestId, requestDetails }: AdminActionsTabProps) {
   const [adminResponse, setAdminResponse] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string | undefined>(requestDetails.status);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const updateRequestStatus = useMutation(api.packages.updatePackageRequestStatus);
+
+  useEffect(() => {
+    setSelectedStatus(requestDetails.status);
+  }, [requestDetails.status]);
 
   const handleStatusUpdate = async (newStatus: string) => {
     if (!requestId) return;
 
+    if (newStatus === requestDetails.status) {
+      toast.info("A solicitação já está com este status.");
+      return;
+    }
+
     try {
+      setIsUpdatingStatus(true);
       await updateRequestStatus({
         id: requestId,
         status: newStatus as any,
@@ -50,83 +55,105 @@ export function AdminActionsTab({ requestId, requestDetails }: AdminActionsTabPr
       });
       toast.success("Status atualizado com sucesso!");
       setAdminResponse("");
-    } catch {
+      setSelectedStatus(newStatus);
+    } catch (error) {
       console.error("Erro ao atualizar status:", error);
       toast.error("Erro ao atualizar status");
+      setSelectedStatus(requestDetails.status);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
   return (
-    <div className="space-y-6 p-1">
-      <Card className="shadow-sm hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <ShieldCheck className="h-6 w-6 text-blue-600"/>
-            Atualizar Status da Solicitação
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {statusActions.map(action => (
-              <Button
-                key={action.status}
-                variant="outline"
-                onClick={() => handleStatusUpdate(action.status)}
-                className="flex flex-col items-center justify-center gap-2 h-24 p-2 text-center group hover:bg-blue-50 hover:text-blue-700 transition-all duration-200"
-                disabled={requestDetails.status === action.status}
-              >
-                <div className="p-2 bg-gray-100 rounded-full group-hover:bg-blue-100 transition-colors duration-200">
-                  {action.icon}
-                </div>
-                <span className="text-xs font-semibold">{action.label}</span>
-              </Button>
-            ))}
+    <div className="space-y-6">
+      <section className="space-y-5 rounded-xl border bg-background/70 p-5">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <ShieldCheck className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Atualizar status</h3>
+            <p className="text-xs text-muted-foreground">
+              Escolha o andamento atual da solicitação e adicione observações internas opcionais.
+            </p>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="admin-notes">Notas Administrativas (Opcional)</Label>
-            <Textarea
-              id="admin-notes"
-              placeholder="Adicione notas internas sobre esta atualização de status..."
-              value={adminResponse}
-              onChange={(e) => setAdminResponse(e.target.value)}
-              rows={3}
-              className="bg-gray-50"
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <div className="space-y-2">
+          <Label htmlFor="status-select">Status atual</Label>
+          <Select
+            value={selectedStatus}
+            onValueChange={(value) => {
+              setSelectedStatus(value);
+              handleStatusUpdate(value);
+            }}
+            disabled={isUpdatingStatus}
+          >
+            <SelectTrigger id="status-select" className="w-full">
+              <SelectValue placeholder="Selecione o novo status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <Card className="shadow-sm hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <Info className="h-6 w-6 text-blue-600"/>
-            Informações de Controle
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="flex justify-between p-2 rounded-md hover:bg-gray-50">
-            <strong className="text-gray-600">Criado em:</strong> 
-            <span>{formatDateTime(requestDetails.createdAt)}</span>
+        <div className="space-y-2">
+          <Label htmlFor="admin-notes">Notas administrativas</Label>
+          <Textarea
+            id="admin-notes"
+            placeholder="Adicione notas internas sobre esta atualização de status (opcional)."
+            value={adminResponse}
+            onChange={(e) => setAdminResponse(e.target.value)}
+            rows={3}
+            className="resize-none bg-background"
+          />
+          <p className="text-xs text-muted-foreground">
+            As notas são anexadas quando um novo status é selecionado.
+          </p>
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-xl border bg-background/70 p-5 text-sm text-foreground">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-slate-600">
+            <Info className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Informações de controle</h3>
+            <p className="text-xs text-muted-foreground">Dados automáticos para monitorar o atendimento desta solicitação.</p>
           </div>
-          <div className="flex justify-between p-2 rounded-md hover:bg-gray-50">
-            <strong className="text-gray-600">Última atualização:</strong> 
-            <span>{formatDateTime(requestDetails.updatedAt)}</span>
+        </div>
+
+        <dl className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg bg-background px-3 py-2">
+            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Criado em</dt>
+            <dd className="text-sm font-medium">{formatDateTime(requestDetails.createdAt)}</dd>
+          </div>
+          <div className="flex items-center justify-between rounded-lg bg-background px-3 py-2">
+            <dt className="text-xs uppercase tracking-wide text-muted-foreground">Última atualização</dt>
+            <dd className="text-sm font-medium">{formatDateTime(requestDetails.updatedAt)}</dd>
           </div>
           {requestDetails.assignedTo && (
-            <div className="flex justify-between p-2 rounded-md hover:bg-gray-50">
-              <strong className="text-gray-600">Atribuído a:</strong> 
-              <span>{requestDetails.assignedTo}</span>
+            <div className="flex items-center justify-between rounded-lg bg-background px-3 py-2">
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Atribuído a</dt>
+              <dd className="text-sm font-medium">{requestDetails.assignedTo}</dd>
             </div>
           )}
           {requestDetails.adminNotes && (
-            <div>
-              <strong className="text-gray-600">Últimas Notas Admin:</strong>
-              <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md border">{requestDetails.adminNotes}</p>
+            <div className="rounded-lg bg-background px-3 py-2">
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Últimas notas internas</dt>
+              <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{requestDetails.adminNotes}</dd>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </dl>
+      </section>
     </div>
   );
-} 
+}
+ 

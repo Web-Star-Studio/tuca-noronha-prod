@@ -1,12 +1,23 @@
 import { Id } from "../../_generated/dataModel";
 
+export type RestaurantType = "internal" | "external";
+
+export interface OperatingDays {
+  Monday: boolean;
+  Tuesday: boolean;
+  Wednesday: boolean;
+  Thursday: boolean;
+  Friday: boolean;
+  Saturday: boolean;
+  Sunday: boolean;
+}
+
 export interface Restaurant {
   _id: Id<"restaurants">;
   _creationTime: number;
   name: string;
   slug: string;
   description: string;
-  description_long: string;
   address: {
     street: string;
     city: string;
@@ -23,18 +34,9 @@ export interface Restaurant {
   cuisine: string[];
   priceRange: string;
   diningStyle: string;
-  hours: {
-    Monday: string[];
-    Tuesday: string[];
-    Wednesday: string[];
-    Thursday: string[];
-    Friday: string[];
-    Saturday: string[];
-    Sunday: string[];
-  };
   features: string[];
   dressCode?: string;
-  paymentOptions: string[];
+  paymentOptions?: string[];
   parkingDetails?: string;
   mainImage: string;
   galleryImages: string[];
@@ -49,7 +51,6 @@ export interface Restaurant {
     totalReviews: bigint;
   };
   acceptsReservations: boolean;
-  maximumPartySize: bigint;
   tags: string[];
   executiveChef?: string;
   privatePartyInfo?: string;
@@ -60,6 +61,10 @@ export interface Restaurant {
   netRate?: number;
   acceptsOnlinePayment?: boolean;
   requiresUpfrontPayment?: boolean;
+  restaurantType: RestaurantType;
+  operatingDays: OperatingDays;
+  openingTime: string;
+  closingTime: string;
 }
 
 export interface RestaurantCreator {
@@ -77,7 +82,6 @@ export interface RestaurantCreateInput {
   name: string;
   slug: string;
   description: string;
-  description_long: string;
   address: {
     street: string;
     city: string;
@@ -94,18 +98,9 @@ export interface RestaurantCreateInput {
   cuisine: string[];
   priceRange: string;
   diningStyle: string;
-  hours: {
-    Monday: string[];
-    Tuesday: string[];
-    Wednesday: string[];
-    Thursday: string[];
-    Friday: string[];
-    Saturday: string[];
-    Sunday: string[];
-  };
   features: string[];
   dressCode?: string;
-  paymentOptions: string[];
+  paymentOptions?: string[];
   parkingDetails?: string;
   mainImage: string;
   galleryImages: string[];
@@ -120,7 +115,6 @@ export interface RestaurantCreateInput {
     totalReviews: number;
   };
   acceptsReservations: boolean;
-  maximumPartySize: number;
   tags: string[];
   executiveChef?: string;
   privatePartyInfo?: string;
@@ -131,6 +125,10 @@ export interface RestaurantCreateInput {
   netRate?: number;
   acceptsOnlinePayment?: boolean;
   requiresUpfrontPayment?: boolean;
+  restaurantType: RestaurantType;
+  operatingDays: OperatingDays;
+  openingTime: string;
+  closingTime: string;
 }
 
 export interface RestaurantUpdateInput {
@@ -138,7 +136,6 @@ export interface RestaurantUpdateInput {
   name?: string;
   slug?: string;
   description?: string;
-  description_long?: string;
   address?: {
     street: string;
     city: string;
@@ -155,15 +152,6 @@ export interface RestaurantUpdateInput {
   cuisine?: string[];
   priceRange?: string;
   diningStyle?: string;
-  hours?: {
-    Monday: string[];
-    Tuesday: string[];
-    Wednesday: string[];
-    Thursday: string[];
-    Friday: string[];
-    Saturday: string[];
-    Sunday: string[];
-  };
   features?: string[];
   dressCode?: string;
   paymentOptions?: string[];
@@ -181,7 +169,6 @@ export interface RestaurantUpdateInput {
     totalReviews: number;
   };
   acceptsReservations?: boolean;
-  maximumPartySize?: number;
   tags?: string[];
   executiveChef?: string;
   privatePartyInfo?: string;
@@ -192,4 +179,8 @@ export interface RestaurantUpdateInput {
   netRate?: number;
   acceptsOnlinePayment?: boolean;
   requiresUpfrontPayment?: boolean;
-} 
+  restaurantType?: RestaurantType;
+  operatingDays?: OperatingDays;
+  openingTime?: string;
+  closingTime?: string;
+}
