@@ -2,7 +2,7 @@ export default {
   providers: [
     {
       /**Change to PROD */
-      domain: "https://accounts.tucanoronha.com.br",
+      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
       applicationID: "convex",
     },
   ],
