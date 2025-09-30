@@ -64,7 +64,7 @@ export default function AdminChatPage() {
       {/* Chat Window */}
       <Card className="h-[calc(100vh-200px)]">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">{chatRoom.title}</h3>
               <p className="text-sm text-muted-foreground">

@@ -45,6 +45,7 @@ export const customerInfoValidator = v.object({
   name: v.string(),
   email: v.string(),
   phone: v.string(),
+  cpf: v.optional(v.string()),
 });
 
 // Activity booking validators
@@ -54,6 +55,9 @@ export const createActivityBookingValidator = v.object({
   date: v.string(),
   time: v.optional(v.string()),
   participants: v.number(),
+  adults: v.optional(v.number()),
+  children: v.optional(v.number()),
+  additionalParticipants: v.optional(v.array(v.string())),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
   couponCode: v.optional(v.string()),
@@ -74,6 +78,9 @@ export const createEventBookingValidator = v.object({
   eventId: v.id("events"),
   ticketId: v.optional(v.id("eventTickets")),
   quantity: v.number(),
+  adults: v.optional(v.number()),
+  children: v.optional(v.number()),
+  participantNames: v.optional(v.array(v.string())),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
   couponCode: v.optional(v.string()),
@@ -95,6 +102,7 @@ export const createRestaurantReservationValidator = v.object({
   date: v.string(),
   time: v.string(),
   partySize: v.number(),
+  guestNames: v.optional(v.array(v.string())),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),
   couponCode: v.optional(v.string()),

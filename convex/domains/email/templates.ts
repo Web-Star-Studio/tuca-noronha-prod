@@ -210,20 +210,27 @@ export const getBookingConfirmationTemplate = (data: any): string => {
   const content = `
     <div class="container">
         <div class="header">
-            <h1>🎉 Reserva Confirmada!</h1>
-            <p>Sua reserva foi confirmada com sucesso</p>
+            <h1>📋 Solicitação de Reserva Recebida!</h1>
+            <p>Sua solicitação foi recebida e está aguardando aprovação</p>
         </div>
         
         <div class="content">
             <p>Olá <strong>${data.customerName}</strong>,</p>
-            <p>Temos o prazer de confirmar sua reserva para <strong>${data.assetName}</strong>!</p>
+            <p>Recebemos sua solicitação de reserva para <strong>${data.assetName}</strong>!</p>
+            
+            <div class="highlight-box" style="background-color: #fef3c7; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e;">
+                    <strong>⏳ Aguardando Aprovação:</strong> Sua solicitação será analisada pelo parceiro. 
+                    Você receberá uma notificação assim que for confirmada.
+                </p>
+            </div>
             
             <div class="confirmation-code">
-                Código de Confirmação: ${data.confirmationCode}
+                Código de Acompanhamento: ${data.confirmationCode}
             </div>
             
             <div class="highlight-box success">
-                <h3>Detalhes da Reserva</h3>
+                <h3>Detalhes da Solicitação</h3>
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">Tipo</div>
@@ -253,24 +260,18 @@ export const getBookingConfirmationTemplate = (data: any): string => {
             
             ${data.bookingDetails ? `
             <div class="highlight-box">
-                <h3>Informações Adicionais da Reserva</h3>
+                <h3>Informações Adicionais da Solicitação</h3>
                 <ul style="margin: 0 0 0 1.5rem;">
                     ${extraDetailsHtml}
                 </ul>
             </div>
             ` : ''}
             
-            <p><strong>Importante:</strong> Guarde este código de confirmação. Você precisará dele no dia da sua experiência.</p>
+            <p><strong>Importante:</strong> Guarde este código de acompanhamento. Você receberá um email de confirmação quando sua reserva for aprovada pelo parceiro.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
                 <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/reservas" class="button">
-                    Ver Minhas Reservas
-                </a>
-            </div>
-            
-            <div style="text-align: center; margin: 1rem 0;">
-                <a href="https://tucanoronha.com.br/voucher/${data.confirmationCode}" class="button" style="background-color: #10b981; margin-left: 10px;">
-                    📄 Acessar Voucher
+                    Acompanhar Minhas Solicitações
                 </a>
             </div>
             
@@ -551,7 +552,7 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
     },
     employee: {
       title: "👋 Bem-vindo à Equipe!",
-      message: "Estamos felizes em tê-lo como parte da equipe Tucano Noronha!",
+      message: "Estamos felizes em tê-lo como parte da equipe Tuca Noronha!",
       features: [
         "🎯 Gerencie operações",
         "👥 Suporte aos clientes",

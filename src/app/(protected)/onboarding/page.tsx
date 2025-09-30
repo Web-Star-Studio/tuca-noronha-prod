@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useOnboarding } from "@/hooks/useOnboarding"
-import { Loader2, UserCheck, Calendar, Phone, User, ArrowLeft, CheckCircle } from "lucide-react"
+import { Loader2, UserCheck, Calendar, Phone, User, ArrowLeft, CheckCircle, CreditCard } from "lucide-react"
 
 interface OnboardingData {
   fullName: string
   dateOfBirth: string
   phoneNumber: string
+  cpf?: string
 }
 
 export default function OnboardingPage() {
@@ -29,6 +30,7 @@ export default function OnboardingPage() {
     fullName: "",
     dateOfBirth: "",
     phoneNumber: "",
+    cpf: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<OnboardingData>>({})
@@ -94,6 +96,14 @@ export default function OnboardingPage() {
       }
     }
 
+    // Validar CPF (opcional, mas se fornecido, deve estar no formato correto)
+    if (formData.cpf && formData.cpf.trim()) {
+      const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/
+      if (!cpfRegex.test(formData.cpf)) {
+        newErrors.cpf = "Formato: XXX.XXX.XXX-XX"
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -124,6 +134,35 @@ export default function OnboardingPage() {
     // Limpar erro se existir
     if (errors.phoneNumber) {
       setErrors(prev => ({ ...prev, phoneNumber: undefined }))
+    }
+  }
+
+  const formatCPF = (value: string): string => {
+    // Remove tudo que não for número
+    const onlyNumbers = value.replace(/\D/g, "")
+    
+    // Limita a 11 dígitos
+    const limited = onlyNumbers.slice(0, 11)
+    
+    // Aplica a máscara
+    if (limited.length <= 3) {
+      return limited
+    } else if (limited.length <= 6) {
+      return `${limited.slice(0, 3)}.${limited.slice(3)}`
+    } else if (limited.length <= 9) {
+      return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6)}`
+    } else {
+      return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6, 9)}-${limited.slice(9)}`
+    }
+  }
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCPF(e.target.value)
+    setFormData(prev => ({ ...prev, cpf: formatted }))
+    
+    // Limpar erro se existir
+    if (errors.cpf) {
+      setErrors(prev => ({ ...prev, cpf: undefined }))
     }
   }
 
@@ -235,6 +274,28 @@ export default function OnboardingPage() {
                 {errors.phoneNumber && (
                   <p className="text-sm text-red-600">{errors.phoneNumber}</p>
                 )}
+              </div>
+
+              {/* CPF (Opcional) */}
+              <div className="space-y-2">
+                <Label htmlFor="cpf" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  CPF (opcional)
+                </Label>
+                <Input
+                  id="cpf"
+                  type="text"
+                  placeholder="000.000.000-00"
+                  value={formData.cpf || ""}
+                  onChange={handleCPFChange}
+                  className={errors.cpf ? "border-red-500" : ""}
+                />
+                {errors.cpf && (
+                  <p className="text-sm text-red-600">{errors.cpf}</p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Recomendado para facilitar reservas e pagamentos
+                </p>
               </div>
 
               {/* Botões */}

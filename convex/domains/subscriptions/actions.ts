@@ -1,108 +1,220 @@
 "use node";
 
-import { action, internalAction } from "../../_generated/server";
+/**
+ * Mercado Pago Subscription Actions
+ * 
+ * Core functions for MP subscription integration:
+ * - createSubscription: Create MP subscription (preapproval)
+ * - processSubscriptionWebhook: Handle MP webhook notifications for subscriptions
+ */
+
+import { internalAction, action } from "../../_generated/server";
 import { v } from "convex/values";
-import Stripe from "stripe";
 import { internal } from "../../_generated/api";
+import { mpFetch } from "../mercadoPago/utils";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-06-30.basil" as any,
-});
-
-// Product and Price IDs from setup script
-const GUIDE_PRODUCT_ID = "prod_SbhqXdhdUhZF77";
-const GUIDE_PRICE_ID = "price_1RgUUlGbTEVfu7BMLwU6TSdF";
+// Subscription configuration
+const GUIDE_SUBSCRIPTION_CONFIG = {
+  title: "Assinatura Premium - Guia de Viagens",
+  reason: "Acesso completo ao painel de guia de viagens",
+  amount: 99.90, // Valor anual em reais
+  frequency: 1,
+  frequencyType: "years",
+  currencyId: "BRL"
+};
 
 /**
- * Create a Stripe Checkout session for guide subscription
+ * Create a subscription (preapproval) for the guide panel
  */
-export const createCheckoutSession = action({
+export const createSubscription = action({
   args: {
-    userId: v.id("users"),
+    userId: v.string(), // Clerk user ID
+    userEmail: v.string(),
+    cardTokenId: v.string(), // Token do cartão gerado pelo MP SDK
+    successUrl: v.string(),
+    cancelUrl: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    preapprovalId: v.optional(v.string()),
+    initPoint: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      // Create subscription body
+      const startDate = new Date();
+      const body = {
+        reason: GUIDE_SUBSCRIPTION_CONFIG.reason,
+        external_reference: `guide_${args.userId}`,
+        payer_email: args.userEmail,
+        card_token_id: args.cardTokenId,
+        auto_recurring: {
+          frequency: GUIDE_SUBSCRIPTION_CONFIG.frequency,
+          frequency_type: GUIDE_SUBSCRIPTION_CONFIG.frequencyType,
+          transaction_amount: GUIDE_SUBSCRIPTION_CONFIG.amount,
+          currency_id: GUIDE_SUBSCRIPTION_CONFIG.currencyId,
+          start_date: startDate.toISOString(),
+        },
+        back_url: args.successUrl,
+        status: "authorized",
+        notification_url: process.env.CONVEX_SITE_URL ? 
+          `${process.env.CONVEX_SITE_URL}/mercadopago/subscription-webhook` : 
+          undefined,
+      };
+
+      console.log("[MP] Creating subscription with body:", body);
+
+      // Create subscription via Mercado Pago API
+      const preapproval = await mpFetch<any>("/preapproval", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      console.log("[MP] Subscription created:", preapproval);
+
+      // Save subscription in database
+      await ctx.runMutation(internal.domains.subscriptions.mutations.upsertSubscription, {
+        userId: args.userId,
+        userEmail: args.userEmail,
+        mpPreapprovalId: String(preapproval.id),
+        status: "authorized",
+        reason: GUIDE_SUBSCRIPTION_CONFIG.reason,
+        externalReference: `guide_${args.userId}`,
+        frequency: GUIDE_SUBSCRIPTION_CONFIG.frequency,
+        frequencyType: GUIDE_SUBSCRIPTION_CONFIG.frequencyType,
+        transactionAmount: GUIDE_SUBSCRIPTION_CONFIG.amount,
+        currencyId: GUIDE_SUBSCRIPTION_CONFIG.currencyId,
+        startDate: new Date(preapproval.start_date || startDate).getTime(),
+        endDate: preapproval.end_date ? new Date(preapproval.end_date).getTime() : undefined,
+      });
+
+      return {
+        success: true,
+        preapprovalId: String(preapproval.id),
+        initPoint: preapproval.init_point || args.successUrl,
+      };
+    } catch (error) {
+      console.error("[MP] Failed to create subscription:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+/**
+ * Create a subscription preference (for Checkout Pro)
+ */
+export const createSubscriptionPreference = action({
+  args: {
+    userId: v.string(), // Clerk user ID
     userEmail: v.string(),
     userName: v.optional(v.string()),
     successUrl: v.string(),
     cancelUrl: v.string(),
   },
   returns: v.object({
-    sessionId: v.string(),
-    sessionUrl: v.string(),
     success: v.boolean(),
+    preferenceId: v.optional(v.string()),
+    preferenceUrl: v.optional(v.string()),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     try {
-      // Get or create Stripe customer
-      const existingCustomer = await ctx.runQuery(internal.domains.stripe.queries.getStripeCustomerByUserId, {
-        userId: args.userId,
+      // Build return URLs - Mercado Pago requires HTTPS URLs, not localhost
+      // Replace localhost URLs with production URL
+      const productionUrl = "https://tucanoronha.com.br";
+      
+      const replaceLocalhost = (url: string | undefined): string => {
+        if (!url) return productionUrl;
+        // Replace localhost/127.0.0.1 URLs with production URL
+        if (url.includes('localhost') || url.includes('127.0.0.1')) {
+          // Extract the path from the localhost URL
+          const urlObj = new URL(url);
+          return `${productionUrl}${urlObj.pathname}${urlObj.search}`;
+        }
+        return url;
+      };
+      
+      // Use provided URLs but replace localhost with production URL
+      const successUrl = replaceLocalhost(args.successUrl?.trim()) || productionUrl;
+      const failureUrl = replaceLocalhost(args.cancelUrl?.trim()) || productionUrl;
+      const pendingUrl = successUrl;
+      
+      // Validate back_urls
+      if (!successUrl) {
+        throw new Error("back_urls.success is required for Mercado Pago preference");
+      }
+      
+      // Log what we're using
+      console.log("[MP] Final URLs for subscription:", {
+        original: { success: args.successUrl, cancel: args.cancelUrl },
+        final: { success: successUrl, failure: failureUrl, pending: pendingUrl }
       });
 
-      let stripeCustomerId: string;
-      if (existingCustomer) {
-        stripeCustomerId = existingCustomer.stripeCustomerId;
-      } else {
-        // Create new customer
-        const customer = await stripe.customers.create({
-          email: args.userEmail,
+      // Create a recurring payment preference
+      const body = {
+        items: [{
+          title: GUIDE_SUBSCRIPTION_CONFIG.title,
+          quantity: 1,
+          currency_id: GUIDE_SUBSCRIPTION_CONFIG.currencyId,
+          unit_price: GUIDE_SUBSCRIPTION_CONFIG.amount,
+        }],
+        payer: {
           name: args.userName,
-          metadata: {
-            userId: args.userId,
-            source: "guide_subscription",
-          },
-        });
-
-        // Store customer in database
-        await ctx.runMutation(internal.domains.stripe.mutations.createStripeCustomer, {
-          userId: args.userId,
-          stripeCustomerId: customer.id,
           email: args.userEmail,
-          name: args.userName,
-          metadata: {
-            source: "guide_subscription",
-            userRole: "traveler",
-          },
-        });
-
-        stripeCustomerId = customer.id;
-      }
-
-      // Create checkout session for subscription
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price: GUIDE_PRICE_ID,
-            quantity: 1,
-          },
-        ],
-        mode: "subscription",
-        success_url: args.successUrl,
-        cancel_url: args.cancelUrl,
-        allow_promotion_codes: true,
+        },
+        back_urls: {
+          success: successUrl,
+          pending: pendingUrl,
+          failure: failureUrl,
+        },
+        auto_return: "approved",
+        external_reference: `guide_${args.userId}`,
+        notification_url: process.env.CONVEX_SITE_URL ? 
+          `${process.env.CONVEX_SITE_URL}/mercadopago/subscription-webhook` : 
+          undefined,
         metadata: {
-          userId: args.userId,
-          type: "guide_subscription",
-          convexOrigin: "true",
+          userId: String(args.userId),
+          userEmail: args.userEmail,
+          subscriptionType: "guide",
         },
-        subscription_data: {
-          metadata: {
-            userId: args.userId,
-            type: "guide_subscription",
-          },
-        },
+        // Indicar que é uma assinatura recorrente
+        purpose: "wallet_purchase",
+      };
+
+      console.log("[MP] Creating subscription preference with URLs:", {
+        success: successUrl,
+        pending: pendingUrl,
+        failure: failureUrl,
       });
 
+      console.log("[MP] Sending preference to API:", {
+        back_urls: body.back_urls,
+        auto_return: body.auto_return,
+      });
+
+      const preference = await mpFetch<any>("/checkout/preferences", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      console.log("[MP] Subscription preference created:", preference);
+
+      const checkoutUrl = preference.init_point || 
+                         preference.sandbox_init_point || 
+                         `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preference.id}`;
+
       return {
-        sessionId: session.id,
-        sessionUrl: session.url || "",
         success: true,
+        preferenceId: String(preference.id),
+        preferenceUrl: checkoutUrl,
       };
     } catch (error) {
-      console.error("Failed to create checkout session:", error);
+      console.error("[MP] Failed to create subscription preference:", error);
       return {
-        sessionId: "",
-        sessionUrl: "",
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
@@ -111,203 +223,108 @@ export const createCheckoutSession = action({
 });
 
 /**
- * Create a Customer Portal session for managing subscriptions
- */
-export const createPortalSession = action({
-  args: {
-    userId: v.id("users"),
-    returnUrl: v.string(),
-  },
-  returns: v.object({
-    portalUrl: v.string(),
-    success: v.boolean(),
-    error: v.optional(v.string()),
-  }),
-  handler: async (ctx, args) => {
-    try {
-      // Get Stripe customer
-      const customer = await ctx.runQuery(internal.domains.stripe.queries.getStripeCustomerByUserId, {
-        userId: args.userId,
-      });
-
-      if (!customer) {
-        throw new Error("Customer not found");
-      }
-
-      // Create portal session
-      const session = await stripe.billingPortal.sessions.create({
-        customer: customer.stripeCustomerId,
-        return_url: args.returnUrl,
-      });
-
-      return {
-        portalUrl: session.url,
-        success: true,
-      };
-    } catch (error) {
-      console.error("Failed to create portal session:", error);
-      return {
-        portalUrl: "",
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  },
-});
-
-/**
- * Process subscription webhook events
+ * Process Mercado Pago subscription webhook events
  */
 export const processSubscriptionWebhook = internalAction({
   args: {
-    eventType: v.string(),
-    subscription: v.object({
-      id: v.string(),
-      customer: v.string(),
-      status: v.string(),
-      current_period_start: v.number(),
-      current_period_end: v.number(),
-      canceled_at: v.optional(v.number()),
-      items: v.object({
-        data: v.array(v.object({
-          price: v.object({
-            id: v.string(),
-          }),
-        })),
-      }),
-      metadata: v.object({
-        userId: v.optional(v.string()),
-      }),
-    }),
+    id: v.optional(v.union(v.string(), v.number())),
+    type: v.optional(v.string()),
+    action: v.optional(v.string()),
+    data: v.optional(v.any()),
   },
   returns: v.object({
     success: v.boolean(),
+    processed: v.boolean(),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     try {
-      const { eventType, subscription } = args;
+      const eventId = args.id != null ? String(args.id) : undefined;
 
-      // Get user ID from metadata or customer lookup
-      let userId = subscription.metadata.userId;
-      if (!userId) {
-        const customer = await ctx.runQuery(internal.domains.stripe.queries.getStripeCustomerByStripeId, {
-          stripeCustomerId: subscription.customer,
-        });
-        if (customer) {
-          userId = customer.userId;
+      if (!eventId) {
+        return { success: false, processed: false, error: "Missing event id" };
+      }
+
+      console.log(`[MP] Processing subscription webhook: ${args.type} - ${args.action}`);
+
+      // Handle subscription notifications
+      if (args.type === "subscription_preapproval" || 
+          args.type === "subscription_authorized_payment") {
+        
+        const preapprovalId = args.data?.id || args.data?.preapproval_id;
+        if (!preapprovalId) {
+          console.warn("[MP] No preapproval ID found in webhook data");
+          return { success: true, processed: true };
+        }
+
+        // Fetch subscription details from MP
+        try {
+          const subscription = await mpFetch<any>(`/preapproval/${preapprovalId}`);
+          console.log(`[MP] Fetched subscription ${preapprovalId}:`, subscription);
+
+          // Update subscription in database
+          const externalRef = subscription.external_reference;
+          const userId = externalRef ? externalRef.replace("guide_", "") : null;
+
+          if (userId) {
+            await ctx.runMutation(internal.domains.subscriptions.mutations.updateSubscriptionStatus, {
+              mpPreapprovalId: String(preapprovalId),
+              status: subscription.status,
+              cancelledDate: subscription.cancelled ? Date.now() : undefined,
+              pausedDate: subscription.paused ? Date.now() : undefined,
+            });
+          }
+        } catch (error) {
+          console.error(`[MP] Failed to fetch subscription ${preapprovalId}:`, error);
         }
       }
 
-      if (!userId) {
-        throw new Error("User not found for subscription");
+      // Handle payment notifications for subscriptions
+      if (args.type === "payment" && args.data?.id) {
+        const paymentId = args.data.id;
+        
+        try {
+          const payment = await mpFetch<any>(`/v1/payments/${paymentId}`);
+          console.log(`[MP] Fetched subscription payment ${paymentId}:`, payment);
+
+          // Check if it's a subscription payment
+          if (payment.metadata?.subscriptionType === "guide" && payment.metadata?.userId) {
+            // Get subscription
+            const subscription = await ctx.runQuery(
+              internal.domains.subscriptions.queries.getUserSubscriptionInternal,
+              { userId: payment.metadata.userId as any }
+            );
+
+            if (subscription) {
+              // Record payment
+              await ctx.runMutation(internal.domains.subscriptions.mutations.recordPayment, {
+                userId: payment.metadata.userId as any,
+                subscriptionId: subscription._id,
+                mpPaymentId: String(payment.id),
+                mpPreapprovalId: subscription.mpPreapprovalId,
+                amount: payment.transaction_amount || 0,
+                currency: payment.currency_id || "BRL",
+                status: payment.status,
+                statusDetail: payment.status_detail,
+                paymentMethod: payment.payment_method_id,
+                paymentTypeId: payment.payment_type_id,
+                paidAt: payment.date_approved ? new Date(payment.date_approved).getTime() : undefined,
+                failureReason: payment.status_detail,
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`[MP] Failed to process subscription payment ${paymentId}:`, error);
+        }
       }
 
-      // Map Stripe status to our status
-      let status: "active" | "canceled" | "past_due" | "expired" | "trialing";
-      switch (subscription.status) {
-        case "active":
-          status = "active";
-          break;
-        case "canceled":
-          status = "canceled";
-          break;
-        case "past_due":
-          status = "past_due";
-          break;
-        case "trialing":
-          status = "trialing";
-          break;
-        default:
-          status = "expired";
-      }
-
-      // Update subscription in database
-      await ctx.runMutation(internal.domains.subscriptions.mutations.upsertSubscription, {
-        userId: userId as any,
-        stripeCustomerId: subscription.customer,
-        stripeSubscriptionId: subscription.id,
-        stripePriceId: subscription.items.data[0].price.id,
-        status,
-        currentPeriodStart: subscription.current_period_start * 1000, // Convert to milliseconds
-        currentPeriodEnd: subscription.current_period_end * 1000,
-        canceledAt: subscription.canceled_at ? subscription.canceled_at * 1000 : undefined,
-      });
-
-      return { success: true };
+      return { success: true, processed: true };
     } catch (error) {
-      console.error("Failed to process subscription webhook:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  },
-});
-
-/**
- * Process invoice webhook events
- */
-export const processInvoiceWebhook = internalAction({
-  args: {
-    eventType: v.string(),
-    invoice: v.object({
-      id: v.string(),
-      customer: v.string(),
-      subscription: v.string(),
-      amount_paid: v.number(),
-      currency: v.string(),
-      payment_intent: v.optional(v.string()),
-      status: v.string(),
-      paid: v.boolean(),
-      created: v.number(),
-    }),
-  },
-  returns: v.object({
-    success: v.boolean(),
-    error: v.optional(v.string()),
-  }),
-  handler: async (ctx, args) => {
-    try {
-      const { eventType, invoice } = args;
-
-      // Get subscription
-      const subscription = await ctx.runQuery(internal.domains.subscriptions.queries.getByStripeSubscriptionId, {
-        stripeSubscriptionId: invoice.subscription,
-      });
-
-      if (!subscription) {
-        console.error("Subscription not found for invoice:", invoice.subscription);
-        return { success: true }; // Don't fail webhook processing
-      }
-
-      // Record payment
-      let paymentStatus: "pending" | "succeeded" | "failed";
-      if (invoice.paid) {
-        paymentStatus = "succeeded";
-      } else if (invoice.status === "open") {
-        paymentStatus = "pending";
-      } else {
-        paymentStatus = "failed";
-      }
-
-      await ctx.runMutation(internal.domains.subscriptions.mutations.recordPayment, {
-        userId: subscription.userId,
-        subscriptionId: subscription._id,
-        stripeInvoiceId: invoice.id,
-        stripePaymentIntentId: invoice.payment_intent,
-        amount: invoice.amount_paid,
-        currency: invoice.currency,
-        status: paymentStatus,
-        paidAt: invoice.paid ? invoice.created * 1000 : undefined,
-      });
-
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to process invoice webhook:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+      console.error("[MP] Failed to process subscription webhook:", error);
+      return { 
+        success: false, 
+        processed: false, 
+        error: error instanceof Error ? error.message : "Unknown error" 
       };
     }
   },

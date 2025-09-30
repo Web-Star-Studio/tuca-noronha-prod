@@ -26,7 +26,8 @@ export const listVehicles = query({
       seats: v.number(),
       fuelType: v.string(),
       transmission: v.string(),
-      pricePerDay: v.number(),
+      estimatedPricePerDay: v.number(),
+      netRate: v.optional(v.number()),
       description: v.optional(v.string()),
       features: v.array(v.string()),
       imageUrl: v.optional(v.string()),
@@ -164,7 +165,8 @@ export const listVehiclesSimple = query({
     seats: v.number(),
     fuelType: v.string(),
     transmission: v.string(),
-    pricePerDay: v.number(),
+    estimatedPricePerDay: v.number(),
+    netRate: v.optional(v.number()),
     imageUrl: v.optional(v.string()),
     status: v.string(),
     licensePlate: v.string(),
@@ -202,7 +204,8 @@ export const listVehiclesSimple = query({
       seats: v.seats,
       fuelType: v.fuelType,
       transmission: v.transmission,
-      pricePerDay: v.pricePerDay,
+      estimatedPricePerDay: v.estimatedPricePerDay,
+      netRate: v.netRate,
       imageUrl: v.imageUrl,
       status: v.status,
       licensePlate: v.licensePlate,
@@ -227,7 +230,8 @@ export const getVehicle = query({
       seats: v.number(),
       fuelType: v.string(),
       transmission: v.string(),
-      pricePerDay: v.number(),
+      estimatedPricePerDay: v.number(),
+      netRate: v.optional(v.number()),
       description: v.optional(v.string()),
       features: v.array(v.string()),
       imageUrl: v.optional(v.string()),
@@ -470,5 +474,102 @@ export const getAll = query({
     }
 
     return [];
+  },
+});
+
+/**
+ * NOVAS QUERIES PARA O FLUXO DE RESERVAS
+ */
+
+// Get booking by ID (com detalhes do veículo)
+export const getBookingById = query({
+  args: { bookingId: v.id("vehicleBookings") },
+  handler: async (ctx, args) => {
+    const userId = await getCurrentUserConvexId(ctx);
+    const role = await getCurrentUserRole(ctx);
+    
+    if (!userId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const booking = await ctx.db.get(args.bookingId);
+    if (!booking) {
+      return null;
+    }
+
+    // Viajante só pode ver suas próprias reservas
+    if (role !== "master" && role !== "partner" && booking.userId !== userId) {
+      throw new Error("Você não tem permissão para ver esta reserva");
+    }
+
+    // Buscar dados do veículo
+    const vehicle = await ctx.db.get(booking.vehicleId);
+    
+    return {
+      ...booking,
+      vehicle,
+    };
+  },
+});
+
+// Get user bookings (minhas reservas)
+export const getMyVehicleBookings = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getCurrentUserConvexId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    const bookings = await ctx.db
+      .query("vehicleBookings")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    // Buscar veículos para cada reserva
+    const bookingsWithVehicles = await Promise.all(
+      bookings.map(async (booking) => {
+        const vehicle = await ctx.db.get(booking.vehicleId);
+        return {
+          ...booking,
+          vehicle,
+        };
+      })
+    );
+
+    return bookingsWithVehicles;
+  },
+});
+
+// Get pending booking requests (para admin)
+export const getPendingBookingRequests = query({
+  args: {},
+  handler: async (ctx) => {
+    const role = await getCurrentUserRole(ctx);
+    if (role !== "master" && role !== "partner") {
+      throw new Error("Apenas administradores podem ver solicitações pendentes");
+    }
+
+    const bookings = await ctx.db
+      .query("vehicleBookings")
+      .withIndex("by_status", (q) => q.eq("status", "pending_request"))
+      .order("desc")
+      .collect();
+
+    // Buscar veículos e usuários
+    const bookingsWithDetails = await Promise.all(
+      bookings.map(async (booking) => {
+        const vehicle = await ctx.db.get(booking.vehicleId);
+        const user = await ctx.db.get(booking.userId);
+        return {
+          ...booking,
+          vehicle,
+          user: user ? { name: user.name, email: user.email } : null,
+        };
+      })
+    );
+
+    return bookingsWithDetails;
   },
 }); 

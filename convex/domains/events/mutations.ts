@@ -25,6 +25,7 @@ export const create = mutationWithRole(["partner", "master"])({
     location: v.string(),
     address: v.string(),
     price: v.number(),
+    netRate: v.optional(v.number()),
     category: v.string(),
     maxParticipants: v.number(),
     imageUrl: v.string(),
@@ -36,6 +37,7 @@ export const create = mutationWithRole(["partner", "master"])({
     speakerBio: v.optional(v.string()),
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    isFree: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
     symplaUrl: v.optional(v.string()),
@@ -55,6 +57,7 @@ export const create = mutationWithRole(["partner", "master"])({
     // Creating the event
     const eventId = await ctx.db.insert("events", {
       ...args,
+      netRate: args.netRate ?? args.price,
       maxParticipants,
       hasMultipleTickets: args.hasMultipleTickets || false, // valor padrão é false
       acceptsOnlinePayment: args.price > 0, // automaticamente true quando price > 0
@@ -102,6 +105,7 @@ export const update = mutationWithRole(["partner", "master"])({
     location: v.optional(v.string()),
     address: v.optional(v.string()),
     price: v.optional(v.number()),
+    netRate: v.optional(v.number()),
     category: v.optional(v.string()),
     maxParticipants: v.optional(v.number()),
     imageUrl: v.optional(v.string()),
@@ -113,6 +117,7 @@ export const update = mutationWithRole(["partner", "master"])({
     speakerBio: v.optional(v.string()),
     isFeatured: v.optional(v.boolean()),
     isActive: v.optional(v.boolean()),
+    isFree: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.optional(v.id("users")),
     symplaUrl: v.optional(v.string()),
@@ -139,6 +144,7 @@ export const update = mutationWithRole(["partner", "master"])({
       location?: string;
       address?: string;
       price?: number;
+      netRate?: number;
       category?: string;
       maxParticipants?: bigint;
       imageUrl?: string;

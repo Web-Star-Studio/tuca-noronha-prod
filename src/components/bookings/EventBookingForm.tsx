@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Ticket } from "lucide-react";
 import { useMutation, useQuery, useAction } from "convex/react";
+import { formatCurrency } from "@/lib/utils";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 
 interface EventBookingFormProps {
@@ -47,7 +48,9 @@ export function EventBookingForm({
   onBookingSuccess,
   className,
 }: EventBookingFormProps) {
-  const [quantity, setQuantity] = useState(1);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [additionalAttendeeNames, setAdditionalAttendeeNames] = useState<string[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"eventTickets"> | undefined>(undefined);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   
@@ -56,11 +59,25 @@ export function EventBookingForm({
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
+
+  // Calculate total quantity
+  const quantity = adults + children;
   
   // Get event tickets if available
   const tickets = useQuery(api.domains.events.queries.getEventTickets, {
     eventId,
   });
+
+  useEffect(() => {
+    const required = Math.max(quantity - 1, 0);
+    setAdditionalAttendeeNames((prev) => {
+      const next = prev.slice(0, required);
+      while (next.length < required) {
+        next.push("");
+      }
+      return next;
+    });
+  }, [quantity]);
 
   const createBooking = useMutation(api.domains.bookings.mutations.createEventBooking);
   const createMpCheckoutPreference = useAction(
@@ -105,6 +122,14 @@ export function EventBookingForm({
       return;
     }
 
+    if (quantity > 1) {
+      const hasEmptyName = additionalAttendeeNames.some((name) => !name.trim());
+      if (hasEmptyName) {
+        toast.error("Informe o nome completo de todos os participantes adicionais");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -113,6 +138,9 @@ export function EventBookingForm({
         eventId,
         ticketId: selectedTicketId,
         quantity,
+        adults,
+        children,
+        participantNames: additionalAttendeeNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
         couponCode: appliedCoupon?.code,
@@ -120,26 +148,43 @@ export function EventBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Ingresso(s) reservado(s) com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
+      toast.success("Solicitação de ingresso(s) enviada!", {
+        description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
       });
 
-      // 2. If event requires payment, try Mercado Pago first; fallback to Stripe
+      // 2. Check if event is free or no payment required
+      if (event.isFree || getFinalPrice() === 0) {
+        console.log("✅ Evento gratuito - pulando fluxo de pagamento");
+        
+        toast.success("Solicitação enviada com sucesso!", {
+          description: "Evento gratuito - aguardando aprovação do parceiro",
+        });
+
+        // Reset form
+        setAdults(1);
+        setChildren(0);
+        setAdditionalAttendeeNames([]);
+        setSelectedTicketId(undefined);
+        setCustomerInfo({ name: "", email: "", phone: "" });
+        setSpecialRequests("");
+
+        if (onBookingSuccess) {
+          onBookingSuccess(result);
+        }
+
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 3. If o evento exige pagamento antecipado, gerar link de pagamento pelo Mercado Pago
       if (event.acceptsOnlinePayment && event.requiresUpfrontPayment && result.totalPrice > 0) {
         try {
-          console.log("🔄 Criando checkout session para evento:", {
-            bookingId: result.bookingId,
-            eventId,
-            totalPrice: result.totalPrice,
-          });
-
-          // Try Mercado Pago first
-          const mpPref = await createMpCheckoutPreference({
-            bookingId: result.bookingId,
-            assetType: "event",
-            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
-            cancelUrl: `${window.location.origin}/booking/cancel`,
-            customerEmail: customerInfo.email,
+        const mpPref = await createMpCheckoutPreference({
+          bookingId: result.bookingId,
+          assetType: "event",
+          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
+          cancelUrl: `${window.location.origin}/booking/cancel`,
+          customerEmail: customerInfo.email,
             couponCode: appliedCoupon?.code,
             discountAmount: getDiscountAmount(),
             originalAmount: getPrice(),
@@ -153,7 +198,9 @@ export function EventBookingForm({
             });
 
             // Reset form before redirecting
-            setQuantity(1);
+            setAdults(1);
+            setChildren(0);
+            setAdditionalAttendeeNames([]);
             setSelectedTicketId(undefined);
             setCustomerInfo({ name: "", email: "", phone: "" });
             setSpecialRequests("");
@@ -166,8 +213,8 @@ export function EventBookingForm({
             throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
           }
         } catch (paymentError) {
-          console.error("💥 Erro ao criar payment link:", paymentError);
-          toast.error("Reserva criada, mas erro no pagamento", {
+          console.error("💥 Erro ao gerar link de pagamento:", paymentError);
+          toast.error("Solicitação criada, mas não foi possível gerar o link de pagamento", {
             description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
           });
           
@@ -185,7 +232,9 @@ export function EventBookingForm({
       }
 
       // Reset form if not redirecting
-      setQuantity(1);
+      setAdults(1);
+      setChildren(0);
+      setAdditionalAttendeeNames([]);
       setSelectedTicketId(undefined);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
@@ -242,36 +291,41 @@ export function EventBookingForm({
             </div>
           )}
 
-          {/* Quantity */}
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantidade de ingressos</Label>
-            <div className="flex items-center space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
-              >
-                -
-              </Button>
-              <div className="flex items-center justify-center w-12 h-10 border rounded-md">
-                <span className="text-sm font-medium">{quantity}</span>
+          {/* Participants */}
+        <ParticipantSelector
+          adults={adults}
+          childrenCount={children}
+            onAdultsChange={setAdults}
+            onChildrenChange={setChildren}
+            minAdults={1}
+            maxAdults={10}
+            maxChildren={9}
+            maxTotal={10}
+          />
+
+          {quantity > 1 && (
+            <div className="space-y-2">
+              <Label>Nomes dos participantes adicionais</Label>
+              <p className="text-xs text-gray-500">
+                Informe o nome completo dos participantes extras além do responsável pela compra.
+              </p>
+              <div className="space-y-2">
+                {additionalAttendeeNames.map((value, index) => (
+                  <Input
+                    key={`attendee-${index}`}
+                    value={value}
+                    onChange={(e) => {
+                      const next = [...additionalAttendeeNames];
+                      next[index] = e.target.value;
+                      setAdditionalAttendeeNames(next);
+                    }}
+                    placeholder={`Participante ${index + 2}`}
+                    className={formStyles.input.base}
+                  />
+                ))}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(quantity + 1)}
-                disabled={quantity >= 10} // Max 10 tickets per order
-              >
-                +
-              </Button>
             </div>
-            <p className="text-xs text-gray-500">
-              Máximo 10 ingressos por pedido
-            </p>
-          </div>
+          )}
 
           {/* Customer Information */}
           <div className="space-y-4 pt-4 border-t">
@@ -338,13 +392,28 @@ export function EventBookingForm({
             />
           )}
 
-          {/* Price summary with Stripe fees */}
+          {/* Price summary */}
           {!isEventPast && getPrice() > 0 && (
-            <StripeFeesDisplay 
-              baseAmount={getPrice()}
-              discountAmount={getDiscountAmount()}
-              className="mt-4"
-            />
+            <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor base</span>
+                <span className="font-medium">{formatCurrency(getPrice())}</span>
+              </div>
+              {getDiscountAmount() > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-900">Total</span>
+                <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Confirmaremos o pagamento com o organizador antes da cobrança definitiva.
+              </p>
+            </div>
           )}
 
           {/* Payment Info - show if requires payment */}

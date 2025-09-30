@@ -22,6 +22,8 @@ export interface Activity {
   description: string;
   shortDescription: string;
   price: number;
+  netRate: number;
+  availableTimes: string[];
   category: string;
   duration: string;
   maxParticipants: number;
@@ -41,6 +43,7 @@ export interface Activity {
   safetyGuidelines?: string[];
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets?: boolean;
   tickets?: ActivityTicket[];
   ticketTypes?: any[];

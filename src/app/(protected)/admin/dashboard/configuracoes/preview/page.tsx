@@ -53,7 +53,7 @@ export default function ConfiguracoesPreviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">WhatsApp</p>
                 <p className="text-xs text-gray-500">Configurado</p>
@@ -67,7 +67,7 @@ export default function ConfiguracoesPreviewPage() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Email</p>
                 <p className="text-xs text-gray-500">Configurado</p>
@@ -81,7 +81,7 @@ export default function ConfiguracoesPreviewPage() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Telefone</p>
                 <p className="text-xs text-gray-500">Configurado</p>
@@ -95,7 +95,7 @@ export default function ConfiguracoesPreviewPage() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Empresa</p>
                 <p className="text-xs text-gray-500">Configurado</p>
@@ -123,7 +123,7 @@ export default function ConfiguracoesPreviewPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-4 w-4 text-green-600" />
                   <span className="font-medium">WhatsApp</span>
@@ -131,7 +131,7 @@ export default function ConfiguracoesPreviewPage() {
                 <Badge variant="secondary">{settings.whatsappNumber}</Badge>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-blue-600" />
                   <span className="font-medium">Email</span>
@@ -139,7 +139,7 @@ export default function ConfiguracoesPreviewPage() {
                 <Badge variant="secondary">{settings.supportEmail}</Badge>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-orange-600" />
                   <span className="font-medium">Telefone</span>
@@ -163,12 +163,12 @@ export default function ConfiguracoesPreviewPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="font-medium">Nome da Empresa</span>
                 <Badge variant="secondary">{settings.companyName}</Badge>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="font-medium">Nome do Negócio</span>
                 <Badge variant="secondary">{settings.businessName}</Badge>
               </div>

@@ -163,7 +163,7 @@ export default function LogsPage() {
       {/* Estatísticas dos Logs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Total de Eventos</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -174,7 +174,7 @@ export default function LogsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Erros</CardTitle>
             <XCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
@@ -185,7 +185,7 @@ export default function LogsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Avisos</CardTitle>
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
           </CardHeader>
@@ -196,7 +196,7 @@ export default function LogsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Eventos Críticos</CardTitle>
             <Shield className="h-4 w-4 text-red-600" />
           </CardHeader>
@@ -368,7 +368,7 @@ export default function LogsPage() {
             <CardDescription>Últimas 24 horas</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span className="text-sm">Criações</span>
@@ -379,7 +379,7 @@ export default function LogsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Edit className="h-4 w-4 text-blue-600" />
                 <span className="text-sm">Atualizações</span>
@@ -390,7 +390,7 @@ export default function LogsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Trash2 className="h-4 w-4 text-red-600" />
                 <span className="text-sm">Exclusões</span>
@@ -401,7 +401,7 @@ export default function LogsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-purple-600" />
                 <span className="text-sm">Autenticação</span>
@@ -420,7 +420,7 @@ export default function LogsPage() {
             <CardDescription>Últimas 24 horas</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-600" />
                 <span className="text-sm">Gestão de Usuários</span>
@@ -430,7 +430,7 @@ export default function LogsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Database className="h-4 w-4 text-green-600" />
                 <span className="text-sm">Gestão de Assets</span>
@@ -440,7 +440,7 @@ export default function LogsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-purple-600" />
                 <span className="text-sm">Autenticação</span>
@@ -450,7 +450,7 @@ export default function LogsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-orange-600" />
                 <span className="text-sm">Administração</span>

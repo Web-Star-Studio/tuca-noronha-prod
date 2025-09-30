@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, ExternalLink } from "lucide-react";
+import { Search } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -39,7 +39,6 @@ export function PartnerTransactionsList({ partnerId }: PartnerTransactionsListPr
     
     return (
       transaction.bookingId.toLowerCase().includes(searchLower) ||
-      transaction.stripePaymentIntentId.toLowerCase().includes(searchLower) ||
       partner?.businessName?.toLowerCase().includes(searchLower) ||
       transaction.bookingType.toLowerCase().includes(searchLower)
     );
@@ -165,15 +164,7 @@ export function PartnerTransactionsList({ partnerId }: PartnerTransactionsListPr
                       {getStatusBadge(transaction.status)}
                     </TableCell>
                     <TableCell>
-                      <a
-                        href={`https://dashboard.stripe.com/test/payments/${transaction.stripePaymentIntentId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        Ver no Stripe
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                      <span className="text-xs text-muted-foreground">Detalhes externos indisponíveis</span>
                     </TableCell>
                   </TableRow>
                 );
@@ -184,7 +175,7 @@ export function PartnerTransactionsList({ partnerId }: PartnerTransactionsListPr
       </div>
 
       {filteredTransactions && filteredTransactions.length > 0 && (
-        <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between px-2 text-sm text-muted-foreground">
           <div>
             Mostrando {filteredTransactions.length} transação(ões)
           </div>

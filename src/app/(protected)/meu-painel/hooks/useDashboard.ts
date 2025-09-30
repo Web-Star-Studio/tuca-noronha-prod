@@ -120,7 +120,6 @@ export function useDashboard() {
         confirmationCode: r.confirmationCode,
         isAdminCreated: true,
         paymentStatus: r.paymentStatus,
-        paymentLinkUrl: r.stripePaymentLinkUrl,
         paymentDueDate: r.paymentDueDate,
       });
     });

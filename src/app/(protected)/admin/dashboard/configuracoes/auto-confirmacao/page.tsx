@@ -209,7 +209,7 @@ export default function AutoConfirmacaoPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-start sm:items-center">
         <div>
           <h1 className="text-3xl font-bold">Configurações de Auto-Confirmação</h1>
           <p className="text-muted-foreground">
@@ -310,7 +310,7 @@ export default function AutoConfirmacaoPage() {
               
               {/* Conditions Tabs */}
               <Tabs defaultValue="time" className="mt-6">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                   <TabsTrigger value="time">Horário</TabsTrigger>
                   <TabsTrigger value="amount">Valor</TabsTrigger>
                   <TabsTrigger value="customer">Cliente</TabsTrigger>
@@ -320,7 +320,7 @@ export default function AutoConfirmacaoPage() {
                 
                 {/* Time Restrictions Tab */}
                 <TabsContent value="time" className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <div>
                       <h3 className="font-medium">Restrições de Horário</h3>
                       <p className="text-sm text-muted-foreground">
@@ -433,7 +433,7 @@ export default function AutoConfirmacaoPage() {
                 
                 {/* Amount Thresholds Tab */}
                 <TabsContent value="amount" className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <div>
                       <h3 className="font-medium">Limites de Valor</h3>
                       <p className="text-sm text-muted-foreground">
@@ -501,7 +501,7 @@ export default function AutoConfirmacaoPage() {
                 
                 {/* Customer Type Filters Tab */}
                 <TabsContent value="customer" className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <div>
                       <h3 className="font-medium">Filtros de Cliente</h3>
                       <p className="text-sm text-muted-foreground">
@@ -590,7 +590,7 @@ export default function AutoConfirmacaoPage() {
                 
                 {/* Booking Conditions Tab */}
                 <TabsContent value="booking" className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <div>
                       <h3 className="font-medium">Condições da Reserva</h3>
                       <p className="text-sm text-muted-foreground">
@@ -718,7 +718,7 @@ export default function AutoConfirmacaoPage() {
                 
                 {/* Availability Conditions Tab */}
                 <TabsContent value="availability" className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <div>
                       <h3 className="font-medium">Condições de Disponibilidade</h3>
                       <p className="text-sm text-muted-foreground">

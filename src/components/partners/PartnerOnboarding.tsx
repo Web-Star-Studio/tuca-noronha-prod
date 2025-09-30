@@ -1,241 +1,152 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
-  CreditCard, 
-  Building2, 
-  User,
-  Loader2,
-  AlertCircle,
-  ArrowRight,
-  CheckCircle2
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Handshake, LifeBuoy, PhoneCall, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { usePartner } from "@/lib/hooks/usePartner";
-import { useUser } from "@clerk/nextjs";
-import { toast } from "sonner";
-import { OnboardingStatus } from "./OnboardingStatus";
 
+const statusLabels: Record<string, { label: string; tone: "default" | "secondary" | "success" | "destructive" }> = {
+  pending: { label: "Configuração pendente", tone: "secondary" },
+  in_progress: { label: "Em análise", tone: "default" },
+  completed: { label: "Configuração concluída", tone: "success" },
+  rejected: { label: "Configuração interrompida", tone: "destructive" },
+};
 
 export function PartnerOnboarding() {
-  const { user } = useUser();
-  const { 
-    partner, 
-    canBePartner, 
-    createStripeAccount,
-    currentUser 
-  } = usePartner();
-  
-  const [isCreating, setIsCreating] = useState(false);
-  const [businessType, setBusinessType] = useState<"individual" | "company">("individual");
-  const [businessName, setBusinessName] = useState("");
+  const { partner, canBePartner } = usePartner();
 
-  // Se não pode ser partner, mostrar mensagem
   if (!canBePartner) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Acesso Restrito</CardTitle>
+          <CardTitle>Acesso restrito</CardTitle>
           <CardDescription>
-            Apenas usuários com perfil de parceiro podem acessar esta funcionalidade.
+            Apenas contas com perfil de parceiro podem visualizar as configurações de recebimento.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  // Se já tem conta, mostrar status
   if (partner) {
-    return <OnboardingStatus />;
-  }
+    const statusInfo = statusLabels[partner.onboardingStatus ?? "pending"] ?? statusLabels.pending;
 
-  const handleCreateAccount = async () => {
-    if (!user?.emailAddresses?.[0]?.emailAddress || !currentUser?._id) {
-      toast.error("Informações do usuário não encontradas");
-      return;
-    }
+    return (
+      <div className="space-y-4">
+        <Card className="border-slate-200">
+          <CardHeader className="space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Handshake className="h-5 w-5 text-slate-500" />
+                  Recebimentos do parceiro
+                </CardTitle>
+                <CardDescription>
+                  A habilitação é acompanhada pelo time financeiro para garantir repasses consistentes.
+                </CardDescription>
+              </div>
+              <Badge variant={statusInfo.tone}>{statusInfo.label}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="font-medium text-slate-700">O que você pode esperar</p>
+              <ul className="mt-3 space-y-2">
+                <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  Pagamentos continuam sendo processados pela plataforma com repasses automáticos.
+                </li>
+                <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  O dashboard financeiro permanece disponível para acompanhar saldo e transações.
+                </li>
+                <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  Você recebe alertas sempre que novos pagamentos forem liberados.
+                </li>
+              </ul>
+            </div>
 
-    if (businessType === "company" && !businessName.trim()) {
-      toast.error("Nome da empresa é obrigatório");
-      return;
-    }
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-slate-500" />
+                Próximos passos sugeridos
+              </p>
+              <ol className="space-y-2 text-sm text-slate-600">
+                <li>1. Envie os dados bancários e documentos solicitados para o suporte.</li>
+                <li>2. Aguarde a validação — o processo leva até um dia útil após o envio completo.</li>
+                <li>3. Receba a confirmação por e-mail e acompanhe os repasses no painel.</li>
+              </ol>
+            </div>
 
-    setIsCreating(true);
-    try {
-      const { onboardingUrl } = await createStripeAccount({
-        userId: currentUser._id, // Usar ID do Convex
-        email: user.emailAddresses[0].emailAddress,
-        country: "BR", // Brasil como padrão
-        businessType,
-        businessName: businessType === "company" ? businessName : undefined,
-      });
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild className="flex-1">
+                <Link href="/contato">
+                  <PhoneCall className="mr-2 h-4 w-4" />
+                  Falar com o suporte
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link href="mailto:financeiro@tuca.com.br">
+                  <LifeBuoy className="mr-2 h-4 w-4" />
+                  Enviar documentos por e-mail
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-      toast.success("Conta criada com sucesso! Redirecionando...");
-      
-      // Aguardar um momento para o usuário ver a mensagem
-      setTimeout(() => {
-        window.location.href = onboardingUrl;
-      }, 1500);
-    } catch {
-      toast.error("Erro ao criar conta");
-      console.error(error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Card de Boas-vindas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Bem-vindo ao Sistema de Parceiros</CardTitle>
-          <CardDescription className="text-base">
-            Configure sua conta para começar a receber pagamentos através da plataforma
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Para receber pagamentos, você precisa configurar uma conta no Stripe Connect.
-              Este processo é seguro e leva apenas alguns minutos.
+        {partner.onboardingStatus === "rejected" && (
+          <Alert variant="destructive">
+            <AlertTitle className="flex items-center gap-2 text-sm">
+              <XCircle className="h-4 w-4" />
+              Revisão necessária
+            </AlertTitle>
+            <AlertDescription className="text-sm">
+              Identificamos divergências nos dados enviados. Reenvie as informações corretas para retomarmos o processo.
             </AlertDescription>
           </Alert>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+    );
+  }
 
-      {/* Card de Configuração */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Configurar Conta de Pagamentos</CardTitle>
-          <CardDescription>
-            Escolha o tipo de conta e forneça as informações necessárias
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Tipo de Conta */}
-          <div className="space-y-3">
-            <Label>Tipo de Conta</Label>
-            <RadioGroup
-              value={businessType}
-              onValueChange={(value) => setBusinessType(value as "individual" | "company")}
-              disabled={isCreating}
-            >
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="individual" id="individual" />
-                <Label htmlFor="individual" className="flex-1 cursor-pointer">
-                  <div className="flex items-start gap-3">
-                    <User className="h-5 w-5 mt-0.5 text-gray-600" />
-                    <div>
-                      <div className="font-medium">Pessoa Física</div>
-                      <div className="text-sm text-muted-foreground">
-                        Para profissionais autônomos e MEIs
-                      </div>
-                    </div>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="company" id="company" />
-                <Label htmlFor="company" className="flex-1 cursor-pointer">
-                  <div className="flex items-start gap-3">
-                    <Building2 className="h-5 w-5 mt-0.5 text-gray-600" />
-                    <div>
-                      <div className="font-medium">Pessoa Jurídica</div>
-                      <div className="text-sm text-muted-foreground">
-                        Para empresas com CNPJ
-                      </div>
-                    </div>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
+  return (
+    <Card className="space-y-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Handshake className="h-5 w-5 text-slate-500" />
+          Habilite os pagamentos da sua conta
+        </CardTitle>
+        <CardDescription>
+          Coletamos os dados essenciais por atendimento para tornar o processo rápido e sem formulários longos.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          <p className="font-medium text-slate-700">Como funciona</p>
+          <ol className="mt-2 space-y-2">
+            <li>1. Compartilhe documentos e dados bancários com nossa equipe.</li>
+            <li>2. Receba a confirmação por e-mail assim que o repasse estiver ativo.</li>
+            <li>3. Acompanhe o saldo e as transferências no painel financeiro.</li>
+          </ol>
+        </div>
 
-          {/* Nome da Empresa (apenas para PJ) */}
-          {businessType === "company" && (
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Nome da Empresa</Label>
-              <Input
-                id="businessName"
-                placeholder="Digite o nome da empresa"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                disabled={isCreating}
-              />
-            </div>
-          )}
-
-          {/* Benefícios */}
-          <div className="border-t pt-6">
-            <h4 className="font-medium mb-4">Benefícios da Conta de Parceiro</h4>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                <div>
-                  <div className="font-medium">Pagamentos Automáticos</div>
-                  <div className="text-sm text-muted-foreground">
-                    Receba pagamentos diretamente em sua conta bancária
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                <div>
-                  <div className="font-medium">Dashboard Exclusivo</div>
-                  <div className="text-sm text-muted-foreground">
-                    Acompanhe suas vendas e transações em tempo real
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                <div>
-                  <div className="font-medium">Segurança Garantida</div>
-                  <div className="text-sm text-muted-foreground">
-                    Processamento seguro com a tecnologia do Stripe
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Botão de Ação */}
-          <Button
-            onClick={handleCreateAccount}
-            disabled={isCreating || (businessType === "company" && !businessName.trim())}
-            size="lg"
-            className="w-full"
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando conta...
-              </>
-            ) : (
-              <>
-                <CreditCard className="mr-2 h-4 w-4" />
-                Criar Conta e Continuar
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button asChild className="flex-1">
+            <Link href="/contato">
+              <PhoneCall className="mr-2 h-4 w-4" />
+              Iniciar atendimento
+            </Link>
           </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Ao continuar, você será redirecionado para o Stripe para completar o processo.
-            Suas informações são processadas de forma segura e criptografada.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          <Button asChild variant="outline" className="flex-1">
+            <Link href="mailto:financeiro@tuca.com.br">
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              Enviar dados por e-mail
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
-} 
+}

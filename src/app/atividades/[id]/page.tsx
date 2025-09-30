@@ -9,6 +9,8 @@ import { usePublicActivity } from "@/lib/services/activityService";
 import { useConvexAuth } from "convex/react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ActivityBookingForm } from "@/components/bookings";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 // Shadcn components
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,18 +59,40 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
   }
 
 
+  const galleryEntries = (activity.galleryImages ?? []).map(parseMediaEntry);
+  const heroBaseEntry = parseMediaEntry(activity.imageUrl);
+  const heroGalleryEntry = galleryEntries.find((entry) => entry.url === heroBaseEntry.url);
+  const heroEntry = heroGalleryEntry ?? heroBaseEntry;
+  const hasHeroMedia = Boolean(heroEntry.url && heroEntry.url.trim() !== "");
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="relative">
         {/* Hero Image */}
         <div className="relative h-[70vh] overflow-hidden">
-          <Image
-            src={activity.imageUrl || "/images/bg-pattern.png"}
-            alt={activity.title}
-            fill
-            className="object-cover"
-            priority
-          />
+          {hasHeroMedia ? (
+            <SmartMedia
+              entry={heroEntry}
+              alt={activity.title}
+              className="h-full w-full object-cover"
+              imageProps={{ fill: true, priority: true }}
+              videoProps={{
+                autoPlay: true,
+                loop: true,
+                muted: true,
+                playsInline: true,
+                controls: false,
+              }}
+            />
+          ) : (
+            <Image
+              src="/images/bg-pattern.png"
+              alt={activity.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
           <div className="absolute inset-0 bg-black/30" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
@@ -264,19 +288,19 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                   {/* Gallery */}
                   {activity.galleryImages && activity.galleryImages.length > 0 && (
                     <div>
-                      <h3 className="text-xl font-semibold mb-4">Galeria de fotos</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {activity.galleryImages.map((image, index) => (
+                      <h3 className="text-xl font-semibold mb-4">Galeria</h3>
+                      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                        {galleryEntries.map((mediaEntry, index) => (
                           <div
-                          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                            key={index}
-                            className="relative aspect-square rounded-lg overflow-hidden"
+                            key={`${activity._id}-media-${index}`}
+                            className="relative aspect-square overflow-hidden rounded-lg"
                           >
-                            <Image
-                              src={image}
-                              alt={`${activity.title} - Imagem ${index + 1}`}
-                              fill
-                              className="object-cover hover:scale-105 transition-transform duration-300"
+                            <SmartMedia
+                              entry={mediaEntry}
+                              alt={`${activity.title} - Mídia ${index + 1}`}
+                              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                              imageProps={{ fill: true }}
+                              videoProps={{ controls: true, preload: "metadata" }}
                             />
                           </div>
                         ))}

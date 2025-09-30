@@ -784,6 +784,7 @@ export const completeOnboarding = mutation({
     fullName: v.string(),
     dateOfBirth: v.string(),
     phoneNumber: v.string(),
+    cpf: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -845,8 +846,11 @@ export const completeOnboarding = mutation({
     // Atualizar o usuário com os dados do onboarding
     await ctx.db.patch(currentUserId, {
       fullName: args.fullName.trim(),
+      name: args.fullName.trim(),
       dateOfBirth: args.dateOfBirth,
       phoneNumber: args.phoneNumber,
+      phone: args.phoneNumber,
+      cpf: args.cpf,
       onboardingCompleted: true,
       onboardingCompletedAt: Date.now(),
     });
@@ -901,68 +905,60 @@ export const getOnboardingStatus = mutation({
 });
 
 /**
- * Atualizar dados do perfil do usuário (após onboarding)
+ * Update user profile (name, phone, dateOfBirth, cpf)
  */
 export const updateUserProfile = mutation({
   args: {
-    fullName: v.optional(v.string()),
+    name: v.optional(v.string()),
     phoneNumber: v.optional(v.string()),
+    dateOfBirth: v.optional(v.string()),
+    cpf: v.optional(v.string()),
   },
-  returns: v.object({
-    success: v.boolean(),
-    message: v.string(),
-  }),
   handler: async (ctx, args) => {
-    const currentUserId = await getCurrentUserConvexId(ctx);
-    
-    if (!currentUserId) {
-      throw new Error("Usuário não autenticado");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
     }
 
-    const user = await ctx.db.get(currentUserId);
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
     if (!user) {
-      throw new Error("Usuário não encontrado");
-    }
-
-    // Verificar se o onboarding foi completado
-    if (!user.onboardingCompleted && user.role === "traveler") {
-      throw new Error("Complete o onboarding antes de atualizar o perfil");
+      throw new Error("User not found");
     }
 
     const updates: any = {};
-
-    if (args.fullName) {
-      updates.fullName = args.fullName.trim();
+    
+    if (args.name !== undefined) {
+      updates.name = args.name;
+      updates.fullName = args.name;
     }
-
-    if (args.phoneNumber) {
-      // Validar telefone
-      const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
-      if (!phoneRegex.test(args.phoneNumber)) {
-        throw new Error("Telefone deve estar no formato (XX) XXXXX-XXXX");
-      }
+    
+    if (args.phoneNumber !== undefined) {
       updates.phoneNumber = args.phoneNumber;
+      updates.phone = args.phoneNumber;
+    }
+    
+    if (args.dateOfBirth !== undefined) {
+      updates.dateOfBirth = args.dateOfBirth;
+    }
+    
+    if (args.cpf !== undefined) {
+      updates.cpf = args.cpf;
     }
 
     if (Object.keys(updates).length === 0) {
-      return {
-        success: false,
-        message: "Nenhum campo para atualizar",
-      };
+      return { success: true, message: "Nenhuma alteração" };
     }
 
-    await ctx.db.patch(currentUserId, updates);
+    await ctx.db.patch(user._id, updates);
 
-    return {
-      success: true,
-      message: "Perfil atualizado com sucesso!",
-    };
+    return { success: true, message: "Perfil atualizado com sucesso!" };
   },
-}); 
+});
 
-/**
- * Update user's Stripe customer ID (internal use only)
- */
 export const updateUserStripeCustomerId = internalMutation({
   args: {
     userId: v.id("users"),

@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { ParticipantSelector } from "@/components/ui/participant-selector"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@clerk/nextjs"
 import { useMutation } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { toast } from "sonner"
@@ -17,7 +20,41 @@ import { cn } from "@/lib/utils"
 import Header from "@/components/header/Header"
 import Footer from "@/components/footer/Footer"
 
+type PackageFormData = {
+  name: string;
+  email: string;
+  phone: string;
+  age: string;
+  occupation: string;
+  originCity: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  duration: string;
+  budget: string;
+  groupSize: string;
+  accommodationType: string;
+  activities: string[];
+  transportPreference: string;
+  foodPreference: string;
+  specialRequirements: string;
+  hasSpecialNeeds: boolean;
+  specialNeeds: string;
+  travelExperience: string;
+  howDidYouHear: string;
+  flexibleDates: boolean;
+  startMonth: string;
+  endMonth: string;
+  adults: number;
+  children: number;
+  includesAirfare: boolean;
+}
+
+const PENDING_PACKAGE_FORM_KEY = "packages:pending-request"
+
 export default function PackagesPage() {
+  const router = useRouter()
+  const { userId, isLoaded } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [requestNumber, setRequestNumber] = useState("")
@@ -31,7 +68,7 @@ export default function PackagesPage() {
 
   const createPackageRequest = useMutation(api.packages.createPackageRequest)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PackageFormData>({
     name: "",
     email: "",
     phone: "",
@@ -43,7 +80,7 @@ export default function PackagesPage() {
     endDate: "",
     duration: "",
     budget: "",
-    groupSize: "",
+    groupSize: "1",
     accommodationType: "",
     activities: [] as string[],
     transportPreference: "",
@@ -55,8 +92,88 @@ export default function PackagesPage() {
     howDidYouHear: "",
     flexibleDates: false,
     startMonth: "",
-    endMonth: ""
+    endMonth: "",
+    adults: 1,
+    children: 0,
+    includesAirfare: false
   })
+
+  const updateCompletionState = (data: PackageFormData) => {
+    const personalComplete = data.name && data.email && data.phone
+    const tripDatesComplete = data.flexibleDates 
+      ? (data.startMonth && data.endMonth)
+      : (data.startDate && data.endDate && !dateError)
+    const tripComplete = tripDatesComplete && data.budget && data.groupSize
+    const preferencesComplete = data.accommodationType || data.activities.length > 0
+
+    setCompletedSections({
+      personal: Boolean(personalComplete),
+      trip: Boolean(tripComplete),
+      preferences: Boolean(preferencesComplete)
+    })
+  }
+
+  const mergeStoredFormData = (prev: PackageFormData, stored: Partial<PackageFormData>): PackageFormData => {
+    const restoredAdults = typeof stored.adults === "number" ? stored.adults : prev.adults
+    const restoredChildren = typeof stored.children === "number" ? stored.children : prev.children
+    const restoredTotal = restoredAdults + restoredChildren
+    const restoredGroupSize = typeof stored.groupSize === "string" && stored.groupSize
+      ? stored.groupSize
+      : restoredTotal > 0
+        ? String(restoredTotal)
+        : prev.groupSize
+
+    return {
+      ...prev,
+      name: typeof stored.name === "string" ? stored.name : prev.name,
+      email: typeof stored.email === "string" ? stored.email : prev.email,
+      phone: typeof stored.phone === "string" ? stored.phone : prev.phone,
+      age: typeof stored.age === "string" ? stored.age : prev.age,
+      occupation: typeof stored.occupation === "string" ? stored.occupation : prev.occupation,
+      originCity: typeof stored.originCity === "string" ? stored.originCity : prev.originCity,
+      destination: typeof stored.destination === "string" ? stored.destination : prev.destination,
+      startDate: typeof stored.startDate === "string" ? stored.startDate : prev.startDate,
+      endDate: typeof stored.endDate === "string" ? stored.endDate : prev.endDate,
+      duration: typeof stored.duration === "string" ? stored.duration : prev.duration,
+      budget: typeof stored.budget === "string" ? stored.budget : prev.budget,
+      groupSize: restoredGroupSize,
+      accommodationType: typeof stored.accommodationType === "string" ? stored.accommodationType : prev.accommodationType,
+      activities: Array.isArray(stored.activities)
+        ? stored.activities.filter((activity): activity is string => typeof activity === "string")
+        : prev.activities,
+      transportPreference: typeof stored.transportPreference === "string" ? stored.transportPreference : prev.transportPreference,
+      foodPreference: typeof stored.foodPreference === "string" ? stored.foodPreference : prev.foodPreference,
+      specialRequirements: typeof stored.specialRequirements === "string" ? stored.specialRequirements : prev.specialRequirements,
+      hasSpecialNeeds: typeof stored.hasSpecialNeeds === "boolean" ? stored.hasSpecialNeeds : prev.hasSpecialNeeds,
+      specialNeeds: typeof stored.specialNeeds === "string" ? stored.specialNeeds : prev.specialNeeds,
+      travelExperience: typeof stored.travelExperience === "string" ? stored.travelExperience : prev.travelExperience,
+      howDidYouHear: typeof stored.howDidYouHear === "string" ? stored.howDidYouHear : prev.howDidYouHear,
+      flexibleDates: typeof stored.flexibleDates === "boolean" ? stored.flexibleDates : prev.flexibleDates,
+      startMonth: typeof stored.startMonth === "string" ? stored.startMonth : prev.startMonth,
+      endMonth: typeof stored.endMonth === "string" ? stored.endMonth : prev.endMonth,
+      adults: restoredAdults,
+      children: restoredChildren,
+      includesAirfare: typeof stored.includesAirfare === "boolean" ? stored.includesAirfare : prev.includesAirfare,
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isLoaded) return
+
+    const storedForm = sessionStorage.getItem(PENDING_PACKAGE_FORM_KEY)
+    if (!storedForm) return
+
+    try {
+      const parsed = JSON.parse(storedForm) as Partial<PackageFormData>
+      setFormData(prev => {
+        const updated = mergeStoredFormData(prev, parsed)
+        updateCompletionState(updated)
+        return updated
+      })
+    } catch (error) {
+      console.error("Erro ao carregar solicitação de pacote salva:", error)
+    }
+  }, [isLoaded])
 
   // Verificar se as datas são válidas sempre que mudarem
   useEffect(() => {
@@ -75,35 +192,46 @@ export default function PackagesPage() {
     }
   }, [formData.startDate, formData.endDate, formData.flexibleDates])
 
-  const handleInputChange = (field: string, value: string | string[] | boolean) => {
+  const handleInputChange = (
+    field: keyof PackageFormData,
+    value: PackageFormData[keyof PackageFormData]
+  ) => {
     setFormData(prev => {
-      const updated = { ...prev, [field]: value }
-
-      // Check if sections are completed
-      const personalComplete = updated.name && updated.email && updated.phone
-      const tripDatesComplete = updated.flexibleDates 
-        ? (updated.startMonth && updated.endMonth)
-        : (updated.startDate && updated.endDate && !dateError)
-      const tripComplete = tripDatesComplete && updated.budget && updated.groupSize
-      const preferencesComplete = updated.accommodationType || updated.activities.length > 0
-
-      setCompletedSections({
-        personal: Boolean(personalComplete),
-        trip: Boolean(tripComplete),
-        preferences: Boolean(preferencesComplete)
-      })
-
+      const updated = { ...prev, [field]: value } as PackageFormData
+      updateCompletionState(updated)
       return updated
     })
   }
 
   const handleActivityChange = (activity: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      activities: checked
+    setFormData(prev => {
+      const activities = checked
         ? [...prev.activities, activity]
         : prev.activities.filter(a => a !== activity)
-    }))
+      const updated: PackageFormData = { ...prev, activities }
+      updateCompletionState(updated)
+      return updated
+    })
+  }
+
+  const handleParticipantsChange = (type: "adults" | "children", value: number) => {
+    const sanitizedValue = Math.max(0, value)
+
+    setFormData(prev => {
+      const newAdults = type === "adults" ? sanitizedValue : prev.adults
+      const newChildren = type === "children" ? sanitizedValue : prev.children
+      const totalParticipants = newAdults + newChildren
+
+      const updated: PackageFormData = {
+        ...prev,
+        adults: newAdults,
+        children: newChildren,
+        groupSize: totalParticipants > 0 ? String(totalParticipants) : ""
+      }
+
+      updateCompletionState(updated)
+      return updated
+    })
   }
 
   // Função para calcular data mínima para volta (1 dia após ida)
@@ -130,6 +258,7 @@ export default function PackagesPage() {
         }
       }
       
+      updateCompletionState(newData)
       return newData
     })
   }
@@ -168,6 +297,11 @@ export default function PackagesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!isLoaded) {
+      toast.info("Estamos quase lá! Tente enviar novamente em instantes.")
+      return
+    }
+
     // Validação básica
     const datesValid = formData.flexibleDates 
       ? (formData.startMonth && formData.endMonth)
@@ -182,6 +316,22 @@ export default function PackagesPage() {
     // Validação adicional para datas não flexíveis
     if (!formData.flexibleDates && dateError) {
       toast.error("A data de volta não pode ser anterior ou igual à data de ida")
+      return
+    }
+
+    if (!userId) {
+      try {
+        const serializableForm: PackageFormData = {
+          ...formData,
+          activities: [...formData.activities],
+        }
+        sessionStorage.setItem(PENDING_PACKAGE_FORM_KEY, JSON.stringify(serializableForm))
+      } catch (error) {
+        console.error("Erro ao salvar solicitação antes do cadastro:", error)
+      }
+
+      toast.info("Crie sua conta para concluir o envio da cotação")
+      router.push("/sign-up?redirect_url=/pacotes")
       return
     }
 
@@ -217,7 +367,8 @@ export default function PackagesPage() {
           groupSize: Number(formData.groupSize),
           companions: "family", // Default, can be made dynamic
           budget: Number(formData.budget),
-          budgetFlexibility: "somewhat_flexible" // Default, can be made dynamic
+          budgetFlexibility: "somewhat_flexible", // Default, can be made dynamic
+          includesAirfare: formData.includesAirfare
         },
         preferences: {
           accommodationType: formData.accommodationType ? [formData.accommodationType] : [],
@@ -236,8 +387,9 @@ export default function PackagesPage() {
       setRequestNumber(result.requestNumber)
       setIsSubmitted(true)
       toast.success("Solicitação enviada com sucesso!")
+      sessionStorage.removeItem(PENDING_PACKAGE_FORM_KEY)
 
-    } catch {
+    } catch (error) {
       console.error("Erro ao enviar solicitação:", error)
       toast.error("Erro ao enviar solicitação. Tente novamente.")
     } finally {
@@ -452,10 +604,6 @@ export default function PackagesPage() {
                 </div>
                 <div className="flex items-center">
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  <span>Suporte 24h</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2" />
                   <span>Experiências únicas</span>
                 </div>
               </div>
@@ -642,23 +790,36 @@ export default function PackagesPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="groupSize" className="text-sm text-gray-600">
-                    Número de Pessoas *
-                  </Label>
-                  <Select value={formData.groupSize} onValueChange={(value) => handleInputChange("groupSize", value)}>
-                    <SelectTrigger className="border-gray-200 focus:border-blue-400">
-                      <SelectValue placeholder="Quantas pessoas?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 pessoa</SelectItem>
-                      <SelectItem value="2">2 pessoas</SelectItem>
-                      <SelectItem value="3">3 pessoas</SelectItem>
-                      <SelectItem value="4">4 pessoas</SelectItem>
-                      <SelectItem value="5">5 pessoas</SelectItem>
-                      <SelectItem value="6">6+ pessoas</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <ParticipantSelector
+                    adults={formData.adults}
+                    childrenCount={formData.children}
+                    onAdultsChange={(value) => handleParticipantsChange("adults", value)}
+                    onChildrenChange={(value) => handleParticipantsChange("children", value)}
+                    minAdults={1}
+                    maxAdults={20}
+                    maxChildren={10}
+                    minTotal={1}
+                    maxTotal={30}
+                    title="Número de Participantes *"
+                    showSummary={false}
+                    showLimits={false}
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white">
+                  <div>
+                    <Label className="text-sm text-gray-700 font-medium">
+                      Precisa de passagens aéreas?
+                    </Label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Marque se deseja que cuidemos dos voos no orçamento do pacote.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.includesAirfare}
+                    onCheckedChange={(checked) => handleInputChange("includesAirfare", checked)}
+                  />
                 </div>
 
                 <div className="md:col-span-2 space-y-4">
@@ -827,10 +988,10 @@ export default function PackagesPage() {
                         <SelectValue placeholder="Selecione sua preferência" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="categoria-turistica">Categoria turística</SelectItem>
-                        <SelectItem value="categoria-intermediaria">Categoria intermediária</SelectItem>
-                        <SelectItem value="categoria-intermediaria-2">Categoria intermediária 2</SelectItem>
-                        <SelectItem value="categoria-luxo">Categoria luxo</SelectItem>
+                        <SelectItem value="simples">Simples</SelectItem>
+                        <SelectItem value="economica">Econômica</SelectItem>
+                        <SelectItem value="intermediaria">Intermediária</SelectItem>
+                        <SelectItem value="luxo">Luxo</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -847,6 +1008,8 @@ export default function PackagesPage() {
                         <SelectItem value="transfer-privado">Transfer privado</SelectItem>
                         <SelectItem value="transfer-regular">Transfer regular/compartilhado</SelectItem>
                         <SelectItem value="aluguel-carro">Aluguel de carro</SelectItem>
+                        <SelectItem value="aluguel-buggy">Aluguel de buggy</SelectItem>
+                        <SelectItem value="aluguel-moto">Aluguel de moto</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -947,7 +1110,7 @@ export default function PackagesPage() {
                 ) : (
                   <div className="flex items-center">
                     <Send className="w-4 h-4 mr-2" />
-                    Solicitar Pacote Personalizado
+                    Solicitar Cotação Personalizada
                   </div>
                 )}
               </Button>
@@ -973,4 +1136,4 @@ export default function PackagesPage() {
       <Footer />
     </main>
   )
-} 
+}

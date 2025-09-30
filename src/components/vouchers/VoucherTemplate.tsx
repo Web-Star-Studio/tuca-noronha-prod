@@ -24,7 +24,7 @@ const formatSafeDate = (dateValue: any): string => {
     }
 
     return format(date, "dd/MM/yyyy", { locale: ptBR });
-  } catch {
+  } catch (error) {
     console.error("Error formatting date:", error);
     return "Erro na data";
   }
@@ -153,18 +153,168 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         </div>
       </div>
 
+      {/* Asset Details Section */}
+      <div className="border-t-2 border-gray-200 pt-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Detalhes do {getAssetTypeLabel()}</h2>
+        
+        {/* Asset Description */}
+        {voucherData.asset.description && (
+          <div className="bg-blue-50 p-4 rounded-lg mb-4">
+            <p className="font-medium text-blue-900 mb-2">Descrição</p>
+            <p className="text-sm text-blue-800 whitespace-pre-line">{voucherData.asset.description}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Highlights/Features */}
+          {voucherData.asset.highlights && voucherData.asset.highlights.length > 0 && (
+            <div className="bg-green-50 p-4 rounded-lg">
+              <p className="font-medium text-green-900 mb-3">🌟 Destaques do Serviço</p>
+              <ul className="space-y-2 text-sm text-green-800">
+                {voucherData.asset.highlights.map((highlight, index) => (
+                  <li key={`${highlight}-${index}`} className="flex items-start gap-2">
+                    <span className="text-green-600 text-xs mt-1">✓</span>
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Includes/Services */}
+          {voucherData.asset.includes && voucherData.asset.includes.length > 0 && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="font-medium text-blue-900 mb-3">📋 Inclusões</p>
+              <ul className="space-y-2 text-sm text-blue-800">
+                {voucherData.asset.includes.map((item, index) => (
+                  <li key={`${item}-${index}`} className="flex items-start gap-2">
+                    <span className="text-blue-600 text-xs mt-1">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Additional Information */}
+        {voucherData.asset.additionalInfo && voucherData.asset.additionalInfo.length > 0 && (
+          <div className="bg-amber-50 p-4 rounded-lg mt-4">
+            <p className="font-medium text-amber-900 mb-3">ℹ️ Informações Importantes</p>
+            <ul className="space-y-2 text-sm text-amber-800">
+              {voucherData.asset.additionalInfo.map((item, index) => (
+                <li key={`${item}-${index}`} className="flex items-start gap-2">
+                  <span className="text-amber-600 text-xs mt-1">!</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       {/* Booking Details */}
       <div className="border-t-2 border-gray-200 pt-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Detalhes da Reserva</h2>
+        
+        {/* Guest Names */}
+        {voucherData.booking.guestNames && voucherData.booking.guestNames.length > 0 && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <p className="font-medium text-gray-900 mb-3">👥 Participantes Adicionais</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {voucherData.booking.guestNames.map((name, index) => (
+                <div key={`${name}-${index}`} className="flex items-center gap-2 text-sm text-gray-700">
+                  <span className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
+                    {index + 1}
+                  </span>
+                  <span>{name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
+        {/* Special Requests */}
+        {voucherData.booking.specialRequests && (
+          <div className="bg-purple-50 p-4 rounded-lg mb-4">
+            <p className="font-medium text-purple-900 mb-2">📝 Observações Especiais</p>
+            <p className="text-sm text-purple-800 whitespace-pre-line">{voucherData.booking.specialRequests}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Cancellation Policy Section */}
+      {voucherData.asset.cancellationPolicy && (
+        <div className="border-t-2 border-gray-200 pt-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">🔄 Política de Cancelamento</h2>
+          <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+            <div className="text-sm text-red-800 space-y-2 whitespace-pre-line">
+              {Array.isArray(voucherData.asset.cancellationPolicy)
+                ? voucherData.asset.cancellationPolicy.map((policy, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-red-600 text-xs mt-1">⚠️</span>
+                      <span>{policy}</span>
+                    </div>
+                  ))
+                : <div className="flex items-start gap-2">
+                    <span className="text-red-600 text-xs mt-1">⚠️</span>
+                    <span>{voucherData.asset.cancellationPolicy}</span>
+                  </div>
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Instructions Section */}
+      <div className="border-t-2 border-gray-200 pt-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">📋 Instruções de Uso</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Check-in Instructions */}
+          {voucherData.instructions?.checkIn && (
+            <div className="bg-green-50 p-4 rounded-lg">
+              <p className="font-medium text-green-900 mb-3">✅ Check-in</p>
+              <ul className="space-y-1 text-sm text-green-800">
+                {voucherData.instructions.checkIn.map((instruction, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-green-600 text-xs mt-1">•</span>
+                    <span>{instruction}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Preparation Instructions */}
+          {voucherData.instructions?.preparation && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="font-medium text-blue-900 mb-3">🎒 Preparação</p>
+              <ul className="space-y-1 text-sm text-blue-800">
+                {voucherData.instructions.preparation.map((instruction, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-blue-600 text-xs mt-1">•</span>
+                    <span>{instruction}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Terms and Conditions */}
       {voucherData.termsAndConditions && voucherData.termsAndConditions.length > 0 && (
         <div className="border-t-2 border-gray-200 pt-6">
-          <h2 className="text-xl font-semibold mb-4">Termos e Condições</h2>
-          <div className="text-sm text-gray-600">
-            {voucherData.termsAndConditions}
+          <h2 className="text-xl font-semibold mb-4">📄 Termos e Condições</h2>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="text-sm text-gray-700 space-y-2">
+              {voucherData.termsAndConditions.split('. ').map((term, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <span className="text-gray-500 text-xs mt-1 font-medium">{index + 1}.</span>
+                  <span>{term.replace(/\.$/, '')}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -236,6 +386,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               <p>{details.specialRequests}</p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -293,6 +444,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -336,6 +488,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               <p>{details.specialRequests}</p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -391,6 +544,7 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
@@ -459,10 +613,28 @@ function renderBookingDetails(assetType: VoucherBookingType, details: any) {
               </p>
             </div>
           )}
+          {renderGuestNames(details.guestNames)}
         </div>
       );
 
     default:
       return <p>Detalhes da reserva não disponíveis.</p>;
   }
-} 
+}
+
+function renderGuestNames(guestNames?: string[]) {
+  if (!guestNames || guestNames.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="md:col-span-2">
+      <p className="font-medium">Participantes adicionais:</p>
+      <ul className="list-disc list-inside text-gray-600 space-y-1 mt-1">
+        {guestNames.map((name, index) => (
+          <li key={`${name}-${index}`}>{name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}

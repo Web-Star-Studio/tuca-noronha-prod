@@ -70,7 +70,7 @@ export default function TaxasPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Taxas de Parceiros</h1>
           <p className="text-muted-foreground">
@@ -95,14 +95,14 @@ export default function TaxasPage() {
         <InfoIcon className="h-4 w-4" />
         <AlertDescription>
           As taxas configuradas aqui determinam a porcentagem que a plataforma retém de cada transação. 
-          O valor restante (menos as taxas do Stripe) é transferido automaticamente para o parceiro.
+          O valor restante (menos as taxas do provedor de pagamento) é transferido automaticamente para o parceiro.
         </AlertDescription>
       </Alert>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">
               Parceiros Ativos
             </CardTitle>
@@ -117,7 +117,7 @@ export default function TaxasPage() {
         </Card>
         
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">
               Taxa Média
             </CardTitle>
@@ -136,7 +136,7 @@ export default function TaxasPage() {
         </Card>
         
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">
               Taxa Padrão
             </CardTitle>
@@ -163,7 +163,7 @@ export default function TaxasPage() {
 
       {/* Main Content */}
       <Tabs defaultValue="partners" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2">
           <TabsTrigger value="partners">
             <Percent className="h-4 w-4 mr-2" />
             Taxas por Parceiro

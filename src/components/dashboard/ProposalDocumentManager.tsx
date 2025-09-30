@@ -6,12 +6,8 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Upload, FileText, Download, Trash2, FileImage, FileSpreadsheet, File, Loader2, Camera } from "lucide-react";
+import { Upload, FileText, Download, Trash2, FileImage, FileSpreadsheet, File, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProposalDocumentManagerProps {
@@ -43,15 +39,6 @@ const formatFileSize = (bytes: number): string => {
 
 export function ProposalDocumentManager({ proposalId, canEdit = true }: ProposalDocumentManagerProps) {
   const [uploads, setUploads] = useState<FileUpload[]>([]);
-  const [showPdfGenerator, setShowPdfGenerator] = useState(false);
-  const [pdfOptions, setPdfOptions] = useState({
-    template: "default",
-    includeTerms: true,
-    includePricing: true,
-    includeItinerary: true,
-    logoUrl: "",
-  });
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
@@ -63,7 +50,6 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
   const generateUploadUrl = useMutation(api.domains.media.mutations.generateUploadUrl);
   const uploadAttachment = useMutation(api.domains.packageProposals.documents.uploadProposalAttachment);
   const removeAttachment = useMutation(api.domains.packageProposals.documents.removeProposalAttachment);
-  const generatePdf = useMutation(api.domains.packageProposals.documents.generateProposalPDF);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -165,37 +151,6 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
     }
   };
 
-  const handleGeneratePdf = async () => {
-    try {
-      setIsGeneratingPdf(true);
-      
-      const result = await generatePdf({
-        proposalId,
-        template: pdfOptions.template,
-        includeTerms: pdfOptions.includeTerms,
-        includePricing: pdfOptions.includePricing,
-        includeItinerary: pdfOptions.includeItinerary,
-        logoUrl: pdfOptions.logoUrl || undefined,
-      });
-
-      if (result.success) {
-        toast.success("PDF gerado com sucesso!");
-        setShowPdfGenerator(false);
-        
-        // Open PDF in new tab if URL is available
-        if (result.documentUrl) {
-          window.open(result.documentUrl, '_blank');
-        }
-      } else {
-        toast.error(result.message);
-      }
-    } catch {
-      console.error("Error generating PDF:", error);
-      toast.error("Erro ao gerar PDF");
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
 
   const handleDownload = async (storageId: string, fileName: string) => {
     try {
@@ -235,101 +190,10 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
         </div>
         <div className="flex gap-2">
           {canEdit && (
-            <>
-              <Dialog open={showPdfGenerator} onOpenChange={setShowPdfGenerator}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Gerar PDF
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Gerar PDF da Proposta</DialogTitle>
-                    <DialogDescription>
-                      Configure as opções para gerar o documento PDF
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="template">Template</Label>
-                      <select
-                        id="template"
-                        className="w-full p-2 border rounded-md"
-                        value={pdfOptions.template}
-                        onChange={(e) => setPdfOptions(prev => ({ ...prev, template: e.target.value }))}
-                      >
-                        <option value="default">Padrão</option>
-                        <option value="modern">Moderno</option>
-                        <option value="minimal">Minimalista</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="logoUrl">URL do Logo (opcional)</Label>
-                      <Input
-                        id="logoUrl"
-                        value={pdfOptions.logoUrl}
-                        onChange={(e) => setPdfOptions(prev => ({ ...prev, logoUrl: e.target.value }))}
-                        placeholder="https://exemplo.com/logo.png"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>Incluir seções:</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={pdfOptions.includeTerms}
-                            onCheckedChange={(checked) => setPdfOptions(prev => ({ ...prev, includeTerms: checked }))}
-                          />
-                          <Label>Termos e condições</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={pdfOptions.includePricing}
-                            onCheckedChange={(checked) => setPdfOptions(prev => ({ ...prev, includePricing: checked }))}
-                          />
-                          <Label>Tabela de preços</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={pdfOptions.includeItinerary}
-                            onCheckedChange={(checked) => setPdfOptions(prev => ({ ...prev, includeItinerary: checked }))}
-                          />
-                          <Label>Itinerário detalhado</Label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowPdfGenerator(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
-                      {isGeneratingPdf ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Gerando...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Gerar PDF
-                        </>
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              <Button size="sm" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="h-4 w-4 mr-2" />
-                Enviar Arquivos
-              </Button>
-            </>
+            <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-2" />
+              Enviar Arquivos
+            </Button>
           )}
         </div>
       </div>

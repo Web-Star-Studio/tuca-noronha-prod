@@ -142,10 +142,6 @@ export default function ConfiguracoesPage() {
                     <h4 className="font-medium">Informações da Conta de Parceiro</h4>
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">ID Stripe:</span>
-                        <span className="font-mono text-xs">{partner.stripeAccountId}</span>
-                      </div>
-                      <div className="flex justify-between">
                         <span className="text-muted-foreground">País:</span>
                         <span>{partner.metadata.country}</span>
                       </div>

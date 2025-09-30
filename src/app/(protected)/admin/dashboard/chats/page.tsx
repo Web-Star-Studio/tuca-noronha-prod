@@ -148,7 +148,7 @@ export default function AdminChatsPage() {
                   onClick={() => router.push(`/admin/dashboard/chats/${room._id}`)}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-wrap gap-3 items-start justify-between">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
                           <h3 className="font-semibold">{room.title}</h3>

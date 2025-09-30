@@ -45,4 +45,7 @@ export * as systemSettings from "./systemSettings";
 export * as subscriptions from "./subscriptions";
 
 // Export notifications domain for system notifications
-export * as notifications from "./notifications"; 
+export * as notifications from "./notifications";
+
+// Export suppliers domain for asset supplier management
+export * as suppliers from "./suppliers";

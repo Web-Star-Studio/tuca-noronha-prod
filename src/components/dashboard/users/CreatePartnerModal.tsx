@@ -45,7 +45,7 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
         phone: formData.phone || undefined,
       });
 
-      toast.success("Partner criado com sucesso!");
+      toast.success("Partner criado com sucesso");
       setFormData({ name: "", email: "", password: "", phone: "" });
       onSuccess();
       onClose();
@@ -66,23 +66,27 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[420px] space-y-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Criar Novo Partner
+            Criar partner
           </DialogTitle>
+          <p className="text-sm text-slate-500">
+            Enviaremos um convite com as credenciais iniciais para o email informado.
+          </p>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nome Completo *</Label>
+            <Label htmlFor="name">Nome completo *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Digite o nome completo"
+              placeholder="Maria Souza"
               disabled={isLoading}
+              autoComplete="name"
               required
             />
           </div>
@@ -94,26 +98,28 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="Digite o email"
+              placeholder="contato@empresa.com"
               disabled={isLoading}
+              autoComplete="email"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Senha Temporária *</Label>
+            <Label htmlFor="password">Senha temporária *</Label>
             <Input
               id="password"
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Digite uma senha temporária"
+              placeholder="Mínimo de 8 caracteres"
               disabled={isLoading}
               required
               minLength={8}
+              autoComplete="new-password"
             />
-            <p className="text-xs text-gray-500">
-              O usuário poderá redefinir a senha após o primeiro login
+            <p className="text-xs text-slate-500">
+              A senha pode ser alterada pelo parceiro após o primeiro acesso.
             </p>
           </div>
 
@@ -124,8 +130,9 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="Digite o telefone (opcional)"
+              placeholder="(81) 99999-9999"
               disabled={isLoading}
+              autoComplete="tel"
             />
           </div>
 
@@ -142,12 +149,12 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando...
+                  Criando
                 </>
               ) : (
                 <>
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Criar Partner
+                  Criar partner
                 </>
               )}
             </Button>
@@ -156,4 +163,4 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -1,56 +1,61 @@
 "use node";
 
+/**
+ * Mercado Pago Actions - Simplified Implementation
+ * 
+ * Core functions for Mercado Pago integration:
+ * - createCheckoutPreference: Create MP checkout preference
+ * - createCheckoutPreferenceForBooking: Public action for booking checkout
+ * - capturePayment: Capture authorized payment
+ * - cancelPayment: Cancel authorized payment
+ * - refundPayment: Refund captured payment
+ * - approveBookingAndCapturePayment: Admin approve booking
+ * - rejectBookingAndCancelPayment: Admin reject booking
+ * - processWebhookEvent: Handle MP webhook notifications
+ */
+
 import { internalAction, action } from "../../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../../_generated/api";
-import {
-  createPaymentValidator,
-  capturePaymentValidator,
-  cancelPaymentValidator,
-  refundPaymentValidator,
-  processWebhookValidator,
-  createCheckoutPreferenceForBookingValidator,
-} from "./types";
 import { mpFetch } from "./utils";
 
+const assetTypeValidator = v.union(
+  v.literal("activity"),
+  v.literal("event"),
+  v.literal("restaurant"),
+  v.literal("vehicle"),
+  v.literal("package")
+);
+
 /**
- * Create a Checkout Preference (Checkout Pro)
+ * Create a Checkout Preference for Mercado Pago
+ * Called by createCheckoutPreferenceForBooking
  */
 export const createCheckoutPreference = internalAction({
   args: {
     bookingId: v.string(),
-    assetType: v.union(
-      v.literal("activity"),
-      v.literal("event"),
-      v.literal("restaurant"),
-      v.literal("vehicle"),
-      v.literal("package"),
-    ),
+    assetType: assetTypeValidator,
     title: v.string(),
     quantity: v.number(),
     unitPrice: v.number(),
     currency: v.optional(v.string()),
-    metadata: v.optional(v.object({
-      assetId: v.optional(v.string()),
-      userId: v.optional(v.string()),
-      bookingId: v.optional(v.string()),
-    })),
-    backUrls: v.optional(v.object({
+    backUrls: v.object({
       success: v.string(),
       pending: v.string(),
       failure: v.string(),
-    })),
+    }),
     notificationUrl: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    captureMode: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
   },
-  returns: v.object({
-    success: v.boolean(),
-    id: v.optional(v.string()),
-    initPoint: v.optional(v.string()),
-    sandboxInitPoint: v.optional(v.string()),
-    error: v.optional(v.string()),
-  }),
   handler: async (ctx, args) => {
     try {
+      // Validate back_urls
+      if (!args.backUrls || !args.backUrls.success) {
+        throw new Error("back_urls.success is required for Mercado Pago preference");
+      }
+
+      // Build Mercado Pago preference body
       const body: any = {
         items: [
           {
@@ -60,44 +65,62 @@ export const createCheckoutPreference = internalAction({
             unit_price: args.unitPrice,
           },
         ],
+        back_urls: args.backUrls,
+        auto_return: "approved",
+        notification_url: args.notificationUrl,
         metadata: {
           bookingId: args.bookingId,
           assetType: args.assetType,
+          captureMode: args.captureMode || "manual", // Default to manual capture
           ...(args.metadata || {}),
         },
-        // Configurações para facilitar testes
         payment_methods: {
-          excluded_payment_methods: [],
-          excluded_payment_types: [],
-          installments: 1, // Força parcelamento em 1x para simplificar
+          installments: 1,
         },
-        // Configurar para não solicitar login/cadastro desnecessário
-        purpose: "wallet_purchase",
       };
-      if (args.backUrls) body.back_urls = args.backUrls;
-      if (args.notificationUrl) body.notification_url = args.notificationUrl;
 
-      const pref = await mpFetch<any>("/checkout/preferences", {
+      // Configure capture mode for authorization without automatic capture
+      if (args.captureMode === "manual") {
+        // For manual capture, use binary_mode false to allow authorization without capture
+        body.binary_mode = false;
+        body.additional_info = {
+          capture: false // Don't capture automatically
+        };
+        // Log that we're using manual capture mode
+        console.log("[MP] Using MANUAL capture mode - payment will be AUTHORIZED only, requiring admin approval to capture");
+      } else {
+        // For automatic capture (default MP behavior)
+        body.binary_mode = true;
+        console.log("[MP] Using AUTOMATIC capture mode - payment will be captured immediately");
+      }
+
+      console.log("[MP] Sending preference to API:", {
+        back_urls: body.back_urls,
+        auto_return: body.auto_return,
+      });
+
+      // Create preference via Mercado Pago API
+      const preference = await mpFetch<any>("/checkout/preferences", {
         method: "POST",
         body: JSON.stringify(body),
       });
 
-      // Store preference id on booking
+      // Store preference ID in booking
       await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingMpInfo, {
         bookingId: args.bookingId,
         assetType: args.assetType,
-        mpPreferenceId: String(pref.id),
+        mpPreferenceId: String(preference.id),
         paymentStatus: "pending",
       });
 
       return {
         success: true,
-        id: String(pref.id),
-        initPoint: pref.init_point,
-        sandboxInitPoint: pref.sandbox_init_point,
+        id: String(preference.id),
+        initPoint: preference.init_point,
+        sandboxInitPoint: preference.sandbox_init_point,
       };
     } catch (error) {
-      console.error("Failed to create MP preference:", error);
+      console.error("[MP] Failed to create preference:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
@@ -107,22 +130,33 @@ export const createCheckoutPreference = internalAction({
 });
 
 /**
- * Client-callable: Create a Checkout Preference for a booking
- * Mirrors Stripe's createCheckoutSession behavior
+ * Public Action: Create a Checkout Preference for a booking
+ * Called from frontend booking forms
  */
 export const createCheckoutPreferenceForBooking = action({
-  args: createCheckoutPreferenceForBookingValidator,
+  args: {
+    bookingId: v.string(),
+    assetType: assetTypeValidator,
+    originalAmount: v.optional(v.number()),
+    finalAmount: v.optional(v.number()),
+    discountAmount: v.optional(v.number()),
+    couponCode: v.optional(v.string()),
+    customerEmail: v.optional(v.string()),
+    successUrl: v.optional(v.string()),
+    cancelUrl: v.optional(v.string()),
+    currency: v.optional(v.string()),
+  },
   returns: v.object({
+    success: v.boolean(),
     preferenceId: v.string(),
     preferenceUrl: v.string(),
     initPoint: v.optional(v.string()),
     sandboxInitPoint: v.optional(v.string()),
-    success: v.boolean(),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     try {
-      // 1) Fetch booking + asset info (provider-agnostic)
+      // Get booking details
       const booking = await ctx.runQuery(internal.domains.bookings.checkout.getBookingForCheckout, {
         bookingId: args.bookingId,
         assetType: args.assetType,
@@ -132,140 +166,229 @@ export const createCheckoutPreferenceForBooking = action({
         throw new Error("Booking not found");
       }
 
-      // 2) Determine pricing
-      const originalAmount = args.originalAmount ?? booking.totalPrice;
+      // Calculate amounts
       const finalAmount = args.finalAmount ?? booking.totalPrice;
-      const discountAmount = args.discountAmount ?? 0;
-      const _hasCoupon = Boolean(args.couponCode && discountAmount > 0);
 
-      // 3) Build URLs
-      const successUrl = args.successUrl;
-      const cancelUrl = args.cancelUrl;
-      const siteUrl = (process.env.CONVEX_SITE_URL || "").replace(/\/$/, "");
+      // Build return URLs - Mercado Pago requires HTTPS URLs, not localhost
+      // Replace localhost URLs with production URL
+      const productionUrl = "https://tucanoronha.com.br";
+      
+      const replaceLocalhost = (url: string | undefined): string => {
+        if (!url) return productionUrl;
+        // Replace localhost/127.0.0.1 URLs with production URL
+        if (url.includes('localhost') || url.includes('127.0.0.1')) {
+          // Extract the path from the localhost URL
+          const urlObj = new URL(url);
+          return `${productionUrl}${urlObj.pathname}${urlObj.search}`;
+        }
+        return url;
+      };
+      
+      // Use provided URLs but replace localhost with production URL
+      const successUrl = replaceLocalhost(args.successUrl?.trim()) || productionUrl;
+      const failureUrl = replaceLocalhost(args.cancelUrl?.trim()) || productionUrl;
+      const pendingUrl = successUrl;
+      
+      // Log what we're using
+      console.log("[MP] Final URLs:", {
+        original: { success: args.successUrl, cancel: args.cancelUrl },
+        final: { success: successUrl, failure: failureUrl, pending: pendingUrl }
+      });
+
+      // Webhook URL
+      const siteUrl = process.env.CONVEX_SITE_URL || "";
       const notificationUrl = siteUrl ? `${siteUrl}/mercadopago/webhook` : undefined;
 
-      // 4) Create preference via internal action
-      const pref = await ctx.runAction(internal.domains.mercadoPago.actions.createCheckoutPreference, {
+      // Log URLs for debugging
+      console.log("[MP] Creating preference with URLs:", {
+        success: successUrl,
+        pending: pendingUrl,
+        failure: failureUrl,
+      });
+
+      // Create preference with MANUAL capture mode (authorization only)
+      const result = await ctx.runAction(internal.domains.mercadoPago.actions.createCheckoutPreference, {
         bookingId: args.bookingId,
         assetType: args.assetType,
         title: booking.assetName,
         quantity: 1,
         unitPrice: finalAmount,
         currency: args.currency || "BRL",
+        backUrls: {
+          success: successUrl,
+          pending: pendingUrl,
+          failure: failureUrl,
+        },
+        notificationUrl,
+        captureMode: "manual", // Always use manual capture - require admin approval
         metadata: {
           assetId: String(booking.assetId),
           userId: String(booking.userId),
           bookingId: String(args.bookingId),
+          confirmationCode: booking.confirmationCode,
         },
-        backUrls: {
-          success: successUrl,
-          pending: successUrl,
-          failure: cancelUrl,
-        },
-        notificationUrl,
       });
 
-      if (!pref.success || !pref.id) {
-        throw new Error(pref.error || "Failed to create Mercado Pago preference");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create preference");
       }
 
-      // Always prioritize sandboxInitPoint if available (for test credentials)
-      // If only initPoint is available, use it (for production credentials)
-      const preferredUrl = pref.sandboxInitPoint || pref.initPoint;
+      // Return preference URL for redirect
+      const checkoutUrl = result.initPoint || 
+                         result.sandboxInitPoint || 
+                         `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${result.id}`;
 
       return {
         success: true,
-        preferenceId: pref.id,
-        preferenceUrl: preferredUrl || "",
-        initPoint: pref.initPoint,
-        sandboxInitPoint: pref.sandboxInitPoint,
+        preferenceId: result.id || "",
+        preferenceUrl: checkoutUrl,
+        initPoint: result.initPoint,
+        sandboxInitPoint: result.sandboxInitPoint,
       };
     } catch (error) {
-      console.error("Failed to create MP checkout preference for booking:", error);
+      console.error("[MP] Failed to create checkout preference:", error);
       return {
         success: false,
         preferenceId: "",
         preferenceUrl: "",
         error: error instanceof Error ? error.message : "Unknown error",
-      } as any;
+      };
     }
   },
 });
 
 /**
- * Create a direct card payment using token (Bricks)
+ * Create a direct payment with manual capture (authorization only)
+ * This is the CORRECT way to implement manual capture with Mercado Pago
+ * Uses the Payments API with capture=false parameter
  */
-export const createPayment = internalAction({
-  args: createPaymentValidator,
+export const createPaymentWithManualCapture = action({
+  args: {
+    bookingId: v.string(),
+    assetType: assetTypeValidator,
+    token: v.string(),
+    paymentMethodId: v.string(),
+    issuerId: v.optional(v.string()),
+    amount: v.number(),
+    installments: v.number(),
+    payer: v.object({
+      email: v.string(),
+      identification: v.optional(v.object({
+        type: v.string(),
+        number: v.string()
+      }))
+    }),
+    description: v.string(),
+    metadata: v.optional(v.any())
+  },
   returns: v.object({
     success: v.boolean(),
-    paymentId: v.optional(v.union(v.string(), v.number())),
+    paymentId: v.optional(v.string()),
     status: v.optional(v.string()),
-    error: v.optional(v.string()),
+    statusDetail: v.optional(v.string()),
+    error: v.optional(v.string())
   }),
   handler: async (ctx, args) => {
     try {
-      const body: any = {
+      console.log("[MP] Creating payment with MANUAL capture for booking:", args.bookingId);
+
+      // Create payment with capture=false (authorization only)
+      const paymentBody: any = {
+        transaction_amount: args.amount,
         token: args.token,
-        transaction_amount: args.transactionAmount,
         payment_method_id: args.paymentMethodId,
         installments: args.installments,
+        capture: false,  // 🔑 THIS IS THE KEY - Manual capture
+        description: args.description,
         payer: args.payer,
-        binary_mode: false,
-        capture: false, // Autorização apenas - captura manual quando admin confirmar
         metadata: {
           bookingId: args.bookingId,
           assetType: args.assetType,
-          ...(args.metadata || {}),
-        },
+          ...(args.metadata || {})
+        }
       };
 
-      if (args.currency) body.currency_id = args.currency;
+      // Add issuer if provided (required for some payment methods)
+      if (args.issuerId) {
+        paymentBody.issuer_id = args.issuerId;
+      }
 
-      const payment = await mpFetch<any>("/v1/payments", {
-        method: "POST",
-        body: JSON.stringify(body),
+      // Call Mercado Pago Payments API
+      const payment = await mpFetch<any>('/v1/payments', {
+        method: 'POST',
+        body: JSON.stringify(paymentBody)
       });
 
-      // Update booking payment status
-      await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingPaymentStatus, {
-        bookingId: args.bookingId,
-        paymentStatus: payment.status,
-        paymentId: String(payment.id),
-        receiptUrl: payment.receipt_url || undefined,
+      console.log("[MP] Payment created:", {
+        id: payment.id,
+        status: payment.status,
+        statusDetail: payment.status_detail,
+        captured: payment.captured
       });
 
-      // Store MP paymentId
+      // Map MP status to our internal status
+      const statusMap: Record<string, string> = {
+        authorized: "authorized",
+        approved: "paid",
+        in_process: "processing",
+        pending: "pending",
+        rejected: "failed",
+        cancelled: "cancelled"
+      };
+
+      const paymentStatus = statusMap[payment.status] || payment.status;
+
+      // Update booking with payment info
       await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingMpInfo, {
         bookingId: args.bookingId,
         assetType: args.assetType,
         mpPaymentId: String(payment.id),
+        paymentStatus: paymentStatus
       });
+
+      // If payment is authorized, update booking status to awaiting_confirmation
+      if (payment.status === "authorized") {
+        await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          status: "awaiting_confirmation",
+          paymentStatus: "authorized"
+        });
+      }
 
       return {
         success: true,
-        paymentId: payment.id,
+        paymentId: String(payment.id),
         status: payment.status,
+        statusDetail: payment.status_detail
       };
+
     } catch (error) {
-      console.error("Failed to create MP payment:", error);
+      console.error("[MP] Failed to create payment with manual capture:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error"
       };
     }
-  },
+  }
 });
+
 
 /**
  * Capture an authorized payment
  */
 export const capturePayment = internalAction({
-  args: capturePaymentValidator,
-  returns: v.object({ success: v.boolean(), status: v.optional(v.string()), error: v.optional(v.string()) }),
+  args: {
+    paymentId: v.string(),
+    amount: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    status: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
   handler: async (_ctx, args) => {
     try {
-      // Capturar o valor total autorizado (sem especificar amount para capturar tudo)
       const body: any = { capture: true };
       if (args.amount) {
         body.transaction_amount = args.amount;
@@ -277,18 +400,24 @@ export const capturePayment = internalAction({
       });
       return { success: true, status: res.status };
     } catch (error) {
-      console.error("Failed to capture MP payment:", error);
+      console.error("[MP] Failed to capture payment:", error);
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
     }
   },
 });
 
 /**
- * Cancel a payment (authorized)
+ * Cancel a payment
  */
 export const cancelPayment = internalAction({
-  args: cancelPaymentValidator,
-  returns: v.object({ success: v.boolean(), status: v.optional(v.string()), error: v.optional(v.string()) }),
+  args: {
+    paymentId: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    status: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
   handler: async (_ctx, args) => {
     try {
       const res = await mpFetch<any>(`/v1/payments/${args.paymentId}`, {
@@ -297,63 +426,62 @@ export const cancelPayment = internalAction({
       });
       return { success: true, status: res.status };
     } catch (error) {
-      console.error("Failed to cancel MP payment:", error);
+      console.error("[MP] Failed to cancel payment:", error);
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
     }
   },
 });
 
 /**
- * Create a refund for a payment
+ * Refund a payment
  */
-export const createRefund = internalAction({
-  args: refundPaymentValidator,
-  returns: v.object({ success: v.boolean(), refundId: v.optional(v.union(v.string(), v.number())), error: v.optional(v.string()) }),
+export const refundPayment = internalAction({
+  args: {
+    paymentId: v.string(),
+    amount: v.optional(v.number()),
+    reason: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    refundId: v.optional(v.union(v.string(), v.number())),
+    error: v.optional(v.string()),
+  }),
   handler: async (ctx, args) => {
     try {
       const res = await mpFetch<any>(`/v1/payments/${args.paymentId}/refunds`, {
         method: "POST",
-        body: JSON.stringify({ amount: args.amount, reason: args.reason }),
+        body: JSON.stringify({ 
+          amount: args.amount, 
+          reason: args.reason 
+        }),
       });
 
-      await ctx.runMutation(internal.domains.mercadoPago.mutations.addRefundToBooking, {
-        bookingId: String(res.metadata?.bookingId || ""),
-        refundId: res.id,
-        amount: res.amount || args.amount || 0,
-        reason: args.reason,
-        status: res.status || "succeeded",
-      });
+      if (res.metadata?.bookingId) {
+        await ctx.runMutation(internal.domains.mercadoPago.mutations.addRefundToBooking, {
+          bookingId: String(res.metadata.bookingId),
+          refundId: res.id,
+          amount: res.amount || args.amount || 0,
+          reason: args.reason,
+          status: res.status || "succeeded",
+        });
+      }
 
       return { success: true, refundId: res.id };
     } catch (error) {
-      console.error("Failed to create MP refund:", error);
+      console.error("[MP] Failed to refund payment:", error);
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
     }
   },
 });
 
-/**
- * Alias for createRefund to maintain consistency with naming
- */
-export const refundPayment = createRefund;
 
 /**
- * Process Mercado Pago webhook events
- */
-/**
- * Approve a booking and capture payment (if needed)
- * Public action that can be called by partners/employees
+ * Approve a booking and capture payment
  */
 export const approveBookingAndCapturePayment = action({
   args: {
     bookingId: v.string(),
-    assetType: v.union(
-      v.literal("activity"),
-      v.literal("event"),
-      v.literal("restaurant"),
-      v.literal("vehicle"),
-      v.literal("package")
-    ),
+    assetType: assetTypeValidator,
     partnerNotes: v.optional(v.string()),
   },
   returns: v.object({
@@ -430,14 +558,17 @@ export const approveBookingAndCapturePayment = action({
         console.error("Failed to generate voucher:", voucherError);
       }
 
-      // Send confirmation email
+      // Send confirmation email ONLY after admin approval and successful payment capture
       try {
-        await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmail, {
+        console.log(`[MP] Sending confirmation email for approved booking ${args.bookingId}`);
+        await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmailById, {
           bookingId: args.bookingId,
           bookingType: args.assetType,
         });
+        console.log(`[MP] Confirmation email sent successfully for booking ${args.bookingId}`);
       } catch (emailError) {
         console.error("Failed to send confirmation email:", emailError);
+        // Don't fail the entire approval if email fails
       }
 
       return { success: true };
@@ -449,19 +580,12 @@ export const approveBookingAndCapturePayment = action({
 });
 
 /**
- * Reject a booking and cancel payment
- * Public action that can be called by partners/employees
+ * Reject a booking and cancel/refund payment
  */
 export const rejectBookingAndCancelPayment = action({
   args: {
     bookingId: v.string(),
-    assetType: v.union(
-      v.literal("activity"),
-      v.literal("event"),
-      v.literal("restaurant"),
-      v.literal("vehicle"),
-      v.literal("package")
-    ),
+    assetType: assetTypeValidator,
     reason: v.optional(v.string()),
   },
   returns: v.object({
@@ -547,9 +671,21 @@ export const rejectBookingAndCancelPayment = action({
   },
 });
 
+/**
+ * Process Mercado Pago webhook events
+ */
 export const processWebhookEvent = internalAction({
-  args: processWebhookValidator,
-  returns: v.object({ success: v.boolean(), processed: v.boolean(), error: v.optional(v.string()) }),
+  args: {
+    id: v.optional(v.union(v.string(), v.number())),
+    type: v.optional(v.string()),
+    action: v.optional(v.string()),
+    data: v.optional(v.any()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    processed: v.boolean(),
+    error: v.optional(v.string()),
+  }),
   handler: async (ctx, args) => {
     try {
       const eventId = args.id != null ? String(args.id) : undefined;
@@ -574,16 +710,20 @@ export const processWebhookEvent = internalAction({
         eventData: args.data || {},
       });
 
-      // If payment notification, fetch full payment
-      if ((args.type === "payment" || args.action?.startsWith("payment.")) && args.data && (args as any).data.id) {
-        const paymentId = (args as any).data.id;
+      // If payment notification, fetch full payment details
+      // Following MP best practices: first acknowledge receipt, then fetch payment details
+      if ((args.type === "payment" || args.action?.startsWith("payment.")) && args.data && args.data.id) {
+        const paymentId = args.data.id;
         
-        // Handle test payments gracefully
+        console.log(`[MP] Processing payment notification for payment ID: ${paymentId}`);
+        
+        // Handle test payments gracefully - they may not exist in MP API
         let payment: any = null;
         try {
           payment = await mpFetch<any>(`/v1/payments/${paymentId}`);
+          console.log(`[MP] Payment ${paymentId} fetched successfully, status: ${payment.status}`);
         } catch (error) {
-          console.warn(`Payment ${paymentId} not found (likely test payment):`, error instanceof Error ? error.message : String(error));
+          console.warn(`[MP] Payment ${paymentId} not found (likely test payment):`, error instanceof Error ? error.message : String(error));
           // For test payments or non-existent payments, still mark webhook as processed
           return { success: true, processed: true };
         }
@@ -593,6 +733,8 @@ export const processWebhookEvent = internalAction({
         const assetId = payment.metadata?.assetId ? String(payment.metadata.assetId) : undefined;
 
         if (bookingId) {
+          console.log(`[MP] Updating booking ${bookingId} with payment status: ${payment.status}`);
+          
           await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingPaymentStatus, {
             bookingId: String(bookingId),
             paymentStatus: payment.status,
@@ -615,6 +757,10 @@ export const processWebhookEvent = internalAction({
             relatedAssetType: assetType ? String(assetType) : undefined,
             relatedAssetId: assetId,
           });
+          
+          console.log(`[MP] Booking ${bookingId} updated successfully`);
+        } else {
+          console.warn(`[MP] Payment ${paymentId} has no associated bookingId in metadata`);
         }
       }
 
@@ -624,10 +770,10 @@ export const processWebhookEvent = internalAction({
 
       return { success: true, processed: true };
     } catch (error) {
-      console.error("Failed to process MP webhook:", error);
-      if ((args as any).id != null) {
+      console.error("[MP] Failed to process webhook:", error);
+      if (args.id != null) {
         await ctx.runMutation(internal.domains.mercadoPago.mutations.addWebhookEventError, {
-          mpEventId: String((args as any).id),
+          mpEventId: String(args.id),
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }

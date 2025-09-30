@@ -3,7 +3,7 @@
 import { action, internalAction } from "../../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../../_generated/api";
-import Stripe from "stripe";
+// Stripe removed - system migrated to Mercado Pago
 
 // Validar cupom em tempo real (para uso no frontend)
 export const validateCouponRealTime = action({
@@ -571,59 +571,8 @@ export const createStripePromotionCode = action({
       throw new Error("Cupom não encontrado");
     }
 
-    try {
-              const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-          apiVersion: "2025-06-30.basil" as any,
-        });
-
-      // Criar cupom no Stripe
-      const stripeCoupon = await stripe.coupons.create({
-        percent_off: coupon.discountType === "percentage" ? coupon.discountValue : undefined,
-        amount_off: coupon.discountType === "fixed_amount" ? Math.round(coupon.discountValue * 100) : undefined, // Converter para centavos
-        currency: coupon.discountType === "fixed_amount" ? "brl" : undefined,
-        duration: "once", // Por enquanto, apenas uso único
-        max_redemptions: coupon.usageLimit || undefined,
-        metadata: {
-          convexCouponId: args.couponId,
-          partnerId: coupon.partnerId || "",
-          type: coupon.type,
-        },
-      });
-
-      // Criar código promocional
-      const promotionCode = await stripe.promotionCodes.create({
-        coupon: stripeCoupon.id,
-        code: coupon.code,
-        active: coupon.isActive,
-        max_redemptions: args.maxRedemptions || coupon.usageLimit || undefined,
-        expires_at: args.expiresAt ? Math.floor(args.expiresAt / 1000) : undefined, // Stripe espera timestamp em segundos
-        restrictions: {
-          minimum_amount: coupon.minimumOrderValue ? Math.round(coupon.minimumOrderValue * 100) : undefined,
-          minimum_amount_currency: coupon.minimumOrderValue ? "brl" : undefined,
-        },
-        metadata: {
-          convexCouponId: args.couponId,
-        },
-      });
-
-      // Atualizar cupom com informações do Stripe
-      await ctx.runMutation(internal.domains.coupons.mutations.updateCouponStripeInfo, {
-        couponId: args.couponId,
-        stripePromotionCodeId: promotionCode.id,
-        stripeCouponId: stripeCoupon.id,
-      });
-
-      return {
-        promotionCodeId: promotionCode.id,
-        couponId: stripeCoupon.id,
-        code: promotionCode.code,
-        active: promotionCode.active,
-        success: true,
-      };
-    } catch (error) {
-      console.error("Erro ao criar cupom no Stripe:", error);
-      throw new Error(`Falha ao criar cupom no Stripe: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
-    }
+    // Stripe functionality has been removed - using Mercado Pago instead
+    throw new Error("Stripe coupon functionality has been removed. Please use Mercado Pago instead.");
   },
 });
 
@@ -635,30 +584,7 @@ export const syncCouponUsageWithStripe = action({
     paymentIntentId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Buscar uso do cupom
-    const usage = await ctx.runQuery(internal.domains.coupons.queries.getCouponUsageById, {
-      usageId: args.couponUsageId,
-    });
-
-    if (!usage) {
-      throw new Error("Uso do cupom não encontrado");
-    }
-
-    // Atualizar com informações do Stripe
-    await ctx.runMutation(internal.domains.coupons.mutations.updateCouponUsage, {
-      usageId: args.couponUsageId,
-      metadata: {
-        stripeSessionId: args.stripeSessionId,
-        paymentIntentId: args.paymentIntentId,
-        syncedAt: Date.now(),
-      },
-    });
-
-    return {
-      success: true,
-      usageId: args.couponUsageId,
-      stripeSessionId: args.stripeSessionId,
-    };
+    throw new Error("Stripe coupon sync functionality has been removed. Please use Mercado Pago instead.");
   },
 });
 

@@ -156,7 +156,7 @@ export default function DebugUserPage() {
             <h4 className="font-medium text-sm mb-2">Descrição das Roles:</h4>
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li><strong>Traveler:</strong> Usuário padrão, pode fazer reservas</li>
-              <li><strong>Partner:</strong> Parceiro com acesso ao Stripe Connect</li>
+              <li><strong>Partner:</strong> Parceiro com acesso a recebimentos na plataforma</li>
               <li><strong>Employee:</strong> Funcionário de um parceiro</li>
               <li><strong>Master:</strong> Administrador do sistema</li>
             </ul>

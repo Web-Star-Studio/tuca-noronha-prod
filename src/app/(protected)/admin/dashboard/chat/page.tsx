@@ -65,7 +65,7 @@ export default function ChatPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   Total de Conversas
@@ -81,7 +81,7 @@ export default function ChatPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   Conversas Ativas
@@ -99,7 +99,7 @@ export default function ChatPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   Não Lidas
@@ -117,7 +117,7 @@ export default function ChatPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   Conversas Hoje
@@ -140,7 +140,7 @@ export default function ChatPage() {
         <div className="lg:col-span-2">
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
                     <MessageCircle className="h-5 w-5 text-purple-600" />

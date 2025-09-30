@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Users, Clock, Plus, Minus, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import { Users, Clock, MapPin, Calendar as CalendarIcon } from "lucide-react";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 
 interface RestaurantReservationFormProps {
@@ -60,7 +60,9 @@ export function RestaurantReservationForm({
 }: RestaurantReservationFormProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
-  const [partySize, setPartySize] = useState(2);
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
+  const [additionalGuestNames, setAdditionalGuestNames] = useState<string[]>([]);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -69,7 +71,6 @@ export function RestaurantReservationForm({
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
-  const createCheckoutSession = useAction(api.domains.stripe.actions.createCheckoutSession);
   const createMpCheckoutPreference = useAction(
     api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
   );
@@ -80,6 +81,17 @@ export function RestaurantReservationForm({
     "20:00", "20:30", "21:00", "21:30", "22:00"
   ]
   
+  useEffect(() => {
+    const required = Math.max(adults + children - 1, 0);
+    setAdditionalGuestNames((prev) => {
+      const next = prev.slice(0, required);
+      while (next.length < required) {
+        next.push("");
+      }
+      return next;
+    });
+  }, [partySize]);
+
   // Calculate price
   const getPrice = () => {
     return restaurant.price || 0;
@@ -96,6 +108,13 @@ export function RestaurantReservationForm({
     return appliedCoupon ? appliedCoupon.discountAmount : 0;
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
   // Handle coupon application
   const handleCouponApplied = (coupon: any) => {
     setAppliedCoupon(coupon);
@@ -106,6 +125,8 @@ export function RestaurantReservationForm({
     setAppliedCoupon(null);
   };
   
+  const totalGuests = adults + children;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -117,6 +138,14 @@ export function RestaurantReservationForm({
     if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
       toast.error("Preencha todas as informações de contato");
       return;
+    }
+
+    if (totalGuests > 1) {
+      const hasEmptyName = additionalGuestNames.some((name) => !name.trim());
+      if (hasEmptyName) {
+        toast.error("Informe o nome completo de todos os acompanhantes");
+        return;
+      }
     }
 
     if (!restaurant.acceptsReservations) {
@@ -132,7 +161,10 @@ export function RestaurantReservationForm({
         restaurantId,
         date: format(date, "yyyy-MM-dd"),
         time,
-        partySize,
+        partySize: totalGuests,
+        adults,
+        children,
+        guestNames: additionalGuestNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
         couponCode: appliedCoupon?.code,
@@ -144,20 +176,13 @@ export function RestaurantReservationForm({
         description: `Código de confirmação: ${result.confirmationCode}`,
       });
 
-      // 2. If restaurant requires payment, try Mercado Pago first; fallback to Stripe
+      // 2. If restaurant requires pagamento antecipado, gerar link através do Mercado Pago
       if (restaurant.acceptsOnlinePayment && restaurant.requiresUpfrontPayment && restaurant.price && restaurant.price > 0) {
         try {
-          console.log("🔄 Criando checkout session para restaurante:", {
-            reservationId: result.reservationId,
-            restaurantId,
-            price: restaurant.price,
-          });
-
-          // Try Mercado Pago first
           const mpPref = await createMpCheckoutPreference({
             bookingId: result.reservationId,
             assetType: "restaurant",
-            successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
+          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
             cancelUrl: `${window.location.origin}/booking/cancel`,
             customerEmail: customerInfo.email,
             couponCode: appliedCoupon?.code,
@@ -175,7 +200,9 @@ export function RestaurantReservationForm({
             // Reset form before redirecting
             setDate(undefined);
             setTime("");
-            setPartySize(2);
+            setAdults(2);
+            setChildren(0);
+            setAdditionalGuestNames([]);
             setCustomerInfo({ name: "", email: "", phone: "" });
             setSpecialRequests("");
 
@@ -184,42 +211,11 @@ export function RestaurantReservationForm({
             }, 1200);
             return; // Don't call onReservationSuccess here, only redirect
           }
-
-          // Fallback to Stripe
-          const checkoutSession = await createCheckoutSession({
-            bookingId: result.reservationId,
-            assetType: "restaurant",
-            successUrl: `${window.location.origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/booking/cancel`,
-            couponCode: appliedCoupon?.code,
-            discountAmount: getDiscountAmount(),
-            originalAmount: getPrice(),
-            finalAmount: getFinalPrice(),
-          });
-
-          if (checkoutSession.success && checkoutSession.sessionUrl) {
-            toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro. O pagamento será autorizado e cobrado após aprovação.",
-            });
-
-            // Reset form before redirecting
-            setDate(undefined);
-            setTime("");
-            setPartySize(2);
-            setCustomerInfo({ name: "", email: "", phone: "" });
-            setSpecialRequests("");
-
-            setTimeout(() => {
-              window.location.href = checkoutSession.sessionUrl;
-            }, 1200);
-
-            return; // Don't call onReservationSuccess here, only redirect
-          } else {
-            throw new Error(checkoutSession.error || "Erro ao criar sessão de pagamento");
-          }
+          
+          throw new Error(mpPref.error || "Não foi possível gerar o link de pagamento");
         } catch (paymentError) {
-          console.error("💥 Erro ao criar payment link:", paymentError);
-          toast.error("Reserva criada, mas erro no pagamento", {
+          console.error("💥 Erro ao gerar link de pagamento:", paymentError);
+          toast.error("Reserva criada, mas não foi possível gerar o link de pagamento", {
             description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
           });
         }
@@ -232,7 +228,9 @@ export function RestaurantReservationForm({
       // Reset form
       setDate(undefined);
       setTime("");
-      setPartySize(2);
+      setAdults(2);
+      setChildren(0);
+      setAdditionalGuestNames([]);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
     } catch (error) {
@@ -243,21 +241,6 @@ export function RestaurantReservationForm({
       setIsSubmitting(false);
     }
   };
-
-  const incrementGuests = () => {
-    if (partySize < restaurant.maximumPartySize) {
-      setPartySize(partySize + 1);
-    }
-  };
-
-  const decrementGuests = () => {
-    if (partySize > 1) {
-      setPartySize(partySize - 1);
-    }
-  };
-
-  // Helper para formatação de moeda
-  // formatCurrency removido (não utilizado);
 
   return (
     <div className={cn("bg-white border border-gray-200 rounded-lg shadow-sm", className)}>
@@ -331,40 +314,56 @@ export function RestaurantReservationForm({
 
           {/* Party Size */}
           <div className="space-y-2">
-            <Label>Número de pessoas</Label>
-            <div className="flex items-center justify-between p-3 border rounded-md">
-              <div className="flex items-center">
-                <Users className="mr-2 h-4 w-4 text-gray-500" />
-                <span className="text-sm">Pessoas</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={decrementGuests}
-                  disabled={partySize <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-8 text-center font-medium">{partySize}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={incrementGuests}
-                  disabled={partySize >= restaurant.maximumPartySize}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <Label className="flex items-center gap-2 text-sm text-gray-600">
+              <Users className="h-4 w-4 text-gray-500" />
+              Número de participantes
+            </Label>
+            <ParticipantSelector
+              adults={adults}
+              childrenCount={children}
+              onAdultsChange={(value) => {
+                const nextAdults = Math.min(value, restaurant.maximumPartySize);
+                const remaining = restaurant.maximumPartySize - nextAdults;
+                const nextChildren = Math.min(children, remaining);
+                setAdults(Math.max(nextAdults, 1));
+                setChildren(nextChildren);
+              }}
+              onChildrenChange={(value) => {
+                const nextChildren = Math.min(value, restaurant.maximumPartySize - adults);
+                setChildren(Math.max(nextChildren, 0));
+              }}
+              minAdults={1}
+              maxAdults={restaurant.maximumPartySize}
+              maxChildren={Math.max(restaurant.maximumPartySize - adults, 0)}
+              minTotal={1}
+              maxTotal={restaurant.maximumPartySize}
+            />
             <p className="text-xs text-gray-500">
-              Máximo: {restaurant.maximumPartySize} pessoas
+              Máximo: {restaurant.maximumPartySize} participantes. Crianças até 5 anos entram na categoria Crianças.
             </p>
           </div>
+
+        {totalGuests > 1 && (
+          <div className="space-y-2">
+            <Label>Nomes dos acompanhantes</Label>
+            <p className="text-xs text-gray-500">Informe o nome completo de cada pessoa além do responsável pela reserva.</p>
+            <div className="space-y-2">
+              {additionalGuestNames.map((value, index) => (
+                <Input
+                  key={`guest-${index}`}
+                  value={value}
+                  onChange={(e) => {
+                    const next = [...additionalGuestNames];
+                    next[index] = e.target.value;
+                    setAdditionalGuestNames(next);
+                  }}
+                  placeholder={`Acompanhante ${index + 2}`}
+                  className={formStyles.input.base}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
           {/* Customer Information */}
           <div className="space-y-4 pt-4 border-t">
@@ -431,13 +430,28 @@ export function RestaurantReservationForm({
             />
           )}
 
-          {/* Price summary with Stripe fees */}
+          {/* Price summary */}
           {restaurant.price && restaurant.price > 0 && (
-            <StripeFeesDisplay 
-              baseAmount={getPrice()}
-              discountAmount={getDiscountAmount()}
-              className="mt-4"
-            />
+            <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor base</span>
+                <span className="font-medium">{formatCurrency(getPrice())}</span>
+              </div>
+              {getDiscountAmount() > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-900">Total</span>
+                <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O pagamento será processado com nosso provedor e confirmado junto ao parceiro antes da cobrança definitiva.
+              </p>
+            </div>
           )}
 
           {/* Payment Info - show if requires payment */}

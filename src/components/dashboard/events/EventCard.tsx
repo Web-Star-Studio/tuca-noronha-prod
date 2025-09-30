@@ -3,9 +3,11 @@
 import { type Event } from "@/lib/services/eventService";
 import { cn } from "@/lib/utils";
 import { Calendar, Clock, ExternalLink, MapPin, Star, Trash2, RefreshCw, Pencil } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { SmartMedia } from "@/components/ui/smart-media";
+import { parseMediaEntry } from "@/lib/media";
 
 
 type EventCardProps = {
@@ -33,6 +35,8 @@ export function EventCard({
     } 
     // No else case - clicking on local events does nothing now that we have a dedicated edit button
   };
+  const coverEntry = parseMediaEntry(event.imageUrl ?? "");
+  const hasCover = Boolean(coverEntry.url && coverEntry.url.trim() !== "");
   
   return (
     <motion.div
@@ -58,13 +62,31 @@ export function EventCard({
         aria-label={`Evento ${event.title}`}
       >
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-          <Image
-            src={event.imageUrl || "/placeholder-event.jpg"}
-            alt={event.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
+          {hasCover ? (
+            <SmartMedia
+              entry={coverEntry}
+              alt={event.title}
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              imageProps={{
+                fill: true,
+                sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+              }}
+              videoProps={{
+                muted: true,
+                loop: true,
+                playsInline: true,
+                controls: false,
+              }}
+            />
+          ) : (
+            <Image
+              src="/placeholder-event.jpg"
+              alt={event.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           
           {/* Badge de categoria */}

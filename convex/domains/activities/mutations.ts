@@ -19,6 +19,8 @@ export const create = mutationWithRole(["partner", "master"])({
     description: v.string(),
     shortDescription: v.string(),
     price: v.number(),
+    netRate: v.optional(v.number()),
+    availableTimes: v.optional(v.array(v.string())),
     category: v.string(),
     duration: v.string(),
     maxParticipants: v.number(),
@@ -35,6 +37,7 @@ export const create = mutationWithRole(["partner", "master"])({
     cancelationPolicy: v.array(v.string()),
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    isFree: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
   },
@@ -53,6 +56,8 @@ export const create = mutationWithRole(["partner", "master"])({
     // Creating the activity
     const activityId = await ctx.db.insert("activities", {
       ...args,
+      netRate: args.netRate ?? args.price,
+      availableTimes: args.availableTimes ?? [],
       maxParticipants,
       minParticipants,
       hasMultipleTickets: args.hasMultipleTickets || false, // default é false
@@ -72,6 +77,8 @@ export const update = mutationWithRole(["partner", "master"])({
     description: v.optional(v.string()),
     shortDescription: v.optional(v.string()),
     price: v.optional(v.number()),
+    netRate: v.optional(v.number()),
+    availableTimes: v.optional(v.array(v.string())),
     category: v.optional(v.string()),
     duration: v.optional(v.string()),
     maxParticipants: v.optional(v.number()),
@@ -88,6 +95,7 @@ export const update = mutationWithRole(["partner", "master"])({
     cancelationPolicy: v.optional(v.array(v.string())),
     isFeatured: v.optional(v.boolean()),
     isActive: v.optional(v.boolean()),
+    isFree: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.optional(v.id("users")),
   },
@@ -108,6 +116,8 @@ export const update = mutationWithRole(["partner", "master"])({
       description?: string;
       shortDescription?: string;
       price?: number;
+      netRate?: number;
+      availableTimes?: string[];
       category?: string;
       duration?: string;
       maxParticipants?: bigint;

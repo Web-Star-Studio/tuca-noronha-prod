@@ -165,4 +165,39 @@ http.route({
   handler: testMpWebhook,
 });
 
+// Mercado Pago subscription webhook route
+http.route({
+  path: "/mercadopago/subscription-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const payload = await request.json();
+      console.log("[MP] Subscription webhook received:", payload);
+      
+      // Process subscription webhook event
+      const result = await ctx.runAction(internal.domains.subscriptions.actions.processSubscriptionWebhook, payload);
+      
+      return new Response(
+        JSON.stringify({ success: result.success }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      console.error("[MP] Subscription webhook error:", error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
 export default http;

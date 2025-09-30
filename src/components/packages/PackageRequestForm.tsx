@@ -20,6 +20,7 @@ import {
   FOOD_PREFERENCES_OPTIONS,
   type PackageRequestFormData 
 } from "../../../convex/domains/packages/types";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
 
 interface PackageRequestFormProps {
   onSuccess?: (requestNumber: string) => void;
@@ -46,7 +47,9 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
       startDate: "",
       endDate: "",
       duration: 0,
-      groupSize: 1,
+      adults: 2,
+      children: 0,
+      groupSize: 2,
       companions: "",
       budget: 0,
       budgetFlexibility: "",
@@ -65,13 +68,38 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
   });
 
   const updateFormData = (section: keyof PackageRequestFormData, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
+    setFormData(prev => {
+      const nextSection = {
         ...(prev[section] as any),
-        [field]: value
+        [field]: value,
+      };
+
+      if (section === "tripDetails" && (field === "groupSize" || field === "adults" || field === "children")) {
+        const currentAdults = prev.tripDetails.adults || 0;
+        const currentChildren = prev.tripDetails.children || 0;
+        const nextAdults = field === "adults" ? Number(value) : currentAdults;
+        const nextChildren = field === "children" ? Number(value) : currentChildren;
+        const nextGroupSize = field === "groupSize"
+          ? Math.max(Number(value) || 0, 0)
+          : Math.max(nextAdults + nextChildren, 0);
+
+        if (field !== "groupSize") {
+          nextSection.groupSize = nextGroupSize;
+          nextSection.adults = field === "adults" ? nextAdults : Math.min(nextAdults, nextGroupSize);
+          nextSection.children = field === "children" ? nextChildren : Math.max(nextGroupSize - (nextSection.adults || 0), 0);
+        } else {
+          const adjustedAdults = Math.min(nextSection.adults ?? currentAdults, nextGroupSize);
+          nextSection.adults = adjustedAdults;
+          nextSection.children = Math.max(nextGroupSize - adjustedAdults, 0);
+        }
       }
-    }));
+
+      const nextState: PackageRequestFormData = {
+        ...prev,
+        [section]: nextSection as any,
+      };
+      return nextState;
+    });
   };
 
   const toggleArrayValue = (section: "preferences", field: string, value: string) => {
@@ -110,7 +138,15 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
     setIsLoading(true);
     
     try {
-      const result = await createRequest(formData);
+      const payload: PackageRequestFormData = {
+        ...formData,
+        tripDetails: {
+          ...formData.tripDetails,
+          groupSize: formData.tripDetails.adults + formData.tripDetails.children,
+        },
+      };
+
+      const result = await createRequest(payload);
       setRequestNumber(result.requestNumber);
       setIsSubmitted(true);
       onSuccess?.(result.requestNumber);
@@ -354,22 +390,26 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="groupSize" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    👥 Número de Pessoas *
+                  <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    👥 Número de Participantes *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="groupSize"
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={formData.tripDetails.groupSize}
-                      onChange={(e) => updateFormData("tripDetails", "groupSize", parseInt(e.target.value))}
-                      className="pl-12 h-12 border-2 border-gray-200 focus:border-emerald-400 rounded-xl transition-colors"
-                      required
-                    />
-                    <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
+                  <ParticipantSelector
+                    adults={formData.tripDetails.adults}
+                    childrenCount={formData.tripDetails.children}
+                    onAdultsChange={(value) => {
+                      updateFormData("tripDetails", "adults", value);
+                      updateFormData("tripDetails", "groupSize", value + (formData.tripDetails.children || 0));
+                    }}
+                    onChildrenChange={(value) => {
+                      updateFormData("tripDetails", "children", value);
+                      updateFormData("tripDetails", "groupSize", (formData.tripDetails.adults || 0) + value);
+                    }}
+                    minAdults={1}
+                    maxAdults={20}
+                    maxChildren={10}
+                    minTotal={1}
+                    maxTotal={30}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="companions" className="text-sm font-semibold text-gray-700 flex items-center gap-2">

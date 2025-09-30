@@ -388,13 +388,34 @@ export const getProposalsForRequest = query({
     }
 
     // Get proposals for this request
-    const proposals = await ctx.db
+    let proposals = await ctx.db
       .query("packageProposals")
       .withIndex("by_package_request", (q) => 
         q.eq("packageRequestId", args.packageRequestId)
       )
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
+
+    // For travelers, show sent proposals and all statuses after they interact
+    if (currentUserRole === "traveler") {
+      proposals = proposals.filter(p => 
+        p.status === "sent" || 
+        p.status === "viewed" || 
+        p.status === "under_negotiation" || 
+        p.status === "accepted" || 
+        p.status === "awaiting_participants_data" ||
+        p.status === "participants_data_completed" ||
+        p.status === "flight_booking_in_progress" ||
+        p.status === "flight_booked" ||
+        p.status === "documents_uploaded" ||
+        p.status === "awaiting_final_confirmation" ||
+        p.status === "payment_pending" ||
+        p.status === "payment_completed" ||
+        p.status === "contracted" ||
+        p.status === "rejected" ||
+        p.status === "expired"
+      );
+    }
 
     return proposals.sort((a, b) => b.createdAt - a.createdAt);
   },

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import { toast } from "sonner";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from "@/lib/services/vehicleService";
 import { Id } from "@/../convex/_generated/dataModel";
+import { SmartMedia } from "@/components/ui/smart-media";
+import { parseMediaEntry } from "@/lib/media";
 
 type VehicleFormProps = {
   onSubmit: () => void;
@@ -44,7 +45,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     seats: 5,
     fuelType: "",
     transmission: "",
-    pricePerDay: 0,
+    estimatedPricePerDay: 0,
+    netRate: 0,
     description: "",
     features: [] as string[],
     imageUrl: "",
@@ -53,6 +55,9 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+
+  const mainImageEntry = parseMediaEntry(vehicleData.imageUrl ?? "");
+  const hasMainImage = Boolean(mainImageEntry.url && mainImageEntry.url.trim() !== "");
 
   // Load vehicle data when in edit mode
   useEffect(() => {
@@ -68,7 +73,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         seats: vehicle.seats,
         fuelType: vehicle.fuelType,
         transmission: vehicle.transmission,
-        pricePerDay: vehicle.pricePerDay,
+        estimatedPricePerDay: vehicle.estimatedPricePerDay,
+        netRate: vehicle.netRate ?? vehicle.estimatedPricePerDay,
         description: vehicle.description || "",
         features: vehicle.features,
         imageUrl: vehicle.imageUrl || "",
@@ -88,6 +94,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         fuelType: "",
         transmission: "",
         pricePerDay: 0,
+        netRate: 0,
         description: "",
         features: [],
         imageUrl: "",
@@ -134,13 +141,19 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     if (!vehicleData.color) missingFields.push("color");
     if (!vehicleData.fuelType) missingFields.push("fuelType");
     if (!vehicleData.transmission) missingFields.push("transmission");
-    if (vehicleData.pricePerDay <= 0) missingFields.push("pricePerDay");
+    if (vehicleData.estimatedPricePerDay <= 0) missingFields.push("estimatedPricePerDay");
+    if (vehicleData.netRate === undefined || vehicleData.netRate < 0) missingFields.push("netRate");
     
     // Validation
     if (missingFields.length > 0) {
       console.log("Missing fields:", missingFields);
       console.log("Vehicle data:", vehicleData);
       toast.error(`Preencha todos os campos obrigatórios. Campos faltando: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    if (vehicleData.netRate > vehicleData.estimatedPricePerDay) {
+      toast.error("A tarifa net deve ser menor ou igual ao preço estimado por dia");
       return;
     }
 
@@ -306,7 +319,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <Label htmlFor="seats" className="text-sm font-medium text-gray-700">Lugares*</Label>
                 <Input
@@ -322,18 +335,40 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                 />
               </div>
               <div>
-                <Label htmlFor="pricePerDay" className="text-sm font-medium text-gray-700">Preço por dia (R$)*</Label>
+                <Label htmlFor="estimatedPricePerDay" className="text-sm font-medium text-gray-700">
+                  Valor Base Estimado (por dia) (R$)*
+                  <span className="block text-xs font-normal text-gray-500 mt-1">
+                    💡 Este é um valor de referência. O valor real será definido ao confirmar cada reserva.
+                  </span>
+                </Label>
                 <Input
-                  id="pricePerDay"
-                  name="pricePerDay"
+                  id="estimatedPricePerDay"
+                  name="estimatedPricePerDay"
                   type="number"
-                  value={vehicleData.pricePerDay}
+                  value={vehicleData.estimatedPricePerDay}
                   onChange={handleNumberChange}
                   min={0}
                   step={10}
                   className="bg-muted/30 border-0 focus:bg-white transition-colors"
                   required
                 />
+              </div>
+              <div>
+                <Label htmlFor="netRate" className="text-sm font-medium text-gray-700">Tarifa net (R$)*</Label>
+                <Input
+                  id="netRate"
+                  name="netRate"
+                  type="number"
+                  value={vehicleData.netRate ?? 0}
+                  onChange={handleNumberChange}
+                  min={0}
+                  step={10}
+                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
+                  required
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Valor líquido combinado para repasse ao fornecedor.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -457,13 +492,14 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             </div>
             <p className="text-xs text-muted-foreground">Selecione uma imagem da biblioteca de mídias (ideal: 800x600px)</p>
             
-            {vehicleData.imageUrl && (
+            {hasMainImage && (
               <div className="relative h-48 w-full overflow-hidden rounded-lg bg-muted">
-                <Image
-                  src={vehicleData.imageUrl}
+                <SmartMedia
+                  entry={mainImageEntry}
                   alt={vehicleData.name || "Veículo"}
-                  fill
-                  className="object-cover"
+                  className="h-full w-full object-cover"
+                  imageProps={{ fill: true }}
+                  videoProps={{ controls: true, preload: "metadata" }}
                 />
               </div>
             )}

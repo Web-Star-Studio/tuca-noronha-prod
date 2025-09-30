@@ -183,7 +183,7 @@ export default function PackageProposalsPage() {
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Total de Propostas</CardTitle>
             <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -193,7 +193,7 @@ export default function PackageProposalsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
             <ClockIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -203,7 +203,7 @@ export default function PackageProposalsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
             <ChartBarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -213,7 +213,7 @@ export default function PackageProposalsPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
             <ChartBarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -224,7 +224,7 @@ export default function PackageProposalsPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="create">Criar Proposta</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
@@ -264,7 +264,7 @@ export default function PackageProposalsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Todos os Status</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.length || 0}
@@ -272,7 +272,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="draft">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Rascunho</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "draft").length || 0}
@@ -280,7 +280,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="review">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Em Revisão</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "review").length || 0}
@@ -288,7 +288,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="sent">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Enviada</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "sent").length || 0}
@@ -296,7 +296,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="viewed">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Visualizada</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "viewed").length || 0}
@@ -304,7 +304,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="under_negotiation">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Em Negociação</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "under_negotiation").length || 0}
@@ -312,7 +312,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="accepted">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Aceita</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "accepted").length || 0}
@@ -320,7 +320,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="rejected">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Rejeitada</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.status === "rejected").length || 0}
@@ -339,7 +339,7 @@ export default function PackageProposalsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Todas as Prioridades</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.length || 0}
@@ -347,7 +347,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="low">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Baixa</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.priority === "low").length || 0}
@@ -355,7 +355,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="normal">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Normal</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.priority === "normal").length || 0}
@@ -363,7 +363,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="high">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Alta</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.priority === "high").length || 0}
@@ -371,7 +371,7 @@ export default function PackageProposalsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="urgent">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Urgente</span>
                         <Badge variant="secondary" className="ml-2">
                           {proposals?.proposals?.filter(p => p.priority === "urgent").length || 0}
@@ -417,7 +417,7 @@ export default function PackageProposalsPage() {
 
                   return (
                     <div key={proposal._id} className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-wrap gap-3 items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold">{proposal.title}</h3>
@@ -541,7 +541,7 @@ export default function PackageProposalsPage() {
                     {packageRequests?.requests?.map((request: any) => (
                       <div key={request._id} className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
                         onClick={() => window.open(`/admin/dashboard/propostas-pacotes/criar/${request._id}`, '_blank')}>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                           <div>
                             <h4 className="font-medium">{request.destination}</h4>
                             <p className="text-sm text-gray-600">
@@ -594,17 +594,17 @@ export default function PackageProposalsPage() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-2 text-xs">
-                        <div className="flex justify-between">
+                        <div className="flex flex-wrap gap-3 justify-between">
                           <span>Categoria:</span>
                           <Badge variant="outline" className="text-xs">
                             {template.category}
                           </Badge>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex flex-wrap gap-3 justify-between">
                           <span>Componentes:</span>
                           <span>{template.defaultComponents.length}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex flex-wrap gap-3 justify-between">
                           <span>Usos:</span>
                           <span>{template.usageCount}</span>
                         </div>
@@ -727,7 +727,7 @@ export default function PackageProposalsPage() {
                 <div className="space-y-2">
                   {selectedProposal.components.map((component: any, index: number) => (
                     <div key={index} className="border rounded p-3 text-sm">
-                      <div className="flex justify-between items-start mb-1">
+                      <div className="flex flex-wrap gap-3 justify-between items-start mb-1">
                         <span className="font-medium">{component.name}</span>
                         <span className="font-semibold text-green-600">
                           {formatCurrency(component.totalPrice)}

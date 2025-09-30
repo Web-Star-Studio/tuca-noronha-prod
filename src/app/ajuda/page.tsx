@@ -212,10 +212,6 @@ export default function AjudaPage() {
             <div className="flex items-center justify-center space-x-6 text-white/80 text-sm">
               <div className="flex items-center">
                 <CheckCircle className="w-4 h-4 mr-2" />
-                <span>Suporte 24h</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="w-4 h-4 mr-2" />
                 <span>Respostas rápidas</span>
               </div>
               <div className="flex items-center">

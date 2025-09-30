@@ -72,6 +72,39 @@ const partnerTransactions = defineTable({
   .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
   .index("by_status_and_createdAt", ["status", "createdAt"]);
 
+const suppliers = defineTable({
+  name: v.string(),
+  phone: v.optional(v.string()),
+  email: v.optional(v.string()),
+  bankDetails: v.optional(
+    v.object({
+      bankName: v.optional(v.string()),
+      accountType: v.optional(v.string()),
+      accountNumber: v.optional(v.string()),
+      agencyNumber: v.optional(v.string()),
+      holderName: v.optional(v.string()),
+      holderDocument: v.optional(v.string()),
+      pixKey: v.optional(v.string()),
+    })
+  ),
+  notes: v.optional(v.string()),
+  assetAssociations: v.array(
+    v.object({
+      assetId: v.string(),
+      assetType: v.string(),
+      assetName: v.optional(v.string()),
+    })
+  ),
+  createdBy: v.id("users"),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  isActive: v.boolean(),
+})
+  .index("by_email", ["email"])
+  .index("by_name", ["name"])
+  .index("by_active", ["isActive", "name"])
+  .index("by_createdBy", ["createdBy"]);
+
 export const contactMessages = defineTable({
   name: v.string(),
   email: v.string(),
@@ -147,6 +180,7 @@ export default defineSchema({
     organizationId: v.optional(v.id("partnerOrganizations")),
     // Onboarding fields for travelers
     dateOfBirth: v.optional(v.string()),
+    cpf: v.optional(v.string()),
     onboardingCompleted: v.optional(v.boolean()),
     onboardingCompletedAt: v.optional(v.number()),
     stripeCustomerId: v.optional(v.string()),
@@ -174,6 +208,8 @@ export default defineSchema({
     .index("by_partner", ["partnerId"]) // Add missing index
     .index("by_employee", ["employeeId"]) // Add missing index
     .index("by_employee_partner", ["employeeId", "partnerId"]), // Add missing index
+
+  suppliers,
 
   // Employee creation requests for partners
   employeeCreationRequests: defineTable({
@@ -426,6 +462,8 @@ export default defineSchema({
     description: v.string(),
     shortDescription: v.string(),
     price: v.float64(),
+    netRate: v.optional(v.float64()),
+    availableTimes: v.optional(v.array(v.string())),
     category: v.string(),
     duration: v.string(),
     maxParticipants: v.int64(),
@@ -442,6 +480,7 @@ export default defineSchema({
     cancelationPolicy: v.array(v.string()),
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
     // Stripe integration fields
@@ -483,6 +522,7 @@ export default defineSchema({
     location: v.string(),    // Location name
     address: v.string(),     // Full address
     price: v.float64(),      // Base price (pode ser o ingresso mais barato) 
+    netRate: v.optional(v.float64()),
     category: v.string(),
     maxParticipants: v.int64(),
     imageUrl: v.string(),
@@ -494,6 +534,7 @@ export default defineSchema({
     speakerBio: v.optional(v.string()),  // Optional speaker bio
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     hasMultipleTickets: v.boolean(),     // Flag indicando se tem múltiplos ingressos
     partnerId: v.id("users"),
     symplaUrl: v.optional(v.string()),   // URL for Sympla event
@@ -548,7 +589,9 @@ export default defineSchema({
     name: v.string(),                                   // Nome do restaurante
     slug: v.string(),                                   // Slug para URL
     description: v.string(),                            // Descrição curta
-    description_long: v.string(),                       // Descrição longa
+    description_long: v.optional(v.string()),           // Descrição longa (opcional)
+    hours: v.optional(v.any()),                         // Horários (formato legado, opcional)
+    maximumPartySize: v.optional(v.int64()),            // Tamanho máximo da mesa (opcional)
     address: v.object({                                 // Objeto com informações de endereço
       street: v.string(),                               // Rua
       city: v.string(),                                 // Cidade
@@ -565,18 +608,9 @@ export default defineSchema({
     cuisine: v.array(v.string()),                       // Array com tipos de cozinha
     priceRange: v.string(),                             // Faixa de preço (ex: "$", "$$", "$$$")
     diningStyle: v.string(),                            // Estilo (ex: "Casual", "Fine Dining")
-    hours: v.object({                                   // Horário de funcionamento por dia
-      Monday: v.array(v.string()),                      // Array com horários - pode ser vazio
-      Tuesday: v.array(v.string()),
-      Wednesday: v.array(v.string()),
-      Thursday: v.array(v.string()),
-      Friday: v.array(v.string()),
-      Saturday: v.array(v.string()),
-      Sunday: v.array(v.string()),
-    }),
     features: v.array(v.string()),                      // Características especiais
     dressCode: v.optional(v.string()),                  // Código de vestimenta (opcional)
-    paymentOptions: v.array(v.string()),                // Opções de pagamento
+    paymentOptions: v.optional(v.array(v.string())),    // Opções de pagamento (opcional)
     parkingDetails: v.optional(v.string()),             // Informações sobre estacionamento (opcional)
     mainImage: v.string(),                              // Imagem principal
     galleryImages: v.array(v.string()),                 // Imagens da galeria
@@ -591,14 +625,15 @@ export default defineSchema({
       totalReviews: v.int64(),                          // Total de avaliações
     }),
     acceptsReservations: v.boolean(),                   // Aceita reservas
-    maximumPartySize: v.int64(),                        // Tamanho máximo de grupo
     tags: v.array(v.string()),                          // Tags para busca
     executiveChef: v.optional(v.string()),              // Chef executivo (opcional)
     privatePartyInfo: v.optional(v.string()),           // Informações para eventos privados (opcional)
     isActive: v.boolean(),                              // Status ativo/inativo
     isFeatured: v.boolean(),                            // Status destacado
+    isFree: v.optional(v.boolean()),                    // Asset gratuito (sem pagamento)
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
     price: v.optional(v.number()),                       // Preço por reserva (opcional)
+    netRate: v.optional(v.number()),                     // Tarifa net (opcional)
     // Stripe integration fields
     stripeProductId: v.optional(v.string()),
     stripePriceId: v.optional(v.string()),
@@ -611,6 +646,18 @@ export default defineSchema({
       createdAt: v.number(),
       updatedAt: v.number(),
     })),
+    restaurantType: v.optional(v.union(v.literal("internal"), v.literal("external"))),
+    operatingDays: v.optional(v.object({
+      Monday: v.boolean(),
+      Tuesday: v.boolean(),
+      Wednesday: v.boolean(),
+      Thursday: v.boolean(),
+      Friday: v.boolean(),
+      Saturday: v.boolean(),
+      Sunday: v.boolean(),
+    })),
+    openingTime: v.optional(v.string()),
+    closingTime: v.optional(v.string()),
   })
     .index("by_slug", ["slug"])                         // Índice por slug (URL)
     .index("by_partner", ["partnerId"])                 // Índice por parceiro
@@ -623,6 +670,9 @@ export default defineSchema({
     date: v.string(),                                   // Data da reserva (YYYY-MM-DD)
     time: v.string(),                                   // Horário da reserva (HH:MM)
     partySize: v.number(),                              // Número de pessoas
+    adults: v.optional(v.number()),                     // Número de adultos
+    children: v.optional(v.number()),                   // Número de crianças (até 5 anos)
+    guestNames: v.optional(v.array(v.string())),        // Nomes dos demais participantes
     name: v.string(),                                   // Nome do responsável pela reserva
     email: v.string(),                                  // Email de contato
     phone: v.string(),                                  // Telefone de contato
@@ -790,6 +840,9 @@ export default defineSchema({
     date: v.string(),                              // Date for the activity (YYYY-MM-DD)
     time: v.optional(v.string()),                  // Specific time if applicable
     participants: v.number(),                      // Number of participants
+    adults: v.optional(v.number()),                // Number of adults
+    children: v.optional(v.number()),              // Number of children (0-5 anos)
+    additionalParticipants: v.optional(v.array(v.string())), // Names of additional participants
     totalPrice: v.number(),                        // Total price for booking
     status: v.string(),                            // pending, confirmed, canceled, completed, refunded
     paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
@@ -801,6 +854,7 @@ export default defineSchema({
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      cpf: v.optional(v.string()),
     }),
     // Coupon fields
     couponCode: v.optional(v.string()),            // Applied coupon code
@@ -841,6 +895,9 @@ export default defineSchema({
     userId: v.id("users"),
     ticketId: v.optional(v.id("eventTickets")),    // If event has multiple tickets
     quantity: v.number(),                          // Number of tickets
+    adults: v.optional(v.number()),                // Number of adults
+    children: v.optional(v.number()),              // Number of children (0-5 anos)
+    participantNames: v.optional(v.array(v.string())), // Names of other attendees
     totalPrice: v.number(),                        // Total price for booking
     status: v.string(),                            // pending, confirmed, canceled, completed, refunded
     paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
@@ -852,6 +909,7 @@ export default defineSchema({
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      cpf: v.optional(v.string()),
     }),
     // Coupon fields
     couponCode: v.optional(v.string()),            // Applied coupon code
@@ -902,7 +960,9 @@ export default defineSchema({
     transmission: v.string(), // Manual, Automático, CVT, Semi-automático
     
     // Business details
-    pricePerDay: v.number(),
+    estimatedPricePerDay: v.number(), // ALTERADO: Valor estimado (exibido como "A partir de R$ X")
+    netRate: v.optional(v.number()),
+    isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     description: v.optional(v.string()),
     features: v.array(v.string()),
     imageUrl: v.optional(v.string()),
@@ -936,8 +996,10 @@ export default defineSchema({
     userId: v.id("users"),
     startDate: v.number(), // Unix timestamp
     endDate: v.number(), // Unix timestamp
-    totalPrice: v.number(),
-    status: v.string(), // pending, confirmed, canceled, completed
+    estimatedPrice: v.number(), // NOVO: Preço estimado mostrado na solicitação
+    finalPrice: v.optional(v.number()), // NOVO: Preço real definido pelo admin
+    totalPrice: v.number(), // Mantido para compatibilidade (será igual a finalPrice quando definido)
+    status: v.string(), // ALTERADO: pending_request, pending_confirmation, confirmed, awaiting_payment, paid, canceled, completed, rejected
     paymentMethod: v.optional(v.string()),
     paymentStatus: v.optional(v.string()),
     pickupLocation: v.optional(v.string()),
@@ -946,12 +1008,19 @@ export default defineSchema({
     additionalOptions: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
     partnerNotes: v.optional(v.string()), // Notes from partner/employee
+    adminNotes: v.optional(v.string()), // NOVO: Notas do admin ao confirmar/rejeitar
     confirmationCode: v.string(), // Unique confirmation code
     customerInfo: v.optional(v.object({     // Customer contact information
       name: v.string(),
       email: v.string(),
       phone: v.string(),
     })),
+    // NOVO: Tracking do fluxo
+    requestedAt: v.number(), // Quando viajante solicitou
+    confirmedAt: v.optional(v.number()), // Quando admin confirmou com valor real
+    rejectedAt: v.optional(v.number()), // Quando admin rejeitou
+    paymentDeadline: v.optional(v.number()), // NOVO: 24h após confirmação
+    paidAt: v.optional(v.number()), // Quando viajante pagou
     // Coupon fields
     couponCode: v.optional(v.string()),         // Applied coupon code
     discountAmount: v.optional(v.number()),     // Discount amount applied
@@ -1138,6 +1207,7 @@ export default defineSchema({
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      cpf: v.optional(v.string()),
     }),
     specialRequests: v.optional(v.string()),
     partnerNotes: v.optional(v.string()),
@@ -1219,10 +1289,14 @@ export default defineSchema({
       endMonth: v.optional(v.string()),
       flexibleDates: v.optional(v.boolean()),
       duration: v.number(), // in days
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
       groupSize: v.number(),
       companions: v.string(), // family, friends, couple, solo, business
       budget: v.number(),
       budgetFlexibility: v.string(), // strict, somewhat_flexible, very_flexible
+      includesAirfare: v.optional(v.boolean()),
+      travelerNames: v.optional(v.array(v.string())),
     }),
     
     // Preferences
@@ -1247,6 +1321,7 @@ export default defineSchema({
       v.literal("proposal_sent"),
       v.literal("confirmed"),
       v.literal("cancelled"),
+      v.literal("requires_revision"),
       v.literal("approved"),
       v.literal("rejected"),
       v.literal("completed")
@@ -1599,6 +1674,7 @@ export default defineSchema({
       currency: v.optional(v.string()),        // Moeda utilizada
       customMessage: v.optional(v.string()),   // Mensagem personalizada
       proposalNumber: v.optional(v.string()),  // Número da proposta
+      participantsCount: v.optional(v.number()), // Número de participantes
       sendEmail: v.optional(v.boolean()),      // Se enviou email
       sendNotification: v.optional(v.boolean()), // Se enviou notificação
       totalPrice: v.optional(v.number()),      // Preço total
@@ -2365,6 +2441,15 @@ export default defineSchema({
       v.literal("viewed"),
       v.literal("under_negotiation"),
       v.literal("accepted"),
+      v.literal("awaiting_participants_data"),    // Waiting for participant info
+      v.literal("participants_data_completed"),   // Participant data filled
+      v.literal("flight_booking_in_progress"),    // Admin booking flights
+      v.literal("flight_booked"),                 // Flights confirmed by admin
+      v.literal("documents_uploaded"),            // Admin uploaded documents
+      v.literal("awaiting_final_confirmation"),   // Waiting customer final approval
+      v.literal("payment_pending"),               // Redirected to payment
+      v.literal("payment_completed"),             // Payment successful
+      v.literal("contracted"),                    // Fully contracted
       v.literal("rejected"),
       v.literal("expired"),
       v.literal("withdrawn")
@@ -2380,6 +2465,18 @@ export default defineSchema({
     negotiationRounds: v.number(),                // Number of negotiation rounds
     customerFeedback: v.optional(v.string()),     // Customer feedback
     adminResponse: v.optional(v.string()),        // Admin response
+    rejectedAt: v.optional(v.number()),           // When rejected
+    lastRevisionRequest: v.optional(v.number()),  // Last revision request timestamp
+    revisionNotes: v.optional(v.string()),        // Notes for revision request
+    
+    // Participants data (stored when proposal is accepted)
+    participantsData: v.optional(v.array(v.object({
+      fullName: v.string(),
+      birthDate: v.string(),
+      cpf: v.string(),
+      email: v.optional(v.string()),
+      phone: v.optional(v.string()),
+    }))),
     
     // Approval Workflow
     requiresApproval: v.boolean(),                // Whether requires approval
@@ -2396,6 +2493,37 @@ export default defineSchema({
     convertedToBooking: v.boolean(),              // Whether converted to booking
     bookingId: v.optional(v.string()),            // Booking ID if converted
     convertedAt: v.optional(v.number()),          // When converted
+    
+    // Contracting Process Tracking
+    participantsDataSubmittedAt: v.optional(v.number()),     // When participant data was submitted
+    flightBookingStartedAt: v.optional(v.number()),          // When admin started flight booking
+    flightBookingCompletedAt: v.optional(v.number()),        // When flights were booked
+    documentsUploadedAt: v.optional(v.number()),             // When admin uploaded documents
+    finalConfirmationAt: v.optional(v.number()),             // When customer gave final confirmation
+    paymentInitiatedAt: v.optional(v.number()),              // When payment was initiated
+    paymentCompletedAt: v.optional(v.number()),              // When payment was completed
+    contractedAt: v.optional(v.number()),                    // When fully contracted
+    
+    // Flight Booking Info
+    flightBookingNotes: v.optional(v.string()),              // Admin notes about flight booking
+    flightDetails: v.optional(v.string()),                   // Flight confirmation details
+    
+    // Documents
+    contractDocuments: v.optional(v.array(v.object({
+      storageId: v.string(),
+      fileName: v.string(),
+      fileType: v.string(),
+      fileSize: v.number(),
+      uploadedAt: v.number(),
+      uploadedBy: v.id("users"),
+      description: v.optional(v.string()),
+    }))),
+    
+    // Final Terms and Payment
+    termsAcceptedAt: v.optional(v.number()),                 // When customer accepted final terms
+    finalAmount: v.optional(v.number()),                     // Final contract amount
+    mpPaymentId: v.optional(v.string()),                     // Mercado Pago payment ID
+    mpPreferenceId: v.optional(v.string()),                  // Mercado Pago preference ID
     
     // Metadata
     partnerId: v.optional(v.id("users")),         // Partner responsible

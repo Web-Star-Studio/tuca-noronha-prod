@@ -215,7 +215,7 @@ export default function RelatoriosPage() {
       {/* KPIs Principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
@@ -233,7 +233,7 @@ export default function RelatoriosPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Reservas Confirmadas</CardTitle>
             <Calendar className="h-4 w-4 text-blue-600" />
           </CardHeader>
@@ -248,7 +248,7 @@ export default function RelatoriosPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
             <Target className="h-4 w-4 text-purple-600" />
           </CardHeader>
@@ -263,7 +263,7 @@ export default function RelatoriosPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
             <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
             <TrendingUp className="h-4 w-4 text-orange-600" />
           </CardHeader>
@@ -290,20 +290,20 @@ export default function RelatoriosPage() {
         <CardContent>
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <span className="text-sm">Receita Bruta</span>
                 <span className="text-sm font-medium text-green-600">
                   {formatCurrency(revenueAnalytics.commissionBreakdown.grossRevenue)}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <span className="text-sm">Comissão Partners</span>
                 <span className="text-sm font-medium text-blue-600">
                   - {formatCurrency(revenueAnalytics.commissionBreakdown.partnerCommission)}
                 </span>
               </div>
               <div className="border-t pt-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm font-semibold">Receita Líquida</span>
                   <span className="text-sm font-semibold text-green-600">
                     {formatCurrency(revenueAnalytics.commissionBreakdown.netRevenue)}
@@ -312,7 +312,7 @@ export default function RelatoriosPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between text-sm">
                 <span>Margem da Plataforma</span>
                 <span className="font-medium">{revenueAnalytics.commissionBreakdown.marginPercentage.toFixed(1)}%</span>
               </div>
@@ -327,7 +327,7 @@ export default function RelatoriosPage() {
 
       {/* Relatórios Detalhados */}
       <Tabs defaultValue="conversao" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <TabsTrigger value="conversao">Conversão</TabsTrigger>
           <TabsTrigger value="receita">Receita</TabsTrigger>
           <TabsTrigger value="destinos">Destinos</TabsTrigger>
@@ -344,13 +344,13 @@ export default function RelatoriosPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <span className="text-sm">Visitantes Únicos</span>
                     <span className="text-sm font-medium">{conversionFunnel.uniqueVisitors.toLocaleString()}</span>
                   </div>
                   <Progress value={100} className="h-2" />
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <span className="text-sm">Visualizaram Assets</span>
                     <span className="text-sm font-medium">{conversionFunnel.assetViews.toLocaleString()}</span>
                   </div>
@@ -359,7 +359,7 @@ export default function RelatoriosPage() {
                     className="h-2" 
                   />
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <span className="text-sm">Iniciaram Reserva</span>
                     <span className="text-sm font-medium">{conversionFunnel.bookingStarted.toLocaleString()}</span>
                   </div>
@@ -368,7 +368,7 @@ export default function RelatoriosPage() {
                     className="h-2" 
                   />
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <span className="text-sm">Finalizaram Reserva</span>
                     <span className="text-sm font-medium text-green-600">{conversionFunnel.bookingCompleted.toLocaleString()}</span>
                   </div>
@@ -388,11 +388,11 @@ export default function RelatoriosPage() {
               <CardContent className="space-y-4">
                 {conversionFunnel.conversionBySource.map((source, index) => (
                   <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                       <span className="text-sm font-medium">{source.source}</span>
                       <Badge variant="outline">{source.conversionRate}%</Badge>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between text-xs text-gray-500">
                       <span>{source.visitors.toLocaleString()} visitantes</span>
                       <span>{source.conversions.toLocaleString()} conversões</span>
                     </div>
@@ -414,11 +414,11 @@ export default function RelatoriosPage() {
               <CardContent className="space-y-4">
                 {revenueAnalytics.revenueByAssetType.map((type, index) => (
                   <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                       <span className="text-sm font-medium capitalize">{type.assetType}</span>
                       <span className="text-sm font-medium">{formatCurrency(type.revenue)}</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between text-xs text-gray-500">
                       <span>{type.percentage.toFixed(1)}% do total</span>
                     </div>
                     <Progress value={type.percentage} className="h-2" />
@@ -434,7 +434,7 @@ export default function RelatoriosPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {revenueAnalytics.revenueByMonth.slice(-6).map((month, index) => (
-                  <div key={index} className="flex items-center justify-between">
+                  <div key={index} className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                     <div>
                       <div className="text-sm font-medium">{month.month}</div>
                       <div className="text-xs text-gray-500">{month.bookings} reservas</div>
@@ -457,7 +457,7 @@ export default function RelatoriosPage() {
               {destinationPerformance ? (
                 <div className="space-y-4">
                   {destinationPerformance.map((destination, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={index} className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
                           <Globe className="h-4 w-4 text-blue-600" />
@@ -508,7 +508,7 @@ export default function RelatoriosPage() {
                 <div className="space-y-4">
                   {assetTypePerformance.map((asset, index) => (
                     <div key={index} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium capitalize">{asset.assetType}</h3>
                           <Badge 
@@ -582,7 +582,7 @@ export default function RelatoriosPage() {
                     <div className="space-y-3">
                       <h4 className="font-medium">Segmentação por Tipo</h4>
                       {userGrowth.userSegmentation.map((segment, index) => (
-                        <div key={index} className="flex items-center justify-between">
+                        <div key={index} className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                           <span className="text-sm capitalize">{segment.role}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{segment.count}</span>
@@ -610,25 +610,25 @@ export default function RelatoriosPage() {
                 {userGrowth ? (
                   <div className="space-y-4">
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                         <span className="text-sm">1 dia</span>
                         <span className="text-sm font-medium">{userGrowth.userRetention.day1}%</span>
                       </div>
                       <Progress value={userGrowth.userRetention.day1} className="h-2" />
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                         <span className="text-sm">7 dias</span>
                         <span className="text-sm font-medium">{userGrowth.userRetention.day7}%</span>
                       </div>
                       <Progress value={userGrowth.userRetention.day7} className="h-2" />
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                         <span className="text-sm">30 dias</span>
                         <span className="text-sm font-medium">{userGrowth.userRetention.day30}%</span>
                       </div>
                       <Progress value={userGrowth.userRetention.day30} className="h-2" />
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                         <span className="text-sm">90 dias</span>
                         <span className="text-sm font-medium">{userGrowth.userRetention.day90}%</span>
                       </div>
@@ -638,11 +638,11 @@ export default function RelatoriosPage() {
                     <div className="pt-4 border-t space-y-2">
                       <h4 className="font-medium">Análise de Churn</h4>
                       <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
+                        <div className="flex flex-wrap gap-3 justify-between">
                           <span>Taxa de Churn:</span>
                           <span className="font-medium">{userGrowth.churnAnalysis.churnRate}%</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex flex-wrap gap-3 justify-between">
                           <span>LTV Médio:</span>
                           <span className="font-medium">{formatCurrency(userGrowth.churnAnalysis.avgLifetimeValue)}</span>
                         </div>

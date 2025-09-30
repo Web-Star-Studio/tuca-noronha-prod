@@ -819,16 +819,10 @@ export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps)
             )}
 
             {/* Informações de Pagamento */}
-            {(data.stripePaymentIntentId || data.stripeCheckoutSessionId || data.paymentDetails) && (
+            {data.paymentDetails && (
               <div className="space-y-4">
                 <h4 className="font-semibold">Informações de Pagamento</h4>
                 <div className="space-y-2 text-sm">
-                  {data.stripePaymentIntentId && (
-                    <div>
-                      <span className="text-gray-600">ID do Pagamento:</span>
-                      <p className="font-mono text-xs">{data.stripePaymentIntentId}</p>
-                    </div>
-                  )}
                   {data.paymentDetails?.receiptUrl && (
                     <div>
                       <a 
@@ -841,6 +835,11 @@ export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps)
                         <span className="ml-1">↗</span>
                       </a>
                     </div>
+                  )}
+                  {!data.paymentDetails?.receiptUrl && (
+                    <p className="text-muted-foreground text-xs">
+                      O comprovante será disponibilizado assim que o pagamento for confirmado pelo provedor.
+                    </p>
                   )}
                 </div>
               </div>

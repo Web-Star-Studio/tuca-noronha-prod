@@ -68,7 +68,7 @@ export default function CreateProposalClientPage({ packageRequestId }: CreatePro
   return (
     <div className="space-y-8">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
             variant="outline"

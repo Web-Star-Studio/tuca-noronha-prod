@@ -678,7 +678,7 @@ export default function AdminBookingsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Total de Reservas</p>
                   <p className="text-2xl font-bold text-foreground">{stats.total}</p>
@@ -692,7 +692,7 @@ export default function AdminBookingsPage() {
 
           <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
                   <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
@@ -706,7 +706,7 @@ export default function AdminBookingsPage() {
 
           <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Confirmadas</p>
                   <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
@@ -720,7 +720,7 @@ export default function AdminBookingsPage() {
 
           <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Receita Total</p>
                   <p className="text-2xl font-bold text-green-600">R$ {stats.revenue.toFixed(2)}</p>
@@ -764,7 +764,7 @@ export default function AdminBookingsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Todos os Tipos</span>
                         <Badge variant="secondary" className="ml-2">
                           {bookingCounts.all}
@@ -772,7 +772,7 @@ export default function AdminBookingsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="activities">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Atividades</span>
                         <Badge variant="secondary" className="ml-2">
                           {bookingCounts.activities}
@@ -780,7 +780,7 @@ export default function AdminBookingsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="restaurants">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Restaurantes</span>
                         <Badge variant="secondary" className="ml-2">
                           {bookingCounts.restaurants}
@@ -788,7 +788,7 @@ export default function AdminBookingsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="vehicles">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Veículos</span>
                         <Badge variant="secondary" className="ml-2">
                           {bookingCounts.vehicles}
@@ -796,7 +796,7 @@ export default function AdminBookingsPage() {
                       </div>
                     </SelectItem>
                     <SelectItem value="events">
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between w-full">
                         <span>Eventos</span>
                         <Badge variant="secondary" className="ml-2">
                           {bookingCounts.events}
@@ -904,7 +904,7 @@ export default function AdminBookingsPage() {
                 {filteredBookings.map((booking: any) => (
                   <Card key={booking._id} className="border border-border/50 hover:shadow-md transition-all duration-300">
                     <CardContent className="p-5">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-wrap gap-3 items-start justify-between">
                         <div className="flex-1 space-y-3">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">

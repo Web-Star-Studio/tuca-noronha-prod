@@ -180,7 +180,7 @@ export default function VehiclesMasterPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
             <Car className="h-6 w-6 text-blue-600" />
@@ -198,7 +198,7 @@ export default function VehiclesMasterPage() {
       {stats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
               <Car className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -209,7 +209,7 @@ export default function VehiclesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Disponíveis</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
@@ -222,7 +222,7 @@ export default function VehiclesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Alugados</CardTitle>
               <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
@@ -235,7 +235,7 @@ export default function VehiclesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Manutenção</CardTitle>
               <Settings className="h-4 w-4 text-yellow-600" />
             </CardHeader>
@@ -248,7 +248,7 @@ export default function VehiclesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Receita Potencial</CardTitle>
               <DollarSign className="h-4 w-4 text-purple-600" />
             </CardHeader>
@@ -261,7 +261,7 @@ export default function VehiclesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Preço Médio</CardTitle>
               <Award className="h-4 w-4 text-orange-600" />
             </CardHeader>

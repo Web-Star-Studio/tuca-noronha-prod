@@ -3,24 +3,41 @@ import { v } from "convex/values";
 import { Id } from "../../_generated/dataModel";
 
 /**
+ * Get the current user's Clerk ID (for subscriptions)
+ */
+async function getCurrentUserClerkId(ctx: any): Promise<string | null> {
+  const identity = await ctx.auth.getUserIdentity();
+  return identity?.subject || null;
+}
+
+/**
  * Create or update a subscription
  */
 export const upsertSubscription = internalMutation({
   args: {
-    userId: v.id("users"),
-    stripeCustomerId: v.string(),
-    stripeSubscriptionId: v.string(),
-    stripePriceId: v.string(),
+    userId: v.string(), // Clerk user ID
+    userEmail: v.string(),
+    mpPreapprovalId: v.string(),
+    mpPlanId: v.optional(v.string()),
     status: v.union(
-      v.literal("active"),
-      v.literal("canceled"),
-      v.literal("past_due"),
-      v.literal("expired"),
-      v.literal("trialing")
+      v.literal("authorized"),
+      v.literal("paused"),
+      v.literal("cancelled"),
+      v.literal("pending")
     ),
-    currentPeriodStart: v.number(),
-    currentPeriodEnd: v.number(),
-    canceledAt: v.optional(v.number()),
+    reason: v.string(),
+    externalReference: v.optional(v.string()),
+    frequency: v.number(),
+    frequencyType: v.union(
+      v.literal("days"),
+      v.literal("weeks"),
+      v.literal("months"),
+      v.literal("years")
+    ),
+    transactionAmount: v.number(),
+    currencyId: v.string(),
+    startDate: v.number(),
+    endDate: v.optional(v.number()),
     metadata: v.optional(v.object({
       source: v.optional(v.string()),
       referrer: v.optional(v.string()),
@@ -31,8 +48,8 @@ export const upsertSubscription = internalMutation({
     // Check if subscription already exists
     const existing = await ctx.db
       .query("guideSubscriptions")
-      .withIndex("by_stripe_subscription", (q) =>
-        q.eq("stripeSubscriptionId", args.stripeSubscriptionId)
+      .withIndex("by_mp_preapproval", (q) =>
+        q.eq("mpPreapprovalId", args.mpPreapprovalId)
       )
       .first();
 
@@ -40,9 +57,9 @@ export const upsertSubscription = internalMutation({
       // Update existing subscription
       await ctx.db.patch(existing._id, {
         status: args.status,
-        currentPeriodStart: args.currentPeriodStart,
-        currentPeriodEnd: args.currentPeriodEnd,
-        canceledAt: args.canceledAt,
+        transactionAmount: args.transactionAmount,
+        endDate: args.endDate,
+        updatedAt: Date.now(),
       });
       return existing._id;
     }
@@ -50,14 +67,21 @@ export const upsertSubscription = internalMutation({
     // Create new subscription
     const subscriptionId = await ctx.db.insert("guideSubscriptions", {
       userId: args.userId,
-      stripeCustomerId: args.stripeCustomerId,
-      stripeSubscriptionId: args.stripeSubscriptionId,
-      stripePriceId: args.stripePriceId,
+      userEmail: args.userEmail,
+      mpPreapprovalId: args.mpPreapprovalId,
+      mpPlanId: args.mpPlanId,
       status: args.status,
-      currentPeriodStart: args.currentPeriodStart,
-      currentPeriodEnd: args.currentPeriodEnd,
-      canceledAt: args.canceledAt,
+      reason: args.reason,
+      externalReference: args.externalReference,
+      frequency: args.frequency,
+      frequencyType: args.frequencyType,
+      transactionAmount: args.transactionAmount,
+      currencyId: args.currencyId,
+      startDate: args.startDate,
+      endDate: args.endDate,
       metadata: args.metadata,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
 
     return subscriptionId;
@@ -69,22 +93,22 @@ export const upsertSubscription = internalMutation({
  */
 export const updateSubscriptionStatus = internalMutation({
   args: {
-    stripeSubscriptionId: v.string(),
+    mpPreapprovalId: v.string(),
     status: v.union(
-      v.literal("active"),
-      v.literal("canceled"),
-      v.literal("past_due"),
-      v.literal("expired"),
-      v.literal("trialing")
+      v.literal("authorized"),
+      v.literal("paused"),
+      v.literal("cancelled"),
+      v.literal("pending")
     ),
-    canceledAt: v.optional(v.number()),
+    cancelledDate: v.optional(v.number()),
+    pausedDate: v.optional(v.number()),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
     const subscription = await ctx.db
       .query("guideSubscriptions")
-      .withIndex("by_stripe_subscription", (q) =>
-        q.eq("stripeSubscriptionId", args.stripeSubscriptionId)
+      .withIndex("by_mp_preapproval", (q) =>
+        q.eq("mpPreapprovalId", args.mpPreapprovalId)
       )
       .first();
 
@@ -94,7 +118,9 @@ export const updateSubscriptionStatus = internalMutation({
 
     await ctx.db.patch(subscription._id, {
       status: args.status,
-      canceledAt: args.canceledAt,
+      cancelledDate: args.cancelledDate,
+      pausedDate: args.pausedDate,
+      updatedAt: Date.now(),
     });
 
     return { success: true };
@@ -106,17 +132,26 @@ export const updateSubscriptionStatus = internalMutation({
  */
 export const recordPayment = internalMutation({
   args: {
-    userId: v.id("users"),
+    userId: v.string(), // Clerk user ID
     subscriptionId: v.id("guideSubscriptions"),
-    stripeInvoiceId: v.string(),
-    stripePaymentIntentId: v.optional(v.string()),
+    mpPaymentId: v.string(),
+    mpPreapprovalId: v.string(),
     amount: v.number(),
     currency: v.string(),
     status: v.union(
       v.literal("pending"),
-      v.literal("succeeded"),
-      v.literal("failed")
+      v.literal("approved"),
+      v.literal("authorized"),
+      v.literal("in_process"),
+      v.literal("in_mediation"),
+      v.literal("rejected"),
+      v.literal("cancelled"),
+      v.literal("refunded"),
+      v.literal("charged_back")
     ),
+    statusDetail: v.optional(v.string()),
+    paymentMethod: v.optional(v.string()),
+    paymentTypeId: v.optional(v.string()),
     paidAt: v.optional(v.number()),
     failureReason: v.optional(v.string()),
   },
@@ -125,14 +160,26 @@ export const recordPayment = internalMutation({
     const paymentId = await ctx.db.insert("subscriptionPayments", {
       userId: args.userId,
       subscriptionId: args.subscriptionId,
-      stripeInvoiceId: args.stripeInvoiceId,
-      stripePaymentIntentId: args.stripePaymentIntentId,
+      mpPaymentId: args.mpPaymentId,
+      mpPreapprovalId: args.mpPreapprovalId,
       amount: args.amount,
       currency: args.currency,
       status: args.status,
+      statusDetail: args.statusDetail,
+      paymentMethod: args.paymentMethod,
+      paymentTypeId: args.paymentTypeId,
       paidAt: args.paidAt,
       failureReason: args.failureReason,
+      createdAt: Date.now(),
     });
+
+    // Update last payment date on subscription
+    const subscription = await ctx.db.get(args.subscriptionId);
+    if (subscription && args.status === "approved") {
+      await ctx.db.patch(args.subscriptionId, {
+        lastPaymentDate: args.paidAt || Date.now(),
+      });
+    }
 
     return paymentId;
   },
@@ -143,12 +190,19 @@ export const recordPayment = internalMutation({
  */
 export const updatePaymentStatus = internalMutation({
   args: {
-    stripeInvoiceId: v.string(),
+    mpPaymentId: v.string(),
     status: v.union(
       v.literal("pending"),
-      v.literal("succeeded"),
-      v.literal("failed")
+      v.literal("approved"),
+      v.literal("authorized"),
+      v.literal("in_process"),
+      v.literal("in_mediation"),
+      v.literal("rejected"),
+      v.literal("cancelled"),
+      v.literal("refunded"),
+      v.literal("charged_back")
     ),
+    statusDetail: v.optional(v.string()),
     paidAt: v.optional(v.number()),
     failureReason: v.optional(v.string()),
   },
@@ -156,8 +210,8 @@ export const updatePaymentStatus = internalMutation({
   handler: async (ctx, args) => {
     const payment = await ctx.db
       .query("subscriptionPayments")
-      .withIndex("by_stripe_invoice", (q) =>
-        q.eq("stripeInvoiceId", args.stripeInvoiceId)
+      .withIndex("by_mp_payment", (q) =>
+        q.eq("mpPaymentId", args.mpPaymentId)
       )
       .first();
 
@@ -167,10 +221,44 @@ export const updatePaymentStatus = internalMutation({
 
     await ctx.db.patch(payment._id, {
       status: args.status,
+      statusDetail: args.statusDetail,
       paidAt: args.paidAt,
       failureReason: args.failureReason,
     });
 
     return { success: true };
+  },
+});
+
+/**
+ * Cancel user subscription
+ */
+export const cancelSubscription = mutation({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
+    const userId = await getCurrentUserClerkId(ctx);
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+
+    const subscription = await ctx.db
+      .query("guideSubscriptions")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", userId).eq("status", "authorized")
+      )
+      .first();
+
+    if (!subscription) {
+      throw new Error("No active subscription found");
+    }
+
+    await ctx.db.patch(subscription._id, {
+      status: "cancelled",
+      cancelledDate: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { success: true, message: "Subscription cancelled successfully" };
   },
 }); 

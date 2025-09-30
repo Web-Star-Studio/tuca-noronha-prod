@@ -156,8 +156,8 @@ export function RestaurantReservationForm({
         specialRequests: specialRequests || undefined,
       });
 
-      toast.success("Reserva realizada com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
+      toast.success("Solicitação de reserva enviada!", {
+        description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do restaurante.`,
       });
 
       if (onReservationSuccess) {

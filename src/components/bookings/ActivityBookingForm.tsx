@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {formatCurrency} from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { useMutation, useQuery, useAction } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -31,7 +31,15 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
-import { StripeFeesDisplay } from "@/components/payments/StripeFeesDisplay";
+import { ParticipantSelector } from "@/components/ui/participant-selector";
+import { PaymentBrick } from "@/components/payments/PaymentBrick";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 
 interface ActivityBookingFormProps {
@@ -42,6 +50,7 @@ interface ActivityBookingFormProps {
     minParticipants: number;
     maxParticipants: number;
     hasMultipleTickets?: boolean;
+    availableTimes?: string[];
   };
   onBookingSuccess?: (booking: { confirmationCode: string; totalPrice: number }) => void;
   className?: string;
@@ -55,33 +64,46 @@ export function ActivityBookingForm({
 }: ActivityBookingFormProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>("");
-  const [participants, setParticipants] = useState(activity.minParticipants);
+  const [adults, setAdults] = useState(Math.max(1, activity.minParticipants));
+  const [children, setChildren] = useState(0);
+  const [additionalParticipantNames, setAdditionalParticipantNames] = useState<string[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<Id<"activityTickets"> | undefined>(undefined);
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [bookingData, setBookingData] = useState<any>(null);
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
+
+  // Calculate total participants
+  const participants = adults + children;
 
   // Get activity tickets if available
   const tickets = useQuery(api.domains.activities.queries.getActivityTickets, {
     activityId,
   });
 
+  useEffect(() => {
+    const required = Math.max(participants - 1, 0);
+    setAdditionalParticipantNames((prev) => {
+      const next = prev.slice(0, required);
+      while (next.length < required) {
+        next.push("");
+      }
+      return next;
+    });
+  }, [participants]);
+
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
-  // Import Payment Service at top of file
-  const createMpCheckoutPreference = useAction(
-    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
-  );
   
   // WhatsApp link generator removido (não utilizado)
 
-  // Available times (customize based on activity)
-  const availableTimes = [
-    "08:00", "09:00", "10:00", "11:00",
-    "14:00", "15:00", "16:00", "17:00",
-  ];
+  // Available times configured for the activity
+  const availableTimes = activity.availableTimes && activity.availableTimes.length > 0
+    ? activity.availableTimes
+    : [];
 
   // Calculate price
   const getPrice = () => {
@@ -121,9 +143,22 @@ export function ActivityBookingForm({
       return;
     }
 
+    if (availableTimes.length > 0 && !time) {
+      toast.error("Selecione um horário");
+      return;
+    }
+
     if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
       toast.error("Preencha todas as informações de contato");
       return;
+    }
+
+    if (participants > 1) {
+      const hasEmptyName = additionalParticipantNames.some((name) => !name.trim());
+      if (hasEmptyName) {
+        toast.error("Informe o nome completo de todos os participantes adicionais");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -136,6 +171,9 @@ export function ActivityBookingForm({
         date: format(date, "yyyy-MM-dd"),
         time: time || undefined,
         participants,
+        adults,
+        children,
+        additionalParticipants: additionalParticipantNames.map((name) => name.trim()),
         customerInfo,
         specialRequests: specialRequests || undefined,
         couponCode: appliedCoupon?.code,
@@ -143,70 +181,57 @@ export function ActivityBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Reserva criada com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
-      });
-
-      // 2. Create Mercado Pago Checkout
-      try {
-        console.log("🔄 Criando preferência de checkout Mercado Pago para:", {
-          bookingId: result.bookingId,
-          activityId,
-          totalAmount: result.totalPrice,
+      // 2. Check if activity is free - skip payment if it is
+      if (activity.isFree || getFinalPrice() === 0) {
+        toast.success("Solicitação de reserva enviada!", {
+          description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
+        });
+        console.log("✅ Atividade gratuita - pulando fluxo de pagamento");
+        
+        toast.success("Solicitação enviada com sucesso!", {
+          description: "Atividade gratuita - aguardando aprovação do parceiro",
         });
 
-        const mpPref = await createMpCheckoutPreference({
-          bookingId: result.bookingId,
-          assetType: "activity",
-          successUrl: `${window.location.origin}/booking/success?booking_id=${result.confirmationCode}`,
-          cancelUrl: `${window.location.origin}/booking/cancel`,
-          customerEmail: customerInfo.email,
-          couponCode: appliedCoupon?.code,
-          discountAmount: getDiscountAmount(),
-          originalAmount: getPrice(),
-          finalAmount: getFinalPrice(),
-          currency: "BRL",
-        });
+        // Reset form
+        setDate(undefined);
+        setTime("");
+        setAdults(Math.max(1, activity.minParticipants));
+        setChildren(0);
+        setAdditionalParticipantNames([]);
+        setSelectedTicketId(undefined);
+        setCustomerInfo({ name: "", email: "", phone: "" });
+        setSpecialRequests("");
 
-        console.log("💳 Resultado da preferência MP:", mpPref);
-
-        if (mpPref.success && mpPref.preferenceUrl) {
-          toast.success("Redirecionando para pagamento...", {
-            description:
-              "Você será levado para o checkout seguro do Mercado Pago. O pagamento será confirmado após processamento.",
-          });
-
-          // Reset form before redirecting
-          setDate(undefined);
-          setTime("");
-          setParticipants(activity.minParticipants);
-          setSelectedTicketId(undefined);
-          setCustomerInfo({ name: "", email: "", phone: "" });
-          setSpecialRequests("");
-
-          setTimeout(() => {
-            window.location.href = mpPref.preferenceUrl;
-          }, 1200);
-          return;
-        } else {
-          throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
-        }
-      } catch (paymentError) {
-        console.error("💥 Erro ao iniciar pagamento Mercado Pago:", paymentError);
-        toast.error("Reserva criada, mas erro no pagamento", {
-          description:
-            paymentError instanceof Error
-              ? paymentError.message
-              : "Entre em contato conosco para finalizar o pagamento",
-        });
-        // Still call onBookingSuccess since booking was created
         if (onBookingSuccess) {
           onBookingSuccess({
             confirmationCode: result.confirmationCode,
             totalPrice: result.totalPrice,
           });
         }
+
+        setIsSubmitting(false);
+        return;
       }
+
+      // 3. For paid activities, show Card Payment Brick modal
+      console.log("💳 Atividade paga - abrindo Card Payment Brick", {
+        bookingId: result.bookingId,
+        totalPrice: result.totalPrice,
+      });
+
+      // Store booking data and show payment modal
+      setBookingData({
+        bookingId: result.bookingId,
+        confirmationCode: result.confirmationCode,
+        totalPrice: result.totalPrice,
+      });
+
+      toast.info("Prossiga com o pagamento", {
+        description: "Escolha seu método de pagamento: cartão, PIX ou boleto.",
+      });
+
+      setShowPaymentDialog(true);
+      setIsSubmitting(false);
 
     } catch (error) {
       toast.error("Erro ao criar reserva", {
@@ -215,6 +240,40 @@ export function ActivityBookingForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Handle payment success
+  const handlePaymentSuccess = (paymentId: string) => {
+    console.log("✅ Pagamento autorizado com sucesso:", paymentId);
+    
+    setShowPaymentDialog(false);
+    
+    // Reset form
+    setDate(undefined);
+    setTime("");
+    setAdults(Math.max(1, activity.minParticipants));
+    setChildren(0);
+    setAdditionalParticipantNames([]);
+    setSelectedTicketId(undefined);
+    setCustomerInfo({ name: "", email: "", phone: "" });
+    setSpecialRequests("");
+    setAppliedCoupon(null);
+    setBookingData(null);
+
+    if (onBookingSuccess && bookingData) {
+      onBookingSuccess({
+        confirmationCode: bookingData.confirmationCode,
+        totalPrice: bookingData.totalPrice,
+      });
+    }
+  };
+
+  // Handle payment error
+  const handlePaymentError = (error: string) => {
+    console.error("❌ Erro no pagamento:", error);
+    toast.error("Erro no pagamento", {
+      description: "Você pode tentar novamente ou entrar em contato conosco.",
+    });
   };
 
   return (
@@ -263,10 +322,16 @@ export function ActivityBookingForm({
 
           {/* Time Selection */}
           <div className="space-y-2">
-            <Label>Horário (opcional)</Label>
-            <Select value={time} onValueChange={setTime}>
+            <Label>Horário</Label>
+            <Select
+              value={time}
+              onValueChange={setTime}
+              disabled={availableTimes.length === 0}
+            >
               <SelectTrigger className={formStyles.select.base}>
-                <SelectValue placeholder="Selecione um horário" />
+                <SelectValue
+                  placeholder={availableTimes.length === 0 ? "Nenhum horário disponível" : "Selecione um horário"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {availableTimes.map((timeOption) => (
@@ -276,6 +341,11 @@ export function ActivityBookingForm({
                 ))}
               </SelectContent>
             </Select>
+            {availableTimes.length === 0 && (
+              <p className="text-xs text-gray-500">
+                Este fornecedor ainda não definiu horários para reservas online.
+              </p>
+            )}
           </div>
 
           {/* Ticket Selection (if multiple tickets) */}
@@ -306,35 +376,41 @@ export function ActivityBookingForm({
           )}
 
           {/* Participants */}
-          <div className="space-y-2">
-            <Label htmlFor="participants">Número de participantes</Label>
-            <div className="flex items-center space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setParticipants(Math.max(activity.minParticipants, participants - 1))}
-                disabled={participants <= activity.minParticipants}
-              >
-                -
-              </Button>
-              <div className="flex items-center justify-center w-12 h-10 border rounded-md">
-                <span className="text-sm font-medium">{participants}</span>
+        <ParticipantSelector
+          adults={adults}
+          childrenCount={children}
+            onAdultsChange={setAdults}
+            onChildrenChange={setChildren}
+            minAdults={1}
+            maxAdults={activity.maxParticipants}
+            maxChildren={Math.max(0, activity.maxParticipants - 1)}
+            minTotal={activity.minParticipants}
+            maxTotal={activity.maxParticipants}
+          />
+
+          {participants > 1 && (
+            <div className="space-y-2">
+              <Label>Nomes dos participantes adicionais</Label>
+              <p className="text-xs text-gray-500">
+                Informe o nome completo de cada pessoa além do responsável pela reserva.
+              </p>
+              <div className="space-y-2">
+                {additionalParticipantNames.map((value, index) => (
+                  <Input
+                    key={`participant-${index}`}
+                    value={value}
+                    onChange={(e) => {
+                      const next = [...additionalParticipantNames];
+                      next[index] = e.target.value;
+                      setAdditionalParticipantNames(next);
+                    }}
+                    placeholder={`Participante ${index + 2}`}
+                    className={formStyles.input.base}
+                  />
+                ))}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setParticipants(Math.min(activity.maxParticipants, participants + 1))}
-                disabled={participants >= activity.maxParticipants}
-              >
-                +
-              </Button>
             </div>
-            <p className="text-xs text-gray-500">
-              Mín: {activity.minParticipants} | Máx: {activity.maxParticipants}
-            </p>
-          </div>
+          )}
 
           {/* Customer Information */}
           <div className="space-y-4 pt-4 border-t">
@@ -376,6 +452,26 @@ export function ActivityBookingForm({
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF (opcional)</Label>
+              <Input
+                id="cpf"
+                type="text"
+                value={customerInfo.cpf || ""}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  const formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                  setCustomerInfo({ ...customerInfo, cpf: formatted });
+                }}
+                className={formStyles.input.base}
+                placeholder="000.000.000-00"
+                maxLength={14}
+              />
+              <p className="text-xs text-gray-500">
+                Recomendado para melhor taxa de aprovação do pagamento
+              </p>
+            </div>
           </div>
 
           {/* Special Requests */}
@@ -401,18 +497,33 @@ export function ActivityBookingForm({
             />
           )}
 
-          {/* Price summary with Stripe fees */}
+          {/* Price summary */}
           {getPrice() > 0 && (
-            <StripeFeesDisplay 
-              baseAmount={getPrice()}
-              discountAmount={getDiscountAmount()}
-              className="mt-4"
-            />
+            <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
+              <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Valor base</span>
+                <span className="font-medium">{formatCurrency(getPrice())}</span>
+              </div>
+              {getDiscountAmount() > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-900">Total</span>
+                <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Confirmaremos o pagamento com o parceiro antes da cobrança definitiva.
+              </p>
+            </div>
           )}
 
           {/* Payment Info */}
           <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-            Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
+            ℹ️ <strong>Captura Manual:</strong> O valor será apenas <strong>autorizado</strong> (bloqueado) no seu cartão. A cobrança efetiva só ocorrerá após o parceiro aprovar a reserva.
           </div>
 
             {/* Submit Button */}
@@ -421,11 +532,63 @@ export function ActivityBookingForm({
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isSubmitting || !date}
             >
-              {isSubmitting ? "Processando..." : "Reservar atividade"}
+              {isSubmitting ? "Processando..." : "Solicitar Reserva"}
             </Button>
           </form>
         </div>
       </div>
+
+      {/* Payment Dialog with Card Payment Brick */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Autorizar Pagamento</DialogTitle>
+            <DialogDescription>
+              Escolha seu método de pagamento (cartão, PIX ou boleto) para o valor de{" "}
+              <strong>{formatCurrency(bookingData?.totalPrice || 0)}</strong>.
+              Para pagamentos com cartão, o valor será bloqueado e só será cobrado após aprovação.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {bookingData && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>⚠️ Atenção:</strong> Este pagamento usa <strong>captura manual</strong>.
+                  O valor de <strong>{formatCurrency(bookingData.totalPrice)}</strong> será{" "}
+                  <strong>autorizado</strong> (bloqueado) no seu cartão, mas <strong>NÃO será cobrado</strong>{" "}
+                  até que o parceiro aprove sua reserva.
+                </p>
+                <p className="text-xs text-amber-700 mt-2">
+                  Código da reserva: <strong>{bookingData.confirmationCode}</strong>
+                </p>
+              </div>
+            )}
+
+            {bookingData && (
+              <PaymentBrick
+                bookingId={bookingData.bookingId}
+                assetType="activity"
+                amount={bookingData.totalPrice}
+                description={`Reserva de atividade: ${activity.title}`}
+                payer={{
+                  email: customerInfo.email,
+                  firstName: customerInfo.name.split(" ")[0] || "",
+                  lastName: customerInfo.name.split(" ").slice(1).join(" ") || "",
+                  identification: customerInfo.cpf
+                    ? {
+                        type: "CPF",
+                        number: customerInfo.cpf.replace(/\D/g, ""),
+                      }
+                    : undefined,
+                }}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

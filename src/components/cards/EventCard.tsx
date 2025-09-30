@@ -3,17 +3,26 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, Clock, MapPin, Users, ExternalLink, RefreshCw } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
 import { WishlistButton } from "@/components/ui/wishlist-button";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 export default function EventCard({ event }: { event: Event }) {
   // Format date for display
   const eventDate = new Date(event.date);
   const formattedDate = formatDate(eventDate);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  
+  const coverEntry = parseMediaEntry(event.imageUrl ?? "");
+  const hasCover = coverEntry.url && coverEntry.url.trim() !== "";
+  const coverIsLikelyImage = Boolean(coverEntry.type?.startsWith("image/"));
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [coverEntry.url]);
+
   // Get real review stats
   const { data: reviewStats, isLoading: isLoadingReviewStats } = useReviewStats({
     assetId: event.id,
@@ -37,22 +46,31 @@ export default function EventCard({ event }: { event: Event }) {
       >
         {/* Main image - no padding at top */}
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
-          {event.imageUrl && event.imageUrl.trim() !== '' ? (
-            <Image  
-              src={event.imageUrl} 
+          {hasCover ? (
+            <SmartMedia
+              entry={coverEntry}
               alt={event.title}
-              fill
-              className={`object-cover transition-all duration-500 group-hover:scale-105 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              onLoad={() => setIsImageLoaded(true)}
-              loading="lazy"
+              className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${coverIsLikelyImage ? (isImageLoaded ? 'opacity-100' : 'opacity-0') : 'opacity-100'}`}
+              imageProps={{
+                fill: true,
+                sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+                loading: "lazy",
+                onLoad: () => setIsImageLoaded(true),
+                onLoadingComplete: () => setIsImageLoaded(true),
+              }}
+              videoProps={{
+                muted: true,
+                loop: true,
+                playsInline: true,
+                controls: false,
+              }}
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
               <Calendar className="h-12 w-12 text-gray-400" />
             </div>
           )}
-          {!isImageLoaded && event.imageUrl && event.imageUrl.trim() !== '' && (
+          {coverIsLikelyImage && hasCover && !isImageLoaded && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse" />
           )}
           {/* Price badge */}

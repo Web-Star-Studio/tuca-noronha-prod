@@ -291,7 +291,7 @@ export default function CardapioMesasPage() {
 
       <div className="space-y-6">
         <Tabs defaultValue="mesas" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
             <TabsTrigger value="mesas">
               <Users className="h-4 w-4 mr-2" />
               Mesas ({tables?.length || 0})
@@ -304,7 +304,7 @@ export default function CardapioMesasPage() {
 
           {/* Aba Mesas */}
           <TabsContent value="mesas" className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap gap-3 justify-between items-start sm:items-center">
               <h2 className="text-2xl font-semibold">Gestão de Mesas</h2>
               <Dialog open={isTableDialogOpen} onOpenChange={setIsTableDialogOpen}>
                 <DialogTrigger asChild>
@@ -459,7 +459,7 @@ export default function CardapioMesasPage() {
                   >
                     <Card className="hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
+                        <div className="flex flex-wrap gap-3 justify-between items-start">
                           <div>
                             <CardTitle className="text-lg">{table.name}</CardTitle>
                             <CardDescription className="flex items-center mt-1">
@@ -489,11 +489,11 @@ export default function CardapioMesasPage() {
                             <MapPin className="h-4 w-4 mr-2" />
                             {table.location}
                           </div>
-                          <div className="flex justify-between">
+                          <div className="flex flex-wrap gap-3 justify-between">
                             <span className="text-gray-500">Tipo:</span>
                             <span className="font-medium">{table.type}</span>
                           </div>
-                          <div className="flex justify-between">
+                          <div className="flex flex-wrap gap-3 justify-between">
                             <span className="text-gray-500">Formato:</span>
                             <span className="font-medium">{table.shape}</span>
                           </div>
@@ -505,7 +505,7 @@ export default function CardapioMesasPage() {
                           </div>
                         )}
                         
-                        <div className="flex justify-between items-center pt-2">
+                        <div className="flex flex-wrap gap-3 justify-between items-start sm:items-center pt-2">
                           <Badge variant={table.isActive ? "default" : "secondary"}>
                             {table.isActive ? "Ativa" : "Inativa"}
                           </Badge>
@@ -545,7 +545,7 @@ export default function CardapioMesasPage() {
 
           {/* Aba Reservas com Atribuição de Mesas */}
           <TabsContent value="reservas" className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap gap-3 justify-between items-start sm:items-center">
               <h2 className="text-2xl font-semibold">Gerenciar Reservas e Mesas</h2>
               
               <div className="flex items-center gap-4">
@@ -579,7 +579,7 @@ export default function CardapioMesasPage() {
                   .map((reservation) => (
                     <Card key={reservation._id} className="border border-gray-200">
                       <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-wrap gap-3 items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-3">
                               <h3 className="text-lg font-semibold">
@@ -634,7 +634,7 @@ export default function CardapioMesasPage() {
 
                             {reservation.table && (
                               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                                   <div>
                                     <h4 className="font-medium text-blue-900">Mesa Atribuída</h4>
                                     <div className="text-sm text-blue-700 space-y-1">
@@ -702,7 +702,7 @@ export default function CardapioMesasPage() {
                                       <Label>Mesas Disponíveis:</Label>
                                       <div className="space-y-2 max-h-60 overflow-y-auto">
                                         {availableTables.map((table) => (
-                                          <div key={table._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                                          <div key={table._id} className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                                             <div className="flex-1">
                                               <div className="font-medium">{table.name}</div>
                                               <div className="text-sm text-gray-500">

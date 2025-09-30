@@ -8,6 +8,8 @@ import { MapPin, Clock, ArrowLeft, Star, UtensilsCrossed } from "lucide-react";
 import { useRestaurantBySlug, type Restaurant as RestaurantServiceType } from "@/lib/services/restaurantService";
 import { useConvexAuth } from "convex/react";
 import { cn } from "@/lib/utils";
+import { parseMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 import type { Id } from "@/../convex/_generated/dataModel";
 
@@ -64,26 +66,66 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
     assetId: restaurant._id!,
   });
 
+  // Days translation to Portuguese
+  const daysInPortuguese: Record<string, string> = {
+    Monday: "Segunda-feira",
+    Tuesday: "Terça-feira", 
+    Wednesday: "Quarta-feira",
+    Thursday: "Quinta-feira",
+    Friday: "Sexta-feira",
+    Saturday: "Sábado",
+    Sunday: "Domingo"
+  };
+
   // Format operation hours for display
   const getOperationHoursForToday = () => {
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const today = daysOfWeek[new Date().getDay()];
-    return restaurant.hours[today]?.join(" e ") || "Fechado hoje";
+    const today = daysOfWeek[new Date().getDay()] as keyof typeof restaurant.operatingDays;
+    
+    if (restaurant.operatingDays && restaurant.operatingDays[today]) {
+      return `${restaurant.openingTime} - ${restaurant.closingTime}`;
+    }
+    
+    return "Fechado hoje";
   };
+
+  const galleryEntries = (restaurant?.galleryImages ?? []).map(parseMediaEntry);
+  const heroBaseEntry = parseMediaEntry(restaurant?.mainImage ?? "");
+  const heroGalleryEntry = galleryEntries.find(
+    (entry) => entry.url === heroBaseEntry.url,
+  );
+  const heroEntry = heroGalleryEntry ?? heroBaseEntry;
+  const hasHeroMedia = Boolean(heroEntry.url && heroEntry.url.trim() !== "");
 
   return (
     <>
       <main className="pb-20">
         {/* Hero Image Section */}
         <div className="relative w-full h-[70vh] overflow-hidden">
-          <Image
-            src={restaurant.mainImage}
-            alt={restaurant.name}
-            fill
-            className="object-cover brightness-[0.85]"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+          {hasHeroMedia ? (
+            <SmartMedia
+              entry={heroEntry}
+              alt={restaurant.name}
+              className="h-full w-full object-cover brightness-[0.85]"
+              imageProps={{ fill: true, priority: true }}
+              videoProps={{
+                autoPlay: true,
+                loop: true,
+                muted: true,
+                playsInline: true,
+                controls: false,
+              }}
+            />
+          ) : (
+            <Image
+              src="/images/bg-pattern.png"
+              alt={restaurant.name}
+              fill
+              className="object-cover brightness-[0.85]"
+              priority
+            />
+          )}
+         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
 
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white container mx-auto">
             <div className="max-w-3xl">
@@ -185,7 +227,7 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                       Sobre o restaurante
                     </h2>
                     <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                      {restaurant.description_long}
+                      {restaurant.description}
                     </p>
                   </div>
 
@@ -237,11 +279,11 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Horário de funcionamento</h3>
                     <div className="space-y-2">
-                      {Object.entries(restaurant.hours).map(([day, hours]) => (
+                      {Object.entries(restaurant.operatingDays || {}).map(([day, isOpen]) => (
                         <div key={day} className="flex justify-between items-center py-1.5 border-b border-gray-100">
-                          <span className="font-medium">{day}</span>
+                          <span className="font-medium">{daysInPortuguese[day] || day}</span>
                           <span className="text-gray-600">
-                            {hours.length > 0 ? hours.join(" e ") : "Fechado"}
+                            {isOpen ? `${restaurant.openingTime} - ${restaurant.closingTime}` : "Fechado"}
                           </span>
                         </div>
                       ))}
@@ -250,19 +292,29 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                 </TabsContent>
 
                 <TabsContent value="photos">
-                  <h2 className="text-2xl font-semibold mb-4">Fotos do local</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {restaurant.galleryImages.map((src, index) => (
-                      <div key={`${restaurant.id}-gallery-${index}`} className="relative aspect-video rounded-lg overflow-hidden">
-                        <Image
-                          src={src}
-                          alt={`Galeria ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <h2 className="text-2xl font-semibold mb-4">Galeria</h2>
+                  {galleryEntries.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                      {galleryEntries.map((mediaEntry, index) => (
+                        <div
+                          key={`${restaurant.id}-gallery-${index}`}
+                          className="relative aspect-video overflow-hidden rounded-lg"
+                        >
+                          <SmartMedia
+                            entry={mediaEntry}
+                            alt={`Mídia ${index + 1}`}
+                            className="h-full w-full object-cover"
+                            imageProps={{ fill: true }}
+                            videoProps={{ controls: true, preload: "metadata" }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma mídia cadastrada para este local ainda.
+                    </p>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="reviews" className="space-y-8">
@@ -290,30 +342,64 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
             {/* Sticky sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-8 space-y-6">
-                {isAuthenticated ? (
-                  <RestaurantReservationForm
-                    restaurantId={restaurant._id as Id<"restaurants">}
-                    restaurant={{
-                      name: restaurant.name,
-                      address: restaurant.address,
-                      maximumPartySize: restaurant.maximumPartySize,
-                      acceptsReservations: restaurant.acceptsReservations,
-                      price: restaurant.price,
-                      acceptsOnlinePayment: restaurant.acceptsOnlinePayment,
-                      requiresUpfrontPayment: restaurant.requiresUpfrontPayment,
-                    }}
-                  />
-                ) : (
+                {restaurant.restaurantType === "external" ? (
+                  // External Restaurant Card
                   <Card className="shadow-lg">
                     <CardContent className="p-6">
-                      <Button
-                        onClick={() => router.push("/sign-in")}
-                        className="w-full"
-                      >
-                        Fazer login para reservar
-                      </Button>
+                      <div className="text-center space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Reserve Diretamente</h3>
+                        <p className="text-sm text-gray-600">
+                          Este restaurante oferece reservas através do seu próprio site. 
+                          Clique no botão abaixo para ser redirecionado e fazer sua reserva.
+                        </p>
+                        <Button
+                          asChild
+                          className="w-full"
+                          size="lg"
+                        >
+                          <a 
+                            href={restaurant.website || "#"} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center"
+                          >
+                            Reservar no Site do Restaurante
+                          </a>
+                        </Button>
+                        {!restaurant.website && (
+                          <p className="text-xs text-amber-600">
+                            Site do restaurante não informado
+                          </p>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
+                ) : (
+                  // Internal Restaurant - Show reservation form
+                  isAuthenticated ? (
+                    <RestaurantReservationForm
+                      restaurantId={restaurant._id as Id<"restaurants">}
+                      restaurant={{
+                        name: restaurant.name,
+                        address: restaurant.address,
+                        acceptsReservations: restaurant.acceptsReservations,
+                        price: restaurant.price,
+                        acceptsOnlinePayment: restaurant.acceptsOnlinePayment,
+                        requiresUpfrontPayment: restaurant.requiresUpfrontPayment,
+                      }}
+                    />
+                  ) : (
+                    <Card className="shadow-lg">
+                      <CardContent className="p-6">
+                        <Button
+                          onClick={() => router.push("/sign-in")}
+                          className="w-full"
+                        >
+                          Fazer login para reservar
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )
                 )}
 
                 <HelpSection 

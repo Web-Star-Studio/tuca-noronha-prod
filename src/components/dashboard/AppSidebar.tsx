@@ -1,12 +1,13 @@
 "use client"
 
 import type * as React from "react"
-import { LayoutDashboard, Activity, Utensils, CalendarDays, Package, ShoppingBag, Users, BarChart3, ListOrderedIcon, ClipboardList, QrCode, MessageCircle, CreditCard, Settings } from "lucide-react";
+import { LayoutDashboard, Activity, Utensils, CalendarDays, Package, ShoppingBag, Users, BarChart3, ListOrderedIcon, ClipboardList, QrCode, MessageCircle, CreditCard, Settings, Image } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarRail, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator, SidebarGroup, SidebarGroupLabel } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
+import { cn } from "@/lib/utils"
 
 // Base navigation items
 const baseNavItems = [
@@ -59,12 +60,11 @@ const baseNavItems = [
     title: "Usuários",
     url: "/admin/dashboard/usuarios",
     icon: Users,
-    badge: "10",
   },
   {
     title: "Mídias",
     url: "/admin/dashboard/midias",
-    icon: ImageIcon,
+    icon: Image,
   },
   {
     title: "Relatórios",
@@ -75,7 +75,6 @@ const baseNavItems = [
     title: "Logs de Auditoria",
     url: "/admin/dashboard/logs",
     icon: ListOrderedIcon,
-    badge: "10",
   },
 ];
 
@@ -106,13 +105,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const showPartnerManagement = currentUser?.role === "partner" || currentUser?.role === "master";
 
   return (
-    <Sidebar className="bg-gradient-to-b from-slate-900/95 to-slate-800/95 text-white shadow-xl transition-all duration-300 ease-in-out" {...props}>
+    <Sidebar className="border-r border-slate-200 bg-white text-slate-900" {...props}>
       <SidebarHeader className="pb-6">
         <div className="flex items-center gap-3 px-5 py-4">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-700">
             TN
           </div>
-          <div className="font-semibold text-lg tracking-tight bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+          <div className="text-lg font-semibold tracking-tight text-slate-800">
             TN Next Admin
           </div>
         </div>
@@ -126,20 +125,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 asChild 
                 isActive={isActive(item.url)} 
                 tooltip={item.title}
-                className="group transition-all duration-200"
+                className="group transition-colors duration-150"
               >
                 <Link href={item.url} className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-slate-800/80 to-slate-700/80 group-hover:from-blue-600/90 group-hover:to-blue-700/90 group-data-[active=true]:from-blue-600 group-data-[active=true]:to-blue-700 transition-all duration-200 shadow-sm">
-                    <item.icon className="h-4 w-4 text-slate-300 group-hover:text-white group-data-[active=true]:text-white" />
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-slate-500",
+                      "group-data-[active=true]:border-slate-900 group-data-[active=true]:bg-slate-900 group-data-[active=true]:text-white",
+                      "group-hover:border-slate-300"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
                   </span>
-                  <span className="text-slate-300 group-hover:text-white group-data-[active=true]:text-white transition-colors duration-200">
+                  <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 group-data-[active=true]:text-slate-900">
                     {item.title}
                   </span>
-                  {item.badge && (
-                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-blue-600/20 text-xs font-medium text-blue-200">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -149,9 +149,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Partner Management Section */}
         {showPartnerManagement && (
           <>
-            <SidebarSeparator className="my-4 bg-slate-700/50" />
+            <SidebarSeparator className="my-4 bg-slate-200" />
             <SidebarGroup>
-              <SidebarGroupLabel className="text-slate-400 uppercase text-xs font-semibold tracking-wider">
+              <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Gestão
               </SidebarGroupLabel>
               <SidebarMenu>
@@ -161,13 +161,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       asChild 
                       isActive={isActive(item.url)} 
                       tooltip={item.title}
-                      className="group transition-all duration-200"
+                      className="group transition-colors duration-150"
                     >
                       <Link href={item.url} className="flex items-center gap-3">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-slate-800/80 to-slate-700/80 group-hover:from-blue-600/90 group-hover:to-blue-700/90 group-data-[active=true]:from-blue-600 group-data-[active=true]:to-blue-700 transition-all duration-200 shadow-sm">
-                          <item.icon className="h-4 w-4 text-slate-300 group-hover:text-white group-data-[active=true]:text-white" />
+                        <span
+                          className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-slate-500",
+                            "group-data-[active=true]:border-slate-900 group-data-[active=true]:bg-slate-900 group-data-[active=true]:text-white",
+                            "group-hover:border-slate-300"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
                         </span>
-                        <span className="text-slate-300 group-hover:text-white group-data-[active=true]:text-white transition-colors duration-200">
+                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 group-data-[active=true]:text-slate-900">
                           {item.title}
                         </span>
                       </Link>
@@ -180,7 +186,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarContent>
       
-      <SidebarRail className="bg-slate-800/50 border-none" />
+      <SidebarRail className="border-none bg-white" />
     </Sidebar>
   )
 }

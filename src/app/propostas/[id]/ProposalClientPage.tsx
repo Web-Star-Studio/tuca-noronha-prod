@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { notFound, useRouter } from "next/navigation";
@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon, ShieldExclamationIcon } from "@heroicons/react/24/solid";
+import { FileText, Download, Plane } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { toast } from "sonner";
 import ProposalQuestionModal from "@/components/propostas/ProposalQuestionModal";
+import { ProposalAcceptanceFlow } from "@/components/customer/ProposalAcceptanceFlow";
 
 interface ProposalClientPageProps {
   proposalId: string;
@@ -25,10 +27,7 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
   const { userId, isLoaded } = useAuth();
   const router = useRouter();
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [isAccepting, setIsAccepting] = useState(false);
-
-  // Mutations
-  const acceptProposal = useMutation(api.domains.packageProposals.mutations.acceptProposal);
+  const [showAcceptanceFlow, setShowAcceptanceFlow] = useState(false);
   
   // Query to get proposal by ID with error handling
   const proposalResult = useQuery(api.domains.packageProposals.queries.getPackageProposalWithAuth, {
@@ -161,31 +160,14 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
   }
 
   const isExpired = proposal.validUntil < Date.now();
-  const canAccept = proposal.status === "sent" && !isExpired;
+  const canAccept = (proposal.status === "sent" || proposal.status === "viewed") && !isExpired;
+  const needsParticipantsData = proposal.status === "awaiting_participants_data";
+  const hasPendingDocuments = proposal.status === "documents_uploaded";
+  const isInProgress = ["participants_data_completed", "flight_booking_in_progress", "flight_booked"].includes(proposal.status);
 
   // Handle accepting proposal
-  const handleAcceptProposal = async () => {
-    if (!proposal) return;
-
-    setIsAccepting(true);
-    try {
-      const result = await acceptProposal({
-        proposalId: proposal._id,
-      });
-
-      if (result.success) {
-        toast.success(result.message);
-        // Reload the page to show updated status
-        window.location.reload();
-      } else {
-        toast.error("Erro ao aceitar proposta");
-      }
-    } catch {
-      console.error("Erro ao aceitar proposta:", error);
-      toast.error(error instanceof Error ? error.message : "Erro ao aceitar proposta");
-    } finally {
-      setIsAccepting(false);
-    }
+  const handleAcceptProposal = () => {
+    setShowAcceptanceFlow(true);
   };
 
   // Handle opening question modal
@@ -194,20 +176,27 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
   };
 
   const statusConfig = {
-    draft: { label: "Rascunho", color: "bg-gray-500" },
     review: { label: "Em Revisão", color: "bg-yellow-500" },
     sent: { label: "Enviada", color: "bg-blue-500" },
     viewed: { label: "Visualizada", color: "bg-purple-500" },
     under_negotiation: { label: "Em Negociação", color: "bg-orange-500" },
     accepted: { label: "Aceita", color: "bg-green-500" },
+    awaiting_participants_data: { label: "Aguardando Seus Dados", color: "bg-blue-500" },
+    participants_data_completed: { label: "Dados Enviados", color: "bg-green-500" },
+    flight_booking_in_progress: { label: "Reservando Voos", color: "bg-yellow-500" },
+    flight_booked: { label: "Voos Confirmados", color: "bg-green-500" },
+    documents_uploaded: { label: "Documentos Disponíveis", color: "bg-purple-500" },
+    awaiting_final_confirmation: { label: "Aguardando Confirmação", color: "bg-blue-500" },
+    payment_pending: { label: "Pagamento Pendente", color: "bg-yellow-500" },
+    payment_completed: { label: "Pago", color: "bg-green-500" },
+    contracted: { label: "Contratado", color: "bg-green-600" },
     rejected: { label: "Rejeitada", color: "bg-red-500" },
-    expired: { label: "Expirada", color: "bg-gray-500" },
-    withdrawn: { label: "Retirada", color: "bg-gray-500" },
+    expired: { label: "Expirada", color: "bg-gray-400" },
+    withdrawn: { label: "Retirada", color: "bg-gray-400" },
   };
 
   const currentStatus = isExpired ? "expired" : proposal.status;
   const statusInfo = statusConfig[currentStatus as keyof typeof statusConfig];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto py-8 px-4">
@@ -340,6 +329,98 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Flight Information - Show when available */}
+            {(proposal.flightDetails || proposal.flightBookingNotes) && (
+              <Card className="border-blue-200 bg-blue-50/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-blue-800">
+                    <Plane className="h-5 w-5" />
+                    Informações dos Voos
+                  </CardTitle>
+                  <CardDescription>
+                    Detalhes sobre suas reservas de voo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {proposal.flightDetails && (
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <h4 className="font-semibold text-blue-800 mb-2">Detalhes da Confirmação</h4>
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{proposal.flightDetails}</p>
+                    </div>
+                  )}
+                  {proposal.flightBookingNotes && (
+                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                      <h4 className="font-semibold text-blue-800 mb-2">Observações</h4>
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{proposal.flightBookingNotes}</p>
+                    </div>
+                  )}
+                  {proposal.flightBookingCompletedAt && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600">
+                      <CheckCircleIcon className="h-4 w-4" />
+                      <span>Voos confirmados em {formatDate(proposal.flightBookingCompletedAt)}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contract Documents - Show when available */}
+            {proposal.contractDocuments && proposal.contractDocuments.length > 0 && (
+              <Card className="border-purple-200 bg-purple-50/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-purple-800">
+                    <FileText className="h-5 w-5" />
+                    Documentos do Contrato
+                  </CardTitle>
+                  <CardDescription>
+                    Documentos importantes para sua viagem
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {proposal.contractDocuments.map((doc: any, index: number) => (
+                      <div key={index} className="bg-white border border-purple-200 rounded-lg p-4 flex items-center justify-between hover:bg-purple-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <FileText className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{doc.fileName}</p>
+                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                              <span>{(doc.fileSize / 1024).toFixed(1)} KB</span>
+                              <span>•</span>
+                              <span>Enviado em {formatDate(doc.uploadedAt)}</span>
+                            </div>
+                            {doc.description && (
+                              <p className="text-sm text-gray-600 mt-1">{doc.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                          onClick={() => {
+                            // TODO: Implement document download
+                            toast.info("Download de documentos será implementado em breve");
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Baixar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  {proposal.documentsUploadedAt && (
+                    <div className="flex items-center gap-2 text-sm text-purple-600 mt-4 pt-4 border-t border-purple-200">
+                      <CheckCircleIcon className="h-4 w-4" />
+                      <span>Documentos enviados em {formatDate(proposal.documentsUploadedAt)}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -412,28 +493,67 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
 
                 <Separator />
 
+                {/* Action buttons based on proposal status */}
                 {canAccept ? (
                   <div className="space-y-2">
                     <Button 
                       className="w-full" 
                       size="lg"
                       onClick={handleAcceptProposal}
-                      disabled={isAccepting}
                     >
-                      {isAccepting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Aceitando...
-                        </>
-                      ) : (
-                        "Aceitar Proposta"
-                      )}
+                      Aceitar Proposta
                     </Button>
                     <Button 
                       variant="outline" 
                       className="w-full"
                       onClick={handleOpenQuestionModal}
-                      disabled={isAccepting}
+                    >
+                      Fazer Pergunta
+                    </Button>
+                  </div>
+                ) : needsParticipantsData ? (
+                  <div className="space-y-3">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-blue-600 font-medium">Preencha os Dados dos Participantes</p>
+                      <p className="text-sm text-blue-500 mt-1">
+                        Precisamos dos dados para reservar os voos
+                      </p>
+                    </div>
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={handleAcceptProposal}
+                    >
+                      <UsersIcon className="h-4 w-4 mr-2" />
+                      Preencher Dados dos Participantes
+                    </Button>
+                  </div>
+                ) : hasPendingDocuments ? (
+                  <div className="space-y-3">
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-purple-600 font-medium">Documentos Disponíveis</p>
+                      <p className="text-sm text-purple-500 mt-1">
+                        Revise os documentos e dê sua confirmação final
+                      </p>
+                    </div>
+                    <Button 
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      onClick={handleAcceptProposal}
+                    >
+                      Revisar Documentos e Confirmar
+                    </Button>
+                  </div>
+                ) : isInProgress ? (
+                  <div className="space-y-3">
+                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                      <p className="text-yellow-600 font-medium">Proposta em Andamento</p>
+                      <p className="text-sm text-yellow-500 mt-1">
+                        Nossa equipe está trabalhando na sua viagem
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleOpenQuestionModal}
                     >
                       Fazer Pergunta
                     </Button>
@@ -461,15 +581,13 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
                         Status: {statusInfo.label}
                       </p>
                     </div>
-                    {["sent", "viewed", "under_negotiation"].includes(proposal.status) && (
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={handleOpenQuestionModal}
-                      >
-                        Fazer Pergunta
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleOpenQuestionModal}
+                    >
+                      Fazer Pergunta
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -556,6 +674,19 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
           onClose={() => setIsQuestionModalOpen(false)}
           proposalId={proposal._id}
           proposalTitle={proposal.title}
+        />
+      )}
+
+      {/* Proposal Acceptance Flow */}
+      {showAcceptanceFlow && proposal && (
+        <ProposalAcceptanceFlow
+          proposal={proposal}
+          onClose={() => setShowAcceptanceFlow(false)}
+          onSuccess={() => {
+            setShowAcceptanceFlow(false);
+            // Reload to show updated status
+            window.location.reload();
+          }}
         />
       )}
     </div>

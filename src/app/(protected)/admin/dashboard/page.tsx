@@ -264,14 +264,14 @@ function PartnerDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">
             Bem-vindo ao painel de controle - {activeOrganization.name}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Link href="/admin/dashboard/chat">
             <Button variant="outline" className="gap-2">
               <MessageCircle className="h-4 w-4" />
@@ -407,13 +407,13 @@ function EmployeeDashboard() {
   return (
     <div className="space-y-8">
       {/* Header - diferente para employee */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">
             Área de trabalho - {activeOrganization.name}
           </p>
-          <div className="mt-2 flex items-center gap-3">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
               Funcionário
             </Badge>
@@ -422,7 +422,7 @@ function EmployeeDashboard() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Link href="/admin/dashboard/chat">
             <Button variant="outline" className="gap-2">
               <MessageCircle className="h-4 w-4" />

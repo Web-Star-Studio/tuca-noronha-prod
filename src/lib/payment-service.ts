@@ -63,8 +63,8 @@ export async function createCheckoutPreference(params: {
       phone: params.customerPhone
     } : undefined,
     backUrls: {
-      success: params.successUrl || `${baseUrl}/booking/success?booking_id=${params.bookingId}`,
-      pending: params.successUrl || `${baseUrl}/booking/success?booking_id=${params.bookingId}`,
+      success: params.successUrl || `${baseUrl}/reservas/?booking_id=${params.bookingId}`,
+      pending: params.successUrl || `${baseUrl}/reservas/?booking_id=${params.bookingId}`,
       failure: params.cancelUrl || `${baseUrl}/booking/cancel`
     },
     metadata: {

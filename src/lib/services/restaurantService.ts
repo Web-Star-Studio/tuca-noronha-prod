@@ -2,6 +2,18 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
+export type RestaurantType = "internal" | "external";
+
+export type OperatingDays = {
+  Monday: boolean;
+  Tuesday: boolean;
+  Wednesday: boolean;
+  Thursday: boolean;
+  Friday: boolean;
+  Saturday: boolean;
+  Sunday: boolean;
+};
+
 // Tipos para representar um restaurante
 export type Restaurant = {
   id?: string;
@@ -10,7 +22,6 @@ export type Restaurant = {
   name: string;
   slug: string;
   description: string;
-  description_long: string;
   address: {
     street: string;
     city: string;
@@ -27,18 +38,9 @@ export type Restaurant = {
   cuisine: string[];
   priceRange: string;
   diningStyle: string;
-  hours: {
-    Monday: string[];
-    Tuesday: string[];
-    Wednesday: string[];
-    Thursday: string[];
-    Friday: string[];
-    Saturday: string[];
-    Sunday: string[];
-  };
   features: string[];
   dressCode?: string;
-  paymentOptions: string[];
+  paymentOptions?: string[];
   parkingDetails?: string;
   mainImage: string;
   galleryImages: string[];
@@ -53,13 +55,21 @@ export type Restaurant = {
     totalReviews: number;
   };
   acceptsReservations: boolean;
-  maximumPartySize: number;
   tags: string[];
   executiveChef?: string;
   privatePartyInfo?: string;
   isActive: boolean;
   isFeatured: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   partnerId?: Id<"users">;
+  price?: number;
+  netRate?: number;
+  acceptsOnlinePayment?: boolean;
+  requiresUpfrontPayment?: boolean;
+  restaurantType: RestaurantType;
+  operatingDays: OperatingDays;
+  openingTime: string;
+  closingTime: string;
   creator?: {
     id: string;
     name?: string;

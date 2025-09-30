@@ -100,12 +100,27 @@ export const createActivityBooking = mutation({
       throw new Error("Atividade não está disponível");
     }
 
+    const participants = args.participants;
+    const adultsCount = Math.max(1, Math.min(args.adults ?? participants, participants));
+    let childrenCount = Math.max(0, Math.min(args.children ?? (participants - adultsCount), participants - adultsCount));
+    if (adultsCount + childrenCount !== participants) {
+      childrenCount = Math.max(0, participants - adultsCount);
+    }
+
     // Check participant limits
-    if (args.participants < activity.minParticipants) {
+    if (participants < activity.minParticipants) {
       throw new Error("Mínimo de " + activity.minParticipants + " participantes");
     }
-    if (args.participants > activity.maxParticipants) {
+    if (participants > activity.maxParticipants) {
       throw new Error("Máximo de " + activity.maxParticipants + " participantes");
+    }
+
+    const normalizedAdditionalParticipants = (args.additionalParticipants ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (participants > 1 && normalizedAdditionalParticipants.length < participants - 1) {
+      throw new Error("Informe o nome completo de todos os participantes adicionais");
     }
 
     // Calculate price
@@ -118,7 +133,7 @@ export const createActivityBooking = mutation({
       totalPrice = ticket.price;
     }
 
-    const calculatedPrice = calculateActivityBookingPrice(totalPrice, args.participants);
+    const calculatedPrice = calculateActivityBookingPrice(totalPrice, participants);
     // Use finalAmount if coupon is applied, otherwise use calculated price
     const finalPrice = args.finalAmount ?? calculatedPrice;
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
@@ -150,12 +165,15 @@ export const createActivityBooking = mutation({
       ticketId: args.ticketId,
       date: args.date,
       time: args.time,
-      participants: args.participants,
+      participants,
+      adults: adultsCount,
+      children: childrenCount,
       totalPrice: finalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
       confirmationCode,
       customerInfo,
+      additionalParticipants: normalizedAdditionalParticipants,
       specialRequests: args.specialRequests,
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
@@ -167,8 +185,17 @@ export const createActivityBooking = mutation({
     // Record successful booking attempt for rate limiting
     await recordRateLimitAttempt(ctx, user._id, "CREATE_BOOKING");
 
-    // Only send confirmation emails if payment is not required or not upfront
-    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !activity.requiresUpfrontPayment) {
+    // REGRA CRÍTICA: NÃO enviar email de confirmação se requer pagamento online antecipado
+    // Email só deve ser enviado APÓS admin aprovar via approveBookingAndCapturePayment
+    // Apenas enviar imediatamente se:
+    // 1. Não requer pagamento (gratuito) OU
+    // 2. Não requer pagamento antecipado E não aceita pagamento online (pagamento no local)
+    const shouldSendEmailNow = (
+      initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
+      (!activity.requiresUpfrontPayment && !activity.acceptsOnlinePayment)
+    );
+    
+    if (shouldSendEmailNow) {
       // Send email confirmation to customer
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
@@ -180,7 +207,10 @@ export const createActivityBooking = mutation({
         totalPrice: finalPrice,
         bookingDetails: {
           activityId: activity._id,
-          participants: args.participants,
+          participants,
+          adults: adultsCount,
+          children: childrenCount,
+          participantNames: normalizedAdditionalParticipants,
           date: args.date,
           specialRequests: args.specialRequests,
         },
@@ -202,7 +232,10 @@ export const createActivityBooking = mutation({
           totalPrice: finalPrice,
           bookingDetails: {
             activityId: activity._id,
-            participants: args.participants,
+            participants,
+            adults: adultsCount,
+            children: childrenCount,
+            participantNames: normalizedAdditionalParticipants,
             date: args.date,
             specialRequests: args.specialRequests,
           },
@@ -272,6 +305,21 @@ export const createEventBooking = mutation({
       throw new Error("Evento não está disponível");
     }
 
+    const quantity = args.quantity;
+    const adultsCount = Math.max(1, Math.min(args.adults ?? quantity, quantity));
+    let childrenCount = Math.max(0, Math.min(args.children ?? (quantity - adultsCount), quantity - adultsCount));
+    if (adultsCount + childrenCount !== quantity) {
+      childrenCount = Math.max(0, quantity - adultsCount);
+    }
+
+    const normalizedParticipantNames = (args.participantNames ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (quantity > 1 && normalizedParticipantNames.length < quantity - 1) {
+      throw new Error("Informe o nome completo dos participantes adicionais");
+    }
+
     // Calculate price
     let totalPrice = event.price;
     if (args.ticketId) {
@@ -282,7 +330,7 @@ export const createEventBooking = mutation({
       totalPrice = ticket.price;
     }
 
-    const calculatedPrice = calculateEventBookingPrice(totalPrice, args.quantity);
+    const calculatedPrice = calculateEventBookingPrice(totalPrice, quantity);
     // Use finalAmount if coupon is applied, otherwise use calculated price
     const finalPrice = args.finalAmount ?? calculatedPrice;
     const confirmationCode = generateConfirmationCode(event.date, customerInfo.name);
@@ -312,12 +360,15 @@ export const createEventBooking = mutation({
       eventId: args.eventId,
       userId: user._id,
       ticketId: args.ticketId,
-      quantity: args.quantity,
+      quantity,
+      adults: adultsCount,
+      children: childrenCount,
       totalPrice: finalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
       confirmationCode,
       customerInfo,
+      participantNames: normalizedParticipantNames,
       specialRequests: args.specialRequests,
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
@@ -326,8 +377,17 @@ export const createEventBooking = mutation({
       updatedAt: Date.now(),
     });
 
-    // Only send confirmation emails if payment is not required or not upfront
-    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !event.requiresUpfrontPayment) {
+    // REGRA CRÍTICA: NÃO enviar email de confirmação se requer pagamento online antecipado
+    // Email só deve ser enviado APÓS admin aprovar via approveBookingAndCapturePayment
+    // Apenas enviar imediatamente se:
+    // 1. Não requer pagamento (gratuito) OU
+    // 2. Não requer pagamento antecipado E não aceita pagamento online (pagamento no local)
+    const shouldSendEmailNow = (
+      initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
+      (!event.requiresUpfrontPayment && !event.acceptsOnlinePayment)
+    );
+    
+    if (shouldSendEmailNow) {
       // Send email confirmation to customer
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
@@ -339,7 +399,9 @@ export const createEventBooking = mutation({
         totalPrice: finalPrice,
         bookingDetails: {
           eventId: event._id,
-          participants: args.quantity,
+          adults: adultsCount,
+          children: childrenCount,
+          participantNames: normalizedParticipantNames,
           date: event.date,
           specialRequests: args.specialRequests,
         },
@@ -361,7 +423,10 @@ export const createEventBooking = mutation({
           totalPrice: finalPrice,
           bookingDetails: {
             eventId: event._id,
-            participants: args.quantity,
+            participants: quantity,
+            adults: adultsCount,
+            children: childrenCount,
+            participantNames: normalizedParticipantNames,
             date: event.date,
             specialRequests: args.specialRequests,
           },
@@ -435,8 +500,14 @@ export const createRestaurantReservation = mutation({
       throw new Error("Restaurante não aceita reservas");
     }
 
-    if (args.partySize > restaurant.maximumPartySize) {
-      throw new Error("Máximo de " + restaurant.maximumPartySize + " pessoas por reserva");
+    // No maximum party size restriction for now - can be implemented per restaurant if needed
+
+    const normalizedGuestNames = (args.guestNames ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (args.partySize > 1 && normalizedGuestNames.length < args.partySize - 1) {
+      throw new Error("Informe o nome completo de todos os acompanhantes");
     }
 
     const confirmationCode = generateConfirmationCode(args.date, customerInfo.name);
@@ -451,6 +522,7 @@ export const createRestaurantReservation = mutation({
       date: args.date,
       time: args.time,
       partySize: args.partySize,
+      guestNames: normalizedGuestNames,
       name: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -465,22 +537,33 @@ export const createRestaurantReservation = mutation({
     });
 
     // Send email confirmation to customer
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: customerInfo.email,
-      customerName: customerInfo.name,
-      assetName: restaurant.name,
-      bookingType: "restaurant",
-      confirmationCode,
-      bookingDate: args.date + " às " + args.time,
-      totalPrice: totalPrice,
-      bookingDetails: {
-        restaurantId: restaurant._id,
-        partySize: args.partySize,
-        date: args.date,
-        time: args.time,
-        specialRequests: args.specialRequests,
-      },
-    });
+    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    // REGRA CRÍTICA: NÃO enviar email se requer pagamento online
+    // Email só após admin aprovar via approveBookingAndCapturePayment
+    const shouldSendEmailNow = (
+      totalPrice === 0 || 
+      (!restaurant.requiresUpfrontPayment && !restaurant.acceptsOnlinePayment)
+    );
+    
+    if (shouldSendEmailNow) {
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
+        customerEmail: customerInfo.email,
+        customerName: customerInfo.name,
+        assetName: restaurant.name,
+        bookingType: "restaurant",
+        confirmationCode,
+        bookingDate: args.date + " às " + args.time,
+        totalPrice: totalPrice,
+        bookingDetails: {
+          restaurantId: restaurant._id,
+          partySize: args.partySize,
+          guestNames: normalizedGuestNames,
+          date: args.date,
+          time: args.time,
+          specialRequests: args.specialRequests,
+        },
+      });
+    }
 
     // Send notification to partner about new booking
     const partner = await ctx.db.get(restaurant.partnerId);
@@ -498,6 +581,7 @@ export const createRestaurantReservation = mutation({
         bookingDetails: {
           restaurantId: restaurant._id,
           partySize: args.partySize,
+          guestNames: normalizedGuestNames,
           date: args.date,
           time: args.time,
           specialRequests: args.specialRequests,
@@ -583,7 +667,7 @@ export const createVehicleBooking = mutation({
 
     // Calculate total price
     const calculatedPrice = calculateVehicleBookingPrice(
-      vehicle.pricePerDay,
+      vehicle.estimatedPricePerDay,
       args.startDate,
       args.endDate,
       args.additionalDrivers
@@ -621,6 +705,7 @@ export const createVehicleBooking = mutation({
       userId: user._id,
       startDate: args.startDate,
       endDate: args.endDate,
+      estimatedPrice: calculatedPrice,
       totalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
@@ -634,12 +719,26 @@ export const createVehicleBooking = mutation({
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
       finalAmount: args.finalAmount,
+      requestedAt: Date.now(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 
-    // Only send confirmation emails if payment is not required or not upfront
-    if (initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || !vehicle.requiresUpfrontPayment) {
+    // IMPORTANTE: Para veículos com valor estimado, NÃO enviar email de confirmação aqui
+    // O email só deve ser enviado DEPOIS que o admin confirmar com o valor real
+    // Isso é feito na mutation confirmBookingWithPrice ou após captura do pagamento
+    
+    // REGRA CRÍTICA: NÃO enviar email de confirmação se requer pagamento online antecipado
+    // Email só deve ser enviado APÓS admin aprovar via approveBookingAndCapturePayment
+    // Apenas enviar imediatamente se:
+    // 1. Não requer pagamento (gratuito) OU
+    // 2. Não requer pagamento antecipado E não aceita pagamento online (pagamento no local)
+    const shouldSendEmailNow = (
+      initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
+      (!vehicle.requiresUpfrontPayment && !vehicle.acceptsOnlinePayment)
+    );
+    
+    if (shouldSendEmailNow) {
       // Send email confirmation to customer
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
         customerEmail: customerInfo.email,
@@ -1501,7 +1600,6 @@ export const seedTestReservations = mutation({
         name: "Sol & Mar Noronha",
         slug: "sol-e-mar-noronha",
         description: "Restaurante de frutos do mar com vista panorâmica para o oceano",
-        description_long: "Localizado na Vila dos Remédios, oferece pratos da culinária regional com ingredientes frescos locais",
         address: {
           street: "Vila dos Remédios, s/n",
           city: "Fernando de Noronha",
@@ -1514,18 +1612,20 @@ export const seedTestReservations = mutation({
         cuisine: ["frutos do mar", "regional"],
         priceRange: "moderate",
         diningStyle: "Casual",
-        hours: {
-          Monday: ["11:30-15:00", "18:00-22:00"],
-          Tuesday: ["11:30-15:00", "18:00-22:00"],
-          Wednesday: ["11:30-15:00", "18:00-22:00"],
-          Thursday: ["11:30-15:00", "18:00-22:00"],
-          Friday: ["11:30-15:00", "18:00-23:00"],
-          Saturday: ["11:30-15:00", "18:00-23:00"],
-          Sunday: ["11:30-15:00", "18:00-22:00"],
-        },
         paymentOptions: ["dinheiro", "cartao", "pix"],
         acceptsReservations: true,
-        maximumPartySize: BigInt(8),
+        restaurantType: "internal" as const,
+        operatingDays: {
+          Monday: true,
+          Tuesday: true,
+          Wednesday: true,
+          Thursday: true,
+          Friday: true,
+          Saturday: true,
+          Sunday: true,
+        },
+        openingTime: "18:00",
+        closingTime: "23:00",
         mainImage: "/images/restaurant-sol-mar.jpg",
         galleryImages: ["/images/restaurant-sol-mar-1.jpg"],
         rating: {
@@ -2240,8 +2340,9 @@ export const updateBookingPaymentSuccess = mutation({
       // Don't throw - voucher generation failure shouldn't fail the payment update
     }
 
-    // Send confirmation emails
-    await sendBookingPaymentConfirmationEmails(ctx, { ...booking, assetType: bookingType });
+    // NOTE: Confirmation emails are now sent ONLY after admin approval via approveBookingAndCapturePayment
+    // This prevents emails being sent for payments that are only authorized (not captured)
+    console.log(`[BOOKING] Skipping auto-email for ${bookingType} booking ${booking._id} - email will be sent after admin approval`);
   },
 });
 
@@ -2352,23 +2453,9 @@ async function sendBookingPaymentConfirmationEmails(ctx: MutationCtx, booking: a
       console.error("Error getting asset name for payment confirmation email:", error);
     }
 
-    // Send booking confirmation email
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
-      customerEmail: customerEmail,
-      customerName: customerName || "Cliente",
-      assetName,
-      bookingType: booking.assetType,
-      confirmationCode: booking.confirmationCode,
-      bookingDate: bookingDate || new Date().toISOString(),
-      totalPrice: booking.totalPrice,
-      bookingDetails: {
-        bookingId: booking._id,
-        assetId: booking.activityId || booking.eventId || booking.restaurantId || booking.vehicleId || booking.accommodationId,
-        participants: booking.participants || booking.quantity,
-        date: bookingDate || new Date().toISOString(),
-        specialRequests: booking.specialRequests,
-      },
-    });
+    // NOTE: Confirmation emails are now sent ONLY after admin approval via approveBookingAndCapturePayment
+    // This prevents emails being sent for payments that are only authorized (not captured)
+    console.log(`[BOOKING HELPER] Skipping auto-email for ${booking.assetType} booking ${booking._id} - email will be sent after admin approval`);
   }
 
   // Send notification email to partner

@@ -1,25 +1,35 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Restaurant } from "@/lib/services/restaurantService";
+import { Restaurant, OperatingDays } from "@/lib/services/restaurantService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Store, AlertCircle } from "lucide-react";
-import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { Media } from "@/lib/services/mediaService";
+import { parseMediaEntry, serializeMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
-export type WeekDay = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
-export type WeekdayHours = Record<WeekDay, string[]>;
+const createEmptyOperatingDays = (): OperatingDays => ({
+  Monday: false,
+  Tuesday: false,
+  Wednesday: false,
+  Thursday: false,
+  Friday: false,
+  Saturday: false,
+  Sunday: false,
+});
 
 interface RestaurantFormProps {
   restaurant?: Restaurant | null;
@@ -53,10 +63,10 @@ export function RestaurantForm({
   // Convert BigInt values from Convex to regular numbers for the form
   const prepareRestaurantForForm = (restaurant: Restaurant | null | undefined) => {
     if (!restaurant) return null;
-    
+
     return {
       ...restaurant,
-      maximumPartySize: Number(restaurant.maximumPartySize) || 8,
+      netRate: restaurant.netRate ?? restaurant.price ?? undefined,
       rating: {
         ...restaurant.rating,
         overall: Number(restaurant.rating.overall) || 0,
@@ -79,37 +89,6 @@ export function RestaurantForm({
   // Prepare restaurant data with BigInt converted to numbers
   const preparedRestaurant = useMemo(() => prepareRestaurantForForm(restaurant), [restaurant]);
 
-  // Estados para arrays e objetos complexos
-  const [cuisineTypes, setCuisineTypes] = useState<string[]>(preparedRestaurant?.cuisine || []);
-  const [features, setFeatures] = useState<string[]>(preparedRestaurant?.features || []);
-  const [tags, setTags] = useState<string[]>(preparedRestaurant?.tags || []);
-  const [paymentOptions, setPaymentOptions] = useState<string[]>(preparedRestaurant?.paymentOptions || []);
-  const [galleryImages, setGalleryImages] = useState<string[]>(preparedRestaurant?.galleryImages || []);
-  const [menuImages, setMenuImages] = useState<string[]>(preparedRestaurant?.menuImages || []);
-  const [currentTab, setCurrentTab] = useState(isEmbedded ? "basic" : "basic");
-  
-  // Estados para inputs temporários
-  const [tempCuisine, setTempCuisine] = useState("");
-  const [tempFeature, setTempFeature] = useState("");
-  const [tempTag, setTempTag] = useState("");
-  const [tempPayment, setTempPayment] = useState("");
-  const [tempGalleryImage, setTempGalleryImage] = useState("");
-  const [tempMenuImage, setTempMenuImage] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  // Horários de funcionamento
-  const defaultHours = useMemo(() => ({
-    Monday: [] as string[],
-    Tuesday: [] as string[],
-    Wednesday: [] as string[],
-    Thursday: [] as string[],
-    Friday: [] as string[],
-    Saturday: [] as string[],
-    Sunday: [] as string[],
-  }), []);
-
-  const [hours, setHours] = useState(preparedRestaurant?.hours || defaultHours);
-  
   // Função para gerar slug automaticamente
   const generateSlug = (name: string) => {
     return name
@@ -124,8 +103,8 @@ export function RestaurantForm({
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
   };
-  
-  // Form setup
+
+  // Form setup - needs to be initialized before using watch
   const {
     register,
     handleSubmit,
@@ -137,7 +116,6 @@ export function RestaurantForm({
       name: initialData?.name || "",
       slug: initialData?.name ? generateSlug(initialData.name) : "",
       description: initialData?.description || "",
-      description_long: initialData?.description || "",
       address: {
         street: "",
         city: "Fernando de Noronha",
@@ -171,17 +149,97 @@ export function RestaurantForm({
         totalReviews: 0,
       },
       acceptsReservations: true,
-      maximumPartySize: 8,
+      netRate: undefined,
       tags: [],
-      executiveChef: "",
-      privatePartyInfo: "",
       isActive: true,
       isFeatured: false,
+      executiveChef: "",
+      privatePartyInfo: "",
+      isFree: false,
       price: undefined,
       acceptsOnlinePayment: false,
       requiresUpfrontPayment: false,
+      restaurantType: "internal" as const,
+      openingTime: "18:00",
+      closingTime: "23:00",
+      operatingDays: createEmptyOperatingDays(),
     },
   });
+
+  // Estados para arrays e objetos complexos
+  const [cuisineTypes, setCuisineTypes] = useState<string[]>(preparedRestaurant?.cuisine || []);
+  const [features, setFeatures] = useState<string[]>(preparedRestaurant?.features || []);
+  const [tags, setTags] = useState<string[]>(preparedRestaurant?.tags || []);
+  const [paymentOptions, setPaymentOptions] = useState<string[]>(preparedRestaurant?.paymentOptions || []);
+  const [galleryImages, setGalleryImages] = useState<string[]>(preparedRestaurant?.galleryImages || []);
+  const [menuImages, setMenuImages] = useState<string[]>(preparedRestaurant?.menuImages || []);
+  const [currentTab, setCurrentTab] = useState("basic");
+  const restaurantType = watch("restaurantType") || "internal";
+
+  const galleryEntries = useMemo(
+    () => galleryImages.map(parseMediaEntry),
+    [galleryImages],
+  );
+
+  const mainImageValue = watch("mainImage") ?? "";
+  const mainImageEntry = parseMediaEntry(mainImageValue);
+  const mainImageGalleryEntry = galleryEntries.find(
+    (entry) => entry.url === mainImageEntry.url,
+  );
+  const mainImageUrl = mainImageGalleryEntry?.url ?? mainImageEntry.url;
+  const previewMainEntry = mainImageGalleryEntry ?? mainImageEntry;
+  const hasMainImage = Boolean(previewMainEntry.url && previewMainEntry.url.trim() !== "");
+
+  const handleAppendGalleryMedia = useCallback((items: Media[]) => {
+    setGalleryImages((prev) => {
+      if (items.length === 0) return prev;
+
+      const existingUrls = new Set(prev.map((entry) => parseMediaEntry(entry).url));
+      const appended = items
+        .filter((item) => !existingUrls.has(item.url))
+        .map((item) => serializeMediaEntry({ url: item.url, type: item.fileType || undefined }));
+
+      if (appended.length === 0) return prev;
+
+      const next = [...prev, ...appended];
+      setValue("galleryImages", next);
+      return next;
+    });
+  }, [setValue]);
+  
+  // Estados para inputs temporários
+  const [tempCuisine, setTempCuisine] = useState("");
+  const [tempFeature, setTempFeature] = useState("");
+  const [tempTag, setTempTag] = useState("");
+  const [tempPayment, setTempPayment] = useState("");
+  const [tempGalleryImage, setTempGalleryImage] = useState("");
+  const [tempMenuImage, setTempMenuImage] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Horários de funcionamento
+  const defaultHours = useMemo(() => ({
+    Monday: [] as string[],
+    Tuesday: [] as string[],
+    Wednesday: [] as string[],
+    Thursday: [] as string[],
+    Friday: [] as string[],
+    Saturday: [] as string[],
+    Sunday: [] as string[],
+  }), []);
+
+  const [operatingDays, setOperatingDays] = useState<OperatingDays>(
+    preparedRestaurant?.operatingDays ?? {
+      Monday: false,
+      Tuesday: false,
+      Wednesday: false,
+      Thursday: false,
+      Friday: false,
+      Saturday: false,
+      Sunday: false,
+    }
+  );
+  const [openingTime, setOpeningTime] = useState(preparedRestaurant?.openingTime || "18:00");
+  const [closingTime, setClosingTime] = useState(preparedRestaurant?.closingTime || "23:00");
 
   // Arrays e objetos manipuladores
   const addCuisineType = () => {
@@ -245,12 +303,20 @@ export function RestaurantForm({
   };
 
   const addGalleryImage = () => {
-    if (tempGalleryImage && !galleryImages.includes(tempGalleryImage)) {
-      const newGalleryImages = [...galleryImages, tempGalleryImage];
+    if (!tempGalleryImage) return;
+
+    const serialized = serializeMediaEntry({ url: tempGalleryImage });
+    const exists = galleryImages.some(
+      (image) => parseMediaEntry(image).url === tempGalleryImage,
+    );
+
+    if (!exists) {
+      const newGalleryImages = [...galleryImages, serialized];
       setGalleryImages(newGalleryImages);
       setValue("galleryImages", newGalleryImages);
-      setTempGalleryImage("");
     }
+
+    setTempGalleryImage("");
   };
 
   const removeGalleryImage = (url: string) => {
@@ -274,45 +340,24 @@ export function RestaurantForm({
     setValue("menuImages", newMenuImages);
   };
 
-  // Função para atualizar horários
-  const updateHours = (day: keyof typeof hours, type: "open" | "close", index: number, value: string) => {
-    const newHours = { ...hours };
-    
-    // Certificar-se de que o array de horários do dia existe
-    if (!newHours[day][index]) {
-      newHours[day][index] = "";
-    }
-    
-    // Formato "HH:MM-HH:MM"
-    const hourParts = newHours[day][index]?.split("-") || ["", ""];
-    
-    if (type === "open") {
-      hourParts[0] = value;
-    } else {
-      hourParts[1] = value;
-    }
-    
-    // Atualizar o valor do horário
-    newHours[day][index] = hourParts.join("-");
-    
-    setHours(newHours);
-    setValue("hours", newHours);
+  const toggleOperatingDay = (day: keyof OperatingDays, checked: boolean | "indeterminate") => {
+    const value = checked === true;
+    setOperatingDays((prev) => {
+      const updated = { ...prev, [day]: value };
+      setValue("operatingDays", updated);
+      return updated;
+    });
   };
 
-  // Adicionar período de horário para um dia
-  const addHourPeriod = (day: keyof typeof hours) => {
-    const newHours = { ...hours };
-    newHours[day].push("00:00-00:00");
-    setHours(newHours);
-    setValue("hours", newHours);
-  };
-
-  // Remover período de horário
-  const removeHourPeriod = (day: keyof typeof hours, index: number) => {
-    const newHours = { ...hours };
-    newHours[day].splice(index, 1);
-    setHours(newHours);
-    setValue("hours", newHours);
+  // Days translation to Portuguese
+  const daysInPortuguese: Record<keyof OperatingDays, string> = {
+    Monday: "Segunda-feira",
+    Tuesday: "Terça-feira", 
+    Wednesday: "Quarta-feira",
+    Thursday: "Quinta-feira",
+    Friday: "Sexta-feira",
+    Saturday: "Sábado",
+    Sunday: "Domingo"
   };
 
   // Watch para nome do restaurante para gerar slug automaticamente
@@ -333,7 +378,17 @@ export function RestaurantForm({
       setPaymentOptions(restaurant.paymentOptions || []);
       setGalleryImages(restaurant.galleryImages || []);
       setMenuImages(restaurant.menuImages || []);
-      setHours(restaurant.hours || defaultHours);
+      setOpeningTime(restaurant.openingTime || "18:00");
+      setClosingTime(restaurant.closingTime || "23:00");
+      setOperatingDays(restaurant.operatingDays || {
+        Monday: false,
+        Tuesday: false,
+        Wednesday: false,
+        Thursday: false,
+        Friday: false,
+        Saturday: false,
+        Sunday: false,
+      });
     }
   }, [restaurant, defaultHours]);
 
@@ -348,14 +403,13 @@ export function RestaurantForm({
     setValidationError(null);
     
     // Validação básica
-    if (!data.name || !data.slug || !data.description || !data.description_long) {
-      const error = "Por favor, preencha todos os campos obrigatórios: Nome, Slug, Descrição e Descrição Completa.";
+    if (!data.name || !data.slug || !data.description) {
+      const error = "Por favor, preencha todos os campos obrigatórios: Nome, Slug e Descrição.";
       setValidationError(error);
       console.error("Missing required fields:", {
         name: data.name,
         slug: data.slug,
         description: data.description,
-        description_long: data.description_long
       });
       return;
     }
@@ -366,17 +420,12 @@ export function RestaurantForm({
       return;
     }
 
-    if (paymentOptions.length === 0) {
-      setValidationError("Por favor, adicione pelo menos uma forma de pagamento.");
-      console.error("No payment options selected");
-      return;
-    }
-
-    if (!data.mainImage) {
-      setValidationError("Por favor, selecione uma imagem principal para o restaurante.");
-      console.error("No main image selected");
-      return;
-    }
+    // Payment options are now optional
+    // if (paymentOptions.length === 0) {
+    //   setValidationError("Por favor, adicione pelo menos uma forma de pagamento.");
+    //   console.error("No payment options selected");
+    //   return;
+    // }
 
     if (!data.address?.street || !data.address?.neighborhood || !data.address?.zipCode) {
       setValidationError("Por favor, preencha todos os campos de endereço: Rua, Bairro e CEP.");
@@ -398,16 +447,15 @@ export function RestaurantForm({
       phone: data.phone || initialData?.phone || "",
       website: data.website || initialData?.website || "",
       description: data.description || initialData?.description || "",
-      description_long: data.description_long || initialData?.description || "",
       cuisine: cuisineTypes,
       features: features,
       tags: tags,
       paymentOptions: paymentOptions,
       galleryImages: galleryImages,
       menuImages: menuImages,
-      hours: hours,
-      // Convert string values to numbers
-      maximumPartySize: Number(data.maximumPartySize) || 8,
+      operatingDays,
+      openingTime,
+      closingTime,
       address: {
         ...data.address,
         city: "Fernando de Noronha",
@@ -448,12 +496,10 @@ export function RestaurantForm({
       )}
       
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-4">
-          <TabsTrigger value="basic">{isEmbedded ? "Config. Base" : "Básico"}</TabsTrigger>
-          <TabsTrigger value="details">Detalhes</TabsTrigger>
-          <TabsTrigger value="address">Endereço</TabsTrigger>
-          <TabsTrigger value="hours">Horários</TabsTrigger>
-          <TabsTrigger value="media">Mídia</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full max-w-3xl mb-4">
+          <TabsTrigger value="basic">Informações Básicas</TabsTrigger>
+          <TabsTrigger value="address">Localização</TabsTrigger>
+          <TabsTrigger value="media">Imagens e Mídia</TabsTrigger>
         </TabsList>
 
         {/* Mensagem informativa quando estiver no modo embedded */}
@@ -476,6 +522,32 @@ export function RestaurantForm({
 
         {/* Tab de informações básicas */}
         <TabsContent value="basic" className="space-y-4">
+          <div className="space-y-2">
+            <Label>Tipo de Restaurante *</Label>
+            <Select
+              value={restaurantType}
+              onValueChange={(value) => {
+                setValue("restaurantType", value as "internal" | "external");
+                if (value === "external") {
+                  setPaymentOptions([]);
+                  setFeatures([]);
+                  setTags([]);
+                  setGalleryImages([]);
+                  setMenuImages([]);
+                  setValue("phone", "");
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="internal">Restaurante Interno</SelectItem>
+                <SelectItem value="external">Restaurante Externo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Mostrar campos de nome apenas quando não estiver no modo embedded ou quando estiver editando */}
           {(!isEmbedded || isEditing) && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -546,37 +618,25 @@ export function RestaurantForm({
           <MediaSelector
             open={mainMediaPickerOpen}
             onOpenChange={setMainMediaPickerOpen}
-            initialSelected={watch("mainImage") ? [watch("mainImage")] : []}
-            onSelect={([url]) => setValue("mainImage", url)}
+            initialSelected={mainImageUrl ? [mainImageUrl] : []}
+            onSelect={() => {}}
+            onSelectMedia={([item]) => {
+              if (!item) return;
+              setValue("mainImage", item.url);
+              handleAppendGalleryMedia([item]);
+            }}
           />
-          {/* Mostrar campos de descrição apenas quando não estiver no modo embedded ou quando estiver editando */}
-          {(!isEmbedded || isEditing) && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição Curta *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Breve descrição do restaurante"
-                  {...register("description", { required: "Descrição é obrigatória" })}
-                  error={errors.description?.message}
-                  rows={2}
-                />
-                {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description_long">Descrição Completa *</Label>
-                <Textarea
-                  id="description_long"
-                  placeholder="Descrição detalhada do restaurante"
-                  {...register("description_long", { required: "Descrição completa é obrigatória" })}
-                  error={errors.description_long?.message}
-                  rows={4}
-                />
-                {errors.description_long && <p className="text-sm text-red-500">{errors.description_long.message}</p>}
-              </div>
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição *</Label>
+            <Textarea
+              id="description"
+              placeholder="Descrição do restaurante"
+              {...register("description", { required: "Descrição é obrigatória" })}
+              error={errors.description?.message}
+              rows={restaurantType === "internal" ? 4 : 3}
+            />
+            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+          </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -678,9 +738,112 @@ export function RestaurantForm({
               </div>
             </div>
           )}
+
+          <Separator className="my-6" />
+
+          {/* Seção de Preços e Gratuidade */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Preços e Cobrança</h3>
+            
+            <div className="col-span-2">
+              <div className="flex items-center space-x-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <Checkbox
+                  id="isFree"
+                  checked={watch("isFree") || false}
+                  onCheckedChange={(checked) => {
+                    const isFree = Boolean(checked);
+                    setValue("isFree", isFree);
+                    // Se gratuito, zerar preços
+                    if (isFree) {
+                      setValue("price", undefined);
+                      setValue("netRate", undefined);
+                    }
+                  }}
+                />
+                <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
+                  Restaurante Gratuito (sem cobrança por reserva)
+                </Label>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="price">
+                  Preço por Reserva (R$) {watch("isFree") && <span className="text-xs text-gray-500">(Desabilitado - Restaurante Gratuito)</span>}
+                </Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 50.00"
+                  disabled={watch("isFree")}
+                  {...register("price", { 
+                    valueAsNumber: true,
+                    validate: (value) => {
+                      if (watch("isFree")) return true;
+                      if (value !== undefined && value < 0) {
+                        return "O preço não pode ser negativo";
+                      }
+                      return true;
+                    }
+                  })}
+                  className="bg-white shadow-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Deixe em branco se o restaurante não cobra por reserva
+                </p>
+                {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="netRate">
+                  Tarifa net (R$) {watch("isFree") && <span className="text-xs text-gray-500">(Desabilitado - Restaurante Gratuito)</span>}
+                </Label>
+                <Input
+                  id="netRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 35.00"
+                  disabled={watch("isFree")}
+                  {...register("netRate", {
+                    valueAsNumber: true,
+                    validate: (value) => {
+                      if (watch("isFree")) return true;
+                      const priceValue = watch("price");
+                      if (value === undefined || Number.isNaN(value)) {
+                        if (priceValue !== undefined && !Number.isNaN(priceValue)) {
+                          return "Informe a tarifa net";
+                        }
+                        return true;
+                      }
+                      if (value < 0) {
+                        return "A tarifa net não pode ser negativa";
+                      }
+                      if (priceValue !== undefined && !Number.isNaN(priceValue) && value > priceValue) {
+                        return "A tarifa net deve ser menor ou igual ao preço";
+                      }
+                      return true;
+                    }
+                  })}
+                  className="bg-white shadow-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Valor líquido do fornecedor; usamos essa base para calcular o repasse.
+                </p>
+                {errors.netRate && <p className="text-sm text-red-500">{errors.netRate.message}</p>}
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
           
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Imagem Principal *</Label>
+            <Label className="text-sm font-medium">Imagem Principal (opcional)</Label>
             <div className="flex items-center gap-2">
               <Input
                 readOnly
@@ -693,13 +856,14 @@ export function RestaurantForm({
               </Button>
             </div>
             {errors.mainImage && <p className="text-sm text-red-500">{errors.mainImage.message}</p>}
-            {watch("mainImage") && (
+            {hasMainImage && (
               <div className="mt-2 relative h-40 w-full overflow-hidden rounded-md">
-                <Image
-                  src={watch("mainImage")!}
+                <SmartMedia
+                  entry={previewMainEntry}
                   alt="Preview"
-                  className="object-cover"
-                  fill
+                  className="h-full w-full object-cover"
+                  imageProps={{ fill: true }}
+                  videoProps={{ controls: true, preload: "metadata" }}
                 />
               </div>
             )}
@@ -710,26 +874,10 @@ export function RestaurantForm({
               <Switch 
                 id="acceptsReservations" 
                 variant="default"
-                checked={watch("acceptsReservations")} 
+                checked={watch("acceptsReservations")}
                 onCheckedChange={(checked) => setValue("acceptsReservations", checked)} 
               />
               <Label htmlFor="acceptsReservations">Aceita Reservas</Label>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="maximumPartySize">Tamanho Máximo de Grupo *</Label>
-              <Input
-                id="maximumPartySize"
-                type="number"
-                min="1"
-                max="100"
-                {...register("maximumPartySize", { 
-                  required: "Tamanho máximo é obrigatório",
-                  min: { value: 1, message: "Deve ser pelo menos 1" },
-                })}
-                error={errors.maximumPartySize?.message}
-              />
-              {errors.maximumPartySize && <p className="text-sm text-red-500">{errors.maximumPartySize.message}</p>}
             </div>
           </div>
 
@@ -752,6 +900,61 @@ export function RestaurantForm({
                 onCheckedChange={(checked) => setValue("isFeatured", checked)} 
               />
               <Label htmlFor="isFeatured">Destacar na Home</Label>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Dias e Horários de Funcionamento */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Dias de Funcionamento</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {Object.entries(operatingDays).map(([day, isOpen]) => (
+                  <div key={day} className="flex items-center gap-2 rounded-md border p-3 hover:bg-gray-50">
+                    <Switch
+                      id={`operating-${day}`}
+                      checked={isOpen}
+                      onCheckedChange={(checked) => toggleOperatingDay(day as keyof OperatingDays, checked)}
+                    />
+                    <Label htmlFor={`operating-${day}`} className="text-sm font-medium cursor-pointer">
+                      {daysInPortuguese[day as keyof OperatingDays]}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selecione os dias em que o restaurante funciona
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Horário de Funcionamento</Label>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="openingTime" className="text-sm font-medium text-gray-700">Horário de Abertura</Label>
+                  <Input
+                    id="openingTime"
+                    type="time"
+                    value={openingTime}
+                    onChange={(event) => setOpeningTime(event.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="closingTime" className="text-sm font-medium text-gray-700">Horário de Fechamento</Label>
+                  <Input
+                    id="closingTime"
+                    type="time"
+                    value={closingTime}
+                    onChange={(event) => setClosingTime(event.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Este horário será aplicado para todos os dias selecionados acima.
+                </p>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -821,7 +1024,7 @@ export function RestaurantForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Formas de Pagamento *</Label>
+            <Label>Formas de Pagamento</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Ex: Visa"
@@ -850,9 +1053,10 @@ export function RestaurantForm({
               ))}
             </div>
             {!paymentOptions.length && (
-              <p className="text-sm text-amber-600">Adicione pelo menos uma forma de pagamento</p>
+              <p className="text-sm text-gray-500">Nenhuma forma de pagamento adicionada</p>
             )}
           </div>
+
 
           <div className="space-y-2">
             <Label htmlFor="dressCode">Código de Vestimenta</Label>
@@ -902,79 +1106,6 @@ export function RestaurantForm({
             />
           </div>
 
-          {/* Configurações de Pagamento */}
-          <Separator className="my-6" />
-          
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Configurações de Reserva e Pagamento</h3>
-            
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="price">Preço por Reserva (R$)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Ex: 50.00"
-                  {...register("price", { 
-                    valueAsNumber: true,
-                    validate: (value) => {
-                      if (value !== undefined && value < 0) {
-                        return "O preço não pode ser negativo";
-                      }
-                      return true;
-                    }
-                  })}
-                />
-                <p className="text-xs text-gray-500">
-                  Deixe em branco se o restaurante não cobra por reserva
-                </p>
-                {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="acceptsOnlinePayment">Aceita Pagamento Online</Label>
-                    <p className="text-xs text-gray-500">
-                      Permite pagamento via Stripe
-                    </p>
-                  </div>
-                  <Switch
-                    id="acceptsOnlinePayment"
-                    checked={watch("acceptsOnlinePayment") || false}
-                    onCheckedChange={(checked) => setValue("acceptsOnlinePayment", checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="requiresUpfrontPayment">Exige Pagamento Antecipado</Label>
-                    <p className="text-xs text-gray-500">
-                      Cobrar no momento da reserva
-                    </p>
-                  </div>
-                  <Switch
-                    id="requiresUpfrontPayment"
-                    checked={watch("requiresUpfrontPayment") || false}
-                    onCheckedChange={(checked) => setValue("requiresUpfrontPayment", checked)}
-                    disabled={!watch("acceptsOnlinePayment")}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {watch("acceptsOnlinePayment") && watch("requiresUpfrontPayment") && !watch("price") && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Atenção</AlertTitle>
-                <AlertDescription>
-                  Para exigir pagamento antecipado, você precisa definir um preço por reserva.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
 
         </TabsContent>
 
@@ -1041,76 +1172,14 @@ export function RestaurantForm({
 
         </TabsContent>
 
-        {/* Tab de horários */}
-        <TabsContent value="hours" className="space-y-4">
-          <div className="border rounded-lg p-4 space-y-6 bg-gray-50">
-            <h3 className="font-medium">Horários de Funcionamento</h3>
-            <p className="text-sm text-gray-500">Defina os horários de abertura e fechamento para cada dia da semana. Deixe em branco para dias fechados.</p>
-            
-            {Object.entries(hours).map(([day, periods]) => (
-              <div key={day} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label className="font-medium">{day}</Label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => addHourPeriod(day as keyof typeof hours)}
-                    className="h-8 text-xs"
-                  >
-                    + Horário
-                  </Button>
-                </div>
-                
-                {periods.length === 0 ? (
-                  <div className="flex items-center p-2 bg-gray-100 rounded">
-                    <p className="text-sm text-gray-500 italic">Fechado</p>
-                  </div>
-                ) : (
-                  periods.map((period: string, index: number) => {
-                    const [openTime, closeTime] = period.split("-");
-                    return (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="flex flex-1 items-center gap-2">
-                          <Input
-                            type="time"
-                            value={openTime}
-                            onChange={(e) => updateHours(day as keyof typeof hours, "open", index, e.target.value)}
-                            className="w-32"
-                          />
-                          <span>até</span>
-                          <Input
-                            type="time"
-                            value={closeTime}
-                            onChange={(e) => updateHours(day as keyof typeof hours, "close", index, e.target.value)}
-                            className="w-32"
-                          />
-                        </div>
-                        <Button 
-                          type="button" 
-                          variant="ghost"
-                          size="icon" 
-                          onClick={() => removeHourPeriod(day as keyof typeof hours, index)}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            ))}
-          </div>
-        </TabsContent>
 
         {/* Tab de mídia */}
           <TabsContent value="media" className="space-y-4">
           <div className="space-y-2">
-            <Label>Galeria de Imagens</Label>
+            <Label>Galeria</Label>
             <div className="flex gap-2">
               <Input
-                placeholder="URL da imagem da galeria"
+                placeholder="URL da mídia da galeria"
                 value={tempGalleryImage}
                 onChange={(e) => setTempGalleryImage(e.target.value)}
                 className="flex-1"
@@ -1122,31 +1191,34 @@ export function RestaurantForm({
                 Selecionar da Biblioteca
               </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-              {galleryImages.map((url, index) => (
-                <Card key={index} className="overflow-hidden relative group">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 mt-2">
+              {galleryEntries.map((entry, index) => (
+                <Card key={`${entry.url}-${index}`} className="relative overflow-hidden group">
                   <div className="relative h-40 w-full">
-                    <div className="relative w-full h-full">
-                      <Image 
-                        src={url} 
-                        alt={`Galeria ${index + 1}`}
-                        className="object-cover"
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    <div className="relative h-full w-full">
+                      <SmartMedia
+                        entry={entry}
+                        alt={`Mídia ${index + 1}`}
+                        className="h-full w-full object-cover"
+                        imageProps={{
+                          fill: true,
+                          sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+                        }}
+                        videoProps={{ controls: true, preload: "metadata" }}
                       />
                     </div>
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="h-7 w-7 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeGalleryImage(url)}
+                      className="absolute right-2 top-2 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => removeGalleryImage(galleryImages[index])}
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                   <CardContent className="p-2">
-                    <p className="text-xs text-gray-500 truncate">{url}</p>
+                    <p className="truncate text-xs text-gray-500">{entry.url}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -1174,12 +1246,15 @@ export function RestaurantForm({
                 <Card key={index} className="overflow-hidden relative group">
                   <div className="relative h-40 w-full">
                     <div className="relative w-full h-full">
-                      <Image 
-                        src={url} 
+                      <SmartMedia
+                        entry={parseMediaEntry(url)}
                         alt={`Menu ${index + 1}`}
-                        className="object-cover"
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="h-full w-full object-cover"
+                        imageProps={{
+                          fill: true,
+                          sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+                        }}
+                        videoProps={{ controls: true, preload: "metadata" }}
                       />
                     </div>
                     <Button
@@ -1201,19 +1276,14 @@ export function RestaurantForm({
           </div>
           </TabsContent>
           {/* Seletor de mídia para galeria e menu */}
-          <MediaSelector
-            open={galleryPickerOpen}
-            onOpenChange={setGalleryPickerOpen}
-            multiple
-            initialSelected={galleryImages}
-            onSelect={(urls) => {
-              // Remove duplicatas e adiciona apenas URLs novas
-              setGalleryImages(prev => {
-                const newUrls = urls.filter(url => !prev.includes(url));
-                return [...prev, ...newUrls];
-              });
-            }}
-          />
+        <MediaSelector
+          open={galleryPickerOpen}
+          onOpenChange={setGalleryPickerOpen}
+          multiple
+          initialSelected={galleryEntries.map((entry) => entry.url)}
+          onSelect={() => {}}
+          onSelectMedia={handleAppendGalleryMedia}
+        />
           <MediaSelector
             open={menuPickerOpen}
             onOpenChange={setMenuPickerOpen}
@@ -1231,58 +1301,37 @@ export function RestaurantForm({
 
       <Separator />
 
-      <div className="flex justify-between pt-2">
-        <div>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline"
-            className="ml-2"
-            onClick={() => {
-              // Limpar erro de validação
-              setValidationError(null);
-              
-              // Preencher campos obrigatórios para teste
-              setValue("name", "Restaurante Teste");
-              setValue("slug", "restaurante-teste");
-              setValue("description", "Descrição curta do restaurante teste");
-              setValue("description_long", "Descrição longa e detalhada do restaurante teste para validação do formulário");
-              setValue("phone", "+55 81 99999-9999");
-              setValue("mainImage", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4");
-              setValue("address.street", "Rua Teste, 123");
-              setValue("address.neighborhood", "Centro");
-              setValue("address.zipCode", "53990-000");
-              setCuisineTypes(["Brasileira", "Internacional"]);
-              setPaymentOptions(["Dinheiro", "Cartão de Crédito", "Pix"]);
-              console.log("Test data filled");
-            }}
-          >
-            Preencher Teste
-          </Button>
-        </div>
-        <div className="space-x-2">
+      <div className="flex justify-between items-center pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
+        
+        <div className="flex items-center gap-3">
           <Button 
             type="button" 
             variant="secondary"
-            disabled={loading}
+            disabled={loading || currentTab === "media"}
             onClick={() => {
-              // Avançar para o próximo tab
-              const tabs = ["basic", "details", "address", "hours", "media"];
+              const tabs = ["basic", "address", "media"];
               const currentIndex = tabs.indexOf(currentTab);
               if (currentIndex < tabs.length - 1) {
                 setCurrentTab(tabs[currentIndex + 1]);
               }
             }}
           >
-            Próximo
+            Próxima Etapa →
           </Button>
           <Button 
             type="submit" 
             disabled={loading}
+            className="bg-green-600 hover:bg-green-700"
           >
-            {loading ? "Salvando..." : isEditing ? "Atualizar" : "Criar Restaurante"}
+            {loading ? "Salvando..." : isEditing ? "✓ Atualizar Restaurante" : "✓ Criar Restaurante"}
           </Button>
         </div>
       </div>

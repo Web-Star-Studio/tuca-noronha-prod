@@ -570,7 +570,7 @@ export const calculatePackagePricing = mutation({
     if (args.vehicleId) {
       const vehicle = await ctx.db.get(args.vehicleId);
       if (vehicle) {
-        vehiclePrice = vehicle.pricePerDay * args.duration;
+        vehiclePrice = vehicle.estimatedPricePerDay * args.duration;
       }
     }
 
@@ -691,6 +691,7 @@ const customerInfoValidator = v.object({
   name: v.string(),
   email: v.string(),
   phone: v.string(),
+  cpf: v.optional(v.string()),
   age: v.optional(v.number()),
   occupation: v.optional(v.string()),
 });
@@ -707,10 +708,14 @@ const tripDetailsValidator = v.object({
   endMonth: v.optional(v.string()),
   flexibleDates: v.optional(v.boolean()),
   duration: v.number(),
+  adults: v.optional(v.number()),
+  children: v.optional(v.number()),
   groupSize: v.number(),
   companions: v.string(),
   budget: v.number(),
   budgetFlexibility: v.string(),
+  includesAirfare: v.optional(v.boolean()),
+  travelerNames: v.optional(v.array(v.string())),
 });
 
 // Preferences validator
@@ -808,13 +813,28 @@ export const createPackageRequest = mutation({
       throw new Error("Group size must be a positive number");
     }
 
+    const sanitizedTravelerNames = (args.tripDetails.travelerNames ?? [])
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    const adultsCount = args.tripDetails.adults ?? args.tripDetails.groupSize;
+    const childrenCount = args.tripDetails.children ?? Math.max(args.tripDetails.groupSize - adultsCount, 0);
+    const normalizedTripDetails = {
+      ...args.tripDetails,
+      adults: adultsCount,
+      children: childrenCount,
+      groupSize: adultsCount + childrenCount,
+      includesAirfare: args.tripDetails.includesAirfare ?? false,
+      travelerNames: sanitizedTravelerNames.length > 0 ? sanitizedTravelerNames : undefined,
+    };
+
     const requestNumber = generateRequestNumber(args.customerInfo.name, args.tripDetails.startDate);
-    
+
     const packageRequestId = await ctx.db.insert("packageRequests", {
       requestNumber,
       userId, // Include userId if available
       customerInfo: args.customerInfo,
-      tripDetails: args.tripDetails,
+      tripDetails: normalizedTripDetails,
       preferences: args.preferences,
       specialRequirements: args.specialRequirements,
       status: "pending",
@@ -830,11 +850,13 @@ export const createPackageRequest = mutation({
       customerName: args.customerInfo.name,
       requestNumber,
       duration: args.tripDetails.duration,
-      guests: args.tripDetails.groupSize,
+      guests: normalizedTripDetails.groupSize,
+      adults: normalizedTripDetails.adults,
+      children: normalizedTripDetails.children,
       budget: args.tripDetails.budget,
       destination: args.tripDetails.destination,
       requestDetails: {
-        tripDetails: args.tripDetails,
+        tripDetails: normalizedTripDetails,
         preferences: args.preferences,
         specialRequirements: args.specialRequirements,
       },
@@ -851,7 +873,7 @@ export const createPackageRequest = mutation({
       destination: args.tripDetails.destination,
       requestDetails: {
         customerInfo: args.customerInfo,
-        tripDetails: args.tripDetails,
+        tripDetails: normalizedTripDetails,
         preferences: args.preferences,
         specialRequirements: args.specialRequirements,
       },
@@ -876,6 +898,7 @@ export const updatePackageRequestStatus = mutation({
       v.literal("proposal_sent"),
       v.literal("confirmed"),
       v.literal("cancelled"),
+      v.literal("requires_revision"),
       v.literal("approved"),
       v.literal("rejected"),
       v.literal("completed")

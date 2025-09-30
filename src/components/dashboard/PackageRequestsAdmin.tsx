@@ -17,13 +17,13 @@ import {
   // PackageRequest removido (não utilizado)
 } from "../../../convex/domains/packages/types";
 import { Id } from "@/../convex/_generated/dataModel";
-import PackageRequestDetailsModal from "./PackageRequestDetailsModal";
+import { useRouter } from "next/navigation";
 
 export default function PackageRequestsAdmin() {
+  const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedRequest, setSelectedRequest] = useState<Id<"packageRequests"> | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
 
@@ -115,14 +115,8 @@ export default function PackageRequestsAdmin() {
     setIsUpdateDialogOpen(true);
   };
 
-  const openDetailsModal = (requestId: Id<"packageRequests">) => {
-    setSelectedRequest(requestId);
-    setIsDetailsModalOpen(true);
-  };
-
-  const closeDetailsModal = () => {
-    setIsDetailsModalOpen(false);
-    setSelectedRequest(null);
+  const handleViewDetails = (requestId: Id<"packageRequests">) => {
+    router.push(`/admin/dashboard/solicitacoes-pacotes/${requestId}`);
   };
 
   if (!requestsStats || !requestsResult) {
@@ -142,7 +136,7 @@ export default function PackageRequestsAdmin() {
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{requestsStats.total}</div>
@@ -165,6 +159,12 @@ export default function PackageRequestsAdmin() {
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-purple-600">{requestsStats.proposalSent}</div>
             <p className="text-xs text-muted-foreground">Propostas Enviadas</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-orange-600">{requestsStats.requiresRevision}</div>
+            <p className="text-xs text-muted-foreground">Requer Revisão</p>
           </CardContent>
         </Card>
         <Card>
@@ -204,6 +204,7 @@ export default function PackageRequestsAdmin() {
                 <option value="in_review">Em análise</option>
                 <option value="proposal_sent">Proposta enviada</option>
                 <option value="confirmed">Confirmado</option>
+                <option value="requires_revision">Requer revisão</option>
                 <option value="cancelled">Cancelado</option>
               </select>
             </div>
@@ -300,7 +301,7 @@ export default function PackageRequestsAdmin() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => openDetailsModal(request._id)}
+                        onClick={() => handleViewDetails(request._id)}
                         title="Ver detalhes completos e mensagens"
                       >
                         <Eye className="h-4 w-4" />
@@ -413,11 +414,6 @@ export default function PackageRequestsAdmin() {
       </Dialog>
 
       {/* Details Modal with Tabs */}
-      <PackageRequestDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={closeDetailsModal}
-        requestId={selectedRequest}
-      />
     </div>
   );
-} 
+}

@@ -47,7 +47,7 @@ export const sendBookingConfirmationEmail = internalAction({
       const emailData: BookingConfirmationEmailData = {
         type: "booking_confirmation",
         to: args.customerEmail,
-        subject: `Reserva Confirmada - ${args.assetName} - Código: ${args.confirmationCode}`,
+        subject: `Solicitação de Reserva Recebida - ${args.assetName} - Código: ${args.confirmationCode}`,
         customerName: args.customerName,
         assetName: args.assetName,
         bookingType: args.bookingType,
@@ -379,7 +379,7 @@ export const sendWelcomeEmail = internalAction({
       const emailData: WelcomeNewUserEmailData = {
         type: "welcome_new_user",
         to: args.userEmail,
-        subject: `Bem-vindo ao Tucano Noronha, ${args.userName}! 🏝️`,
+        subject: `Bem-vindo ao Tuca Noronha, ${args.userName}! 🏝️`,
         userName: args.userName,
         userEmail: args.userEmail,
         userRole: args.userRole,
@@ -673,7 +673,7 @@ export const testEmailService = action({
       const emailData: WelcomeNewUserEmailData = {
         type: "welcome_new_user",
         to: args.testEmail,
-        subject: "Teste do Sistema de Email - Tucano Noronha",
+        subject: "Teste do Sistema de Email - Tuca Noronha",
         userName: "Usuário Teste",
         userEmail: args.testEmail,
         userRole: "traveler",
@@ -808,5 +808,162 @@ export const sendAdminReservationPaymentLinkEmail = internalAction({
     });
 
     return result;
+  },
+});
+
+/**
+ * Enviar email de confirmação de reserva usando bookingId
+ * Esta função busca os dados da reserva e envia o email de confirmação
+ * Deve ser chamada APENAS após aprovação do admin master
+ */
+export const sendBookingConfirmationEmailById = internalAction({
+  args: {
+    bookingId: v.string(),
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package")
+    ),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      console.log(`[EMAIL] Sending confirmation email for booking ${args.bookingId} (${args.bookingType}) - ADMIN APPROVED`);
+      
+      // Buscar dados da reserva para obter informações do cliente e asset
+      const tables = [
+        "activityBookings",
+        "eventBookings", 
+        "restaurantReservations",
+        "vehicleBookings",
+        "packageBookings"
+      ];
+
+      let booking: any = null;
+      for (const tableName of tables) {
+        try {
+          booking = await ctx.runQuery(internal.domains.bookings.queries.getBookingByIdInternal, {
+            bookingId: args.bookingId,
+            tableName: tableName,
+          });
+          if (booking) {
+            console.log(`[EMAIL] Found booking in table: ${tableName}`);
+            break;
+          }
+        } catch (error) {
+          // Continue tentando outras tabelas
+        }
+      }
+
+      if (!booking) {
+        console.error(`[EMAIL] Booking ${args.bookingId} not found in any table`);
+        return { success: false, error: "Booking not found" };
+      }
+
+      // Buscar dados do cliente
+      const customer = await ctx.runQuery(internal.domains.users.queries.getUserById, {
+        userId: booking.userId,
+      });
+
+      if (!customer) {
+        console.error(`[EMAIL] Customer not found for booking ${args.bookingId}`);
+        return { success: false, error: "Customer not found" };
+      }
+
+      // Buscar dados do asset (atividade, evento, etc.)
+      let assetName = "Reserva";
+      let partnerName = "";
+      let partnerEmail = "";
+
+      try {
+        // Determinar que tipo de asset buscar baseado no bookingType
+        if (args.bookingType === "activity" && booking.activityId) {
+          const activity = await ctx.runQuery(internal.domains.activities.queries.getActivityById, {
+            activityId: booking.activityId,
+          });
+          assetName = activity?.title || "Atividade";
+          if (activity?.partnerId) {
+            const partner = await ctx.runQuery(internal.domains.users.queries.getUserById, {
+              userId: activity.partnerId,
+            });
+            partnerName = partner?.name || "";
+            partnerEmail = partner?.email || "";
+          }
+        } else if (args.bookingType === "event" && booking.eventId) {
+          const event = await ctx.runQuery(internal.domains.events.queries.getEventById, {
+            eventId: booking.eventId,
+          });
+          assetName = event?.title || "Evento";
+          if (event?.partnerId) {
+            const partner = await ctx.runQuery(internal.domains.users.queries.getUserById, {
+              userId: event.partnerId,
+            });
+            partnerName = partner?.name || "";
+            partnerEmail = partner?.email || "";
+          }
+        } else if (args.bookingType === "restaurant" && booking.restaurantId) {
+          const restaurant = await ctx.runQuery(internal.domains.restaurants.queries.getRestaurantById, {
+            restaurantId: booking.restaurantId,
+          });
+          assetName = restaurant?.name || "Restaurante";
+          if (restaurant?.partnerId) {
+            const partner = await ctx.runQuery(internal.domains.users.queries.getUserById, {
+              userId: restaurant.partnerId,
+            });
+            partnerName = partner?.name || "";
+            partnerEmail = partner?.email || "";
+          }
+        } else if (args.bookingType === "vehicle" && booking.vehicleId) {
+          const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getVehicleById, {
+            vehicleId: booking.vehicleId,
+          });
+          assetName = vehicle?.name || "Veículo";
+          if (vehicle?.partnerId) {
+            const partner = await ctx.runQuery(internal.domains.users.queries.getUserById, {
+              userId: vehicle.partnerId,
+            });
+            partnerName = partner?.name || "";
+            partnerEmail = partner?.email || "";
+          }
+        }
+      } catch (assetError) {
+        console.warn(`[EMAIL] Could not fetch asset details: ${assetError}`);
+      }
+
+      // Preparar dados para o email de confirmação
+      const bookingDate = booking.date || booking.checkInDate || booking.startDate || new Date().toISOString();
+      
+      console.log(`[EMAIL] Sending confirmation email to ${customer.email} for ${assetName}`);
+
+      // Chamar a função original de envio de email
+      return await ctx.runAction(internal.domains.email.actions.sendBookingConfirmationEmail, {
+        customerEmail: customer.email,
+        customerName: customer.name || "Cliente",
+        assetName: assetName,
+        bookingType: args.bookingType,
+        confirmationCode: booking.confirmationCode,
+        bookingDate: bookingDate,
+        totalPrice: booking.totalAmount,
+        partnerName: partnerName,
+        partnerEmail: partnerEmail,
+        bookingDetails: {
+          participants: booking.participants || booking.guestCount || booking.quantity || booking.partySize || 1,
+          date: bookingDate,
+          specialRequests: booking.specialRequests || booking.notes || booking.comments,
+        },
+      });
+
+    } catch (error) {
+      console.error(`[EMAIL] Failed to send confirmation email for booking ${args.bookingId}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   },
 }); 

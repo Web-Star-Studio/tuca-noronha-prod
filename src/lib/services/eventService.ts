@@ -47,6 +47,7 @@ export type EventFromConvex = {
   location: string;
   address: string;
   price: number;
+  netRate?: number;
   category: string;
   maxParticipants: bigint;
   imageUrl: string;
@@ -58,6 +59,7 @@ export type EventFromConvex = {
   speakerBio?: string;
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets: boolean;
   partnerId: string; // Reference to the user who created the event
   creator?: {
@@ -96,6 +98,7 @@ export type Event = {
   location: string;
   address: string;
   price: number;
+  netRate: number;
   category: string;
   maxParticipants: number;
   imageUrl: string;
@@ -107,6 +110,7 @@ export type Event = {
   speakerBio?: string;
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -146,6 +150,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     location: event.location,
     address: event.address,
     price: event.price,
+    netRate: typeof event.netRate === "number" ? event.netRate : event.price,
     category: event.category,
     maxParticipants: Number(event.maxParticipants),
     imageUrl: event.imageUrl,
@@ -157,6 +162,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     speakerBio: event.speakerBio,
     isFeatured: event.isFeatured,
     isActive: event.isActive,
+    isFree: event.isFree,
     hasMultipleTickets: event.hasMultipleTickets,
     createdAt: new Date(event._creationTime),
     updatedAt: new Date(event._creationTime),
@@ -209,6 +215,7 @@ export const mapEventToConvex = (event: Event, convexUserId: Id<"users"> | null)
     location: event.location,
     address: event.address,
     price: event.price,
+    netRate: event.netRate ?? event.price,
     category: event.category,
     maxParticipants: event.maxParticipants,
     imageUrl: event.imageUrl,

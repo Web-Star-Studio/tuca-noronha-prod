@@ -9,6 +9,15 @@ export const PackageProposalStatus = v.union(
   v.literal("viewed"),
   v.literal("under_negotiation"),
   v.literal("accepted"),
+  v.literal("awaiting_participants_data"),    // Waiting for participant info
+  v.literal("participants_data_completed"),   // Participant data filled
+  v.literal("flight_booking_in_progress"),    // Admin booking flights
+  v.literal("flight_booked"),                 // Flights confirmed by admin
+  v.literal("documents_uploaded"),            // Admin uploaded documents
+  v.literal("awaiting_final_confirmation"),   // Waiting customer final approval
+  v.literal("payment_pending"),               // Redirected to payment
+  v.literal("payment_completed"),             // Payment successful
+  v.literal("contracted"),                    // Fully contracted
   v.literal("rejected"),
   v.literal("expired"),
   v.literal("withdrawn")
@@ -85,6 +94,7 @@ export const CreatePackageProposalArgs = v.object({
   attachments: v.optional(v.array(ProposalAttachment)),
   requiresApproval: v.boolean(),
   priority: PackageProposalPriority,
+  status: v.optional(PackageProposalStatus),
   tags: v.optional(v.array(v.string())),
 });
 
@@ -108,6 +118,7 @@ export const UpdatePackageProposalArgs = v.object({
   attachments: v.optional(v.array(ProposalAttachment)),
   status: v.optional(PackageProposalStatus),
   priority: v.optional(PackageProposalPriority),
+  requiresApproval: v.optional(v.boolean()),
   tags: v.optional(v.array(v.string())),
   customerFeedback: v.optional(v.string()),
   adminResponse: v.optional(v.string()),

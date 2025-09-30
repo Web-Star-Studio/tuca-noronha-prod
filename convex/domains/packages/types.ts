@@ -246,19 +246,22 @@ export interface PackageRequestTripDetails {
   endMonth?: string;
   flexibleDates?: boolean;
   duration: number;
+  adults?: number;
+  children?: number;
   budget: number;
   groupSize: number;
   companions: string;
   budgetFlexibility: string;
   includesAirfare?: boolean;
+  travelerNames?: string[];
 }
 
 export interface PackageRequestPreferences {
-  accommodationType?: string;
-  activities?: string;
-  transportPreference?: string;
-  foodPreference?: string;
-  specialRequirements?: string;
+  accommodationType?: string[];
+  activities: string[];
+  transportation: string[];
+  foodPreferences: string[];
+  accessibility?: string[];
 }
 
 export interface PackageRequestAdditionalInfo {
@@ -287,6 +290,7 @@ export interface PackageRequest {
   preferences: PackageRequestPreferences;
   additionalInfo: PackageRequestAdditionalInfo;
   status: PackageRequestStatus;
+  userId?: Id<"users">;
   assignedTo?: Id<"users">;
   adminNotes?: PackageRequestAdminNote[];
   createdAt: number;
@@ -296,6 +300,10 @@ export interface PackageRequest {
 export type PackageRequestStatus = 
   | "pending"
   | "in_review"
+  | "proposal_sent"
+  | "confirmed"
+  | "requires_revision"
+  | "cancelled"
   | "approved"
   | "rejected"
   | "completed";
@@ -323,24 +331,26 @@ export interface PackageRequestSummary {
 export const STATUS_LABELS = {
   pending: "Pendente",
   in_review: "Em Análise",
+  proposal_sent: "Proposta Enviada",
+  confirmed: "Confirmado",
+  requires_revision: "Requer Revisão",
+  cancelled: "Cancelado",
   approved: "Aprovado",
   rejected: "Rejeitado",
   completed: "Concluído",
-  proposal_sent: "Proposta Enviada",
-  confirmed: "Confirmado",
-  cancelled: "Cancelado"
 } as const;
 
 // Status colors for package requests
 export const STATUS_COLORS = {
   pending: "bg-yellow-100 text-yellow-800",
   in_review: "bg-blue-100 text-blue-800",
+  proposal_sent: "bg-purple-100 text-purple-800",
+  confirmed: "bg-green-100 text-green-800",
+  requires_revision: "bg-orange-100 text-orange-800",
+  cancelled: "bg-red-100 text-red-800",
   approved: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800",
   completed: "bg-green-100 text-green-800",
-  proposal_sent: "bg-purple-100 text-purple-800",
-  confirmed: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800"
 } as const;
 
 // Form option constants
@@ -429,14 +439,17 @@ export interface PackageRequestFormData {
     endMonth?: string;
     flexibleDates?: boolean;
     duration: number;
+    adults: number;
+    children: number;
     groupSize: number;
     companions: string;
     budget: number;
     budgetFlexibility: string;
     includesAirfare?: boolean;
+    travelerNames?: string[];
   };
   preferences: {
-  
+    accommodationType: string[];
     activities: string[];
     transportation: string[];
     foodPreferences: string[];

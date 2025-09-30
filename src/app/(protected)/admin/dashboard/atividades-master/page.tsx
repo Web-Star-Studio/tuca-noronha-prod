@@ -259,7 +259,7 @@ export default function ActivitiesMasterPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <DashboardPageHeader
           title="Gestão de Atividades"
           description="Visão completa de todas as atividades da plataforma"
@@ -280,7 +280,7 @@ export default function ActivitiesMasterPage() {
       {stats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -291,7 +291,7 @@ export default function ActivitiesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Ativas</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
@@ -304,7 +304,7 @@ export default function ActivitiesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Em Destaque</CardTitle>
               <Star className="h-4 w-4 text-yellow-600" />
             </CardHeader>
@@ -317,7 +317,7 @@ export default function ActivitiesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Potencial de Receita</CardTitle>
               <DollarSign className="h-4 w-4 text-blue-600" />
             </CardHeader>
@@ -330,7 +330,7 @@ export default function ActivitiesMasterPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Avaliação Média</CardTitle>
               <Award className="h-4 w-4 text-purple-600" />
             </CardHeader>

@@ -38,7 +38,7 @@ export function TaxaHistoryDrawer({ partnerId, open, onClose }: TaxaHistoryDrawe
         </SheetHeader>
 
         <div className="mt-6">
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-4 bg-muted rounded-lg">
             <div>
               <p className="text-sm font-medium">Taxa Atual</p>
               <p className="text-2xl font-bold">{partner?.feePercentage}%</p>
@@ -76,7 +76,7 @@ export function TaxaHistoryDrawer({ partnerId, open, onClose }: TaxaHistoryDrawe
                     <div className="absolute left-0 top-2 w-4 h-4 rounded-full bg-background border-2 border-primary" />
                     
                     <div className="space-y-2">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-wrap gap-3 items-start justify-between">
                         <div>
                           <p className="font-medium flex items-center gap-2">
                             {item.feePercentage}%

@@ -25,38 +25,37 @@ export function StatsCard({
   className
 }: StatsCardProps) {
   const getVariantStyles = () => {
+    const base = {
+      container: "bg-white hover:bg-slate-50",
+      icon: "bg-slate-100 text-slate-500",
+      value: "text-slate-900",
+      title: "text-slate-500"
+    };
+
     const variants = {
-      default: {
-        container: "bg-white hover:bg-gray-50/80",
-        icon: "bg-gray-50 text-gray-600",
-        value: "text-gray-900",
-        title: "text-gray-600"
-      },
+      default: base,
       success: {
-        container: "bg-emerald-50/50 hover:bg-emerald-50",
-        icon: "bg-emerald-100 text-emerald-600",
-        value: "text-emerald-900",
-        title: "text-emerald-700"
+        ...base,
+        icon: "bg-emerald-50 text-emerald-600",
+        title: "text-emerald-600"
       },
       warning: {
-        container: "bg-orange-50/50 hover:bg-orange-50",
-        icon: "bg-orange-100 text-orange-600",
-        value: "text-orange-900",
-        title: "text-orange-700"
+        ...base,
+        icon: "bg-amber-50 text-amber-600",
+        title: "text-amber-600"
       },
       danger: {
-        container: "bg-red-50/50 hover:bg-red-50",
-        icon: "bg-red-100 text-red-600",
-        value: "text-red-900",
-        title: "text-red-700"
+        ...base,
+        icon: "bg-rose-50 text-rose-600",
+        title: "text-rose-600"
       },
       info: {
-        container: "bg-blue-50/50 hover:bg-blue-50",
-        icon: "bg-blue-100 text-blue-600",
-        value: "text-blue-900",
-        title: "text-blue-700"
+        ...base,
+        icon: "bg-blue-50 text-blue-600",
+        title: "text-blue-600"
       }
     };
+
     return variants[variant];
   };
 
@@ -70,16 +69,16 @@ export function StatsCard({
         className
       )}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", styles.icon)}>
+      <div className="flex flex-wrap gap-3 items-start justify-between mb-3">
+        <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200", styles.icon)}>
           <Icon className="h-5 w-5" />
         </div>
         {trend && (
           <span className={cn(
             "text-xs font-medium px-2 py-1 rounded-full",
             trend.isPositive 
-              ? "bg-emerald-100 text-emerald-700" 
-              : "bg-red-100 text-red-700"
+              ? "bg-emerald-50 text-emerald-700" 
+              : "bg-rose-50 text-rose-700"
           )}>
             {trend.isPositive ? '+' : ''}{trend.value}
           </span>

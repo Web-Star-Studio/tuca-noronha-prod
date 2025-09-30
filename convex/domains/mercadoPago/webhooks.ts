@@ -57,6 +57,12 @@ export const handleMercadoPagoWebhook = httpAction(async (ctx, request) => {
     console.log(`📝 Raw body: ${rawBody}`);
     console.log(`🔍 Event data:`, JSON.stringify(event, null, 2));
 
+    // Validate that we have the minimum required data
+    if (!event.id) {
+      console.error("❌ Missing event ID in webhook payload");
+      return new Response("Missing event ID", { status: 400 });
+    }
+
     const result = await ctx.runAction(
       internal.domains.mercadoPago.actions.processWebhookEvent,
       {
@@ -68,12 +74,12 @@ export const handleMercadoPagoWebhook = httpAction(async (ctx, request) => {
     );
 
     if (result.success) {
-      console.log("✅ MP webhook processed");
+      console.log("✅ MP webhook processed successfully");
       return new Response("ok", { status: 200 });
     }
 
     console.error("❌ MP webhook processing failed:", result.error);
-    return new Response(`Processing failed: ${result.error}`, { status: 500 });
+    return new Response(`Processing failed: ${result.error}`, { status: 400 });
   } catch (error) {
     console.error("MP webhook handler error:", error);
     return new Response("Internal server error", { status: 500 });

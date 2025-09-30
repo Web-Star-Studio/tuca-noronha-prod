@@ -7,12 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { MediaSelector } from "@/components/dashboard/media";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import Image from "next/image";
+import type { Media } from "@/lib/services/mediaService";
+import { parseMediaEntry, serializeMediaEntry } from "@/lib/media";
+import { SmartMedia } from "@/components/ui/smart-media";
 
 type EventFormProps = {
   event: Event | null;
@@ -30,34 +33,80 @@ export function EventForm({
   const categories = ["Passeio", "Workshop", "Palestra", "Curso", "Festa", "Gastronomia", "Cultural"];
   
   const [formData, setFormData] = useState<Event>(
-    event || {
-      id: uuidv4(),
-      title: "",
-      description: "",
-      shortDescription: "",
-      date: "",
-      time: "",
-      location: "",
-      address: "",
-      price: 0,
-      category: categories[0],
-      maxParticipants: 100,
-      imageUrl: "https://source.unsplash.com/random/800x600/?event",
-      galleryImages: [],
-      highlights: [],
-      includes: [],
-      additionalInfo: [],
-      isFeatured: false,
-      isActive: true,
-      hasMultipleTickets: false,
-      partnerId: "",
-      speaker: "",
-      speakerBio: "",
-      whatsappContact: "",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
+    event
+      ? { ...event, netRate: event.netRate ?? event.price }
+      : {
+          id: uuidv4(),
+          title: "",
+          description: "",
+          shortDescription: "",
+          date: "",
+          time: "",
+          location: "",
+          address: "",
+          price: 0,
+          netRate: 0,
+          category: categories[0],
+          maxParticipants: 100,
+          imageUrl: "https://source.unsplash.com/random/800x600/?event",
+          galleryImages: [],
+          highlights: [],
+          includes: [],
+          additionalInfo: [],
+          isFeatured: false,
+          isActive: true,
+          isFree: false,
+          hasMultipleTickets: false,
+          partnerId: "",
+          speaker: "",
+          speakerBio: "",
+          whatsappContact: "",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
   );
+
+  const galleryEntries = useMemo(
+    () => formData.galleryImages.map(parseMediaEntry),
+    [formData.galleryImages],
+  );
+
+  const heroEntry = useMemo(() => {
+    const baseEntry = parseMediaEntry(formData.imageUrl ?? "");
+    const matchingEntry = galleryEntries.find((entry) => entry.url === baseEntry.url);
+    return matchingEntry ?? baseEntry;
+  }, [formData.imageUrl, galleryEntries]);
+  const heroUrl = heroEntry.url ?? "";
+  const hasHeroMedia = Boolean(heroUrl && heroUrl.trim() !== "");
+
+  const handleAppendGalleryMedia = useCallback((items: Media[]) => {
+    setFormData((prev) => {
+      if (items.length === 0) return prev;
+
+      const existing = prev.galleryImages.map(parseMediaEntry);
+      const existingUrls = new Set(existing.map((entry) => entry.url));
+
+      const appended = items
+        .filter((item) => !existingUrls.has(item.url))
+        .map((item) => serializeMediaEntry({ url: item.url, type: item.fileType || undefined }));
+
+      if (appended.length === 0) return prev;
+
+      return {
+        ...prev,
+        galleryImages: [...prev.galleryImages, ...appended],
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        ...event,
+        netRate: event.netRate ?? event.price,
+      });
+    }
+  }, [event]);
 
   // Form tabs
   const [activeTab, setActiveTab] = useState("basic");
@@ -146,6 +195,14 @@ export function EventForm({
     }
     if (!formData.address) {
       toast.error("O endereço é obrigatório");
+      return false;
+    }
+    if (formData.netRate < 0) {
+      toast.error("A tarifa net não pode ser negativa");
+      return false;
+    }
+    if (formData.netRate > formData.price) {
+      toast.error("A tarifa net deve ser menor ou igual ao preço");
       return false;
     }
     if (!formData.category) {
@@ -237,7 +294,7 @@ export function EventForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
               <Label htmlFor="category" className="text-sm font-medium">Categoria</Label>
               <Select 
@@ -254,9 +311,11 @@ export function EventForm({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
-              <Label htmlFor="price" className="text-sm font-medium">Preço (R$)</Label>
+              <Label htmlFor="price" className="text-sm font-medium">
+                Preço (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Asset Gratuito)</span>}
+              </Label>
               <Input 
                 id="price" 
                 name="price" 
@@ -267,8 +326,56 @@ export function EventForm({
                 step="0.01" 
                 className="mt-1.5 bg-white shadow-sm"
                 placeholder="0.00"
-                required 
+                disabled={formData.isFree}
+                required={!formData.isFree}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="netRate" className="text-sm font-medium">
+                Tarifa net (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Asset Gratuito)</span>}
+              </Label>
+              <Input 
+                id="netRate" 
+                name="netRate" 
+                type="number" 
+                value={formData.netRate} 
+                onChange={handleNumberChange} 
+                min="0" 
+                step="0.01" 
+                className="mt-1.5 bg-white shadow-sm"
+                placeholder="0.00"
+                disabled={formData.isFree}
+                required={!formData.isFree}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Custo líquido combinado com o fornecedor.
+              </p>
+            </div>
+
+            <div className="col-span-2">
+              <div className="flex items-center space-x-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <Checkbox
+                  id="isFree"
+                  checked={formData.isFree || false}
+                  onCheckedChange={(checked) => {
+                    const isFree = Boolean(checked);
+                    setFormData({
+                      ...formData,
+                      isFree,
+                      // Se gratuito, zerar preços
+                      price: isFree ? 0 : formData.price,
+                      netRate: isFree ? 0 : formData.netRate,
+                    });
+                  }}
+                />
+                <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
+                  Asset Gratuito (sem cobrança)
+                </Label>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
+              </p>
             </div>
           </div>
             
@@ -321,15 +428,36 @@ export function EventForm({
         <MediaSelector
           open={mainMediaPickerOpen}
           onOpenChange={setMainMediaPickerOpen}
-          initialSelected={formData.imageUrl ? [formData.imageUrl] : []}
-          onSelect={([url]) => setFormData({ ...formData, imageUrl: url })}
+          initialSelected={heroUrl ? [heroUrl] : []}
+          onSelect={() => {}}
+          onSelectMedia={([item]) => {
+            if (!item) return;
+            setFormData((prev) => {
+              const serialized = serializeMediaEntry({
+                url: item.url,
+                type: item.fileType || undefined,
+              });
+              const hasInGallery = prev.galleryImages.some(
+                (entry) => parseMediaEntry(entry).url === item.url,
+              );
+
+              return {
+                ...prev,
+                imageUrl: item.url,
+                galleryImages: hasInGallery
+                  ? prev.galleryImages
+                  : [...prev.galleryImages, serialized],
+              };
+            });
+          }}
         />
         <MediaSelector
           open={galleryPickerOpen}
           onOpenChange={setGalleryPickerOpen}
           multiple
-          initialSelected={formData.galleryImages}
-          onSelect={(urls) => setFormData({ ...formData, galleryImages: [...formData.galleryImages, ...urls] })}
+          initialSelected={galleryEntries.map((entry) => entry.url)}
+          onSelect={() => {}}
+          onSelectMedia={handleAppendGalleryMedia}
         />
 
         {/* Details Tab */}
@@ -452,7 +580,7 @@ export function EventForm({
             <Label className="text-sm font-medium">Imagem Principal</Label>
             <div className="flex items-center gap-2">
               <Input
-                value={formData.imageUrl}
+                value={heroUrl}
                 readOnly
                 placeholder="Nenhuma imagem selecionada"
                 className="flex-1 bg-white shadow-sm"
@@ -461,27 +589,34 @@ export function EventForm({
                 Selecionar da Biblioteca
               </Button>
             </div>
-            {formData.imageUrl && (
-              <div className="mt-4 relative h-40 rounded-md overflow-hidden">
-                <Image
-                  src={formData.imageUrl}
+            {hasHeroMedia && (
+              <div className="mt-4 relative h-40 overflow-hidden rounded-md">
+                <SmartMedia
+                  entry={heroEntry}
                   alt="Preview"
-                  fill
-                  className="object-cover"
+                  className="h-full w-full object-cover"
+                  imageProps={{ fill: true }}
+                  videoProps={{ controls: true, preload: "metadata" }}
                 />
               </div>
             )}
           </div>
-          {/* Galeria de Imagens */}
+          {/* Galeria de mídia */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Galeria de Imagens</Label>
+            <Label className="text-sm font-medium">Galeria</Label>
             <div className="flex flex-wrap gap-2">
-              {formData.galleryImages.map((url, idx) => (
-                <div key={idx} className="relative w-24 h-24 rounded overflow-hidden">
-                  <Image src={url} alt={`Imagem ${idx + 1} da galeria do evento`} fill className="object-cover" />
+              {galleryEntries.map((entry, idx) => (
+                <div key={`${entry.url}-${idx}`} className="relative h-24 w-24 overflow-hidden rounded">
+                  <SmartMedia
+                    entry={entry}
+                    alt={`Mídia ${idx + 1} da galeria do evento`}
+                    className="h-full w-full object-cover"
+                    imageProps={{ fill: true }}
+                    videoProps={{ controls: true, preload: "metadata" }}
+                  />
                   <button
                     type="button"
-                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    className="absolute top-1 right-1 rounded-full bg-white p-1 shadow"
                     onClick={() => {
                       const newGallery = [...formData.galleryImages];
                       newGallery.splice(idx, 1);
@@ -493,7 +628,7 @@ export function EventForm({
                 </div>
               ))}
               <Button type="button" onClick={() => setGalleryPickerOpen(true)}>
-                Adicionar Imagens
+                Adicionar mídia
               </Button>
             </div>
           </div>  
