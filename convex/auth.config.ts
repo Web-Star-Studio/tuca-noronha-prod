@@ -2,7 +2,7 @@ export default {
   providers: [
     {
       /**Change to PROD */
-      domain: "https://champion-griffon-8.clerk.accounts.dev",
+      domain: "https://clerk.tucanoronha.com.br",
       applicationID: "convex",
     },
   ],
