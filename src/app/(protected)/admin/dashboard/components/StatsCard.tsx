@@ -69,7 +69,7 @@ export function StatsCard({
         className
       )}
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex flex-wrap gap-3 items-start justify-between mb-3">
         <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200", styles.icon)}>
           <Icon className="h-5 w-5" />
         </div>

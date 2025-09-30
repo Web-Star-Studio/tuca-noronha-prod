@@ -121,7 +121,7 @@ export default function MediaPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Total</p>
                 <p className="text-2xl font-bold text-foreground">{media?.length || 0}</p>
@@ -135,7 +135,7 @@ export default function MediaPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Filtradas</p>
                 <p className="text-2xl font-bold text-purple-600">{filteredMedia.length}</p>
@@ -149,7 +149,7 @@ export default function MediaPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Públicas</p>
                 <p className="text-2xl font-bold text-green-600">
@@ -165,7 +165,7 @@ export default function MediaPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Categorias</p>
                 <p className="text-2xl font-bold text-orange-600">
@@ -183,7 +183,7 @@ export default function MediaPage() {
       {/* Actions Bar */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-wrap flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="font-semibold text-foreground">Filtros e Pesquisa</h3>
               <p className="text-sm text-muted-foreground">

@@ -176,7 +176,7 @@ export default function UsersPage() {
       <div className="grid gap-4 md:grid-cols-5">
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Total</p>
                 <p className="text-2xl font-bold text-foreground">{stats.total}</p>
@@ -190,7 +190,7 @@ export default function UsersPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Ativos</p>
                 <p className="text-2xl font-bold text-green-600">{stats.active}</p>
@@ -204,7 +204,7 @@ export default function UsersPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                           <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Masters</p>
               <p className="text-2xl font-bold text-purple-600">{stats.admins}</p>
@@ -218,7 +218,7 @@ export default function UsersPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Parceiros</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.partners}</p>
@@ -232,7 +232,7 @@ export default function UsersPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Viajantes</p>
                 <p className="text-2xl font-bold text-green-600">{stats.travelers}</p>
@@ -328,7 +328,7 @@ export default function UsersPage() {
                 return (
                   <Card key={userItem._id} className="hover:shadow-lg transition-all duration-300">
                     <CardContent className="p-5">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
                             <AvatarImage src={userItem.image} alt={(userItem.fullName || userItem.name) || "Usuário"} />

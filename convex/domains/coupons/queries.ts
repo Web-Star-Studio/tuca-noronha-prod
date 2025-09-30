@@ -674,7 +674,7 @@ export const getPartnerAssets = query({
               name: vehicle.name,
               type: "vehicles",
               image: vehicle.imageUrl,
-              pricePerDay: vehicle.pricePerDay,
+              pricePerDay: vehicle.estimatedPricePerDay,
               category: vehicle.category,
             });
           }

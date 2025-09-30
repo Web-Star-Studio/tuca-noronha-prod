@@ -570,7 +570,7 @@ export const calculatePackagePricing = mutation({
     if (args.vehicleId) {
       const vehicle = await ctx.db.get(args.vehicleId);
       if (vehicle) {
-        vehiclePrice = vehicle.pricePerDay * args.duration;
+        vehiclePrice = vehicle.estimatedPricePerDay * args.duration;
       }
     }
 
@@ -691,6 +691,7 @@ const customerInfoValidator = v.object({
   name: v.string(),
   email: v.string(),
   phone: v.string(),
+  cpf: v.optional(v.string()),
   age: v.optional(v.number()),
   occupation: v.optional(v.string()),
 });

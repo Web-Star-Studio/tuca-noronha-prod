@@ -160,7 +160,7 @@ export const getPackageById = query({
           brand: vehicleData.brand,
           model: vehicleData.model,
           category: vehicleData.category,
-          pricePerDay: vehicleData.pricePerDay,
+          pricePerDay: vehicleData.estimatedPricePerDay,
           imageUrl: vehicleData.imageUrl,
         };
       }

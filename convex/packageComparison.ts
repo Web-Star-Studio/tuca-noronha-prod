@@ -209,7 +209,7 @@ export const getUserComparison = query({
             brand: vehicle.brand,
             model: vehicle.model,
             category: vehicle.category,
-            pricePerDay: vehicle.pricePerDay,
+            pricePerDay: vehicle.estimatedPricePerDay,
             imageUrl: vehicle.imageUrl,
           } : null,
           includedActivitiesCount,

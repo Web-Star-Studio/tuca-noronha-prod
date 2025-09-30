@@ -15,7 +15,7 @@ import { ProposalDocumentManager } from '../ProposalDocumentManager';
 import { ProposalDetailsView } from './ProposalDetailsView';
 import { SimpleProposalModal } from './SimpleProposalModal';
 
-import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp, CreditCard } from "lucide-react";
+import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp } from "lucide-react";
 
 import { formatCurrency, formatDate } from './helpers';
 

@@ -361,7 +361,7 @@ export default function NovoEmpreendimentoPage() {
                 </div>
 
                 {/* Botões */}
-                <div className="flex justify-between pt-4">
+                <div className="flex flex-wrap gap-3 justify-between pt-4">
                   <Button type="button" variant="outline" onClick={() => router.back()}>
                     Cancelar
                   </Button>

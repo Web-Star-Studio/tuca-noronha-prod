@@ -5,6 +5,7 @@ export interface CustomerInfo {
   name: string;
   email: string;
   phone: string;
+  cpf?: string;
 }
 
 export function useCustomerInfo() {
@@ -13,6 +14,7 @@ export function useCustomerInfo() {
     name: "",
     email: "",
     phone: "",
+    cpf: "",
   });
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export function useCustomerInfo() {
         name: user.name || "",
         email: user.email || "",
         phone: user.phoneNumber || "",
+        cpf: user.cpf || "",
       });
     }
   }, [user]);

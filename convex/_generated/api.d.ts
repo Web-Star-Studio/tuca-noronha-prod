@@ -166,6 +166,7 @@ import type * as domains_users_mutations from "../domains/users/mutations.js";
 import type * as domains_users_queries from "../domains/users/queries.js";
 import type * as domains_users_types from "../domains/users/types.js";
 import type * as domains_users_utils from "../domains/users/utils.js";
+import type * as domains_vehicles_bookingMutations from "../domains/vehicles/bookingMutations.js";
 import type * as domains_vehicles_index from "../domains/vehicles/index.js";
 import type * as domains_vehicles_mutations from "../domains/vehicles/mutations.js";
 import type * as domains_vehicles_queries from "../domains/vehicles/queries.js";
@@ -367,6 +368,7 @@ declare const fullApi: ApiFromModules<{
   "domains/users/queries": typeof domains_users_queries;
   "domains/users/types": typeof domains_users_types;
   "domains/users/utils": typeof domains_users_utils;
+  "domains/vehicles/bookingMutations": typeof domains_vehicles_bookingMutations;
   "domains/vehicles/index": typeof domains_vehicles_index;
   "domains/vehicles/mutations": typeof domains_vehicles_mutations;
   "domains/vehicles/queries": typeof domains_vehicles_queries;

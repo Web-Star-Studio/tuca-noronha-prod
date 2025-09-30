@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, RefreshCw, ArrowLeft, AlertTriangle, Home, CheckCircle } from "lucide-react";
@@ -9,7 +9,6 @@ import Link from "next/link";
 
 export default function PaymentPendingPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
   const paymentId = searchParams.get("payment_id");

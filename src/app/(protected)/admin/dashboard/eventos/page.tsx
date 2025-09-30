@@ -271,7 +271,7 @@ export default function EventsPage() {
       <div className="grid gap-4 md:grid-cols-5">
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Total</p>
                 <p className="text-2xl font-bold text-foreground">{stats.total}</p>
@@ -285,7 +285,7 @@ export default function EventsPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Ativos</p>
                 <p className="text-2xl font-bold text-green-600">{stats.active}</p>
@@ -299,7 +299,7 @@ export default function EventsPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Destacados</p>
                 <p className="text-2xl font-bold text-yellow-600">{stats.featured}</p>
@@ -313,7 +313,7 @@ export default function EventsPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Futuros</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.upcoming}</p>
@@ -327,7 +327,7 @@ export default function EventsPage() {
 
         <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Finalizados</p>
                 <p className="text-2xl font-bold text-gray-600">{stats.past}</p>
@@ -421,7 +421,7 @@ export default function EventsPage() {
                 return (
                   <Card key={event._id} className="border border-border/50 hover:shadow-md transition-all duration-300">
                     <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-wrap gap-3 items-start justify-between">
                         <div className="flex gap-4 flex-1">
                           {/* Event Image */}
                           <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">

@@ -92,7 +92,7 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
         </div>
         
         <div className="flex flex-col grow p-5">
-          <div className="mb-2 flex justify-between items-start">
+          <div className="mb-2 flex flex-wrap gap-3 justify-between items-start">
             <h3 className="text-lg font-medium line-clamp-1">{activity.title}</h3>
             <div className="flex gap-1.5">
               <motion.button 
@@ -171,7 +171,7 @@ function ActivityCard({ activity, onEdit, onDelete, onToggleFeatured, onToggleAc
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-sm text-gray-500">
               <span className="line-clamp-1">Dificuldade: {activity.difficulty}</span>
               </div>
@@ -826,7 +826,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
 
         <TabsContent value="highlights" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <Label className="text-sm font-medium">Destaques da Atividade</Label>
               <Button
                 type="button"
@@ -873,7 +873,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
         <TabsContent value="includes" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <Label className="text-sm font-medium">Inclui</Label>
                 <Button
                   type="button"
@@ -917,7 +917,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <Label className="text-sm font-medium">Não Inclui</Label>
                 <Button
                   type="button"
@@ -965,7 +965,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
         <TabsContent value="itinerary" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <Label className="text-sm font-medium">Itinerário</Label>
                 <Button
                   type="button"
@@ -1009,7 +1009,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                 <Label className="text-sm font-medium">Política de Cancelamento</Label>
                 <Button
                   type="button"
@@ -1054,7 +1054,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
               <Label className="text-sm font-medium">Informações Adicionais</Label>
               <Button
                 type="button"
@@ -1099,7 +1099,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-between gap-2 pt-4 border-t border-gray-100">
+      <div className="flex flex-wrap justify-between gap-2 pt-4 border-t border-gray-100">
         {!isFirstTab ? (
           <Button type="button" variant="outline" onClick={goToPreviousTab} className="border-slate-200 hover:bg-slate-100 transition-colors">
             <ChevronLeft className="mr-2 h-4 w-4" /> Voltar
@@ -1237,7 +1237,7 @@ export default function ActivitiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent">Atividades</h2>
           <p className="text-muted-foreground text-sm">

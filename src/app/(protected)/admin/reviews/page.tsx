@@ -50,8 +50,8 @@ export default function AdminReviewsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gerenciamento de Reviews</h1>
           <p className="text-muted-foreground">
@@ -59,7 +59,7 @@ export default function AdminReviewsPage() {
           </p>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
@@ -113,7 +113,7 @@ export default function AdminReviewsPage() {
       {/* Lista de Reviews */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-wrap items-center justify-between gap-3">
             <span>Reviews ({reviews?.length || 0})</span>
             {status === "LoadingFirstPage" && (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>

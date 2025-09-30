@@ -20,17 +20,14 @@ import {
   Utensils,
   UserCheck,
   Database,
-  DollarSign,
   Tag,
   QrCode,
   CreditCard,
-  Star,
   Check,
   Shield,
   Home,
   ChevronLeft,
-  Search,
-  Building2
+  Search
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -214,7 +211,6 @@ function MasterSidebar() {
   const masterSystemLinks = [
     { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard Principal" },
     { href: "/admin/dashboard/usuarios", icon: Users, label: "Gestão de Usuários" },
-    { href: "/admin/reviews", icon: Star, label: "Gerenciar Reviews" },
     { href: "/admin/dashboard/chats", icon: MessageCircle, label: "Chats de Parceiros" },
     { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte", badge: 3 },
     { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria" },
@@ -222,7 +218,6 @@ function MasterSidebar() {
 
   const masterAssetLinks = [
     { href: "/admin/dashboard/assets", icon: Database, label: "Todos os Assets" },
-    { href: "/admin/dashboard/fornecedores", icon: Building2, label: "Fornecedores" },
     { href: "/admin/dashboard/restaurantes", icon: Utensils, label: "Restaurantes" },
     { href: "/admin/dashboard/eventos", icon: Calendar, label: "Eventos" },
     { href: "/admin/dashboard/atividades", icon: Activity, label: "Atividades" },
@@ -230,9 +225,8 @@ function MasterSidebar() {
   ]
 
   const masterReportLinks = [
-    { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },,
+    { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },
     { href: "/admin/dashboard/solicitacoes-pacotes", icon: Package, label: "Solicitações de Pacotes" },
-    { href: "/admin/dashboard/propostas-pacotes", icon: FileText, label: "Propostas de Pacotes" },
   ]
 
   const masterConfigLinks = [
@@ -240,7 +234,6 @@ function MasterSidebar() {
     { href: "/admin/dashboard/vouchers", icon: QrCode, label: "Vouchers" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Gestão de Mídias" },
     { href: "/admin/dashboard/configuracoes", icon: Settings, label: "Configurações do Sistema" },
-    { href: "/admin/dashboard/configuracoes/taxas", icon: DollarSign, label: "Taxas de Parceiros" },
   ]
 
   return (
@@ -586,46 +579,48 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       {/* Usar sidebar específico para Master */}
       {user?.role === "master" ? <MasterSidebar /> : <AdminSidebar />}
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-6 bg-white border-b border-slate-200">
-          <div className="flex items-center gap-4">
+        <header className="flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-center gap-3">
             <SidebarTrigger className="rounded-md p-1.5 hover:bg-slate-100 transition-colors">
               <ChevronLeft className="h-5 w-5 text-slate-600" />
             </SidebarTrigger>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative w-64">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <Input
                 placeholder="Pesquisar..."
-                className="pl-8 h-9 focus-visible:ring-blue-500"
+                className="h-9 w-full pl-8 focus-visible:ring-blue-500"
               />
             </div>
 
-            <NotificationCenter className="rounded-full hover:bg-slate-100">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 relative">
-                <Bell className="h-5 w-5 text-slate-700" />
-              </Button>
-            </NotificationCenter>
+            <div className="flex items-center justify-end gap-3">
+              <NotificationCenter className="rounded-full hover:bg-slate-100">
+                <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-slate-100">
+                  <Bell className="h-5 w-5 text-slate-700" />
+                </Button>
+              </NotificationCenter>
 
-            <div className="overflow-hidden rounded-full">
-              <UserButton appearance={{
-                elements: {
-                  userPreview: "bg-white rounded-lg shadow-md",
-                  userButtonPopoverCard: "bg-white rounded-lg shadow-lg border border-gray-200",
-                  userButtonTrigger: "shadow-sm hover:shadow-md focus:shadow-md transition-shadow",
-                  userButtonPopoverActions: "p-2",
-                  userButtonPopoverActionButton: "text-black hover:bg-blue-100 rounded-md transition-colors",
-                  userButtonPopoverActionButtonIcon: "text-gray-600",
-                  userButtonPopoverFooter: "border-t border-gray-200",
-                  userButtonPopoverActionButtonText: "text-sm font-medium",
-                  avatarBox: "h-9 w-9 rounded-full border border-slate-200"
-                }
-              }} />
+              <div className="overflow-hidden rounded-full">
+                <UserButton appearance={{
+                  elements: {
+                    userPreview: "bg-white rounded-lg shadow-md",
+                    userButtonPopoverCard: "bg-white rounded-lg shadow-lg border border-gray-200",
+                    userButtonTrigger: "shadow-sm hover:shadow-md focus:shadow-md transition-shadow",
+                    userButtonPopoverActions: "p-2",
+                    userButtonPopoverActionButton: "text-black hover:bg-blue-100 rounded-md transition-colors",
+                    userButtonPopoverActionButtonIcon: "text-gray-600",
+                    userButtonPopoverFooter: "border-t border-gray-200",
+                    userButtonPopoverActionButtonText: "text-sm font-medium",
+                    avatarBox: "h-9 w-9 rounded-full border border-slate-200"
+                  }
+                }} />
+              </div>
             </div>
           </div>
         </header>
-        <main className="flex flex-1 flex-col p-6 bg-slate-50 min-h-screen">
+        <main className="flex flex-1 flex-col bg-slate-50 p-4 sm:p-6 min-h-screen">
           {children}
         </main>
       </SidebarInset>

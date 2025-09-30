@@ -47,7 +47,7 @@ export default function DebugTaxasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-start sm:items-center">
         <div>
           <h1 className="text-2xl font-bold">Debug - Sistema de Taxas</h1>
           <p className="text-muted-foreground">Verificação de dados do sistema</p>
@@ -154,7 +154,7 @@ export default function DebugTaxasPage() {
                 <div className="space-y-4">
                   {partnerUsers.map((user) => (
                     <div key={user._id} className="border rounded p-3 space-y-2">
-                      <div className="flex justify-between items-start">
+                      <div className="flex flex-wrap gap-3 justify-between items-start">
                         <div className="space-y-1">
                           <p><strong>Nome:</strong> {user.name}</p>
                           <p><strong>Email:</strong> {user.email}</p>

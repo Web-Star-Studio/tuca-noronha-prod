@@ -9,6 +9,7 @@ interface OnboardingData {
   fullName: string
   dateOfBirth: string
   phoneNumber: string
+  cpf?: string
 }
 
 export function useOnboarding() {

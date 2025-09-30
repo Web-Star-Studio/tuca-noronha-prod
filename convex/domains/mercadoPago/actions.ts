@@ -257,6 +257,122 @@ export const createCheckoutPreferenceForBooking = action({
   },
 });
 
+/**
+ * Create a direct payment with manual capture (authorization only)
+ * This is the CORRECT way to implement manual capture with Mercado Pago
+ * Uses the Payments API with capture=false parameter
+ */
+export const createPaymentWithManualCapture = action({
+  args: {
+    bookingId: v.string(),
+    assetType: assetTypeValidator,
+    token: v.string(),
+    paymentMethodId: v.string(),
+    issuerId: v.optional(v.string()),
+    amount: v.number(),
+    installments: v.number(),
+    payer: v.object({
+      email: v.string(),
+      identification: v.optional(v.object({
+        type: v.string(),
+        number: v.string()
+      }))
+    }),
+    description: v.string(),
+    metadata: v.optional(v.any())
+  },
+  returns: v.object({
+    success: v.boolean(),
+    paymentId: v.optional(v.string()),
+    status: v.optional(v.string()),
+    statusDetail: v.optional(v.string()),
+    error: v.optional(v.string())
+  }),
+  handler: async (ctx, args) => {
+    try {
+      console.log("[MP] Creating payment with MANUAL capture for booking:", args.bookingId);
+
+      // Create payment with capture=false (authorization only)
+      const paymentBody: any = {
+        transaction_amount: args.amount,
+        token: args.token,
+        payment_method_id: args.paymentMethodId,
+        installments: args.installments,
+        capture: false,  // 🔑 THIS IS THE KEY - Manual capture
+        description: args.description,
+        payer: args.payer,
+        metadata: {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          ...(args.metadata || {})
+        }
+      };
+
+      // Add issuer if provided (required for some payment methods)
+      if (args.issuerId) {
+        paymentBody.issuer_id = args.issuerId;
+      }
+
+      // Call Mercado Pago Payments API
+      const payment = await mpFetch<any>('/v1/payments', {
+        method: 'POST',
+        body: JSON.stringify(paymentBody)
+      });
+
+      console.log("[MP] Payment created:", {
+        id: payment.id,
+        status: payment.status,
+        statusDetail: payment.status_detail,
+        captured: payment.captured
+      });
+
+      // Map MP status to our internal status
+      const statusMap: Record<string, string> = {
+        authorized: "authorized",
+        approved: "paid",
+        in_process: "processing",
+        pending: "pending",
+        rejected: "failed",
+        cancelled: "cancelled"
+      };
+
+      const paymentStatus = statusMap[payment.status] || payment.status;
+
+      // Update booking with payment info
+      await ctx.runMutation(internal.domains.mercadoPago.mutations.updateBookingMpInfo, {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        mpPaymentId: String(payment.id),
+        paymentStatus: paymentStatus
+      });
+
+      // If payment is authorized, update booking status to awaiting_confirmation
+      if (payment.status === "authorized") {
+        await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          status: "awaiting_confirmation",
+          paymentStatus: "authorized"
+        });
+      }
+
+      return {
+        success: true,
+        paymentId: String(payment.id),
+        status: payment.status,
+        statusDetail: payment.status_detail
+      };
+
+    } catch (error) {
+      console.error("[MP] Failed to create payment with manual capture:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+});
+
 
 /**
  * Capture an authorized payment

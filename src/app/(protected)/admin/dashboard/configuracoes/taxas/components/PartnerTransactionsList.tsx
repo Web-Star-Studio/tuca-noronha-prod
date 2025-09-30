@@ -175,7 +175,7 @@ export function PartnerTransactionsList({ partnerId }: PartnerTransactionsListPr
       </div>
 
       {filteredTransactions && filteredTransactions.length > 0 && (
-        <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between px-2 text-sm text-muted-foreground">
           <div>
             Mostrando {filteredTransactions.length} transação(ões)
           </div>

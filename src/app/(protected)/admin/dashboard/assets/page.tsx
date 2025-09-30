@@ -240,7 +240,7 @@ const AssetsGrid = ({ assets, handleNavigateToAsset }: {
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     {assets.map((asset) => (
       <Card key={asset._id} className="flex flex-col">
-        <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
+        <CardHeader className="flex flex-wrap flex-row items-start justify-between gap-4 pb-2">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden relative flex-shrink-0">
               {asset.imageUrl ? (
@@ -279,7 +279,7 @@ const AssetsGrid = ({ assets, handleNavigateToAsset }: {
           </DropdownMenu>
         </CardHeader>
         <CardContent className="flex-grow space-y-3">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between text-sm">
             <Badge className={`text-xs ${assetTypeColors[asset.assetType] || "bg-gray-100 text-gray-800"}`}>
               {assetTypeLabels[asset.assetType] || "Desconhecido"}
             </Badge>
@@ -292,7 +292,7 @@ const AssetsGrid = ({ assets, handleNavigateToAsset }: {
             <AssetDetailsCell asset={asset} />
           </div>
         </CardContent>
-        <div className="border-t p-4 text-xs text-gray-500 flex justify-between items-center">
+        <div className="border-t p-4 text-xs text-gray-500 flex flex-wrap gap-3 justify-between items-start sm:items-center">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>{asset.partnerName || "N/A"}</span>
@@ -477,7 +477,7 @@ export default function AssetsManagementPage() {
       {systemStats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
               <Database className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -488,7 +488,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Restaurantes</CardTitle>
               <Store className="h-4 w-4 text-orange-600" />
             </CardHeader>
@@ -498,7 +498,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Eventos</CardTitle>
               <Calendar className="h-4 w-4 text-blue-600" />
             </CardHeader>
@@ -508,7 +508,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Atividades</CardTitle>
               <Activity className="h-4 w-4 text-green-600" />
             </CardHeader>
@@ -518,7 +518,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Veículos</CardTitle>
               <Car className="h-4 w-4 text-purple-600" />
             </CardHeader>
@@ -528,7 +528,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Hospedagens</CardTitle>
               <Building2 className="h-4 w-4 text-pink-600" />
             </CardHeader>
@@ -543,7 +543,7 @@ export default function AssetsManagementPage() {
       {assetStats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Filtrados</CardTitle>
               <Filter className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -554,7 +554,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Ativos</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
@@ -564,7 +564,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Inativos</CardTitle>
               <XCircle className="h-4 w-4 text-red-600" />
             </CardHeader>
@@ -574,7 +574,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Com Reservas</CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-600" />
             </CardHeader>
@@ -584,7 +584,7 @@ export default function AssetsManagementPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Avaliação Média</CardTitle>
               <Star className="h-4 w-4 text-yellow-600" />
             </CardHeader>

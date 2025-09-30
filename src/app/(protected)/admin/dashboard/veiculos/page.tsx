@@ -98,7 +98,7 @@ export default function VehiclesPage() {
       </DashboardPageHeader>
 
       <Tabs defaultValue="vehicles" className="w-full">
-        <TabsList className="mb-6 grid w-full grid-cols-3">
+        <TabsList className="mb-6 grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
           <TabsTrigger value="vehicles">Veículos</TabsTrigger>
           <TabsTrigger value="bookings">Reservas</TabsTrigger>
           <TabsTrigger value="stats">Estatísticas</TabsTrigger>

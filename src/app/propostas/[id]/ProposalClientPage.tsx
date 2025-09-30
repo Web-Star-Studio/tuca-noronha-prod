@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { notFound, useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, EnvelopeIcon, DocumentTextIcon, PlaneTakeoffIcon } from "@heroicons/react/24/outline";
+import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon, ShieldExclamationIcon } from "@heroicons/react/24/solid";
 import { FileText, Download, Plane } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -27,11 +27,7 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
   const { userId, isLoaded } = useAuth();
   const router = useRouter();
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [isAccepting, setIsAccepting] = useState(false);
   const [showAcceptanceFlow, setShowAcceptanceFlow] = useState(false);
-
-  // Mutations
-  const acceptProposal = useMutation(api.domains.packageProposals.mutations.acceptProposal);
   
   // Query to get proposal by ID with error handling
   const proposalResult = useQuery(api.domains.packageProposals.queries.getPackageProposalWithAuth, {
@@ -201,8 +197,6 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
 
   const currentStatus = isExpired ? "expired" : proposal.status;
   const statusInfo = statusConfig[currentStatus as keyof typeof statusConfig];
-
-  const statusColor = statusInfo?.color || "bg-gray-500";
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto py-8 px-4">

@@ -1,23 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Download, ArrowRight, Home } from "lucide-react";
+import { CheckCircle, ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   const paymentId = searchParams.get("payment_id");
   const status = searchParams.get("status");
-  const merchantOrderId = searchParams.get("merchant_order_id");
   const preferenceId = searchParams.get("preference_id");
 
   // Get payment details if we have a payment ID

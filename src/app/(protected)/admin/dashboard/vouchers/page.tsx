@@ -139,7 +139,7 @@ export default function AdminVouchersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <h1 className="text-2xl font-bold">Gerenciamento de Vouchers</h1>
         <Button 
           onClick={() => window.open(`/admin/dashboard/vouchers/scanner`, "_blank")}
@@ -205,7 +205,7 @@ export default function AdminVouchersPage() {
 
       {/* Main Content */}
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
           <TabsTrigger value="list">Lista de Vouchers</TabsTrigger>
           <TabsTrigger value="scanner">Scanner QR</TabsTrigger>
         </TabsList>

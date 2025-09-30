@@ -165,7 +165,7 @@ export default function SupportPage() {
       {supportStats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -175,7 +175,7 @@ export default function SupportPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Abertas</CardTitle>
               <Clock className="h-4 w-4 text-blue-600" />
             </CardHeader>
@@ -185,7 +185,7 @@ export default function SupportPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
@@ -195,7 +195,7 @@ export default function SupportPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Resolvidas</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
@@ -205,7 +205,7 @@ export default function SupportPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Urgentes</CardTitle>
               <AlertTriangle className="h-4 w-4 text-red-600" />
             </CardHeader>
@@ -215,7 +215,7 @@ export default function SupportPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
               <CardTitle className="text-sm font-medium">Minhas</CardTitle>
               <User className="h-4 w-4 text-purple-600" />
             </CardHeader>
@@ -276,7 +276,7 @@ export default function SupportPage() {
             onClick={() => handleViewMessage(message)}
           >
             <CardContent className="p-6">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-wrap gap-3 items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold">{message.subject}</h3>

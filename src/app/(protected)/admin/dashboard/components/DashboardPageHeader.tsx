@@ -20,8 +20,8 @@ export function DashboardPageHeader({
 }: DashboardPageHeaderProps) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div className="flex items-start gap-4 sm:items-center">
           <div className={`w-12 h-12 ${iconBgClassName} rounded-xl flex items-center justify-center flex-shrink-0`}>
             <Icon className={`h-6 w-6 ${iconColorClassName}`} />
           </div>
@@ -35,7 +35,7 @@ export function DashboardPageHeader({
           </div>
         </div>
         {children && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             {children}
           </div>
         )}

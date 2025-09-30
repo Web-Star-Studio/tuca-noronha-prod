@@ -45,6 +45,7 @@ export const customerInfoValidator = v.object({
   name: v.string(),
   email: v.string(),
   phone: v.string(),
+  cpf: v.optional(v.string()),
 });
 
 // Activity booking validators

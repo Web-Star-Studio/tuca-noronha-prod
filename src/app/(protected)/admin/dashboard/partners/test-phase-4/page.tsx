@@ -161,7 +161,7 @@ export default function TestPhase4Page() {
               {recentTransactions.page.map((transaction) => (
                 <div
                   key={transaction._id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex flex-wrap gap-3 items-start sm:items-center justify-between p-3 border rounded-lg"
                 >
                   <div>
                     <p className="font-medium">

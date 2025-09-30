@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import {formatCurrency} from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { useMutation, useQuery, useAction } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -32,6 +32,14 @@ import { toast } from "sonner";
 import { formStyles } from "@/lib/ui-config";
 import CouponValidator from "@/components/coupons/CouponValidator";
 import { ParticipantSelector } from "@/components/ui/participant-selector";
+import { PaymentBrick } from "@/components/payments/PaymentBrick";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 
 interface ActivityBookingFormProps {
@@ -63,6 +71,8 @@ export function ActivityBookingForm({
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [bookingData, setBookingData] = useState<any>(null);
   
   // Use the custom hook to get customer information
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
@@ -87,10 +97,6 @@ export function ActivityBookingForm({
   }, [participants]);
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
-  // Import Payment Service at top of file
-  const createMpCheckoutPreference = useAction(
-    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
-  );
   
   // WhatsApp link generator removido (não utilizado)
 
@@ -175,12 +181,11 @@ export function ActivityBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Solicitação de reserva enviada!", {
-        description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
-      });
-
       // 2. Check if activity is free - skip payment if it is
       if (activity.isFree || getFinalPrice() === 0) {
+        toast.success("Solicitação de reserva enviada!", {
+          description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
+        });
         console.log("✅ Atividade gratuita - pulando fluxo de pagamento");
         
         toast.success("Solicitação enviada com sucesso!", {
@@ -208,68 +213,25 @@ export function ActivityBookingForm({
         return;
       }
 
-      // 3. Create Mercado Pago Checkout for paid activities
-      try {
-        console.log("🔄 Criando preferência de checkout Mercado Pago para:", {
-          bookingId: result.bookingId,
-          activityId,
-          totalAmount: result.totalPrice,
-        });
+      // 3. For paid activities, show Card Payment Brick modal
+      console.log("💳 Atividade paga - abrindo Card Payment Brick", {
+        bookingId: result.bookingId,
+        totalPrice: result.totalPrice,
+      });
 
-        const mpPref = await createMpCheckoutPreference({
-          bookingId: result.bookingId,
-          assetType: "activity",
-          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
-          cancelUrl: `${window.location.origin}/booking/cancel`,
-          customerEmail: customerInfo.email,
-          couponCode: appliedCoupon?.code,
-          discountAmount: getDiscountAmount(),
-          originalAmount: getPrice(),
-          finalAmount: getFinalPrice(),
-          currency: "BRL",
-        });
+      // Store booking data and show payment modal
+      setBookingData({
+        bookingId: result.bookingId,
+        confirmationCode: result.confirmationCode,
+        totalPrice: result.totalPrice,
+      });
 
-        console.log("💳 Resultado da preferência MP:", mpPref);
+      toast.info("Prossiga com o pagamento", {
+        description: "Escolha seu método de pagamento: cartão, PIX ou boleto.",
+      });
 
-        if (mpPref.success && mpPref.preferenceUrl) {
-          toast.success("Redirecionando para pagamento...", {
-            description:
-              "Você será levado para o checkout seguro do Mercado Pago. O pagamento será confirmado após processamento.",
-          });
-
-          // Reset form before redirecting
-          setDate(undefined);
-          setTime("");
-          setAdults(Math.max(1, activity.minParticipants));
-          setChildren(0);
-          setAdditionalParticipantNames([]);
-          setSelectedTicketId(undefined);
-          setCustomerInfo({ name: "", email: "", phone: "" });
-          setSpecialRequests("");
-
-          setTimeout(() => {
-            window.location.href = mpPref.preferenceUrl;
-          }, 1200);
-          return;
-        } else {
-          throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
-        }
-      } catch (paymentError) {
-        console.error("💥 Erro ao iniciar pagamento Mercado Pago:", paymentError);
-        toast.error("Solicitação criada, mas erro no pagamento", {
-          description:
-            paymentError instanceof Error
-              ? paymentError.message
-              : "Entre em contato conosco para finalizar o pagamento",
-        });
-        // Still call onBookingSuccess since booking was created
-        if (onBookingSuccess) {
-          onBookingSuccess({
-            confirmationCode: result.confirmationCode,
-            totalPrice: result.totalPrice,
-          });
-        }
-      }
+      setShowPaymentDialog(true);
+      setIsSubmitting(false);
 
     } catch (error) {
       toast.error("Erro ao criar reserva", {
@@ -278,6 +240,40 @@ export function ActivityBookingForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Handle payment success
+  const handlePaymentSuccess = (paymentId: string) => {
+    console.log("✅ Pagamento autorizado com sucesso:", paymentId);
+    
+    setShowPaymentDialog(false);
+    
+    // Reset form
+    setDate(undefined);
+    setTime("");
+    setAdults(Math.max(1, activity.minParticipants));
+    setChildren(0);
+    setAdditionalParticipantNames([]);
+    setSelectedTicketId(undefined);
+    setCustomerInfo({ name: "", email: "", phone: "" });
+    setSpecialRequests("");
+    setAppliedCoupon(null);
+    setBookingData(null);
+
+    if (onBookingSuccess && bookingData) {
+      onBookingSuccess({
+        confirmationCode: bookingData.confirmationCode,
+        totalPrice: bookingData.totalPrice,
+      });
+    }
+  };
+
+  // Handle payment error
+  const handlePaymentError = (error: string) => {
+    console.error("❌ Erro no pagamento:", error);
+    toast.error("Erro no pagamento", {
+      description: "Você pode tentar novamente ou entrar em contato conosco.",
+    });
   };
 
   return (
@@ -456,6 +452,26 @@ export function ActivityBookingForm({
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF (opcional)</Label>
+              <Input
+                id="cpf"
+                type="text"
+                value={customerInfo.cpf || ""}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  const formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                  setCustomerInfo({ ...customerInfo, cpf: formatted });
+                }}
+                className={formStyles.input.base}
+                placeholder="000.000.000-00"
+                maxLength={14}
+              />
+              <p className="text-xs text-gray-500">
+                Recomendado para melhor taxa de aprovação do pagamento
+              </p>
+            </div>
           </div>
 
           {/* Special Requests */}
@@ -507,7 +523,7 @@ export function ActivityBookingForm({
 
           {/* Payment Info */}
           <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-            Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
+            ℹ️ <strong>Captura Manual:</strong> O valor será apenas <strong>autorizado</strong> (bloqueado) no seu cartão. A cobrança efetiva só ocorrerá após o parceiro aprovar a reserva.
           </div>
 
             {/* Submit Button */}
@@ -521,6 +537,58 @@ export function ActivityBookingForm({
           </form>
         </div>
       </div>
+
+      {/* Payment Dialog with Card Payment Brick */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Autorizar Pagamento</DialogTitle>
+            <DialogDescription>
+              Escolha seu método de pagamento (cartão, PIX ou boleto) para o valor de{" "}
+              <strong>{formatCurrency(bookingData?.totalPrice || 0)}</strong>.
+              Para pagamentos com cartão, o valor será bloqueado e só será cobrado após aprovação.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {bookingData && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>⚠️ Atenção:</strong> Este pagamento usa <strong>captura manual</strong>.
+                  O valor de <strong>{formatCurrency(bookingData.totalPrice)}</strong> será{" "}
+                  <strong>autorizado</strong> (bloqueado) no seu cartão, mas <strong>NÃO será cobrado</strong>{" "}
+                  até que o parceiro aprove sua reserva.
+                </p>
+                <p className="text-xs text-amber-700 mt-2">
+                  Código da reserva: <strong>{bookingData.confirmationCode}</strong>
+                </p>
+              </div>
+            )}
+
+            {bookingData && (
+              <PaymentBrick
+                bookingId={bookingData.bookingId}
+                assetType="activity"
+                amount={bookingData.totalPrice}
+                description={`Reserva de atividade: ${activity.title}`}
+                payer={{
+                  email: customerInfo.email,
+                  firstName: customerInfo.name.split(" ")[0] || "",
+                  lastName: customerInfo.name.split(" ").slice(1).join(" ") || "",
+                  identification: customerInfo.cpf
+                    ? {
+                        type: "CPF",
+                        number: customerInfo.cpf.replace(/\D/g, ""),
+                      }
+                    : undefined,
+                }}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

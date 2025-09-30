@@ -1042,8 +1042,8 @@ const restaurantAssetValidator = v.object({
   cuisine: v.array(v.string()),
   priceRange: v.string(),
   diningStyle: v.string(),
-  restaurantType: v.union(v.literal("internal"), v.literal("external")),
-  operatingDays: v.object({
+  restaurantType: v.optional(v.union(v.literal("internal"), v.literal("external"))),
+  operatingDays: v.optional(v.object({
     Monday: v.boolean(),
     Tuesday: v.boolean(),
     Wednesday: v.boolean(),
@@ -1051,9 +1051,9 @@ const restaurantAssetValidator = v.object({
     Friday: v.boolean(),
     Saturday: v.boolean(),
     Sunday: v.boolean(),
-  }),
-  openingTime: v.string(),
-  closingTime: v.string(),
+  })),
+  openingTime: v.optional(v.string()),
+  closingTime: v.optional(v.string()),
   features: v.array(v.string()),
   dressCode: v.optional(v.string()),
   paymentOptions: v.optional(v.array(v.string())),

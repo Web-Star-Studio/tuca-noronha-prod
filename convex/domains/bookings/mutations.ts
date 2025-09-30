@@ -185,11 +185,14 @@ export const createActivityBooking = mutation({
     // Record successful booking attempt for rate limiting
     await recordRateLimitAttempt(ctx, user._id, "CREATE_BOOKING");
 
-    // Only send confirmation emails if payment is not required or not upfront
-    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    // REGRA CRÍTICA: NÃO enviar email de confirmação se requer pagamento online antecipado
+    // Email só deve ser enviado APÓS admin aprovar via approveBookingAndCapturePayment
+    // Apenas enviar imediatamente se:
+    // 1. Não requer pagamento (gratuito) OU
+    // 2. Não requer pagamento antecipado E não aceita pagamento online (pagamento no local)
     const shouldSendEmailNow = (
       initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
-      !activity.requiresUpfrontPayment
+      (!activity.requiresUpfrontPayment && !activity.acceptsOnlinePayment)
     );
     
     if (shouldSendEmailNow) {
@@ -374,11 +377,14 @@ export const createEventBooking = mutation({
       updatedAt: Date.now(),
     });
 
-    // Only send confirmation emails if payment is not required or not upfront
-    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    // REGRA CRÍTICA: NÃO enviar email de confirmação se requer pagamento online antecipado
+    // Email só deve ser enviado APÓS admin aprovar via approveBookingAndCapturePayment
+    // Apenas enviar imediatamente se:
+    // 1. Não requer pagamento (gratuito) OU
+    // 2. Não requer pagamento antecipado E não aceita pagamento online (pagamento no local)
     const shouldSendEmailNow = (
       initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
-      !event.requiresUpfrontPayment
+      (!event.requiresUpfrontPayment && !event.acceptsOnlinePayment)
     );
     
     if (shouldSendEmailNow) {
@@ -532,7 +538,12 @@ export const createRestaurantReservation = mutation({
 
     // Send email confirmation to customer
     // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
-    const shouldSendEmailNow = (totalPrice === 0); // Only send immediately if no payment required
+    // REGRA CRÍTICA: NÃO enviar email se requer pagamento online
+    // Email só após admin aprovar via approveBookingAndCapturePayment
+    const shouldSendEmailNow = (
+      totalPrice === 0 || 
+      (!restaurant.requiresUpfrontPayment && !restaurant.acceptsOnlinePayment)
+    );
     
     if (shouldSendEmailNow) {
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingConfirmationEmail, {
@@ -656,7 +667,7 @@ export const createVehicleBooking = mutation({
 
     // Calculate total price
     const calculatedPrice = calculateVehicleBookingPrice(
-      vehicle.pricePerDay,
+      vehicle.estimatedPricePerDay,
       args.startDate,
       args.endDate,
       args.additionalDrivers
@@ -694,6 +705,7 @@ export const createVehicleBooking = mutation({
       userId: user._id,
       startDate: args.startDate,
       endDate: args.endDate,
+      estimatedPrice: calculatedPrice,
       totalPrice,
       status: initialStatus,
       paymentStatus: initialPaymentStatus,
@@ -707,15 +719,23 @@ export const createVehicleBooking = mutation({
       couponCode: args.couponCode,
       discountAmount: args.discountAmount,
       finalAmount: args.finalAmount,
+      requestedAt: Date.now(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
 
-    // Only send confirmation emails if payment is not required or not upfront
-    // NOTE: For Mercado Pago payments, emails are sent ONLY after admin approval via approveBookingAndCapturePayment
+    // IMPORTANTE: Para veículos com valor estimado, NÃO enviar email de confirmação aqui
+    // O email só deve ser enviado DEPOIS que o admin confirmar com o valor real
+    // Isso é feito na mutation confirmBookingWithPrice ou após captura do pagamento
+    
+    // REGRA CRÍTICA: NÃO enviar email de confirmação se requer pagamento online antecipado
+    // Email só deve ser enviado APÓS admin aprovar via approveBookingAndCapturePayment
+    // Apenas enviar imediatamente se:
+    // 1. Não requer pagamento (gratuito) OU
+    // 2. Não requer pagamento antecipado E não aceita pagamento online (pagamento no local)
     const shouldSendEmailNow = (
       initialPaymentStatus === PAYMENT_STATUS.NOT_REQUIRED || 
-      !vehicle.requiresUpfrontPayment
+      (!vehicle.requiresUpfrontPayment && !vehicle.acceptsOnlinePayment)
     );
     
     if (shouldSendEmailNow) {

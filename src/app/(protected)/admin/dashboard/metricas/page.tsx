@@ -45,7 +45,7 @@ function MetricCard({ title, value, change, icon: Icon, description, color }: Me
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2 sm:flex-nowrap sm:items-center">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={`h-4 w-4 ${color}`} />
       </CardHeader>
@@ -199,7 +199,7 @@ export default function MetricasPage() {
 
       {/* Abas de Métricas Detalhadas */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
@@ -216,7 +216,7 @@ export default function MetricasPage() {
                 <CardDescription>Breakdown por tipo de usuário</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Viajantes</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-blue-200 rounded-full">
@@ -229,7 +229,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Parceiros</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-green-200 rounded-full">
@@ -242,7 +242,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Funcionários</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-yellow-200 rounded-full">
@@ -255,7 +255,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Masters</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-purple-200 rounded-full">
@@ -277,7 +277,7 @@ export default function MetricasPage() {
                 <CardDescription>Breakdown por categoria</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Restaurantes</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-orange-200 rounded-full">
@@ -290,7 +290,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Eventos</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-blue-200 rounded-full">
@@ -303,7 +303,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Atividades</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-green-200 rounded-full">
@@ -316,7 +316,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Veículos</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-purple-200 rounded-full">
@@ -329,7 +329,7 @@ export default function MetricasPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
                   <span className="text-sm">Hospedagens</span>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-pink-200 rounded-full">
@@ -398,15 +398,15 @@ export default function MetricasPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-wrap gap-3 justify-between text-sm">
                     <span>Restaurante do João</span>
                     <span className="font-medium">245 views</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-wrap gap-3 justify-between text-sm">
                     <span>Evento Música na Praia</span>
                     <span className="font-medium">189 views</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-wrap gap-3 justify-between text-sm">
                     <span>Mergulho com Tartarugas</span>
                     <span className="font-medium">156 views</span>
                   </div>

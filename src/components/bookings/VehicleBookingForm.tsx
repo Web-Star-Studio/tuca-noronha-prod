@@ -5,7 +5,7 @@ import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
 
-import { useMutation, useQuery, useAction } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -28,14 +28,14 @@ import CouponValidator from "@/components/coupons/CouponValidator";
 
 interface VehicleBookingFormProps {
   vehicleId: Id<"vehicles">;
-  pricePerDay: number;
+  estimatedPricePerDay: number; // ALTERADO: valor estimado
   vehicle?: {
     acceptsOnlinePayment?: boolean;
     requiresUpfrontPayment?: boolean;
   };
 }
 
-export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className }: VehicleBookingFormProps & { className?: string }) {
+export function VehicleBookingForm({ vehicleId, estimatedPricePerDay, className }: VehicleBookingFormProps & { className?: string }) {
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 3));
   const [isLoading, setIsLoading] = useState(false);
@@ -51,13 +51,13 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
   // Get current user
   const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
 
-  // Calculate total days and price
+  // Calculate total days and estimated price
   const totalDays = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
-  const totalPrice = totalDays * pricePerDay;
+  const estimatedTotalPrice = totalDays * estimatedPricePerDay;
 
-  // Calculate final price with coupon
+  // Calculate final price with coupon (baseado no estimado)
   const getFinalPrice = () => {
-    return appliedCoupon ? appliedCoupon.finalAmount : totalPrice;
+    return appliedCoupon ? appliedCoupon.finalAmount : estimatedTotalPrice;
   };
 
   // Get discount amount
@@ -82,11 +82,8 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
     setAppliedCoupon(null);
   };
 
-  // Create booking mutation - using the correct one from bookings domain
-  const createBooking = useMutation(api.domains.bookings.mutations.createVehicleBooking);
-  const createMpCheckoutPreference = useAction(
-    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
-  );
+  // NOVO: Usar mutation de solicitação de reserva
+  const requestBooking = useMutation(api.domains.vehicles.requestVehicleBooking);
 
   const handleBooking = async () => {
     if (!startDate || !endDate) {
@@ -123,71 +120,26 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
         return;
       }
       
-      // 1. Create the booking first
-      const result = await createBooking({
+      // NOVO FLUXO: Apenas solicita a reserva, SEM pagamento
+      const result = await requestBooking({
         vehicleId,
         startDate: startDate.getTime(),
         endDate: endDate.getTime(),
-        customerInfo,
         pickupLocation: pickupLocation.trim() || undefined,
         notes: notes.trim() || undefined,
-        couponCode: appliedCoupon?.code,
-        discountAmount: getDiscountAmount(),
-        finalAmount: getFinalPrice(),
+        customerInfo,
       });
 
-      toast.success("Reserva criada com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
+      toast.success("✅ Solicitação enviada com sucesso!", {
+        description: `Código: ${result.confirmationCode}. O valor estimado é ${formatCurrency(result.estimatedPrice)}. Aguarde a confirmação do admin com o valor final.`,
+        duration: 8000,
       });
 
-      // 2. If vehicle requires payment, create checkout session
-      if (vehicle?.acceptsOnlinePayment && vehicle?.requiresUpfrontPayment && totalPrice > 0) {
-        try {
-          console.log("🔄 Criando checkout session para veículo:", {
-            bookingId: result.bookingId,
-            vehicleId,
-            totalPrice,
-          });
-
-          // Try Mercado Pago first
-        const mpPref = await createMpCheckoutPreference({
-          bookingId: result.bookingId,
-          assetType: "vehicle",
-          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
-          cancelUrl: `${window.location.origin}/booking/cancel`,
-          customerEmail: customerInfo.email,
-            couponCode: appliedCoupon?.code,
-            discountAmount: getDiscountAmount(),
-            originalAmount: totalPrice,
-            finalAmount: getFinalPrice(),
-            currency: "BRL",
-          });
-
-          if (mpPref.success && mpPref.preferenceUrl) {
-            toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro do Mercado Pago. O pagamento será confirmado após processamento.",
-            });
-            setTimeout(() => {
-              window.location.href = mpPref.preferenceUrl;
-            }, 1200);
-            return;
-          } else {
-            throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
-          }
-        } catch (paymentError) {
-          console.error("💥 Erro ao criar payment link:", paymentError);
-          toast.error("Reserva criada, mas erro no pagamento", {
-            description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
-          });
-        }
-      } else {
-        toast.success("Reserva solicitada com sucesso!", {
-          description: "Em breve entraremos em contato para confirmar sua reserva.",
-        });
-      }
-
-      // Redirect to confirmation page or user bookings
-      // router.push("/reservas");
+      // Limpar formulário
+      setCustomerInfo({ name: "", email: "", phone: "" });
+      setPickupLocation("");
+      setNotes("");
+      setAppliedCoupon(null);
     } catch (error) {
       console.error("Erro ao criar reserva:", error);
       toast.error("Erro ao fazer reserva", {
@@ -203,9 +155,12 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
       <div className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Reserve este veículo</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              R$ {pricePerDay.toFixed(2)} por diária
+            <h3 className="text-xl font-bold text-gray-900">Solicitar Reserva</h3>
+            <p className="text-sm text-yellow-600 font-medium mt-1">
+              💡 A partir de {formatCurrency(estimatedPricePerDay)}/diária
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              O valor final será confirmado pelo administrador após análise da sua solicitação.
             </p>
           </div>
 
@@ -338,23 +293,23 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
       </div>
 
       {/* Coupon validator */}
-      {startDate && endDate && totalPrice > 0 && (
+      {startDate && endDate && estimatedTotalPrice > 0 && (
         <CouponValidator
           assetType="vehicle"
           assetId={vehicleId}
-          orderValue={totalPrice}
+          orderValue={estimatedTotalPrice}
           onCouponApplied={handleCouponApplied}
           onCouponRemoved={handleCouponRemoved}
         />
       )}
 
-      {/* Price summary */}
-      {startDate && endDate && totalPrice > 0 && (
-        <div className="mt-4 rounded-lg border border-gray-200 p-4 space-y-3 bg-gray-50">
-          <h4 className="text-sm font-semibold text-gray-700">Resumo do pagamento</h4>
+      {/* Estimated Price summary */}
+      {startDate && endDate && estimatedTotalPrice > 0 && (
+        <div className="mt-4 rounded-lg border border-yellow-200 p-4 space-y-3 bg-yellow-50">
+          <h4 className="text-sm font-semibold text-yellow-800">📊 Estimativa de Valor</h4>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Valor base</span>
-            <span className="font-medium">{formatCurrency(totalPrice)}</span>
+            <span className="text-gray-700">Valor base estimado ({totalDays} diárias)</span>
+            <span className="font-medium">{formatCurrency(estimatedTotalPrice)}</span>
           </div>
           {getDiscountAmount() > 0 && (
             <div className="flex items-center justify-between text-sm text-green-600">
@@ -362,20 +317,13 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
               <span>-{formatCurrency(getDiscountAmount())}</span>
             </div>
           )}
-          <div className="border-t pt-3 flex items-center justify-between text-sm">
-            <span className="font-semibold text-gray-900">Total</span>
-            <span className="text-base font-bold text-gray-900">{formatCurrency(getFinalPrice())}</span>
+          <div className="border-t border-yellow-300 pt-3 flex items-center justify-between text-sm">
+            <span className="font-semibold text-yellow-900">Total Estimado</span>
+            <span className="text-base font-bold text-yellow-900">{formatCurrency(getFinalPrice())}</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            A cobrança final acontece somente após a confirmação com o parceiro.
+          <p className="text-xs text-yellow-700 bg-white border border-yellow-200 rounded p-2">
+            <strong>⚠️ Importante:</strong> Este é um valor estimado. O valor final será confirmado pelo administrador após análise da sua solicitação. Não haverá cobrança agora.
           </p>
-        </div>
-      )}
-
-      {/* Payment Info - show if requires payment */}
-      {vehicle?.acceptsOnlinePayment && vehicle?.requiresUpfrontPayment && totalPrice > 0 && (
-        <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-          Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo parceiro.
         </div>
       )}
 
@@ -391,7 +339,7 @@ export function VehicleBookingForm({ vehicleId, pricePerDay, vehicle, className 
                 !customerInfo.phone.trim()
               }
             >
-              {isLoading ? "Processando..." : "Reservar agora"}
+              {isLoading ? "Enviando solicitação..." : "🚗 Solicitar Reserva"}
             </Button>
           </div>
         </div>

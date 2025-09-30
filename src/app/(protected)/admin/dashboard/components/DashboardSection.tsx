@@ -36,8 +36,8 @@ export function DashboardSection({
         "flex flex-col gap-2 border-b border-slate-100 pb-4",
         variant !== 'default' ? "px-6 pt-6" : "px-4 pt-4"
       )}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
+        <div className="flex flex-wrap items-start justify-between gap-4 sm:flex-nowrap">
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
               {Icon && <Icon className="h-4 w-4" />}
               <span className="uppercase tracking-wide">{title}</span>
@@ -49,7 +49,7 @@ export function DashboardSection({
             )}
           </div>
           {headerActions && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               {headerActions}
             </div>
           )}

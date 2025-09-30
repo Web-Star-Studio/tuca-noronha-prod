@@ -104,7 +104,7 @@ export default function AdminReservasPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-start sm:items-center">
         <div>
           <h1 className="text-3xl font-bold">Reservas Administrativas</h1>
           <p className="text-muted-foreground">
@@ -259,7 +259,7 @@ export default function AdminReservasPage() {
                     key={reservation._id}
                     className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-wrap gap-3 items-start justify-between">
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold">

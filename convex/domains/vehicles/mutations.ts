@@ -17,7 +17,7 @@ export const createVehicle = mutation({
     seats: v.number(),
     fuelType: v.string(),
     transmission: v.string(),
-    pricePerDay: v.number(),
+    estimatedPricePerDay: v.number(),
     netRate: v.optional(v.number()),
     isFree: v.optional(v.boolean()),
     description: v.optional(v.string()),
@@ -53,7 +53,7 @@ export const createVehicle = mutation({
     }
     const vehicleId = await ctx.db.insert("vehicles", {
       ...args,
-      netRate: args.netRate ?? args.pricePerDay,
+      netRate: args.netRate ?? args.estimatedPricePerDay,
       createdAt: currentTime,
       updatedAt: currentTime,
       ownerId: currentUserId, // Set owner to current user
@@ -91,7 +91,7 @@ export const updateVehicle = mutation({
     seats: v.optional(v.number()),
     fuelType: v.optional(v.string()),
     transmission: v.optional(v.string()),
-    pricePerDay: v.optional(v.number()),
+    estimatedPricePerDay: v.optional(v.number()),
     netRate: v.optional(v.number()),
     isFree: v.optional(v.boolean()),
     description: v.optional(v.string()),
@@ -288,8 +288,14 @@ export const createVehicleBooking = mutation({
     const customerName = args.customerInfo?.name || 'Guest';
     const confirmationCode = generateConfirmationCode(startDateString, customerName);
     
+    // Calcular número de dias e preço estimado
+    const days = Math.ceil((args.endDate - args.startDate) / (1000 * 60 * 60 * 24));
+    const estimatedPrice = vehicle.estimatedPricePerDay * days;
+    
     const bookingId = await ctx.db.insert("vehicleBookings", {
       ...args,
+      estimatedPrice,
+      requestedAt: currentTime,
       confirmationCode,
       createdAt: currentTime,
       updatedAt: currentTime,

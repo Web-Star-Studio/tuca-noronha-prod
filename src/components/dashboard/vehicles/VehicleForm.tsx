@@ -45,7 +45,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     seats: 5,
     fuelType: "",
     transmission: "",
-    pricePerDay: 0,
+    estimatedPricePerDay: 0,
     netRate: 0,
     description: "",
     features: [] as string[],
@@ -73,8 +73,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         seats: vehicle.seats,
         fuelType: vehicle.fuelType,
         transmission: vehicle.transmission,
-        pricePerDay: vehicle.pricePerDay,
-        netRate: vehicle.netRate ?? vehicle.pricePerDay,
+        estimatedPricePerDay: vehicle.estimatedPricePerDay,
+        netRate: vehicle.netRate ?? vehicle.estimatedPricePerDay,
         description: vehicle.description || "",
         features: vehicle.features,
         imageUrl: vehicle.imageUrl || "",
@@ -141,7 +141,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     if (!vehicleData.color) missingFields.push("color");
     if (!vehicleData.fuelType) missingFields.push("fuelType");
     if (!vehicleData.transmission) missingFields.push("transmission");
-    if (vehicleData.pricePerDay <= 0) missingFields.push("pricePerDay");
+    if (vehicleData.estimatedPricePerDay <= 0) missingFields.push("estimatedPricePerDay");
     if (vehicleData.netRate === undefined || vehicleData.netRate < 0) missingFields.push("netRate");
     
     // Validation
@@ -152,8 +152,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       return;
     }
 
-    if (vehicleData.netRate > vehicleData.pricePerDay) {
-      toast.error("A tarifa net deve ser menor ou igual ao preço por dia");
+    if (vehicleData.netRate > vehicleData.estimatedPricePerDay) {
+      toast.error("A tarifa net deve ser menor ou igual ao preço estimado por dia");
       return;
     }
 
@@ -335,12 +335,17 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                 />
               </div>
               <div>
-                <Label htmlFor="pricePerDay" className="text-sm font-medium text-gray-700">Preço por dia (R$)*</Label>
+                <Label htmlFor="estimatedPricePerDay" className="text-sm font-medium text-gray-700">
+                  Valor Base Estimado (por dia) (R$)*
+                  <span className="block text-xs font-normal text-gray-500 mt-1">
+                    💡 Este é um valor de referência. O valor real será definido ao confirmar cada reserva.
+                  </span>
+                </Label>
                 <Input
-                  id="pricePerDay"
-                  name="pricePerDay"
+                  id="estimatedPricePerDay"
+                  name="estimatedPricePerDay"
                   type="number"
-                  value={vehicleData.pricePerDay}
+                  value={vehicleData.estimatedPricePerDay}
                   onChange={handleNumberChange}
                   min={0}
                   step={10}
