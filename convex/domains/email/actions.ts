@@ -47,7 +47,7 @@ export const sendBookingConfirmationEmail = internalAction({
       const emailData: BookingConfirmationEmailData = {
         type: "booking_confirmation",
         to: args.customerEmail,
-        subject: `Reserva Confirmada - ${args.assetName} - Código: ${args.confirmationCode}`,
+        subject: `Solicitação de Reserva Recebida - ${args.assetName} - Código: ${args.confirmationCode}`,
         customerName: args.customerName,
         assetName: args.assetName,
         bookingType: args.bookingType,
@@ -379,7 +379,7 @@ export const sendWelcomeEmail = internalAction({
       const emailData: WelcomeNewUserEmailData = {
         type: "welcome_new_user",
         to: args.userEmail,
-        subject: `Bem-vindo ao Tucano Noronha, ${args.userName}! 🏝️`,
+        subject: `Bem-vindo ao Tuca Noronha, ${args.userName}! 🏝️`,
         userName: args.userName,
         userEmail: args.userEmail,
         userRole: args.userRole,
@@ -673,7 +673,7 @@ export const testEmailService = action({
       const emailData: WelcomeNewUserEmailData = {
         type: "welcome_new_user",
         to: args.testEmail,
-        subject: "Teste do Sistema de Email - Tucano Noronha",
+        subject: "Teste do Sistema de Email - Tuca Noronha",
         userName: "Usuário Teste",
         userEmail: args.testEmail,
         userRole: "traveler",

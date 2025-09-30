@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { ArrowLeft, Loader2, Mail, Phone, FileText, MessageSquare } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, MessageSquare } from "lucide-react";
 
 import type { Id } from "@/../convex/_generated/dataModel";
 import { STATUS_COLORS, STATUS_LABELS } from "@/../convex/domains/packages/types";
@@ -13,7 +12,6 @@ import { usePackageRequestQueries } from "@/hooks/usePackageRequestQueries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 
 import { RequestDetailsContent } from "./RequestDetailsContent";
-import { AdminActionsTab } from "./AdminActionsTab";
 import { ProposalsTab } from "./ProposalsTab";
 import { ChatTab } from "./ChatTab";
 import { SimpleProposalModal } from "./SimpleProposalModal";
@@ -43,7 +40,6 @@ export function PackageRequestDetailsPageClient({ requestId }: PackageRequestDet
     requestMessages,
     requestProposals,
     isLoading,
-    refetchProposals, // Assuming the hook can return a refetch function
   } = usePackageRequestQueries({
     requestId: convexRequestId,
     enabled: true,

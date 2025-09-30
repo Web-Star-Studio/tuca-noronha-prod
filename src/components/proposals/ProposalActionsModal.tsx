@@ -233,9 +233,10 @@ export function ProposalActionsModal({
 
                 <div className="flex gap-3 justify-end">
                   <Button
-                    variant="outline"
+                    variant="destructive"
                     onClick={() => setAction('reject')}
                     disabled={isSubmitting}
+                    className='bg-red-500 text-white'
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Rejeitar
@@ -244,12 +245,13 @@ export function ProposalActionsModal({
                     variant="secondary"
                     onClick={() => setAction('revise')}
                     disabled={isSubmitting}
+                    className='bg-blue-500 text-white'
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Pedir Revisão
                   </Button>
                   <Button
-                    className="bg-green-600 hover:bg-green-700"
+                    className="text-white bg-green-600 hover:bg-green-700"
                     onClick={handleAccept}
                     disabled={isSubmitting}
                   >
@@ -353,7 +355,7 @@ export function ProposalActionsModal({
               Cancelar
             </Button>
             <Button
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
               onClick={handleRequestRevision}
               disabled={isSubmitting || !revisionNotes.trim()}
             >

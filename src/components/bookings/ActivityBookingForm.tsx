@@ -175,11 +175,40 @@ export function ActivityBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Reserva criada com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
+      toast.success("Solicitação de reserva enviada!", {
+        description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
       });
 
-      // 2. Create Mercado Pago Checkout
+      // 2. Check if activity is free - skip payment if it is
+      if (activity.isFree || getFinalPrice() === 0) {
+        console.log("✅ Atividade gratuita - pulando fluxo de pagamento");
+        
+        toast.success("Solicitação enviada com sucesso!", {
+          description: "Atividade gratuita - aguardando aprovação do parceiro",
+        });
+
+        // Reset form
+        setDate(undefined);
+        setTime("");
+        setAdults(Math.max(1, activity.minParticipants));
+        setChildren(0);
+        setAdditionalParticipantNames([]);
+        setSelectedTicketId(undefined);
+        setCustomerInfo({ name: "", email: "", phone: "" });
+        setSpecialRequests("");
+
+        if (onBookingSuccess) {
+          onBookingSuccess({
+            confirmationCode: result.confirmationCode,
+            totalPrice: result.totalPrice,
+          });
+        }
+
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 3. Create Mercado Pago Checkout for paid activities
       try {
         console.log("🔄 Criando preferência de checkout Mercado Pago para:", {
           bookingId: result.bookingId,
@@ -227,7 +256,7 @@ export function ActivityBookingForm({
         }
       } catch (paymentError) {
         console.error("💥 Erro ao iniciar pagamento Mercado Pago:", paymentError);
-        toast.error("Reserva criada, mas erro no pagamento", {
+        toast.error("Solicitação criada, mas erro no pagamento", {
           description:
             paymentError instanceof Error
               ? paymentError.message

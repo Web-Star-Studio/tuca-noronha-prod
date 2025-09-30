@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -154,6 +155,7 @@ export function RestaurantForm({
       isFeatured: false,
       executiveChef: "",
       privatePartyInfo: "",
+      isFree: false,
       price: undefined,
       acceptsOnlinePayment: false,
       requiresUpfrontPayment: false,
@@ -495,9 +497,9 @@ export function RestaurantForm({
       
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
         <TabsList className="grid grid-cols-3 w-full max-w-3xl mb-4">
-          <TabsTrigger value="basic">{isEmbedded ? "Config. Base" : "Básico"}</TabsTrigger>
-          <TabsTrigger value="address">Endereço</TabsTrigger>
-          <TabsTrigger value="media">Mídia</TabsTrigger>
+          <TabsTrigger value="basic">Informações Básicas</TabsTrigger>
+          <TabsTrigger value="address">Localização</TabsTrigger>
+          <TabsTrigger value="media">Imagens e Mídia</TabsTrigger>
         </TabsList>
 
         {/* Mensagem informativa quando estiver no modo embedded */}
@@ -736,6 +738,109 @@ export function RestaurantForm({
               </div>
             </div>
           )}
+
+          <Separator className="my-6" />
+
+          {/* Seção de Preços e Gratuidade */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Preços e Cobrança</h3>
+            
+            <div className="col-span-2">
+              <div className="flex items-center space-x-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <Checkbox
+                  id="isFree"
+                  checked={watch("isFree") || false}
+                  onCheckedChange={(checked) => {
+                    const isFree = Boolean(checked);
+                    setValue("isFree", isFree);
+                    // Se gratuito, zerar preços
+                    if (isFree) {
+                      setValue("price", undefined);
+                      setValue("netRate", undefined);
+                    }
+                  }}
+                />
+                <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
+                  Restaurante Gratuito (sem cobrança por reserva)
+                </Label>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="price">
+                  Preço por Reserva (R$) {watch("isFree") && <span className="text-xs text-gray-500">(Desabilitado - Restaurante Gratuito)</span>}
+                </Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 50.00"
+                  disabled={watch("isFree")}
+                  {...register("price", { 
+                    valueAsNumber: true,
+                    validate: (value) => {
+                      if (watch("isFree")) return true;
+                      if (value !== undefined && value < 0) {
+                        return "O preço não pode ser negativo";
+                      }
+                      return true;
+                    }
+                  })}
+                  className="bg-white shadow-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Deixe em branco se o restaurante não cobra por reserva
+                </p>
+                {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="netRate">
+                  Tarifa net (R$) {watch("isFree") && <span className="text-xs text-gray-500">(Desabilitado - Restaurante Gratuito)</span>}
+                </Label>
+                <Input
+                  id="netRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 35.00"
+                  disabled={watch("isFree")}
+                  {...register("netRate", {
+                    valueAsNumber: true,
+                    validate: (value) => {
+                      if (watch("isFree")) return true;
+                      const priceValue = watch("price");
+                      if (value === undefined || Number.isNaN(value)) {
+                        if (priceValue !== undefined && !Number.isNaN(priceValue)) {
+                          return "Informe a tarifa net";
+                        }
+                        return true;
+                      }
+                      if (value < 0) {
+                        return "A tarifa net não pode ser negativa";
+                      }
+                      if (priceValue !== undefined && !Number.isNaN(priceValue) && value > priceValue) {
+                        return "A tarifa net deve ser menor ou igual ao preço";
+                      }
+                      return true;
+                    }
+                  })}
+                  className="bg-white shadow-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Valor líquido do fornecedor; usamos essa base para calcular o repasse.
+                </p>
+                {errors.netRate && <p className="text-sm text-red-500">{errors.netRate.message}</p>}
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
           
           <div className="space-y-2">
             <Label className="text-sm font-medium">Imagem Principal (opcional)</Label>
@@ -1001,115 +1106,6 @@ export function RestaurantForm({
             />
           </div>
 
-          {/* Configurações de Pagamento */}
-          <Separator className="my-6" />
-          
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Configurações de Reserva e Pagamento</h3>
-            
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Preço por Reserva (R$)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 50.00"
-                    {...register("price", { 
-                      valueAsNumber: true,
-                      validate: (value) => {
-                        if (value !== undefined && value < 0) {
-                          return "O preço não pode ser negativo";
-                        }
-                        return true;
-                      }
-                    })}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Deixe em branco se o restaurante não cobra por reserva
-                  </p>
-                  {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="netRate">Tarifa net (R$)</Label>
-                  <Input
-                    id="netRate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 35.00"
-                    {...register("netRate", {
-                      valueAsNumber: true,
-                      validate: (value) => {
-                        const priceValue = watch("price");
-                        if (value === undefined || Number.isNaN(value)) {
-                          if (priceValue !== undefined && !Number.isNaN(priceValue)) {
-                            return "Informe a tarifa net";
-                          }
-                          return true;
-                        }
-                        if (value < 0) {
-                          return "A tarifa net não pode ser negativa";
-                        }
-                        if (priceValue !== undefined && !Number.isNaN(priceValue) && value > priceValue) {
-                          return "A tarifa net deve ser menor ou igual ao preço";
-                        }
-                        return true;
-                      }
-                    })}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Valor líquido do fornecedor; usamos essa base para calcular o repasse.
-                  </p>
-                  {errors.netRate && <p className="text-sm text-red-500">{errors.netRate.message}</p>}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="acceptsOnlinePayment">Aceita Pagamento Online</Label>
-                    <p className="text-xs text-gray-500">
-                      Permite pagamento online
-                    </p>
-                  </div>
-                  <Switch
-                    id="acceptsOnlinePayment"
-                    checked={watch("acceptsOnlinePayment") || false}
-                    onCheckedChange={(checked) => setValue("acceptsOnlinePayment", checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="requiresUpfrontPayment">Exige Pagamento Antecipado</Label>
-                    <p className="text-xs text-gray-500">
-                      Cobrar no momento da reserva
-                    </p>
-                  </div>
-                  <Switch
-                    id="requiresUpfrontPayment"
-                    checked={watch("requiresUpfrontPayment") || false}
-                    onCheckedChange={(checked) => setValue("requiresUpfrontPayment", checked)}
-                    disabled={!watch("acceptsOnlinePayment")}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {watch("acceptsOnlinePayment") && watch("requiresUpfrontPayment") && !watch("price") && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Atenção</AlertTitle>
-                <AlertDescription>
-                  Para exigir pagamento antecipado, você precisa definir um preço por reserva.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
 
         </TabsContent>
 
@@ -1305,71 +1301,37 @@ export function RestaurantForm({
 
       <Separator />
 
-      <div className="flex justify-between pt-2">
-        <div>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline"
-            className="ml-2"
-            onClick={() => {
-              // Limpar erro de validação
-              setValidationError(null);
-              
-              // Preencher campos obrigatórios para teste
-              setValue("name", "Restaurante Teste");
-              setValue("slug", "restaurante-teste");
-              setValue("description", "Descrição curta do restaurante teste");
-              setValue("phone", "+55 81 99999-9999");
-              setValue("mainImage", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4");
-              setValue("address.street", "Rua Teste, 123");
-              setValue("address.neighborhood", "Centro");
-              setValue("address.zipCode", "53990-000");
-              const filledDays: OperatingDays = {
-                Monday: true,
-                Tuesday: true,
-                Wednesday: true,
-                Thursday: true,
-                Friday: true,
-                Saturday: true,
-                Sunday: true,
-              };
-              setOperatingDays(filledDays);
-              setValue("operatingDays", filledDays);
-              setOpeningTime("08:00");
-              setClosingTime("22:00");
-              setValue("openingTime", "08:00");
-              setValue("closingTime", "22:00");
-              setPaymentOptions(["Dinheiro", "Cartão de Crédito", "Pix"]);
-              console.log("Test data filled");
-            }}
-          >
-            Preencher Teste
-          </Button>
-        </div>
-        <div className="space-x-2">
+      <div className="flex justify-between items-center pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
+        
+        <div className="flex items-center gap-3">
           <Button 
             type="button" 
             variant="secondary"
-            disabled={loading}
+            disabled={loading || currentTab === "media"}
             onClick={() => {
-              // Avançar para o próximo tab
-              const tabs = ["basic", "details", "address", "media"];
+              const tabs = ["basic", "address", "media"];
               const currentIndex = tabs.indexOf(currentTab);
               if (currentIndex < tabs.length - 1) {
                 setCurrentTab(tabs[currentIndex + 1]);
               }
             }}
           >
-            Próximo
+            Próxima Etapa →
           </Button>
           <Button 
             type="submit" 
             disabled={loading}
+            className="bg-green-600 hover:bg-green-700"
           >
-            {loading ? "Salvando..." : isEditing ? "Atualizar" : "Criar Restaurante"}
+            {loading ? "Salvando..." : isEditing ? "✓ Atualizar Restaurante" : "✓ Criar Restaurante"}
           </Button>
         </div>
       </div>

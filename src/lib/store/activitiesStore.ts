@@ -43,6 +43,7 @@ export interface Activity {
   safetyGuidelines?: string[];
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets?: boolean;
   tickets?: ActivityTicket[];
   ticketTypes?: any[];

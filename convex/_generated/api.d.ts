@@ -104,6 +104,10 @@ import type * as domains_partners_mutations from "../domains/partners/mutations.
 import type * as domains_partners_queries from "../domains/partners/queries.js";
 import type * as domains_partners_types from "../domains/partners/types.js";
 import type * as domains_partners_utils from "../domains/partners/utils.js";
+import type * as domains_payments_actions from "../domains/payments/actions.js";
+import type * as domains_payments_mutations from "../domains/payments/mutations.js";
+import type * as domains_payments_queries from "../domains/payments/queries.js";
+import type * as domains_payments_types from "../domains/payments/types.js";
 import type * as domains_rbac_action from "../domains/rbac/action.js";
 import type * as domains_rbac_functions from "../domains/rbac/functions.js";
 import type * as domains_rbac_index from "../domains/rbac/index.js";
@@ -301,6 +305,10 @@ declare const fullApi: ApiFromModules<{
   "domains/partners/queries": typeof domains_partners_queries;
   "domains/partners/types": typeof domains_partners_types;
   "domains/partners/utils": typeof domains_partners_utils;
+  "domains/payments/actions": typeof domains_payments_actions;
+  "domains/payments/mutations": typeof domains_payments_mutations;
+  "domains/payments/queries": typeof domains_payments_queries;
+  "domains/payments/types": typeof domains_payments_types;
   "domains/rbac/action": typeof domains_rbac_action;
   "domains/rbac/functions": typeof domains_rbac_functions;
   "domains/rbac/index": typeof domains_rbac_index;

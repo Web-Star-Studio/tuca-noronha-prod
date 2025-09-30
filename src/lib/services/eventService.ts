@@ -59,6 +59,7 @@ export type EventFromConvex = {
   speakerBio?: string;
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets: boolean;
   partnerId: string; // Reference to the user who created the event
   creator?: {
@@ -109,6 +110,7 @@ export type Event = {
   speakerBio?: string;
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -160,6 +162,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     speakerBio: event.speakerBio,
     isFeatured: event.isFeatured,
     isActive: event.isActive,
+    isFree: event.isFree,
     hasMultipleTickets: event.hasMultipleTickets,
     createdAt: new Date(event._creationTime),
     updatedAt: new Date(event._creationTime),

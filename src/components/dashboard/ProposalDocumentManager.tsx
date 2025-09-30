@@ -6,10 +6,8 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Upload, FileText, Download, Trash2, FileImage, FileSpreadsheet, File, Loader2, Camera } from "lucide-react";
+import { Upload, FileText, Download, Trash2, FileImage, FileSpreadsheet, File, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProposalDocumentManagerProps {

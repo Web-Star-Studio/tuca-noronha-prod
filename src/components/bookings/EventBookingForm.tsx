@@ -148,11 +148,35 @@ export function EventBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Ingresso(s) reservado(s) com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
+      toast.success("Solicitação de ingresso(s) enviada!", {
+        description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
       });
 
-      // 2. If o evento exige pagamento antecipado, gerar link de pagamento pelo Mercado Pago
+      // 2. Check if event is free or no payment required
+      if (event.isFree || getFinalPrice() === 0) {
+        console.log("✅ Evento gratuito - pulando fluxo de pagamento");
+        
+        toast.success("Solicitação enviada com sucesso!", {
+          description: "Evento gratuito - aguardando aprovação do parceiro",
+        });
+
+        // Reset form
+        setAdults(1);
+        setChildren(0);
+        setAdditionalAttendeeNames([]);
+        setSelectedTicketId(undefined);
+        setCustomerInfo({ name: "", email: "", phone: "" });
+        setSpecialRequests("");
+
+        if (onBookingSuccess) {
+          onBookingSuccess(result);
+        }
+
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 3. If o evento exige pagamento antecipado, gerar link de pagamento pelo Mercado Pago
       if (event.acceptsOnlinePayment && event.requiresUpfrontPayment && result.totalPrice > 0) {
         try {
         const mpPref = await createMpCheckoutPreference({
@@ -190,7 +214,7 @@ export function EventBookingForm({
           }
         } catch (paymentError) {
           console.error("💥 Erro ao gerar link de pagamento:", paymentError);
-          toast.error("Reserva criada, mas não foi possível gerar o link de pagamento", {
+          toast.error("Solicitação criada, mas não foi possível gerar o link de pagamento", {
             description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
           });
           

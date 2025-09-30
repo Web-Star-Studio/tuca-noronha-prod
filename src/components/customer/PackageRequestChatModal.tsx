@@ -256,7 +256,7 @@ export default function PackageRequestChatModal({
                           {/* Admin Badge */}
                           {isAdminMessage && (
                             <div className="text-xs font-medium mb-1 text-green-600">
-                              👤 Equipe TourNarrays
+                              👤 Equipe Tuca Noronha
                             </div>
                           )}
                           

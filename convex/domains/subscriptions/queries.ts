@@ -1,6 +1,13 @@
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
-import { getCurrentUserConvexId } from "../rbac";
+
+/**
+ * Get the current user's Clerk ID (for subscriptions)
+ */
+async function getCurrentUserClerkId(ctx: any): Promise<string | null> {
+  const identity = await ctx.auth.getUserIdentity();
+  return identity?.subject || null;
+}
 
 /**
  * Check if the current user has an active guide subscription
@@ -9,7 +16,7 @@ export const hasActiveSubscription = query({
   args: {},
   returns: v.boolean(),
   handler: async (ctx) => {
-    const userId = await getCurrentUserConvexId(ctx);
+    const userId = await getCurrentUserClerkId(ctx);
     if (!userId) {
       return false;
     }
@@ -18,7 +25,7 @@ export const hasActiveSubscription = query({
     const subscription = await ctx.db
       .query("guideSubscriptions")
       .withIndex("by_user_and_status", (q) => 
-        q.eq("userId", userId).eq("status", "active")
+        q.eq("userId", userId).eq("status", "authorized")
       )
       .first();
 
@@ -28,7 +35,7 @@ export const hasActiveSubscription = query({
 
     // Check if subscription is still within valid period
     const now = Date.now();
-    return subscription.currentPeriodEnd > now;
+    return !subscription.endDate || subscription.endDate > now;
   },
 });
 
@@ -39,7 +46,7 @@ export const getCurrentSubscription = query({
   args: {},
   returns: v.any(),
   handler: async (ctx) => {
-    const userId = await getCurrentUserConvexId(ctx);
+    const userId = await getCurrentUserClerkId(ctx);
     if (!userId) {
       return null;
     }
@@ -61,7 +68,7 @@ export const getPaymentHistory = query({
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
-    const userId = await getCurrentUserConvexId(ctx);
+    const userId = await getCurrentUserClerkId(ctx);
     if (!userId) {
       return [];
     }
@@ -77,16 +84,32 @@ export const getPaymentHistory = query({
 });
 
 /**
- * Get subscription by Stripe subscription ID
+ * Get subscription by Mercado Pago preapproval ID
  */
-export const getByStripeSubscriptionId = query({
-  args: { stripeSubscriptionId: v.string() },
+export const getByMpPreapprovalId = query({
+  args: { mpPreapprovalId: v.string() },
   returns: v.any(),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("guideSubscriptions")
-      .withIndex("by_stripe_subscription", (q) => 
-        q.eq("stripeSubscriptionId", args.stripeSubscriptionId)
+      .withIndex("by_mp_preapproval", (q) => 
+        q.eq("mpPreapprovalId", args.mpPreapprovalId)
+      )
+      .first();
+  },
+});
+
+/**
+ * Internal query to get user's subscription by ID
+ */
+export const getUserSubscriptionInternal = internalQuery({
+  args: { userId: v.string() }, // Clerk user ID
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("guideSubscriptions")
+      .withIndex("by_user_and_status", (q) => 
+        q.eq("userId", args.userId).eq("status", "authorized")
       )
       .first();
   },

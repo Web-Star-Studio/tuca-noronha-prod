@@ -6,7 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Search, Plus, Package, MapPin, Calendar, Users, DollarSign, MessageCircle, Eye, ArrowRight } from "lucide-react";
+import { Search, Plus, Package, MapPin, Calendar, Users, DollarSign, MessageCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,6 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import PackageRequestChatModal from "@/components/customer/PackageRequestChatModal";
-import { Id } from "convex/_generated/dataModel";
 
 const PackageRequestsSection: React.FC = () => {
   const { user } = useUser();

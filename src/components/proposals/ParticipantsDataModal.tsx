@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { format } from 'date-fns';
 import { Calendar, User, CreditCard, Mail, Phone, AlertCircle } from 'lucide-react';
 import {
   Dialog,
@@ -118,7 +117,7 @@ export function ParticipantsDataModal({
         <DialogHeader>
           <DialogTitle>Dados dos Participantes</DialogTitle>
           <DialogDescription>
-            Para aceitar a proposta "{proposalTitle}", precisamos dos dados de todos os participantes da viagem.
+            Para aceitar a proposta &ldquo;{proposalTitle}&rdquo;, precisamos dos dados de todos os participantes da viagem.
             Preencha as informações abaixo com atenção.
           </DialogDescription>
         </DialogHeader>

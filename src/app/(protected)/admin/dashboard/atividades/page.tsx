@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Star, Trash2, ChevronLeft, ChevronRight, Loader2, ExternalLink, Clock, X } from "lucide-react"
 import Link from "next/link"
 import { useState, useMemo, useEffect, useCallback } from "react"
@@ -224,6 +225,7 @@ const createEmptyActivity = (): Activity => ({
   cancelationPolicy: [],
   isFeatured: false,
   isActive: true,
+  isFree: false,
   hasMultipleTickets: false,
   tickets: [],
   createdAt: new Date(),
@@ -482,7 +484,9 @@ function ActivityForm({ activity, onSave, onCancel }: {
             
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="price" className="text-sm font-medium">Preço (R$)</Label>
+              <Label htmlFor="price" className="text-sm font-medium">
+                Preço (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Atividade Gratuita)</span>}
+              </Label>
               <Input 
                 id="price" 
                 name="price" 
@@ -493,12 +497,15 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 step="0.01" 
                 className="mt-1.5 bg-white shadow-sm"
                 placeholder="0.00"
-                required 
+                disabled={formData.isFree}
+                required={!formData.isFree}
               />
             </div>
 
             <div>
-              <Label htmlFor="netRate" className="text-sm font-medium">Tarifa net (R$)</Label>
+              <Label htmlFor="netRate" className="text-sm font-medium">
+                Tarifa net (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Atividade Gratuita)</span>}
+              </Label>
               <Input
                 id="netRate"
                 name="netRate"
@@ -509,13 +516,41 @@ function ActivityForm({ activity, onSave, onCancel }: {
                 step="0.01"
                 className="mt-1.5 bg-white shadow-sm"
                 placeholder="0.00"
-                required
+                disabled={formData.isFree}
+                required={!formData.isFree}
               />
               <p className="mt-1 text-xs text-slate-500">
                 Valor líquido acordado com o fornecedor para cálculo do repasse.
               </p>
             </div>
-            
+          </div>
+
+          <div className="col-span-2">
+            <div className="flex items-center space-x-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <Checkbox
+                id="isFree"
+                checked={formData.isFree || false}
+                onCheckedChange={(checked) => {
+                  const isFree = Boolean(checked);
+                  setFormData({
+                    ...formData,
+                    isFree,
+                    // Se gratuito, zerar preços
+                    price: isFree ? 0 : formData.price,
+                    netRate: isFree ? 0 : formData.netRate,
+                  });
+                }}
+              />
+              <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
+                Atividade Gratuita (sem cobrança)
+              </Label>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
             <div>
               <Label htmlFor="category" className="text-sm font-medium">Categoria</Label>
               <Select 

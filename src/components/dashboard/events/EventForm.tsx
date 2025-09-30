@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { MediaSelector } from "@/components/dashboard/media";
@@ -54,6 +55,7 @@ export function EventForm({
           additionalInfo: [],
           isFeatured: false,
           isActive: true,
+          isFree: false,
           hasMultipleTickets: false,
           partnerId: "",
           speaker: "",
@@ -311,7 +313,9 @@ export function EventForm({
             </div>
 
             <div>
-              <Label htmlFor="price" className="text-sm font-medium">Preço (R$)</Label>
+              <Label htmlFor="price" className="text-sm font-medium">
+                Preço (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Asset Gratuito)</span>}
+              </Label>
               <Input 
                 id="price" 
                 name="price" 
@@ -322,12 +326,15 @@ export function EventForm({
                 step="0.01" 
                 className="mt-1.5 bg-white shadow-sm"
                 placeholder="0.00"
-                required 
+                disabled={formData.isFree}
+                required={!formData.isFree}
               />
             </div>
 
             <div>
-              <Label htmlFor="netRate" className="text-sm font-medium">Tarifa net (R$)</Label>
+              <Label htmlFor="netRate" className="text-sm font-medium">
+                Tarifa net (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Asset Gratuito)</span>}
+              </Label>
               <Input 
                 id="netRate" 
                 name="netRate" 
@@ -338,10 +345,36 @@ export function EventForm({
                 step="0.01" 
                 className="mt-1.5 bg-white shadow-sm"
                 placeholder="0.00"
-                required 
+                disabled={formData.isFree}
+                required={!formData.isFree}
               />
               <p className="mt-1 text-xs text-slate-500">
                 Custo líquido combinado com o fornecedor.
+              </p>
+            </div>
+
+            <div className="col-span-2">
+              <div className="flex items-center space-x-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <Checkbox
+                  id="isFree"
+                  checked={formData.isFree || false}
+                  onCheckedChange={(checked) => {
+                    const isFree = Boolean(checked);
+                    setFormData({
+                      ...formData,
+                      isFree,
+                      // Se gratuito, zerar preços
+                      price: isFree ? 0 : formData.price,
+                      netRate: isFree ? 0 : formData.netRate,
+                    });
+                  }}
+                />
+                <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
+                  Asset Gratuito (sem cobrança)
+                </Label>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
               </p>
             </div>
           </div>

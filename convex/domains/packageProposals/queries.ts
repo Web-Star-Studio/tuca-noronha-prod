@@ -396,14 +396,24 @@ export const getProposalsForRequest = query({
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
 
-    // For travelers, only show sent proposals or proposals they've interacted with
+    // For travelers, show sent proposals and all statuses after they interact
     if (currentUserRole === "traveler") {
       proposals = proposals.filter(p => 
         p.status === "sent" || 
         p.status === "viewed" || 
         p.status === "under_negotiation" || 
         p.status === "accepted" || 
-        p.status === "rejected"
+        p.status === "awaiting_participants_data" ||
+        p.status === "participants_data_completed" ||
+        p.status === "flight_booking_in_progress" ||
+        p.status === "flight_booked" ||
+        p.status === "documents_uploaded" ||
+        p.status === "awaiting_final_confirmation" ||
+        p.status === "payment_pending" ||
+        p.status === "payment_completed" ||
+        p.status === "contracted" ||
+        p.status === "rejected" ||
+        p.status === "expired"
       );
     }
 

@@ -479,6 +479,7 @@ export default defineSchema({
     cancelationPolicy: v.array(v.string()),
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
     // Stripe integration fields
@@ -532,6 +533,7 @@ export default defineSchema({
     speakerBio: v.optional(v.string()),  // Optional speaker bio
     isFeatured: v.boolean(),
     isActive: v.boolean(),
+    isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     hasMultipleTickets: v.boolean(),     // Flag indicando se tem múltiplos ingressos
     partnerId: v.id("users"),
     symplaUrl: v.optional(v.string()),   // URL for Sympla event
@@ -624,6 +626,7 @@ export default defineSchema({
     privatePartyInfo: v.optional(v.string()),           // Informações para eventos privados (opcional)
     isActive: v.boolean(),                              // Status ativo/inativo
     isFeatured: v.boolean(),                            // Status destacado
+    isFree: v.optional(v.boolean()),                    // Asset gratuito (sem pagamento)
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
     price: v.optional(v.number()),                       // Preço por reserva (opcional)
     netRate: v.optional(v.number()),                     // Tarifa net (opcional)
@@ -953,6 +956,7 @@ export default defineSchema({
     // Business details
     pricePerDay: v.number(),
     netRate: v.optional(v.number()),
+    isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     description: v.optional(v.string()),
     features: v.array(v.string()),
     imageUrl: v.optional(v.string()),
@@ -1654,6 +1658,7 @@ export default defineSchema({
       currency: v.optional(v.string()),        // Moeda utilizada
       customMessage: v.optional(v.string()),   // Mensagem personalizada
       proposalNumber: v.optional(v.string()),  // Número da proposta
+      participantsCount: v.optional(v.number()), // Número de participantes
       sendEmail: v.optional(v.boolean()),      // Se enviou email
       sendNotification: v.optional(v.boolean()), // Se enviou notificação
       totalPrice: v.optional(v.number()),      // Preço total
@@ -2420,6 +2425,15 @@ export default defineSchema({
       v.literal("viewed"),
       v.literal("under_negotiation"),
       v.literal("accepted"),
+      v.literal("awaiting_participants_data"),    // Waiting for participant info
+      v.literal("participants_data_completed"),   // Participant data filled
+      v.literal("flight_booking_in_progress"),    // Admin booking flights
+      v.literal("flight_booked"),                 // Flights confirmed by admin
+      v.literal("documents_uploaded"),            // Admin uploaded documents
+      v.literal("awaiting_final_confirmation"),   // Waiting customer final approval
+      v.literal("payment_pending"),               // Redirected to payment
+      v.literal("payment_completed"),             // Payment successful
+      v.literal("contracted"),                    // Fully contracted
       v.literal("rejected"),
       v.literal("expired"),
       v.literal("withdrawn")
@@ -2463,6 +2477,37 @@ export default defineSchema({
     convertedToBooking: v.boolean(),              // Whether converted to booking
     bookingId: v.optional(v.string()),            // Booking ID if converted
     convertedAt: v.optional(v.number()),          // When converted
+    
+    // Contracting Process Tracking
+    participantsDataSubmittedAt: v.optional(v.number()),     // When participant data was submitted
+    flightBookingStartedAt: v.optional(v.number()),          // When admin started flight booking
+    flightBookingCompletedAt: v.optional(v.number()),        // When flights were booked
+    documentsUploadedAt: v.optional(v.number()),             // When admin uploaded documents
+    finalConfirmationAt: v.optional(v.number()),             // When customer gave final confirmation
+    paymentInitiatedAt: v.optional(v.number()),              // When payment was initiated
+    paymentCompletedAt: v.optional(v.number()),              // When payment was completed
+    contractedAt: v.optional(v.number()),                    // When fully contracted
+    
+    // Flight Booking Info
+    flightBookingNotes: v.optional(v.string()),              // Admin notes about flight booking
+    flightDetails: v.optional(v.string()),                   // Flight confirmation details
+    
+    // Documents
+    contractDocuments: v.optional(v.array(v.object({
+      storageId: v.string(),
+      fileName: v.string(),
+      fileType: v.string(),
+      fileSize: v.number(),
+      uploadedAt: v.number(),
+      uploadedBy: v.id("users"),
+      description: v.optional(v.string()),
+    }))),
+    
+    // Final Terms and Payment
+    termsAcceptedAt: v.optional(v.number()),                 // When customer accepted final terms
+    finalAmount: v.optional(v.number()),                     // Final contract amount
+    mpPaymentId: v.optional(v.string()),                     // Mercado Pago payment ID
+    mpPreferenceId: v.optional(v.string()),                  // Mercado Pago preference ID
     
     // Metadata
     partnerId: v.optional(v.id("users")),         // Partner responsible

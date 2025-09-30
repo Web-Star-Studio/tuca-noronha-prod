@@ -60,6 +60,7 @@ export type Restaurant = {
   privatePartyInfo?: string;
   isActive: boolean;
   isFeatured: boolean;
+  isFree?: boolean; // Asset gratuito (sem pagamento)
   partnerId?: Id<"users">;
   price?: number;
   netRate?: number;
