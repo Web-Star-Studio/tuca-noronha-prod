@@ -27,6 +27,7 @@ type PackageFormData = {
   age: string;
   occupation: string;
   originCity: string;
+  customOriginCity: string;
   destination: string;
   startDate: string;
   endDate: string;
@@ -75,6 +76,7 @@ export default function PackagesPage() {
     age: "",
     occupation: "",
     originCity: "",
+    customOriginCity: "",
     destination: "",
     startDate: "",
     endDate: "",
@@ -131,6 +133,7 @@ export default function PackagesPage() {
       age: typeof stored.age === "string" ? stored.age : prev.age,
       occupation: typeof stored.occupation === "string" ? stored.occupation : prev.occupation,
       originCity: typeof stored.originCity === "string" ? stored.originCity : prev.originCity,
+      customOriginCity: typeof stored.customOriginCity === "string" ? stored.customOriginCity : prev.customOriginCity,
       destination: typeof stored.destination === "string" ? stored.destination : prev.destination,
       startDate: typeof stored.startDate === "string" ? stored.startDate : prev.startDate,
       endDate: typeof stored.endDate === "string" ? stored.endDate : prev.endDate,
@@ -357,7 +360,7 @@ export default function PackagesPage() {
         },
         tripDetails: {
           destination: "fernando-de-noronha", // Always Fernando de Noronha
-          originCity: formData.originCity || undefined,
+          originCity: formData.originCity === "outras" ? formData.customOriginCity : formData.originCity || undefined,
           startDate: formData.flexibleDates ? undefined : formData.startDate,
           endDate: formData.flexibleDates ? undefined : formData.endDate,
           startMonth: formData.flexibleDates ? formData.startMonth : undefined,
@@ -731,11 +734,16 @@ export default function PackagesPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="originCity" className="text-sm text-gray-600">
                     Cidade de Origem
                   </Label>
-                  <Select value={formData.originCity} onValueChange={(value) => handleInputChange("originCity", value)}>
+                  <Select value={formData.originCity} onValueChange={(value) => {
+                    handleInputChange("originCity", value)
+                    if (value !== "outras") {
+                      handleInputChange("customOriginCity", "")
+                    }
+                  }}>
                     <SelectTrigger className="border-gray-200 focus:border-blue-400">
                       <SelectValue placeholder="De onde você sairá?" />
                     </SelectTrigger>
@@ -771,6 +779,24 @@ export default function PackagesPage() {
                       <SelectItem value="outras">📍 Outra cidade</SelectItem>
                     </SelectContent>
                   </Select>
+                  
+                  {formData.originCity === "outras" && (
+                    <div className="mt-3">
+                      <Input
+                        id="customOriginCity"
+                        value={formData.customOriginCity}
+                        onChange={(e) => handleInputChange("customOriginCity", e.target.value)}
+                        onFocus={() => setFocusedField("customOriginCity")}
+                        onBlur={() => setFocusedField(null)}
+                        className={cn(
+                          "border-gray-200 focus:border-blue-400 transition-colors",
+                          focusedField === "customOriginCity" ? "border-blue-400 ring-1 ring-blue-100" : ""
+                        )}
+                        placeholder="Digite o nome da sua cidade"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

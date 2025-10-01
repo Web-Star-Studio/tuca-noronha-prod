@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { getCategoryLabel } from "@/lib/constants/vehicleCategories";
 
 interface VehicleFilterProps {
   categories: string[];
@@ -135,7 +136,7 @@ export default function VehicleFilter({
                         <Check className="h-3 w-3 text-white" />
                       )}
                     </div>
-                    <span className="text-sm">{category}</span>
+                    <span className="text-sm">{getCategoryLabel(category)}</span>
                   </div>
                 ))}
               </div>

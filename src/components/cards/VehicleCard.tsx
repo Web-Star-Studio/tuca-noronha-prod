@@ -6,6 +6,7 @@ import { useReviewStats } from "@/lib/hooks/useReviews";
 import { WishlistButton } from "@/components/ui/wishlist-button";
 import { parseMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
+import { getCategoryLabel } from "@/lib/constants/vehicleCategories";
 
 interface VehicleCardProps {
   vehicle: {
@@ -64,7 +65,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           {/* Badge de categoria */}
           <div className="absolute top-3 left-3">
             <span className="bg-white/90 backdrop-blur-sm text-xs font-medium px-3 py-1.5 rounded-full shadow-md">
-              {vehicle.category}
+              {getCategoryLabel(vehicle.category)}
             </span>
           </div>
           
@@ -81,8 +82,9 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           </div>
           
           {/* Preço */}
-          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
-            <p className="text-lg font-bold">R$ {vehicle.pricePerDay}/dia</p>
+          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
+            <p className="text-xs text-gray-600 mb-0.5">A partir de</p>
+            <p className="text-lg font-bold text-gray-900">R$ {vehicle.pricePerDay.toFixed(2)}/dia</p>
           </div>
         </div>
 

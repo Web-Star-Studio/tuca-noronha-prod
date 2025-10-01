@@ -14,6 +14,7 @@ import { useCreateVehicle, useUpdateVehicle, useVehicle } from "@/lib/services/v
 import { Id } from "@/../convex/_generated/dataModel";
 import { SmartMedia } from "@/components/ui/smart-media";
 import { parseMediaEntry } from "@/lib/media";
+import { getCategoryBasePrice } from "@/lib/constants/vehicleCategories";
 
 type VehicleFormProps = {
   onSubmit: () => void;
@@ -93,7 +94,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         seats: 5,
         fuelType: "",
         transmission: "",
-        pricePerDay: 0,
+        estimatedPricePerDay: 0,
         netRate: 0,
         description: "",
         features: [],
@@ -110,7 +111,21 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setVehicleData((prev) => ({ ...prev, [name]: value }));
+    setVehicleData((prev) => {
+      const updated = { ...prev, [name]: value };
+      
+      // Se a categoria mudou e o preço está em 0, sugerir o preço base
+      if (name === "category" && prev.estimatedPricePerDay === 0) {
+        const basePrice = getCategoryBasePrice(value);
+        if (basePrice > 0) {
+          updated.estimatedPricePerDay = basePrice;
+          updated.netRate = basePrice;
+          toast.info(`Preço base sugerido: R$ ${basePrice.toFixed(2)}/dia`);
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,13 +281,16 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="economy">Econômico</SelectItem>
-                    <SelectItem value="compact">Compacto</SelectItem>
-                    <SelectItem value="sedan">Sedan</SelectItem>
-                    <SelectItem value="suv">SUV</SelectItem>
-                    <SelectItem value="luxury">Luxo</SelectItem>
-                    <SelectItem value="minivan">Minivan</SelectItem>
-                    <SelectItem value="pickup">Pickup</SelectItem>
+                    <SelectItem value="bike-eletrica">Bike Elétrica</SelectItem>
+                    <SelectItem value="moto-xre-190">Moto XRE 190</SelectItem>
+                    <SelectItem value="buggy">Buggy</SelectItem>
+                    <SelectItem value="uno-gol">Uno/Gol</SelectItem>
+                    <SelectItem value="jimny-4x4">Jimny 4X4</SelectItem>
+                    <SelectItem value="oroch">Oroch</SelectItem>
+                    <SelectItem value="duster">Duster</SelectItem>
+                    <SelectItem value="jeep-renegade-diesel-4x4">Jeep Renegade Diesel 4X4</SelectItem>
+                    <SelectItem value="l200-triton-diesel-4x4">L200 Triton Diesel 4X4</SelectItem>
+                    <SelectItem value="sprinter-17-1">Sprinter 17 +1</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

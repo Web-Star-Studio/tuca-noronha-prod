@@ -1,11 +1,11 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { PenSquare, Trash2, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { Trash2, AlertCircle, PenSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useVehicles } from "@/lib/services/vehicleService";
-
 import { useOrganization } from "@/lib/providers/organization-context";
+import { getCategoryLabel } from "@/lib/constants/vehicleCategories";
 
 type VehicleListProps = {
   onEdit?: (vehicleId: string) => void;
@@ -133,7 +133,7 @@ export default function VehicleList({
               </div>
               <div className="flex items-center">
                 <span className="text-muted-foreground">Categoria:</span>
-                <span className="ml-2 font-medium capitalize">{vehicle.category}</span>
+                <span className="ml-2 font-medium">{getCategoryLabel(vehicle.category)}</span>
               </div>
               <div className="flex items-center">
                 <span className="text-muted-foreground">Combustível:</span>

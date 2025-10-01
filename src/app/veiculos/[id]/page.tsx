@@ -25,6 +25,7 @@ import { HelpSection } from "@/components/contact";
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
+import { getCategoryLabel } from "@/lib/constants/vehicleCategories";
 
 export default function VehiclePage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
@@ -123,7 +124,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                   variant="secondary"
                   className="bg-white/20 backdrop-blur-sm"
                 >
-                  {vehicle.category}
+                  {getCategoryLabel(vehicle.category)}
                 </Badge>
                 <Badge
                   variant="secondary"
@@ -232,7 +233,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                       </div>
                       <div className="flex justify-between p-3 bg-gray-50 rounded">
                         <span className="font-medium text-gray-700">Categoria</span>
-                        <span>{vehicle.category}</span>
+                        <span>{getCategoryLabel(vehicle.category)}</span>
                       </div>
                       <div className="flex justify-between p-3 bg-gray-50 rounded">
                         <span className="font-medium text-gray-700">Cor</span>

@@ -121,11 +121,16 @@ export default function VehiclesPage() {
                     <SelectTrigger id="category" className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="economy">Econômico</SelectItem>
-                      <SelectItem value="compact">Compacto</SelectItem>
-                      <SelectItem value="sedan">Sedan</SelectItem>
-                      <SelectItem value="suv">SUV</SelectItem>
-                      <SelectItem value="luxury">Luxo</SelectItem>
+                      <SelectItem value="bike-eletrica">Bike Elétrica</SelectItem>
+                      <SelectItem value="moto-xre-190">Moto XRE 190</SelectItem>
+                      <SelectItem value="buggy">Buggy</SelectItem>
+                      <SelectItem value="uno-gol">Uno/Gol</SelectItem>
+                      <SelectItem value="jimny-4x4">Jimny 4X4</SelectItem>
+                      <SelectItem value="oroch">Oroch</SelectItem>
+                      <SelectItem value="duster">Duster</SelectItem>
+                      <SelectItem value="jeep-renegade-diesel-4x4">Jeep Renegade Diesel 4X4</SelectItem>
+                      <SelectItem value="l200-triton-diesel-4x4">L200 Triton Diesel 4X4</SelectItem>
+                      <SelectItem value="sprinter-17-1">Sprinter 17 +1</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
