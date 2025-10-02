@@ -159,13 +159,12 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
     },
     instructions: {
       checkIn: ["Chegue 15 minutos antes do horário", "Apresente este voucher"],
-      preparation: ["Traga documento de identidade", "Siga as instruções do estabelecimento"],
+      preparation: ["Traga documento de identidade", "Siga as instruções do estabelecimento", "Apresentar RG e ingresso do Parque Nacional"],
       cancellation: cancellationPolicyText,
     },
     termsAndConditions: [
       "Este voucher é pessoal e intransferível",
       "Apresente este voucher no estabelecimento", 
-      "Sujeito à disponibilidade e condições do estabelecimento",
       cancellationPolicyText,
     ].join(". "),
     confirmationInfo: voucher.confirmationInfo || undefined,

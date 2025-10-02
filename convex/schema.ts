@@ -483,6 +483,7 @@ export default defineSchema({
     isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
+    supplierId: v.optional(v.id("suppliers")), // Fornecedor associado
     // Stripe integration fields
     stripeProductId: v.optional(v.string()),
     stripePriceId: v.optional(v.string()),
@@ -537,6 +538,7 @@ export default defineSchema({
     isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     hasMultipleTickets: v.boolean(),     // Flag indicando se tem múltiplos ingressos
     partnerId: v.id("users"),
+    supplierId: v.optional(v.id("suppliers")), // Fornecedor associado
     symplaUrl: v.optional(v.string()),   // URL for Sympla event
     whatsappContact: v.optional(v.string()), // WhatsApp contact number for reservations
     // New Sympla fields
@@ -632,6 +634,7 @@ export default defineSchema({
     isFeatured: v.boolean(),                            // Status destacado
     isFree: v.optional(v.boolean()),                    // Asset gratuito (sem pagamento)
     partnerId: v.id("users"),                           // ID do parceiro/proprietário
+    supplierId: v.optional(v.id("suppliers")),          // Fornecedor associado
     price: v.optional(v.number()),                       // Preço por reserva (opcional)
     netRate: v.optional(v.number()),                     // Tarifa net (opcional)
     // Stripe integration fields
@@ -667,6 +670,7 @@ export default defineSchema({
   restaurantReservations: defineTable({
     restaurantId: v.id("restaurants"),                  // Referência ao restaurante
     userId: v.id("users"),                              // Usuário que fez a reserva
+    supplierId: v.optional(v.id("suppliers")),         // Supplier assigned at confirmation
     date: v.string(),                                   // Data da reserva (YYYY-MM-DD)
     time: v.string(),                                   // Horário da reserva (HH:MM)
     partySize: v.number(),                              // Número de pessoas
@@ -836,6 +840,7 @@ export default defineSchema({
   activityBookings: defineTable({
     activityId: v.id("activities"),
     userId: v.id("users"),
+    supplierId: v.optional(v.id("suppliers")),    // Supplier assigned at confirmation
     ticketId: v.optional(v.id("activityTickets")), // If activity has multiple tickets
     date: v.string(),                              // Date for the activity (YYYY-MM-DD)
     time: v.optional(v.string()),                  // Specific time if applicable
@@ -893,6 +898,7 @@ export default defineSchema({
   eventBookings: defineTable({
     eventId: v.id("events"),
     userId: v.id("users"),
+    supplierId: v.optional(v.id("suppliers")),    // Supplier assigned at confirmation
     ticketId: v.optional(v.id("eventTickets")),    // If event has multiple tickets
     quantity: v.number(),                          // Number of tickets
     adults: v.optional(v.number()),                // Number of adults
@@ -975,6 +981,7 @@ export default defineSchema({
     updatedAt: v.number(),
     ownerId: v.optional(v.id("users")), // Reference to user who created/owns this vehicle
     organizationId: v.optional(v.string()), // For multi-tenant applications
+    supplierId: v.optional(v.id("suppliers")), // Fornecedor associado
     // Stripe integration fields
     stripeProductId: v.optional(v.string()),
     stripePriceId: v.optional(v.string()),
@@ -994,6 +1001,7 @@ export default defineSchema({
   vehicleBookings: defineTable({
     vehicleId: v.id("vehicles"),
     userId: v.id("users"),
+    supplierId: v.optional(v.id("suppliers")),         // Supplier assigned at confirmation
     startDate: v.number(), // Unix timestamp
     endDate: v.number(), // Unix timestamp
     estimatedPrice: v.number(), // NOVO: Preço estimado mostrado na solicitação

@@ -62,6 +62,7 @@ export type EventFromConvex = {
   isFree?: boolean; // Asset gratuito (sem pagamento)
   hasMultipleTickets: boolean;
   partnerId: string; // Reference to the user who created the event
+  supplierId?: string; // Reference to the supplier (fornecedor)
   creator?: {
     id: string;
     name?: string;
@@ -115,6 +116,7 @@ export type Event = {
   createdAt: Date;
   updatedAt: Date;
   partnerId: string;
+  supplierId?: string;
   creatorName?: string;
   creatorEmail?: string;
   creatorImage?: string;

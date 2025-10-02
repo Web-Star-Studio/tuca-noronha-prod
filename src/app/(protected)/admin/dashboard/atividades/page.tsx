@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MediaSelector } from "@/components/dashboard/media";
+import { SupplierSelect } from "@/components/dashboard/SupplierSelect";
 import type { Media } from "@/lib/services/mediaService";
 import { parseMediaEntry, serializeMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
@@ -231,6 +232,7 @@ const createEmptyActivity = (): Activity => ({
   createdAt: new Date(),
   updatedAt: new Date(),
   partnerId: undefined,
+  supplierId: undefined,
   creatorName: undefined,
   creatorEmail: undefined,
   creatorImage: undefined,
@@ -548,6 +550,13 @@ function ActivityForm({ activity, onSave, onCancel }: {
             <p className="mt-2 text-xs text-slate-500">
               Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
             </p>
+          </div>
+
+          <div className="col-span-2">
+            <SupplierSelect
+              value={formData.supplierId}
+              onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-6">

@@ -212,6 +212,12 @@ export interface VoucherDisplayData {
     name: string;
     contactInfo?: string;
   };
+  supplier?: {
+    name: string;
+    phone?: string;
+    email?: string;
+    notes?: string;
+  };
 }
 
 // Voucher template data interface

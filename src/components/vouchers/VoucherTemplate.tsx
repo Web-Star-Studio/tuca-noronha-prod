@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MapPin, Users, Phone, Mail, Car, Package, Utensils, Activity, Calendar } from "lucide-react";
+import { MapPin, Users, Phone, Mail } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { VoucherTemplateData, VoucherBookingType } from "../../../convex/domains/vouchers/types";
 
@@ -31,23 +31,6 @@ const formatSafeDate = (dateValue: any): string => {
 };
 
 export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps) {
-
-  const getAssetIcon = () => {
-    switch (assetType) {
-      case "activity":
-        return <Activity className="w-6 h-6" />;
-      case "event":
-        return <Calendar className="w-6 h-6" />;
-      case "restaurant":
-        return <Utensils className="w-6 h-6" />;
-      case "vehicle":
-        return <Car className="w-6 h-6" />;
-      case "package":
-        return <Package className="w-6 h-6" />;
-      default:
-        return null;
-    }
-  };
 
   const getAssetTypeLabel = () => {
     switch (assetType) {
@@ -77,14 +60,13 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             <p className="text-gray-600 mt-1">Voucher: {voucherData.voucher.voucherNumber || "N/A"}</p>  
           </div>
           <div className="text-right">
-            {voucherData.brandInfo.logoUrl ? (
-              <Image src={voucherData.brandInfo.logoUrl} alt="Logo" width={64} height={64} className="h-16 mb-2" />
-            ) : (
-              <div className="flex items-center gap-2 mb-2">
-                {getAssetIcon()}
-                <span className="text-xl font-semibold">Tuca Noronha</span>
-              </div>
-            )}
+            <Image 
+              src={voucherData.brandInfo.logoUrl || "/images/tuca-logo.jpeg"} 
+              alt="Tuca Noronha Logo" 
+              width={120} 
+              height={120} 
+              className="h-24 w-auto mb-2 object-contain" 
+            />
             <p className="text-sm text-gray-600">
               Emitido em: {formatSafeDate(voucherData.voucher.generatedAt)}
             </p>
@@ -104,18 +86,14 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
           <h2 className="text-xl font-semibold mb-4">Informações do Cliente</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="font-medium text-lg mb-2">{voucherData.customer.name || "Atendimento Tuca Noronha"}</p>
-            <div className="space-y-1 text-gray-600">
-              <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                {voucherData.customer.email || "atendimentotucanoronha@gmail.com"}
-              </p>
-              {voucherData.customer.phone && (
+            {voucherData.customer.phone && (
+              <div className="space-y-1 text-gray-600">
                 <p className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
                   {voucherData.customer.phone}
                 </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Asset Info */}
@@ -217,28 +195,66 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       <div className="border-t-2 border-gray-200 pt-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Detalhes da Reserva</h2>
         
-        {/* Guest Names */}
-        {voucherData.booking.guestNames && voucherData.booking.guestNames.length > 0 && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <p className="font-medium text-gray-900 mb-3">👥 Participantes Adicionais</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {voucherData.booking.guestNames.map((name, index) => (
+        {/* All Participants (Customer + Guests) */}
+        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <p className="font-medium text-gray-900 mb-3">👥 Lista de Participantes</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* Main customer */}
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                1
+              </span>
+              <span className="font-semibold">{voucherData.customer.name}</span>
+              <span className="text-xs text-gray-500">(Titular)</span>
+            </div>
+            
+            {/* Additional guests */}
+            {voucherData.booking.guestNames && voucherData.booking.guestNames.length > 0 && (
+              voucherData.booking.guestNames.map((name, index) => (
                 <div key={`${name}-${index}`} className="flex items-center gap-2 text-sm text-gray-700">
                   <span className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
-                    {index + 1}
+                    {index + 2}
                   </span>
                   <span>{name}</span>
                 </div>
-              ))}
+              ))
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Total: {1 + (voucherData.booking.guestNames?.length || 0)} {(1 + (voucherData.booking.guestNames?.length || 0)) === 1 ? 'participante' : 'participantes'}
+          </p>
+        </div>
+
+        {/* Supplier Information */}
+        {voucherData.supplier && (
+          <div className="bg-purple-50 p-4 rounded-lg mb-4 border-l-4 border-purple-400">
+            <p className="font-medium text-purple-900 mb-3">🏢 Informações do Fornecedor</p>
+            <div className="space-y-2 text-sm text-purple-800">
+              <p className="font-semibold text-base">{voucherData.supplier.name}</p>
+              {voucherData.supplier.phone && (
+                <p className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  {voucherData.supplier.phone}
+                </p>
+              )}
+              {voucherData.supplier.email && (
+                <p className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {voucherData.supplier.email}
+                </p>
+              )}
+              {voucherData.supplier.notes && (
+                <p className="text-xs mt-2 italic">{voucherData.supplier.notes}</p>
+              )}
             </div>
           </div>
         )}
 
         {/* Special Requests */}
         {voucherData.booking.specialRequests && (
-          <div className="bg-purple-50 p-4 rounded-lg mb-4">
-            <p className="font-medium text-purple-900 mb-2">📝 Observações Especiais</p>
-            <p className="text-sm text-purple-800 whitespace-pre-line">{voucherData.booking.specialRequests}</p>
+          <div className="bg-amber-50 p-4 rounded-lg mb-4">
+            <p className="font-medium text-amber-900 mb-2">📝 Observações Especiais</p>
+            <p className="text-sm text-amber-800 whitespace-pre-line">{voucherData.booking.specialRequests}</p>
           </div>
         )}
       </div>
@@ -319,10 +335,31 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         </div>
       )}
 
+      {/* Important Information - Fees */}
+      <div className="border-t-2 border-gray-200 pt-6 mt-6">
+        <h2 className="text-xl font-semibold mb-4">⚠️ Informações Importantes</h2>
+        <div className="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-400">
+          <div className="space-y-3 text-sm text-amber-900">
+            <div>
+              <p className="font-semibold mb-1">• Não incluso taxa de Preservação Ambiental</p>
+              <p className="ml-4">
+                (<a href="https://www.noronha.pe.gov.br" target="_blank" rel="noopener noreferrer" className="text-amber-700 underline hover:text-amber-800">www.noronha.pe.gov.br</a>) - <span className="font-bold">R$ 101,33</span> por noite/pessoa;
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold mb-1">• Não incluso Ingresso de acesso ao parque Marinho</p>
+              <p className="ml-4">
+                (<a href="https://www.parnanoronha.com.br" target="_blank" rel="noopener noreferrer" className="text-amber-700 underline hover:text-amber-800">www.parnanoronha.com.br</a>) - <span className="font-bold">R$ 186,50</span> por pessoa (brasileiros) e <span className="font-bold">R$ 373,00</span> (estrangeiros). Válido por 10 dias.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Footer */}
       <div className="mt-8 pt-6 border-t-2 border-gray-200 text-center text-sm text-gray-600">
         <p>Este voucher é válido apenas para a data e horário especificados.</p>
-        <p>Em caso de dúvidas, entre em contato com o estabelecimento.</p>
+        <p>Em caso de dúvidas, entre em contato com a agência Tuca Noronha.</p>
       </div>
     </div>
   );

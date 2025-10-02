@@ -1030,6 +1030,7 @@ export const cancelVehicleBooking = mutation({
 export const confirmActivityBooking = mutation({
   args: {
     bookingId: v.id("activityBookings"),
+    supplierId: v.optional(v.id("suppliers")),
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator, // Adicionado
   },
@@ -1078,6 +1079,7 @@ export const confirmActivityBooking = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
+      ...(args.supplierId && { supplierId: args.supplierId }),
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
@@ -1136,6 +1138,7 @@ export const confirmActivityBooking = mutation({
 export const confirmEventBooking = mutation({
   args: {
     bookingId: v.id("eventBookings"),
+    supplierId: v.optional(v.id("suppliers")),
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator,
   },
@@ -1185,6 +1188,7 @@ export const confirmEventBooking = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
+      ...(args.supplierId && { supplierId: args.supplierId }),
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
@@ -1244,6 +1248,7 @@ export const confirmEventBooking = mutation({
 export const confirmRestaurantReservation = mutation({
   args: {
     bookingId: v.id("restaurantReservations"),
+    supplierId: v.optional(v.id("suppliers")),
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator,
   },
@@ -1293,6 +1298,7 @@ export const confirmRestaurantReservation = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
+      ...(args.supplierId && { supplierId: args.supplierId }),
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
@@ -1350,6 +1356,7 @@ export const confirmRestaurantReservation = mutation({
 export const confirmVehicleBooking = mutation({
   args: {
     bookingId: v.id("vehicleBookings"),
+    supplierId: v.optional(v.id("suppliers")),
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator,
   },
@@ -1399,6 +1406,7 @@ export const confirmVehicleBooking = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
+      ...(args.supplierId && { supplierId: args.supplierId }),
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });

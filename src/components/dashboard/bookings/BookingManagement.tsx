@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, Users, MapPin, Phone, Mail, CheckCircle, XCircle, AlertCircle, Car, CalendarDays, Eye, Lock } from "lucide-react";
 import { ChatButton } from "@/components/chat/ChatButton";
 import { toast } from "sonner";
@@ -124,17 +125,27 @@ interface ConfirmBookingDialogProps {
 
 function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess }: ConfirmBookingDialogProps) {
   const [notes, setNotes] = useState("");
+  const [supplierId, setSupplierId] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
 
   const confirmActivityBooking = useMutation(api.domains.bookings.mutations.confirmActivityBooking);
   const confirmEventBooking = useMutation(api.domains.bookings.mutations.confirmEventBooking);
   const confirmRestaurantReservation = useMutation(api.domains.bookings.mutations.confirmRestaurantReservation);
   const confirmVehicleBooking = useMutation(api.domains.bookings.mutations.confirmVehicleBooking);
+  
+  // Buscar fornecedores ativos
+  const suppliers = useQuery(api.domains.suppliers.queries.listSupplierOptions, { isActive: true });
 
   const handleConfirm = async () => {
+    if (!supplierId) {
+      toast.error("Por favor, selecione um fornecedor");
+      return;
+    }
+    
     try {
       const args = {
         bookingId: bookingId as Id<any>,
+        supplierId: supplierId as Id<"suppliers">,
         notes: notes.trim() || undefined,
       };
 
@@ -159,8 +170,9 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
       toast.success("Reserva confirmada com sucesso!");
       setIsOpen(false);
       setNotes("");
+      setSupplierId("");
       onSuccess();
-    } catch {
+    } catch (error) {
       console.error("Erro ao confirmar reserva:", error);
       toast.error("Erro ao confirmar reserva. Tente novamente.");
     }
@@ -184,6 +196,26 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
         </DialogHeader>
         <div className="space-y-4">
           <div>
+            <Label htmlFor="supplier" className="text-sm font-medium">
+              Fornecedor * <span className="text-red-500">obrigatório</span>
+            </Label>
+            <Select value={supplierId} onValueChange={setSupplierId}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Selecione o fornecedor responsável..." />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers?.map((supplier) => (
+                  <SelectItem key={supplier._id} value={supplier._id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              As informações do fornecedor aparecerão no voucher da reserva
+            </p>
+          </div>
+          <div>
             <Label htmlFor="notes">Observações (opcional)</Label>
             <Textarea
               id="notes"
@@ -197,7 +229,11 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button 
+              onClick={handleConfirm} 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={!supplierId}
+            >
               Confirmar Reserva
             </Button>
           </div>

@@ -168,6 +168,29 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
   const includes = asset.includes || asset.services || [];
   const additionalInfo = asset.additionalInfo || asset.notes || [];
 
+  // Get supplier information - prioritize booking supplier over asset supplier
+  let supplier: {
+    name: string;
+    phone?: string;
+    email?: string;
+    notes?: string;
+  } | undefined = undefined;
+
+  // First try to get supplier from booking (set during confirmation)
+  const supplierId = booking.supplierId || asset.supplierId;
+  
+  if (supplierId) {
+    const supplierDoc = await ctx.db.get(supplierId);
+    if (supplierDoc && supplierDoc.isActive) {
+      supplier = {
+        name: supplierDoc.name,
+        phone: supplierDoc.phone,
+        email: supplierDoc.email,
+        notes: supplierDoc.notes,
+      };
+    }
+  }
+
   // Return formatted voucher data
   return {
     voucher: {
@@ -212,6 +235,7 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       name: partner.name,
       contactInfo: partner.email,
     },
+    supplier,
     confirmationInfo,
   };
 }

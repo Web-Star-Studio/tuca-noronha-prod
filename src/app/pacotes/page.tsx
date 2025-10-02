@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Send, MapPin, CheckCircle, Star, User, Target, Car, Waves, Fish, Palette, Bike, Sunset, Ship, Sun, Zap, Mountain } from "lucide-react";
+import { Send, MapPin, CheckCircle, Star, User, Activity as ActivityIcon, Target, Car } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { ParticipantSelector } from "@/components/ui/participant-selector"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-import { useMutation } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -68,6 +68,11 @@ export default function PackagesPage() {
   })
 
   const createPackageRequest = useMutation(api.packages.createPackageRequest)
+  
+  // Buscar atividades ativas do banco de dados
+  const activities = useQuery(api.activities.listActivities, { 
+    isActive: true 
+  })
 
   const [formData, setFormData] = useState<PackageFormData>({
     name: "",
@@ -484,87 +489,13 @@ export default function PackagesPage() {
     )
   }
 
-  // Atividades atualizadas conforme solicitação
-  const activityOptions = [
-    { 
-      id: "bicicleta-aquatica", 
-      label: "Bicicleta aquática", 
-      icon: Bike, 
-      description: "Pedale sobre as águas cristalinas. Duração: 1h | Horário: 8h às 17h | Máx: 4 pessoas | Inclui: equipamento e instrutor"
-    },
-    { 
-      id: "entardecer", 
-      label: "Entardecer", 
-      icon: Sunset, 
-      description: "Contemple o pôr do sol mais belo. Duração: 2h | Horário: 16h às 18h | Máx: 15 pessoas | Inclui: transporte e bebida"
-    },
-    { 
-      id: "entardecer-privativo", 
-      label: "Entardecer privativo", 
-      icon: Sun, 
-      description: "Entardecer exclusivo para você. Duração: 2h | Horário: 16h às 18h | Máx: 6 pessoas | Inclui: jantar, bebidas e fotógrafo"
-    },
-    { 
-      id: "barco-regular", 
-      label: "Passeio de barco regular", 
-      icon: Ship, 
-      description: "Explore as praias em grupo. Duração: 6h | Horário: 9h às 15h | Máx: 20 pessoas | Inclui: almoço, bebidas e snorkel"
-    },
-    { 
-      id: "barco-privativo", 
-      label: "Passeio de barco privativo", 
-      icon: Waves, 
-      description: "Barco exclusivo para seu grupo. Duração: 8h | Horário: 8h às 16h | Máx: 12 pessoas | Inclui: capitão, almoço gourmet, bebidas premium"
-    },
-    { 
-      id: "ilhatour-regular", 
-      label: "Ilhatour regular", 
-      icon: MapPin, 
-      description: "Conheça as principais ilhas. Duração: 8h | Horário: 7h às 15h | Máx: 25 pessoas | Inclui: transporte, almoço e guia"
-    },
-    { 
-      id: "ilhatour-privativo", 
-      label: "Ilhatour privativo", 
-      icon: Target, 
-      description: "Tour personalizado pelas ilhas. Duração: 10h | Horário: 7h às 17h | Máx: 8 pessoas | Inclui: guia exclusivo, refeições premium"
-    },
-    { 
-      id: "canoa-havaiana", 
-      label: "Canoa havaiana", 
-      icon: Zap, 
-      description: "Remada em equipe tradicional. Duração: 1h30 | Horário: 8h às 16h | Máx: 6 pessoas | Inclui: equipamento e instrutor certificado"
-    },
-    { 
-      id: "trilhas", 
-      label: "Trilhas", 
-      icon: Mountain, 
-      description: "Trilha do Pico (3h, difícil), Trilha dos Golfinhos (2h, médio), Trilha da Praia (1h, fácil) | Inclui: guia e equipamentos"
-    },
-    { 
-      id: "pesca", 
-      label: "Pesca", 
-      icon: Fish, 
-      description: "Barco Fishing 35 pés. Duração: 4h | Horário: 6h ou 14h | Máx: 6 pessoas | Inclui: equipamentos, isca, bebidas e lanche"
-    },
-    { 
-      id: "relaxamento-praia", 
-      label: "Relaxamento na praia", 
-      icon: Palette, 
-      description: "Day use com conforto total. Duração: dia todo | Horário: 9h às 17h | Inclui: cadeiras, guarda-sol, bebidas e massagem"
-    },
-    { 
-      id: "mergulho-batismo", 
-      label: "Mergulho batismo", 
-      icon: Fish, 
-      description: "Primeira experiência de mergulho. Duração: 3h | Horário: 8h ou 14h | Máx: 4 pessoas | Inclui: instrutor, equipamentos e certificado"
-    },
-    { 
-      id: "mergulho-snorkel", 
-      label: "Mergulho snorkel", 
-      icon: Waves, 
-      description: "Explore a vida marinha na superfície. Duração: 2h | Horário: 9h às 16h | Máx: 8 pessoas | Inclui: equipamentos e guia marinho"
-    }
-  ]
+  // Transformar atividades do Convex em opções para o formulário
+  const activityOptions = activities?.map(activity => ({
+    id: activity._id,
+    label: activity.title,
+    icon: ActivityIcon, // Ícone padrão para todas as atividades
+    description: activity.shortDescription || activity.description?.slice(0, 150) + '...' || 'Atividade em Fernando de Noronha'
+  })) || []
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col">
@@ -1043,9 +974,16 @@ export default function PackagesPage() {
 
                 <div>
                   <Label className="text-sm text-gray-600 mb-4 block">
-                    Atividades de Interesse
+                    Atividades de Interesse {activities === undefined && <span className="text-xs text-gray-400">(Carregando...)</span>}
                   </Label>
-                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
+                  {activityOptions.length === 0 && activities !== undefined && (
+                    <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      Nenhuma atividade disponível no momento. Nossa equipe entrará em contato para apresentar as opções.
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {activityOptions.map((activity) => (
                       <div
                         key={activity.id}

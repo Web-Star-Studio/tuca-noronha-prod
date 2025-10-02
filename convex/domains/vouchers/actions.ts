@@ -262,7 +262,6 @@ export const generateVoucherPDF = action({
       const termsText = [
         '• Este voucher é pessoal e intransferível.',
         '• Apresente este voucher no estabelecimento junto com documento de identidade.',
-        '• Sujeito à disponibilidade e condições do estabelecimento.',
         '• Em caso de cancelamento, siga as políticas do estabelecimento.',
         '• Válido apenas para o serviço e data especificados.'
       ];
