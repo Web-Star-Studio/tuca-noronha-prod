@@ -4,9 +4,8 @@ import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Printer, Share2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
+import { Printer, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { VoucherTemplate } from "./VoucherTemplate";
-import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -177,26 +176,6 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
     window.print();
   };
 
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/voucher/${voucherData.voucher.voucherNumber}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Voucher ${voucherData.voucher.voucherNumber}`,
-          text: `Voucher de ${voucherData.asset.name}`,
-          url: shareUrl,
-        });
-      } catch {
-        console.error("Erro ao compartilhar:", error);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareUrl);
-      toast.success("Link copiado para a área de transferência!");
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Actions Bar */}
@@ -210,15 +189,6 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
         </div>
         
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShare}
-            className="flex items-center gap-2"
-          >
-            <Share2 className="w-4 h-4" />
-            Compartilhar
-          </Button>
           <Button
             variant="outline"
             size="sm"
