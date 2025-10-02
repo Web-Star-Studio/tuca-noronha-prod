@@ -25,6 +25,7 @@ export interface Activity {
   cancelationPolicy: string[];
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean;
   hasMultipleTickets?: boolean;
   partnerId: Id<"users">;
 }
@@ -77,6 +78,7 @@ export interface ActivityCreateInput {
   cancelationPolicy: string[];
   isFeatured: boolean;
   isActive: boolean;
+  isFree?: boolean;
   hasMultipleTickets?: boolean;
   partnerId: Id<"users">;
 }
@@ -105,6 +107,7 @@ export interface ActivityUpdateInput {
   cancelationPolicy?: string[];
   isFeatured?: boolean;
   isActive?: boolean;
+  isFree?: boolean;
   hasMultipleTickets?: boolean;
   partnerId?: Id<"users">;
 }

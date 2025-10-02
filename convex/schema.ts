@@ -73,37 +73,54 @@ const partnerTransactions = defineTable({
   .index("by_status_and_createdAt", ["status", "createdAt"]);
 
 const suppliers = defineTable({
-  name: v.string(),
-  phone: v.optional(v.string()),
-  email: v.optional(v.string()),
+  // Public Information (appears on voucher)
+  name: v.string(),                           // Supplier name (REQUIRED)
+  address: v.optional(v.string()),            // Physical address
+  cnpj: v.optional(v.string()),               // Brazilian business registration
+  emergencyPhone: v.optional(v.string()),     // Emergency contact phone ("Fone de plantão")
+  
+  // Private Information (admin only)
   bankDetails: v.optional(
     v.object({
       bankName: v.optional(v.string()),
-      accountType: v.optional(v.string()),
+      accountType: v.optional(v.string()),    // checking, savings
+      agency: v.optional(v.string()),         // "agencyNumber" renamed to "agency"
       accountNumber: v.optional(v.string()),
-      agencyNumber: v.optional(v.string()),
-      holderName: v.optional(v.string()),
-      holderDocument: v.optional(v.string()),
-      pixKey: v.optional(v.string()),
     })
   ),
-  notes: v.optional(v.string()),
-  assetAssociations: v.array(
+  financialEmail: v.optional(v.string()),     // E-mail do financeiro
+  contactPerson: v.optional(v.string()),      // Contato (main contact name)
+  financialPhone: v.optional(v.string()),     // Fone do financeiro
+  pixKey: v.optional(v.string()),             // PIX
+  
+  // Legacy fields (keep for backward compatibility)
+  phone: v.optional(v.string()),              // Generic phone (legacy)
+  email: v.optional(v.string()),              // Generic email (legacy)
+  notes: v.optional(v.string()),              // Internal notes
+  assetAssociations: v.optional(v.array(      // Made optional
     v.object({
       assetId: v.string(),
       assetType: v.string(),
       assetName: v.optional(v.string()),
     })
-  ),
+  )),
+  
+  // Metadata
+  isActive: v.boolean(),
+  partnerId: v.optional(v.id("users")),       // Partner who created
+  organizationId: v.optional(v.id("partnerOrganizations")), // Organization
   createdBy: v.id("users"),
+  updatedBy: v.optional(v.id("users")),       // Who last updated
   createdAt: v.number(),
   updatedAt: v.number(),
-  isActive: v.boolean(),
 })
   .index("by_email", ["email"])
   .index("by_name", ["name"])
   .index("by_active", ["isActive", "name"])
-  .index("by_createdBy", ["createdBy"]);
+  .index("by_createdBy", ["createdBy"])
+  .index("by_partner", ["partnerId"])
+  .index("by_organization", ["organizationId"])
+  .index("by_created_at", ["createdAt"]);
 
 export const contactMessages = defineTable({
   name: v.string(),

@@ -335,4 +335,9 @@ export const removeActivityTicket = mutationWithRole(["partner", "master"])({
     // Excluir o ingresso
     await ctx.db.delete(args.id);
   },
-}); 
+});
+
+// Aliases for backward compatibility
+export const createTicket = createActivityTicket;
+export const updateTicket = updateActivityTicket;
+export const removeTicket = removeActivityTicket; 

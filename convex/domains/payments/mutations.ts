@@ -54,35 +54,13 @@ export const createPaymentPreference = mutation({
     }
 
     try {
-      // Schedule the action to create MP preference
-      const actionId = await ctx.scheduler.runAfter(0, internal.domains.payments.actions.createMPPreference, {
-        proposalId: args.proposalId,
-        items: args.items,
-        payer: args.payer,
-        back_urls: args.back_urls,
-        auto_return: args.auto_return,
-        external_reference: args.external_reference,
-        notification_url: args.notification_url,
-      });
-
-      const now = Date.now();
-
-      // Update proposal to indicate payment is being processed
-      await ctx.db.patch(args.proposalId, {
-        status: "payment_pending",
-        mpPreferenceId: `scheduled_${actionId}`,
-        paymentInitiatedAt: now,
-        updatedAt: now,
-      });
-
-      // Log preference creation
-      console.log(`Payment preference scheduled for proposal: ${proposal.title}`);
-
+      // DEPRECATED: Use createPaymentPreferenceWithUpdate action instead
+      // This mutation is kept for backward compatibility but should not be used
+      // The action creates the MP preference synchronously and returns the real checkout URL
+      
       return {
-        success: true,
-        preferenceId: `scheduled_${actionId}`,
-        initPoint: "/payment/processing",
-        sandboxInitPoint: "/payment/processing",
+        success: false,
+        error: "Use a action 'createPaymentPreferenceWithUpdate' para criar pagamentos. Esta mutation está deprecada.",
       };
     } catch (error) {
       console.error("Error creating payment preference:", error);

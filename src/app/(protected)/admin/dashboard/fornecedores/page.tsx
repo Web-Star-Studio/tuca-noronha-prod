@@ -33,13 +33,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SupplierFormDialog } from "@/components/suppliers/SupplierFormDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useOptimizedAssets } from "@/hooks/useOptimizedAssets";
-import type { Supplier, SupplierFormValues } from "@/types/supplier";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SupplierForm } from "@/components/dashboard/suppliers/SupplierForm";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -53,37 +57,12 @@ const formatDate = (timestamp: number) =>
     year: "numeric",
   });
 
-const buildCreatePayload = (values: SupplierFormValues) => {
-  const payload: Record<string, unknown> = {
-    name: values.name,
-    assetAssociations: values.assetAssociations,
-  };
-
-  if (values.phone) payload.phone = values.phone;
-  if (values.email) payload.email = values.email;
-  if (values.notes) payload.notes = values.notes;
-  if (values.bankDetails) payload.bankDetails = values.bankDetails;
-
-  return payload;
-};
-
-const buildUpdatePayload = (values: SupplierFormValues) => ({
-  ...buildCreatePayload(values),
-  isActive: values.isActive,
-});
-
 export default function SuppliersPage() {
   const { user, isLoading: isUserLoading } = useCurrentUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { allAssets, isLoading: isAssetsLoading } = useOptimizedAssets({
-    assetType: "all",
-    isActive: true,
-  });
+  const [editingSupplier, setEditingSupplier] = useState<any>(null);
 
   const supplierQueryArgs = useMemo(() => {
     const trimmedSearch = searchTerm.trim();
@@ -103,8 +82,6 @@ export default function SuppliersPage() {
   const suppliers = useQuery(suppliersQueries.listSuppliers, supplierQueryArgs);
   const isSuppliersLoading = suppliers === undefined;
 
-  const createSupplier = useMutation(suppliersMutations.createSupplier);
-  const updateSupplier = useMutation(suppliersMutations.updateSupplier);
   const setSupplierStatus = useMutation(suppliersMutations.setSupplierStatus);
 
   const stats = useMemo(() => {
@@ -122,7 +99,7 @@ export default function SuppliersPage() {
     setDialogOpen(true);
   };
 
-  const handleEditSupplier = (supplier: Supplier) => {
+  const handleEditSupplier = (supplier: any) => {
     setEditingSupplier(supplier);
     setDialogOpen(true);
   };
@@ -136,30 +113,7 @@ export default function SuppliersPage() {
     }
   };
 
-  const handleSubmit = async (values: SupplierFormValues) => {
-    setIsSubmitting(true);
-    try {
-      if (editingSupplier) {
-        const payload = buildUpdatePayload(values);
-        await updateSupplier({ supplierId: editingSupplier._id, ...payload });
-        toast.success("Fornecedor atualizado com sucesso");
-      } else {
-        const payload = buildCreatePayload(values);
-        await createSupplier(payload);
-        toast.success("Fornecedor cadastrado com sucesso");
-      }
-
-      setDialogOpen(false);
-      setEditingSupplier(null);
-    } catch (error) {
-      console.error("Erro ao salvar fornecedor", error);
-      toast.error("Não foi possível salvar o fornecedor. Tente novamente.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleToggleStatus = async (supplier: Supplier) => {
+  const handleToggleStatus = async (supplier: any) => {
     try {
       await setSupplierStatus({ supplierId: supplier._id, isActive: !supplier.isActive });
       toast.success(
@@ -394,14 +348,28 @@ export default function SuppliersPage() {
         </CardContent>
       </Card>
 
-      <SupplierFormDialog
-        open={dialogOpen}
-        onOpenChange={handleDialogChange}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        initialData={editingSupplier}
-        availableAssets={isAssetsLoading ? [] : allAssets}
-      />
+      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <SupplierForm
+              supplier={editingSupplier}
+              onSuccess={() => {
+                setDialogOpen(false);
+                setEditingSupplier(null);
+              }}
+              onCancel={() => {
+                setDialogOpen(false);
+                setEditingSupplier(null);
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

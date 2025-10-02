@@ -2,16 +2,7 @@ import { v } from "convex/values";
 import type { MutationCtx } from "../../_generated/server";
 import { mutationWithRole } from "../rbac/mutation";
 import type { SupplierAssetAssociation } from "./types";
-
-const bankDetailsValidator = v.object({
-  bankName: v.optional(v.string()),
-  accountType: v.optional(v.string()),
-  accountNumber: v.optional(v.string()),
-  agencyNumber: v.optional(v.string()),
-  holderName: v.optional(v.string()),
-  holderDocument: v.optional(v.string()),
-  pixKey: v.optional(v.string()),
-});
+import { CreateSupplierArgs, UpdateSupplierArgs, SupplierBankDetailsValidator } from "./types";
 
 const assetAssociationValidator = v.object({
   assetId: v.string(),
@@ -66,70 +57,84 @@ async function getCurrentUserId(ctx: MutationCtx) {
   return user._id;
 }
 
-export const createSupplier = mutationWithRole(["master"])({
-  args: {
-    name: v.string(),
-    phone: v.optional(v.string()),
-    email: v.optional(v.string()),
-    bankDetails: v.optional(bankDetailsValidator),
-    notes: v.optional(v.string()),
-    assetAssociations: v.optional(v.array(assetAssociationValidator)),
-  },
+export const createSupplier = mutationWithRole(["master", "partner"])({
+  args: CreateSupplierArgs,
   returns: v.id("suppliers"),
   handler: async (ctx, args) => {
     const now = Date.now();
     const createdBy = await getCurrentUserId(ctx);
 
     const supplierId = await ctx.db.insert("suppliers", {
+      // Public fields
       name: args.name,
+      address: args.address,
+      cnpj: args.cnpj,
+      emergencyPhone: args.emergencyPhone,
+      
+      // Private fields
+      bankDetails: args.bankDetails,
+      financialEmail: args.financialEmail,
+      contactPerson: args.contactPerson,
+      financialPhone: args.financialPhone,
+      pixKey: args.pixKey,
+      
+      // Legacy fields
       phone: args.phone,
       email: args.email,
-      bankDetails: args.bankDetails,
       notes: args.notes,
-      assetAssociations: normalizeAssetAssociations(args.assetAssociations ?? []),
+      assetAssociations: args.assetAssociations ? normalizeAssetAssociations(args.assetAssociations) : undefined,
+      
+      // Metadata
+      isActive: true,
+      partnerId: args.partnerId,
+      organizationId: args.organizationId,
       createdBy,
+      updatedBy: createdBy,
       createdAt: now,
       updatedAt: now,
-      isActive: true,
     });
 
     return supplierId;
   },
 });
 
-export const updateSupplier = mutationWithRole(["master"])({
-  args: {
-    supplierId: v.id("suppliers"),
-    name: v.optional(v.string()),
-    phone: v.optional(v.string()),
-    email: v.optional(v.string()),
-    bankDetails: v.optional(bankDetailsValidator),
-    notes: v.optional(v.string()),
-    assetAssociations: v.optional(v.array(assetAssociationValidator)),
-    isActive: v.optional(v.boolean()),
-  },
+export const updateSupplier = mutationWithRole(["master", "partner"])({
+  args: UpdateSupplierArgs,
   returns: v.null(),
   handler: async (ctx, args) => {
-    const supplier = await ctx.db.get(args.supplierId);
+    const supplier = await ctx.db.get(args.id);
     if (!supplier) {
       throw new Error("Fornecedor não encontrado");
     }
 
+    const currentUserId = await getCurrentUserId(ctx);
     const updates: Record<string, unknown> = {
       updatedAt: Date.now(),
+      updatedBy: currentUserId,
     };
 
+    // Public fields
     if (args.name !== undefined) updates.name = args.name;
+    if (args.address !== undefined) updates.address = args.address;
+    if (args.cnpj !== undefined) updates.cnpj = args.cnpj;
+    if (args.emergencyPhone !== undefined) updates.emergencyPhone = args.emergencyPhone;
+    
+    // Private fields
+    if (args.bankDetails !== undefined) updates.bankDetails = args.bankDetails;
+    if (args.financialEmail !== undefined) updates.financialEmail = args.financialEmail;
+    if (args.contactPerson !== undefined) updates.contactPerson = args.contactPerson;
+    if (args.financialPhone !== undefined) updates.financialPhone = args.financialPhone;
+    if (args.pixKey !== undefined) updates.pixKey = args.pixKey;
+    
+    // Legacy fields
     if (args.phone !== undefined) updates.phone = args.phone;
     if (args.email !== undefined) updates.email = args.email;
-    if (args.bankDetails !== undefined) updates.bankDetails = args.bankDetails;
     if (args.notes !== undefined) updates.notes = args.notes;
-    if (args.assetAssociations !== undefined) {
-      updates.assetAssociations = normalizeAssetAssociations(args.assetAssociations);
-    }
+    
+    // Status
     if (args.isActive !== undefined) updates.isActive = args.isActive;
 
-    await ctx.db.patch(args.supplierId, updates);
+    await ctx.db.patch(args.id, updates);
     return null;
   },
 });

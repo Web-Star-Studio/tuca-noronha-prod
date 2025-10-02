@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { toast } from "sonner";
 
@@ -55,7 +55,7 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
   const acceptProposalInitial = useMutation(api.domains.packageProposals.mutations.acceptProposalInitial);
   const submitParticipantsData = useMutation(api.domains.packageProposals.mutations.submitParticipantsData);
   const giveFinalConfirmation = useMutation(api.domains.packageProposals.mutations.giveFinalConfirmation);
-  const createPaymentPreference = useMutation(api.domains.payments.mutations.createPaymentPreference);
+  const createPaymentPreferenceAction = useAction(api.domains.payments.actions.createPaymentPreferenceWithUpdate);
 
   const handleAcceptProposal = async () => {
     try {
@@ -109,9 +109,9 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
       
       toast.success("Confirmação registrada! Criando pagamento...");
       
-      // Create payment preference
+      // Create payment preference usando action (chamada direta ao Mercado Pago)
       const firstParticipant = proposal.participantsData?.[0];
-      const paymentResult = await createPaymentPreference({
+      const paymentResult = await createPaymentPreferenceAction({
         proposalId: proposal._id,
         items: [
           {
@@ -137,22 +137,20 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
             number: firstParticipant.cpf.replace(/\D/g, ''),
           } : undefined,
         } : undefined,
-        back_urls: {
-          success: `${window.location.origin}/pagamento/sucesso`,
-          failure: `${window.location.origin}/pagamento/erro`,
-          pending: `${window.location.origin}/pagamento/pendente`,
-        },
-        auto_return: "approved",
-        external_reference: proposal._id,
-        notification_url: `${window.location.origin}/api/webhooks/mercadopago`,
-        statement_descriptor: "TUCA NORONHA",
       });
 
-      if (paymentResult.success && paymentResult.initPoint) {
-        toast.success("Redirecionando para pagamento...");
+      if (paymentResult.success && (paymentResult.initPoint || paymentResult.sandboxInitPoint)) {
+        // Use sandbox in dev, production in prod
+        const checkoutUrl = process.env.NODE_ENV === 'production' 
+          ? paymentResult.initPoint 
+          : (paymentResult.sandboxInitPoint || paymentResult.initPoint);
         
-        // Redirect to Mercado Pago checkout
-        window.location.href = paymentResult.initPoint;
+        toast.success("Redirecionando para o Checkout Pro do Mercado Pago...");
+        
+        // Redirect direto para Mercado Pago Checkout Pro
+        setTimeout(() => {
+          window.location.href = checkoutUrl!;
+        }, 1000);
       } else {
         toast.error(paymentResult.error || "Erro ao criar pagamento");
       }

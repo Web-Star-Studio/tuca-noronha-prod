@@ -168,13 +168,13 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
   const includes = asset.includes || asset.services || [];
   const additionalInfo = asset.additionalInfo || asset.notes || [];
 
-  // Get supplier information - prioritize booking supplier over asset supplier
+  // Get supplier information (public fields only) - prioritize booking supplier over asset supplier
   let supplier: {
     name: string;
-    phone?: string;
-    email?: string;
-    notes?: string;
-  } | undefined = undefined;
+    address?: string;
+    cnpj?: string;
+    emergencyPhone?: string;
+  } | null = null;
 
   // First try to get supplier from booking (set during confirmation)
   const supplierId = booking.supplierId || asset.supplierId;
@@ -182,11 +182,12 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
   if (supplierId) {
     const supplierDoc = await ctx.db.get(supplierId);
     if (supplierDoc && supplierDoc.isActive) {
+      // Return only public fields (those that appear on voucher)
       supplier = {
         name: supplierDoc.name,
-        phone: supplierDoc.phone,
-        email: supplierDoc.email,
-        notes: supplierDoc.notes,
+        address: supplierDoc.address,
+        cnpj: supplierDoc.cnpj,
+        emergencyPhone: supplierDoc.emergencyPhone,
       };
     }
   }

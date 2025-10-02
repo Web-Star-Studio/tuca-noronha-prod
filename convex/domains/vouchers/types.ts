@@ -214,10 +214,10 @@ export interface VoucherDisplayData {
   };
   supplier?: {
     name: string;
-    phone?: string;
-    email?: string;
-    notes?: string;
-  };
+    address?: string;
+    cnpj?: string;
+    emergencyPhone?: string;
+  } | null;
 }
 
 // Voucher template data interface

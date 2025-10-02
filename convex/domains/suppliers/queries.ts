@@ -1,22 +1,41 @@
 import { v } from "convex/values";
+import { query } from "../../_generated/server";
 import { queryWithRole } from "../rbac/query";
-import type { Supplier } from "./types";
+import type { Supplier, SupplierPublicInfo } from "./types";
 
-export const listSuppliers = queryWithRole(["master"])({
+export const listSuppliers = queryWithRole(["master", "partner"])({
   args: {
     search: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
+    partnerId: v.optional(v.id("users")),
+    organizationId: v.optional(v.id("partnerOrganizations")),
   },
   handler: async (ctx, args) => {
     let suppliers: Supplier[];
 
-    if (args.isActive !== undefined) {
+    // Filter by partner or organization if specified
+    if (args.partnerId) {
+      suppliers = (await ctx.db
+        .query("suppliers")
+        .withIndex("by_partner", (q) => q.eq("partnerId", args.partnerId))
+        .collect()) as Supplier[];
+    } else if (args.organizationId) {
+      suppliers = (await ctx.db
+        .query("suppliers")
+        .withIndex("by_organization", (q) => q.eq("organizationId", args.organizationId))
+        .collect()) as Supplier[];
+    } else if (args.isActive !== undefined) {
       suppliers = (await ctx.db
         .query("suppliers")
         .withIndex("by_active", (q) => q.eq("isActive", args.isActive))
         .collect()) as Supplier[];
     } else {
       suppliers = (await ctx.db.query("suppliers").collect()) as Supplier[];
+    }
+
+    // Apply active filter if needed
+    if (args.isActive !== undefined) {
+      suppliers = suppliers.filter((s) => s.isActive === args.isActive);
     }
 
     const searchTerm = args.search?.trim().toLowerCase();
@@ -27,6 +46,9 @@ export const listSuppliers = queryWithRole(["master"])({
           supplier.name,
           supplier.email,
           supplier.phone,
+          supplier.address,
+          supplier.cnpj,
+          supplier.contactPerson,
           supplier.notes,
         ]
           .filter(Boolean)
@@ -37,7 +59,7 @@ export const listSuppliers = queryWithRole(["master"])({
           return true;
         }
 
-        return supplier.assetAssociations.some((association) =>
+        return supplier.assetAssociations?.some((association) =>
           association.assetName?.toLowerCase().includes(searchTerm)
         );
       });
@@ -56,7 +78,7 @@ export const getSupplier = queryWithRole(["master"])({
   },
 });
 
-export const listSupplierOptions = queryWithRole(["master"])({
+export const listSupplierOptions = queryWithRole(["master", "partner"])({
   args: {
     isActive: v.optional(v.boolean()),
   },
@@ -75,5 +97,30 @@ export const listSupplierOptions = queryWithRole(["master"])({
         name: supplier.name,
         isActive: supplier.isActive,
       }));
+  },
+});
+
+/**
+ * Get public supplier information for voucher display
+ * This query is public (no role check) as it only returns public fields
+ */
+export const getSupplierPublicInfo = query({
+  args: {
+    supplierId: v.id("suppliers"),
+  },
+  handler: async (ctx, args): Promise<SupplierPublicInfo | null> => {
+    const supplier = await ctx.db.get(args.supplierId);
+    
+    if (!supplier) {
+      return null;
+    }
+
+    // Return only public fields for voucher
+    return {
+      name: supplier.name,
+      address: supplier.address,
+      cnpj: supplier.cnpj,
+      emergencyPhone: supplier.emergencyPhone,
+    };
   },
 });

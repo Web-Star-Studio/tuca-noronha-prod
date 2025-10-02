@@ -565,6 +565,7 @@ export const listAllUsers = query({
     partnerId: v.optional(v.id("users")),
     organizationId: v.optional(v.id("partnerOrganizations")),
     dateOfBirth: v.optional(v.string()),
+    cpf: v.optional(v.string()),
     onboardingCompleted: v.optional(v.boolean()),
     onboardingCompletedAt: v.optional(v.number()),
     // Métricas agregadas
@@ -2519,3 +2520,5 @@ export const getUserByIdPublic = query({
     };
   },
 });
+// Aliases for backward compatibility
+export const getAll = listAllUsers;

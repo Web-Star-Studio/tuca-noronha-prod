@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as activities from "../activities.js";
 import type * as admin_functions from "../admin_functions.js";
 import type * as ai from "../ai.js";
 import type * as auth from "../auth.js";
@@ -193,6 +194,7 @@ import type * as shared_rbac from "../shared/rbac.js";
 import type * as shared_validators from "../shared/validators.js";
 import type * as types from "../types.js";
 import type * as userPreferences from "../userPreferences.js";
+import type * as users from "../users.js";
 import type * as wishlist from "../wishlist.js";
 
 import type {
@@ -210,6 +212,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  activities: typeof activities;
   admin_functions: typeof admin_functions;
   ai: typeof ai;
   auth: typeof auth;
@@ -395,6 +398,7 @@ declare const fullApi: ApiFromModules<{
   "shared/validators": typeof shared_validators;
   types: typeof types;
   userPreferences: typeof userPreferences;
+  users: typeof users;
   wishlist: typeof wishlist;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

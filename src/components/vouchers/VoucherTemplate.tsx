@@ -98,6 +98,38 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             </p>
           </div>
 
+          {/* Supplier Info */}
+          {voucherData.supplier && (
+            <>
+              <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Fornecedor</h2>
+              <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg mb-4">
+                <p className="font-semibold text-blue-900 text-lg mb-2">
+                  {voucherData.supplier.name}
+                </p>
+                <div className="space-y-1 text-sm text-blue-800">
+                  {voucherData.supplier.address && (
+                    <p className="flex items-start gap-2">
+                      <span className="font-medium">📍 Endereço:</span>
+                      <span>{voucherData.supplier.address}</span>
+                    </p>
+                  )}
+                  {voucherData.supplier.cnpj && (
+                    <p className="flex items-start gap-2">
+                      <span className="font-medium">🏢 CNPJ:</span>
+                      <span>{voucherData.supplier.cnpj}</span>
+                    </p>
+                  )}
+                  {voucherData.supplier.emergencyPhone && (
+                    <p className="flex items-start gap-2">
+                      <span className="font-medium">📞 Fone de Plantão:</span>
+                      <span className="font-semibold">{voucherData.supplier.emergencyPhone}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Asset Info */}
           <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Serviço</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
