@@ -118,7 +118,13 @@ export const createPaymentPreferenceWithUpdate = action({
         external_reference: args.external_reference || args.proposalId,
         notification_url: args.notification_url || `${siteUrl}/api/webhooks/mercadopago`,
         payment_methods: {
-          installments: 12,
+          installments: 12, // Até 12 parcelas no cartão de crédito
+          excluded_payment_methods: [], // Não excluir nenhum método específico
+          excluded_payment_types: [
+            { id: "ticket" }, // Excluir boleto
+            { id: "atm" }, // Excluir débito em caixa eletrônico
+          ],
+          // Aceita: credit_card, debit_card, bank_transfer (PIX)
         },
       };
       
@@ -260,7 +266,13 @@ export const createMPPreference = action({
         external_reference: args.external_reference || args.proposalId,
         notification_url: args.notification_url || `${siteUrl}/api/webhooks/mercadopago`,
         payment_methods: {
-          installments: 12,
+          installments: 12, // Até 12 parcelas no cartão de crédito
+          excluded_payment_methods: [], // Não excluir nenhum método específico
+          excluded_payment_types: [
+            { id: "ticket" }, // Excluir boleto
+            { id: "atm" }, // Excluir débito em caixa eletrônico
+          ],
+          // Aceita: credit_card, debit_card, bank_transfer (PIX)
         },
       };
 

@@ -89,7 +89,7 @@ export default function SuppliersPage() {
     const total = list.length;
     const active = list.filter((supplier) => supplier.isActive).length;
     const inactive = total - active;
-    const withAssets = list.filter((supplier) => supplier.assetAssociations.length > 0).length;
+    const withAssets = list.filter((supplier) => supplier.assetAssociations && supplier.assetAssociations.length > 0).length;
 
     return { total, active, inactive, withAssets };
   }, [suppliers]);
@@ -272,7 +272,7 @@ export default function SuppliersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="align-top">
-                      {supplier.assetAssociations.length ? (
+                      {supplier.assetAssociations && supplier.assetAssociations.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {supplier.assetAssociations.map((association) => (
                             <Badge
