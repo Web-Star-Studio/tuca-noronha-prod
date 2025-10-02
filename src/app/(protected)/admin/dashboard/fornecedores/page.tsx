@@ -105,11 +105,12 @@ export default function SuppliersPage() {
   };
 
   const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
     if (!open) {
-      setDialogOpen(false);
-      setEditingSupplier(null);
-    } else {
-      setDialogOpen(true);
+      // Limpar estado após pequeno delay para garantir que o dialog seja desmontado corretamente
+      setTimeout(() => {
+        setEditingSupplier(null);
+      }, 100);
     }
   };
 
@@ -348,28 +349,28 @@ export default function SuppliersPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-            <SupplierForm
-              supplier={editingSupplier}
-              onSuccess={() => {
-                setDialogOpen(false);
-                setEditingSupplier(null);
-              }}
-              onCancel={() => {
-                setDialogOpen(false);
-                setEditingSupplier(null);
-              }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {dialogOpen && (
+        <Dialog open={dialogOpen} onOpenChange={handleDialogChange} modal={true}>
+          <DialogContent className="max-w-3xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+              <SupplierForm
+                supplier={editingSupplier}
+                onSuccess={() => {
+                  handleDialogChange(false);
+                }}
+                onCancel={() => {
+                  handleDialogChange(false);
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

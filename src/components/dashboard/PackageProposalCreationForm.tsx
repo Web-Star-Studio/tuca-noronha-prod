@@ -150,7 +150,7 @@ export function PackageProposalCreationForm({
           title: `Proposta de Pacote para ${packageRequest.customerInfo.name} em ${packageRequest.tripDetails.destination}`,
           description: `Uma proposta de viagem exclusiva para ${packageRequest.tripDetails.destination}, pensada para ${packageRequest.tripDetails.groupSize} pessoa(s), com duração de ${packageRequest.tripDetails.duration} dias.`,
           summary: `Pacote para ${packageRequest.tripDetails.destination} incluindo as melhores atividades e hospedagens.`,
-          validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          validUntil: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         }));
 
         const suggestedComponents: PackageComponent[] = result.suggestions.map(suggestion => ({

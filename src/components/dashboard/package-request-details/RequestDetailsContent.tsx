@@ -51,7 +51,6 @@ export function RequestDetailsContent({ request }: { request: any }) {
   const accommodationTypes = request.preferences?.accommodationType ?? [];
   const activities = request.preferences?.activities ?? [];
   const transportation = request.preferences?.transportation ?? [];
-  const foodPreferences = request.preferences?.foodPreferences ?? [];
   const accessibility = request.preferences?.accessibility ?? [];
 
   const formatList = (values: string[] | undefined, emptyLabel = "Não informado") => {
@@ -153,7 +152,6 @@ export function RequestDetailsContent({ request }: { request: any }) {
               <p><strong>Tipo de Hospedagem:</strong> <span className="ml-2">{formatList(accommodationTypes)}</span></p>
               <p><strong>Atividades:</strong> <span className="ml-2">{formatList(activities)}</span></p>
               <p><strong>Transporte:</strong> <span className="ml-2">{formatList(transportation)}</span></p>
-              <p><strong>Preferências Alimentares:</strong> <span className="ml-2">{formatList(foodPreferences)}</span></p>
               {accessibility.length > 0 && (
                 <p><strong>Acessibilidade:</strong> <span className="ml-2">{formatList(accessibility)}</span></p>
               )}

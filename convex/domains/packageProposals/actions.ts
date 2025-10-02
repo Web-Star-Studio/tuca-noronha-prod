@@ -448,7 +448,7 @@ export const duplicateProposal = action({
         adminResponse: undefined,
         attachments: [], // Don't copy attachments
         validUntil: modifications.updateValidUntil 
-          ? Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 days from now
+          ? Date.now() + (45 * 24 * 60 * 60 * 1000) // 45 days from now
           : sourceProposal.validUntil,
       };
 

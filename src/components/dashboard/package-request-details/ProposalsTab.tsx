@@ -514,6 +514,7 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
           onSuccess={handleEditSuccess}
           isEditing={true}
           existingProposal={selectedProposal}
+          customerName={requestDetails?.customerInfo?.name}
         />
       )}
 

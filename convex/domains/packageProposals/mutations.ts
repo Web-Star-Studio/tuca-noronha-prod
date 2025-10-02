@@ -343,11 +343,13 @@ export const sendPackageProposal = mutation({
       updatedAt: Date.now(),
     });
 
-    // Update package request status to "proposal_sent" if it's still pending
+    // Update package request status to "proposal_sent"
     const currentRequest = await ctx.db.get(proposal.packageRequestId);
-    if (currentRequest && currentRequest.status === "pending") {
+    if (currentRequest) {
+      // Update last proposal sent timestamp
       await ctx.db.patch(proposal.packageRequestId, {
         status: "proposal_sent",
+        lastProposalSent: now,
         updatedAt: now,
       });
     }

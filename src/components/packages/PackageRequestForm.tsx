@@ -17,7 +17,6 @@ import {
   ACCOMMODATION_TYPE_OPTIONS,
   ACTIVITY_OPTIONS,
   TRANSPORTATION_OPTIONS,
-  FOOD_PREFERENCES_OPTIONS,
   type PackageRequestFormData 
 } from "../../../convex/domains/packages/types";
 import { ParticipantSelector } from "@/components/ui/participant-selector";
@@ -572,23 +571,6 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
                       variant={formData.preferences.transportation.includes(option.value) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => toggleArrayValue("preferences", "transportation", option.value)}
-                    >
-                      {option.label}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Food Preferences */}
-              <div>
-                <Label className="text-base font-semibold">Preferências Gastronômicas</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {FOOD_PREFERENCES_OPTIONS.map(option => (
-                    <Badge
-                      key={option.value}
-                      variant={formData.preferences.foodPreferences.includes(option.value) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => toggleArrayValue("preferences", "foodPreferences", option.value)}
                     >
                       {option.label}
                     </Badge>

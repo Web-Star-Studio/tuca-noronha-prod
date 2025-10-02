@@ -963,7 +963,6 @@ export default function PackagesPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="transfer-privado">Transfer privado</SelectItem>
-                        <SelectItem value="transfer-regular">Transfer regular/compartilhado</SelectItem>
                         <SelectItem value="aluguel-carro">Aluguel de carro</SelectItem>
                         <SelectItem value="aluguel-buggy">Aluguel de buggy</SelectItem>
                         <SelectItem value="aluguel-moto">Aluguel de moto</SelectItem>

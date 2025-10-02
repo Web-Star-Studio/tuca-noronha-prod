@@ -21,14 +21,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-
 interface SimpleProposalModalProps {
   isOpen: boolean;
   onClose: () => void;
   packageRequestId: Id<"packageRequests">;
-  onSuccess: () => void;
+  onSuccess?: (proposalId: Id<"packageProposals">) => void;
   isEditing?: boolean;
   existingProposal?: any;
+  customerName?: string;
 }
 
 const initialFormData = {
@@ -107,6 +107,7 @@ export function SimpleProposalModal({
   onSuccess,
   isEditing = false,
   existingProposal,
+  customerName,
 }: SimpleProposalModalProps) {
   const [formData, setFormData] = useState(() =>
     isEditing && existingProposal
@@ -157,8 +158,8 @@ export function SimpleProposalModal({
       inclusions,
       exclusions,
     } = formData;
-    if (!travelPeriod || !nights || !totalPrice || !fullPackageDescription || !departureLocation || !airline || !accommodationType || !accommodationDetails || !paymentTerms || !cancellationPolicy) {
-      toast.error("Preencha os campos obrigatórios: Período, Noites, Descrição, Preço Total, Local de Saída, Companhia Aérea, Tipo de Acomodação, Detalhes da Acomodação, Condições de Pagamento e Política de Cancelamento.");
+    if (!travelPeriod || !nights || !totalPrice || !fullPackageDescription || !accommodationType || !accommodationDetails) {
+      toast.error("Preencha os campos obrigatórios: Período, Noites, Descrição, Preço Total, Tipo de Acomodação e Detalhes da Acomodação.");
       setIsSubmitting(false);
       return;
     }
@@ -176,35 +177,39 @@ export function SimpleProposalModal({
       return;
     }
 
-    const title =
-      formData.accommodationType && formData.departureLocation
-        ? `Proposta de Pacote: ${formData.accommodationType} em ${formData.departureLocation}`
-        : existingProposal?.title ?? "Proposta de Pacote";
+    // Incluir nome do cliente no título
+    const baseTitle = formData.accommodationType && formData.departureLocation
+      ? `${formData.accommodationType} em ${formData.departureLocation}`
+      : "Pacote Personalizado";
+    
+    const title = customerName 
+      ? `Proposta para ${customerName}: ${baseTitle}`
+      : existingProposal?.title ?? `Proposta de Pacote: ${baseTitle}`;
 
-    const summary =
-      nights
-        ? `Pacote de ${nights} noites.`
-        : existingProposal?.summary ?? "Pacote personalizado.";
+    // Resumo com descrição do pacote primeiro
+    const summary = fullPackageDescription || existingProposal?.summary || "Pacote personalizado.";
 
     // Build the enhanced description with travel info
-    const enhancedDescription = `
-${fullPackageDescription}
+    const travelInfoLines = [
+      `- **Periodo da Viagem:** ${travelPeriod}`,
+      `- **Noites:** ${nights}`,
+      departureLocation ? `- **Local de Saida:** ${departureLocation}` : null,
+      airline ? `- **Companhia Aerea:** ${airline}` : null,
+      `- **Acomodacao:** ${accommodationType} - ${accommodationDetails}`,
+      additionalNotes ? `- **Observacoes:** ${additionalNotes}` : null,
+    ].filter(Boolean).join('\n');
+    
+    const enhancedDescription = `**Informacoes da Viagem:**
+${travelInfoLines}
 
-**Informacoes da Viagem:**
-- **Periodo da Viagem:** ${travelPeriod}
-- **Noites:** ${nights}
-- **Local de Saida:** ${departureLocation}
-- **Companhia Aerea:** ${airline}
-- **Acomodacao:** ${accommodationType} - ${accommodationDetails}
-- **Observacoes:** ${additionalNotes}
-    `.trim();
+${fullPackageDescription}`.trim();
 
     // Process inclusions and exclusions from textarea to array
     const inclusionsArray = inclusions ? inclusions.split('\n').filter((item: string) => item.trim()) : [];
     const exclusionsArray = exclusions ? exclusions.split('\n').filter((item: string) => item.trim()) : [];
 
-    // Components should be actual package components, not the travel info
-    const components = existingProposal?.components || [];
+    // Componentes removidos do sistema
+    const components = [];
     const requiresApproval = existingProposal?.requiresApproval ?? false;
     const priority = existingProposal?.priority ?? "normal";
     const tags = existingProposal?.tags ?? ["proposta-simples"];
@@ -212,7 +217,21 @@ ${fullPackageDescription}
     const fees = existingProposal?.fees ?? 0;
     const discount = existingProposal?.discount ?? 0;
     const currency = existingProposal?.currency ?? "BRL";
-    const validUntil = existingProposal?.validUntil ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).getTime();
+    // Validade até 17h30 do mesmo dia (horário de expediente até 18h)
+    const getValidUntilToday = () => {
+      const now = new Date();
+      const deadline = new Date();
+      deadline.setHours(17, 30, 0, 0);
+      
+      // Se já passou de 17h30, retorna 17h30 do dia seguinte
+      if (now > deadline) {
+        deadline.setDate(deadline.getDate() + 1);
+      }
+      
+      return deadline.getTime();
+    };
+    
+    const validUntil = existingProposal?.validUntil ?? getValidUntilToday();
 
     const subtotal = totalPriceNum;
     const totalPriceValue = subtotal + taxes + fees - discount;
@@ -229,8 +248,8 @@ ${fullPackageDescription}
       totalPrice: totalPriceValue,
       currency,
       validUntil,
-      paymentTerms: paymentTerms || "50% na reserva, 50% até 30 dias antes da viagem.",
-      cancellationPolicy: cancellationPolicy || "Cancelamento gratuito até 30 dias antes da viagem.",
+      paymentTerms: paymentTerms || "",
+      cancellationPolicy: cancellationPolicy || "",
       inclusions: inclusionsArray,
       exclusions: exclusionsArray,
       requiresApproval,
@@ -310,12 +329,12 @@ ${fullPackageDescription}
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="accommodationType">Tipo de Acomodação</Label>
+            <Label htmlFor="accommodationType">Tipo de Acomodação *</Label>
             <Input id="accommodationType" name="accommodationType" value={formData.accommodationType} onChange={handleChange} placeholder="Ex: Pousada, Hotel, Resort" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="accommodationDetails">Detalhes da acomodação</Label>
+            <Label htmlFor="accommodationDetails">Detalhes da acomodação *</Label>
             <Textarea id="accommodationDetails" name="accommodationDetails" value={formData.accommodationDetails} onChange={handleChange} placeholder="Ex: Pousada com piscina, café da manhã incluso." />
           </div>
 
@@ -344,7 +363,7 @@ ${fullPackageDescription}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="paymentTerms">Termos de Pagamento *</Label>
+              <Label htmlFor="paymentTerms">Forma de Pagamento</Label>
               <Textarea 
                 id="paymentTerms" 
                 name="paymentTerms" 
@@ -355,7 +374,7 @@ ${fullPackageDescription}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cancellationPolicy">Política de Cancelamento *</Label>
+              <Label htmlFor="cancellationPolicy">Política de Cancelamento</Label>
               <Textarea 
                 id="cancellationPolicy" 
                 name="cancellationPolicy" 

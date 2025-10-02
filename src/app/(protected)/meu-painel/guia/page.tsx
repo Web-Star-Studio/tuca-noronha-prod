@@ -5,23 +5,23 @@ import { api } from "../../../../../convex/_generated/api";
 import GuiaPageContent from "./GuiaPageContent";
 
 export default async function GuidePanel() {
-  // Check if user has active subscription
+  // Check if user has access to guide (master role or active subscription)
   const { userId } = await auth();
   
   if (!userId) {
     redirect("/sign-in");
   }
 
-  // Check subscription status
+  // Check guide access (masters have free access, others need subscription)
   const preloaded = await preloadQuery(
-    api.domains.subscriptions.queries.hasActiveSubscription,
+    api.domains.subscriptions.queries.hasGuideAccess,
     {}
   );
 
-  const hasSubscription = preloaded._valueJSON;
+  const hasAccess = preloaded._valueJSON;
 
-  if (!hasSubscription) {
-    // Redirect to subscription page if no active subscription
+  if (!hasAccess) {
+    // Redirect to subscription page if no access
     redirect("/meu-painel/guia/assinar");
   }
   

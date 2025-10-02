@@ -238,10 +238,10 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             <p className="font-medium text-purple-900 mb-3">🏢 Informações do Fornecedor</p>
             <div className="space-y-2 text-sm text-purple-800">
               <p className="font-semibold text-base">{voucherData.supplier.name}</p>
-              {voucherData.supplier.phone && (
+              {voucherData.supplier.emergencyPhone && (
                 <p className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  {voucherData.supplier.phone}
+                  {voucherData.supplier.emergencyPhone}
                 </p>
               )}
               {voucherData.supplier.email && (

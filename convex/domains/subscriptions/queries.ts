@@ -1,5 +1,6 @@
 import { query, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
+import { getCurrentUserRole } from "../rbac";
 
 /**
  * Get the current user's Clerk ID (for subscriptions)
@@ -22,6 +23,46 @@ export const hasActiveSubscription = query({
     }
 
     // Check for active subscription
+    const subscription = await ctx.db
+      .query("guideSubscriptions")
+      .withIndex("by_user_and_status", (q) => 
+        q.eq("userId", userId).eq("status", "authorized")
+      )
+      .first();
+
+    if (!subscription) {
+      return false;
+    }
+
+    // Check if subscription is still within valid period
+    const now = Date.now();
+    return !subscription.endDate || subscription.endDate > now;
+  },
+});
+
+/**
+ * Check if the current user has access to the guide (master role or active subscription)
+ */
+export const hasGuideAccess = query({
+  args: {},
+  returns: v.boolean(),
+  handler: async (ctx) => {
+    // Check if user is master - masters have free access
+    try {
+      const userRole = await getCurrentUserRole(ctx);
+      if (userRole === "master") {
+        return true;
+      }
+    } catch (error) {
+      // If role check fails, continue to subscription check
+    }
+
+    // Check for active subscription
+    const userId = await getCurrentUserClerkId(ctx);
+    if (!userId) {
+      return false;
+    }
+
     const subscription = await ctx.db
       .query("guideSubscriptions")
       .withIndex("by_user_and_status", (q) => 

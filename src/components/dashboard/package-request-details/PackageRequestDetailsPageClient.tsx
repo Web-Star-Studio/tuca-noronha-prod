@@ -167,6 +167,7 @@ export function PackageRequestDetailsPageClient({ requestId }: PackageRequestDet
         onClose={() => setIsProposalModalOpen(false)}
         packageRequestId={convexRequestId}
         onSuccess={handleProposalSuccess}
+        customerName={requestDetails?.customerInfo?.name}
       />
 
       <Dialog open={isChatModalOpen} onOpenChange={setIsChatModalOpen}>
