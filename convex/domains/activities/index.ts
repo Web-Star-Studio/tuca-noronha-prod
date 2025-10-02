@@ -2,8 +2,23 @@
  * Activities domain exports
  */
 
-// Re-export all queries from the queries file
-// Temporarily disabled due to Convex type issues: export * from "./queries";
+// Re-export specific queries
+export { 
+  listActivities,
+  getAll,
+  getFeatured,
+  getFeaturedActivities,
+  getById,
+  getByUser,
+  getUserById,
+  getActivitiesWithCreators,
+  getActivityTickets,
+  getActiveActivityTickets,
+  getPublicActivityById,
+  getPublicActivitiesWithCreators,
+  getPublicFeaturedActivities,
+  getByPartnerId
+} from "./queries";
 
 // Re-export all mutations from the mutations file
 export * from "./mutations";

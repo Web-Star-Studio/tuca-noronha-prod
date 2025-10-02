@@ -6,6 +6,26 @@ import { queryWithRole } from "../../domains/rbac";
 import { getCurrentUserRole, getCurrentUserConvexId, verifyPartnerAccess, verifyEmployeeAccess } from "../../domains/rbac";
 
 /**
+ * List activities with optional filters (PUBLIC - no auth required)
+ * Used in public forms like package requests
+ */
+export const listActivities = query({
+  args: {
+    isActive: v.optional(v.boolean()),
+  },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    let activities = await ctx.db.query("activities").collect();
+
+    if (args.isActive !== undefined) {
+      activities = activities.filter((a) => a.isActive === args.isActive);
+    }
+
+    return activities.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+  },
+});
+
+/**
  * Get all activities
  */
 export const getAll = query({
