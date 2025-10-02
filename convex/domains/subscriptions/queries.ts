@@ -47,19 +47,31 @@ export const hasGuideAccess = query({
   args: {},
   returns: v.boolean(),
   handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    
+    if (!identity) {
+      console.log("[hasGuideAccess] No identity found");
+      return false;
+    }
+
     // Check if user is master - masters have free access
     try {
       const userRole = await getCurrentUserRole(ctx);
+      console.log("[hasGuideAccess] User role:", userRole, "ClerkId:", identity.subject);
+      
       if (userRole === "master") {
+        console.log("[hasGuideAccess] Master user detected - granting access");
         return true;
       }
     } catch (error) {
+      console.error("[hasGuideAccess] Error checking role:", error);
       // If role check fails, continue to subscription check
     }
 
     // Check for active subscription
     const userId = await getCurrentUserClerkId(ctx);
     if (!userId) {
+      console.log("[hasGuideAccess] No userId found");
       return false;
     }
 
@@ -71,12 +83,64 @@ export const hasGuideAccess = query({
       .first();
 
     if (!subscription) {
+      console.log("[hasGuideAccess] No active subscription found for userId:", userId);
       return false;
     }
 
     // Check if subscription is still within valid period
     const now = Date.now();
-    return !subscription.endDate || subscription.endDate > now;
+    const isValid = !subscription.endDate || subscription.endDate > now;
+    console.log("[hasGuideAccess] Subscription found, isValid:", isValid);
+    return isValid;
+  },
+});
+
+/**
+ * Debug query to check current user's role and guide access
+ */
+export const debugGuideAccess = query({
+  args: {},
+  returns: v.object({
+    hasIdentity: v.boolean(),
+    clerkId: v.optional(v.string()),
+    userRole: v.optional(v.string()),
+    hasSubscription: v.boolean(),
+    hasAccess: v.boolean(),
+  }),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    
+    if (!identity) {
+      return {
+        hasIdentity: false,
+        hasSubscription: false,
+        hasAccess: false,
+      };
+    }
+
+    const userRole = await getCurrentUserRole(ctx);
+    const userId = await getCurrentUserClerkId(ctx);
+    
+    let hasSubscription = false;
+    if (userId) {
+      const subscription = await ctx.db
+        .query("guideSubscriptions")
+        .withIndex("by_user_and_status", (q) => 
+          q.eq("userId", userId).eq("status", "authorized")
+        )
+        .first();
+      hasSubscription = !!subscription;
+    }
+
+    const hasAccess = userRole === "master" || hasSubscription;
+
+    return {
+      hasIdentity: true,
+      clerkId: identity.subject,
+      userRole,
+      hasSubscription,
+      hasAccess,
+    };
   },
 });
 
