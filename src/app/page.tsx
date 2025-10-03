@@ -9,6 +9,7 @@ import FeaturedRestaurants from "@/components/highlights/restaurants/FeaturedRes
 
 import FeaturedVehicles from "@/components/highlights/vehicles/FeaturedVehicles";
 import BookingCTA from "@/components/cta/BookingCTA";
+import { GuidePopupManager } from "@/components/guide/GuidePopupManager";
 
 export default function Home() {
   return (
@@ -23,6 +24,9 @@ export default function Home() {
       <FeaturedActivities />
       <BookingCTA />
       <Footer />
+      
+      {/* Guide Subscription Popup */}
+      <GuidePopupManager />
     </main>
   )
 }
