@@ -76,8 +76,8 @@ export function SubscriptionPaymentBrick({
           });
         }
 
-        // Get public key from environment
-        const publicKey = process.env.MERCADO_PAGO_PUBLIC_KEY;
+        // Get public key from environment (must use NEXT_PUBLIC_ prefix for client-side access)
+        const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
         if (!publicKey) {
           throw new Error("Mercado Pago public key not configured");
         }

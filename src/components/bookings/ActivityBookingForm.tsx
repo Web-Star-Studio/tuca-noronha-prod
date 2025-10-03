@@ -321,32 +321,26 @@ export function ActivityBookingForm({
           </div>
 
           {/* Time Selection */}
-          <div className="space-y-2">
-            <Label>Horário</Label>
-            <Select
-              value={time}
-              onValueChange={setTime}
-              disabled={availableTimes.length === 0}
-            >
-              <SelectTrigger className={formStyles.select.base}>
-                <SelectValue
-                  placeholder={availableTimes.length === 0 ? "Nenhum horário disponível" : "Selecione um horário"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTimes.map((timeOption) => (
-                  <SelectItem key={timeOption} value={timeOption}>
-                    {timeOption}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {availableTimes.length === 0 && (
-              <p className="text-xs text-gray-500">
-                Este fornecedor ainda não definiu horários para reservas online.
-              </p>
-            )}
-          </div>
+          {availableTimes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Horário</Label>
+              <Select
+                value={time}
+                onValueChange={setTime}
+              >
+                <SelectTrigger className={formStyles.select.base}>
+                  <SelectValue placeholder="Selecione um horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimes.map((timeOption) => (
+                    <SelectItem key={timeOption} value={timeOption}>
+                      {timeOption}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Ticket Selection (if multiple tickets) */}
           {activity.hasMultipleTickets && tickets && tickets.length > 0 && (
