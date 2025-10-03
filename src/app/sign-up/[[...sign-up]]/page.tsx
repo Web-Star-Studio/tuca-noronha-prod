@@ -17,9 +17,11 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {playfairDisplay} from '@/lib/fonts'
 import Link from "next/link";
+import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SignUpPage() {
-
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-[url('/images/bg-pattern.png')] bg-cover bg-center bg-no-repeat bg-blend-overlay bg-white/80 backdrop-blur-sm relative">
@@ -87,8 +89,8 @@ export default function SignUpPage() {
                               size="lg"
                               variant="outline"
                               type="button"
-                              disabled={isGlobalLoading}
-                              className="w-full border-gray-300 bg-white/80 hover:bg-white text-gray-800 font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-md"
+                              disabled={isGlobalLoading || !termsAccepted}
+                              className="w-full border-gray-300 bg-white/80 hover:bg-white text-gray-800 font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Clerk.Loading scope="provider:google">
                                 {(isLoading) =>
@@ -164,10 +166,42 @@ export default function SignUpPage() {
                           <SignUp.Captcha />
                           {/* Manual CAPTCHA element as fallback */}
                           <div id="clerk-captcha" />
+                          
+                          {/* Terms and Conditions Checkbox */}
+                          <div className="flex items-start space-x-3 py-2">
+                            <Checkbox
+                              id="terms"
+                              checked={termsAccepted}
+                              onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                              className="mt-1"
+                            />
+                            <label
+                              htmlFor="terms"
+                              className="text-sm text-gray-600 leading-relaxed cursor-pointer"
+                            >
+                              Eu aceito os{" "}
+                              <Link
+                                href="/termos"
+                                target="_blank"
+                                className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                              >
+                                Termos de Serviço
+                              </Link>
+                              {" "}e a{" "}
+                              <Link
+                                href="/privacidade"
+                                target="_blank"
+                                className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                              >
+                                Política de Privacidade
+                              </Link>
+                            </label>
+                          </div>
+
                           <SignUp.Action submit asChild>
                             <Button
-                              disabled={isGlobalLoading}
-                              className="h-11 bg-blue-700 hover:bg-blue-800 text-white font-medium transition-all duration-300 hover:shadow-lg"
+                              disabled={isGlobalLoading || !termsAccepted}
+                              className="h-11 bg-blue-700 hover:bg-blue-800 text-white font-medium transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Clerk.Loading>
                                 {(isLoading) => {
