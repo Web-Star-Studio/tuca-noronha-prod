@@ -223,6 +223,133 @@ export const createSubscriptionPreference = action({
 });
 
 /**
+ * Create a subscription payment via Payment Brick (direct payment)
+ */
+export const createSubscriptionPayment = action({
+  args: {
+    userId: v.string(), // Clerk user ID
+    userEmail: v.string(),
+    userName: v.optional(v.string()),
+    token: v.string(), // Card token from Payment Brick
+    paymentMethodId: v.string(),
+    issuerId: v.optional(v.string()),
+    installments: v.optional(v.number()),
+    payer: v.object({
+      email: v.string(),
+      identification: v.optional(v.object({
+        type: v.string(),
+        number: v.string()
+      }))
+    }),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    paymentId: v.optional(v.string()),
+    status: v.optional(v.string()),
+    statusDetail: v.optional(v.string()),
+    error: v.optional(v.string())
+  }),
+  handler: async (ctx, args) => {
+    try {
+      console.log("[MP] Creating subscription payment for user:", args.userId);
+
+      // Create payment body
+      const paymentBody: any = {
+        transaction_amount: GUIDE_SUBSCRIPTION_CONFIG.amount,
+        token: args.token,
+        payment_method_id: args.paymentMethodId,
+        installments: args.installments || 1,
+        description: GUIDE_SUBSCRIPTION_CONFIG.title,
+        payer: args.payer,
+        external_reference: `guide_${args.userId}`,
+        metadata: {
+          userId: args.userId,
+          userEmail: args.userEmail,
+          subscriptionType: "guide"
+        }
+      };
+
+      // Add issuer if provided
+      if (args.issuerId) {
+        paymentBody.issuer_id = args.issuerId;
+      }
+
+      // Call Mercado Pago Payments API
+      const payment = await mpFetch<any>('/v1/payments', {
+        method: 'POST',
+        body: JSON.stringify(paymentBody)
+      });
+
+      console.log("[MP] Subscription payment created:", {
+        id: payment.id,
+        status: payment.status,
+        statusDetail: payment.status_detail
+      });
+
+      // If payment is approved, create subscription
+      if (payment.status === "approved") {
+        // Calculate subscription dates
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setFullYear(endDate.getFullYear() + 1); // 1 year subscription
+
+        // Create subscription in database
+        await ctx.runMutation(internal.domains.subscriptions.mutations.upsertSubscription, {
+          userId: args.userId,
+          userEmail: args.userEmail,
+          mpPreapprovalId: String(payment.id), // Use payment ID as reference
+          status: "authorized",
+          reason: GUIDE_SUBSCRIPTION_CONFIG.reason,
+          externalReference: `guide_${args.userId}`,
+          frequency: GUIDE_SUBSCRIPTION_CONFIG.frequency,
+          frequencyType: GUIDE_SUBSCRIPTION_CONFIG.frequencyType,
+          transactionAmount: GUIDE_SUBSCRIPTION_CONFIG.amount,
+          currencyId: GUIDE_SUBSCRIPTION_CONFIG.currencyId,
+          startDate: startDate.getTime(),
+          endDate: endDate.getTime(),
+        });
+
+        // Record payment
+        const subscription = await ctx.runQuery(
+          internal.domains.subscriptions.queries.getUserSubscriptionInternal,
+          { userId: args.userId }
+        );
+
+        if (subscription) {
+          await ctx.runMutation(internal.domains.subscriptions.mutations.recordPayment, {
+            userId: args.userId,
+            subscriptionId: subscription._id,
+            mpPaymentId: String(payment.id),
+            mpPreapprovalId: String(payment.id),
+            amount: payment.transaction_amount || GUIDE_SUBSCRIPTION_CONFIG.amount,
+            currency: payment.currency_id || "BRL",
+            status: payment.status,
+            statusDetail: payment.status_detail,
+            paymentMethod: payment.payment_method_id,
+            paymentTypeId: payment.payment_type_id,
+            paidAt: payment.date_approved ? new Date(payment.date_approved).getTime() : Date.now(),
+          });
+        }
+      }
+
+      return {
+        success: true,
+        paymentId: String(payment.id),
+        status: payment.status,
+        statusDetail: payment.status_detail
+      };
+
+    } catch (error) {
+      console.error("[MP] Failed to create subscription payment:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  },
+});
+
+/**
  * Process Mercado Pago subscription webhook events
  */
 export const processSubscriptionWebhook = internalAction({

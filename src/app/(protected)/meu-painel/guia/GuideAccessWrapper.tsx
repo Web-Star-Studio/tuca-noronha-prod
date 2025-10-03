@@ -3,20 +3,65 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../../../convex/_generated/api";
 import { Loader2 } from "lucide-react";
 import GuiaPageContent from "./GuiaPageContent";
 
 export default function GuideAccessWrapper() {
   const router = useRouter();
-  const hasAccess = useQuery(api.domains.subscriptions.queries.hasGuideAccess);
+  const { isLoaded: authLoaded, userId } = useAuth();
+  
+  // Wait for auth to be ready before querying
+  const hasAccess = useQuery(
+    api.domains.subscriptions.queries.hasGuideAccess,
+    authLoaded && userId ? {} : "skip"
+  );
+  
+  const debugInfo = useQuery(
+    api.domains.subscriptions.queries.debugGuideAccess,
+    authLoaded && userId ? {} : "skip"
+  );
+
+  // Log debug info when available
+  useEffect(() => {
+    if (debugInfo) {
+      console.log("[GuideAccessWrapper] Debug info:", debugInfo);
+    }
+  }, [debugInfo]);
 
   useEffect(() => {
     // Only redirect after we have a definitive answer
     if (hasAccess === false) {
+      console.log("[GuideAccessWrapper] No access, redirecting...");
       router.push("/meu-painel/guia/assinar");
     }
   }, [hasAccess, router]);
+
+  // Wait for Clerk auth to load
+  if (!authLoaded) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-gray-600">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <span>Carregando autenticação...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated - should not happen due to middleware, but handle anyway
+  if (!userId) {
+    router.push("/sign-in");
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-gray-600">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <span>Redirecionando...</span>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading state while checking access
   if (hasAccess === undefined) {
@@ -25,6 +70,12 @@ export default function GuideAccessWrapper() {
         <div className="flex flex-col items-center gap-3 text-gray-600">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           <span>Verificando acesso...</span>
+          {debugInfo && (
+            <div className="mt-4 text-xs text-gray-500">
+              <p>Role: {debugInfo.userRole || "carregando..."}</p>
+              <p>Clerk ID: {debugInfo.clerkId || "carregando..."}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -36,12 +87,19 @@ export default function GuideAccessWrapper() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-gray-600">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span>Redirecionando...</span>
+          <span>Sem acesso - redirecionando...</span>
+          {debugInfo && (
+            <div className="mt-4 text-xs text-red-500">
+              <p>Role: {debugInfo.userRole}</p>
+              <p>Tem assinatura: {debugInfo.hasSubscription ? "Sim" : "Não"}</p>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
   // User has access - show the guide content
+  console.log("[GuideAccessWrapper] Access granted!");
   return <GuiaPageContent />;
 }

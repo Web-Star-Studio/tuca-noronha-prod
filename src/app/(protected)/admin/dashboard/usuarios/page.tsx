@@ -442,7 +442,7 @@ export default function UsersPage() {
             
             <div className="space-y-6">
               {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Nome</label>
                   <p className="text-foreground">{selectedUser.fullName || selectedUser.name || "Não informado"}</p>
@@ -492,7 +492,7 @@ export default function UsersPage() {
               </div>
 
               {/* System Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">ID do Sistema</label>
                   <p className="text-foreground font-mono text-sm">{selectedUser._id}</p>

@@ -127,7 +127,7 @@ export default function CriarPropostaPacotePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="startDate" className="text-sm font-medium text-slate-700">
                     Data de Saída *
@@ -177,7 +177,7 @@ export default function CriarPropostaPacotePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="departureLocation" className="text-sm font-medium text-slate-700">
                     Local de Saída *

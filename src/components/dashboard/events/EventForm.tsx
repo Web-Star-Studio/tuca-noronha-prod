@@ -253,8 +253,8 @@ export function EventForm({
 
         {/* Basic Information Tab */}
         <TabsContent value="basic" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="md:col-span-2">
               <Label htmlFor="title" className="text-sm font-medium">Título</Label>
               <Input 
                 id="title" 
@@ -267,7 +267,7 @@ export function EventForm({
               />
             </div>
             
-            <div className="col-span-2">
+            <div className="md:col-span-2">
               <Label htmlFor="shortDescription" className="text-sm font-medium">Descrição Curta</Label>
               <Textarea 
                 id="shortDescription" 
@@ -388,7 +388,7 @@ export function EventForm({
             </div>
           </div>
             
-          <div className="grid grid-cols-2 gap-6 p-4 bg-blue-50/50 rounded-lg">
+          <div className="grid grid-cols-1 gap-6 p-4 bg-blue-50/50 rounded-lg md:grid-cols-2">
             <div className="flex items-center gap-3">
               <Button
                 type="button"
@@ -471,7 +471,7 @@ export function EventForm({
 
         {/* Details Tab */}
         <TabsContent value="details" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <Label htmlFor="date" className="text-sm font-medium">Data</Label>
               <Input 
@@ -499,7 +499,7 @@ export function EventForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <Label htmlFor="location" className="text-sm font-medium">Local</Label>
               <Input 
@@ -555,7 +555,7 @@ export function EventForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <Label htmlFor="speaker" className="text-sm font-medium">Palestrante/Anfitrião</Label>
               <Input 

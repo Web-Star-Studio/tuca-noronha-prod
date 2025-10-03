@@ -3,20 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { useAction, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { CheckCircle2, Loader2, Sparkles, ShieldCheck, Map, Camera } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { SubscriptionPaymentBrick } from "@/components/payments/SubscriptionPaymentBrick";
 
 export default function GuideSubscriptionPage() {
   const router = useRouter();
   const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   const currentSubscription = useQuery(api.domains.subscriptions.queries.getCurrentSubscription);
-  const createSubscriptionPreference = useAction(api.domains.subscriptions.actions.createSubscriptionPreference);
 
   // If user already has an active subscription, redirect to guide panel
   if (currentSubscription?.status === "authorized") {
@@ -24,33 +25,27 @@ export default function GuideSubscriptionPage() {
     return null;
   }
 
-  const handleBuyGuide = async () => {
+  const handleBuyGuide = () => {
     if (!user) {
       toast.error("Você precisa estar logado para comprar o guia");
       return;
     }
+    setShowPaymentModal(true);
+  };
 
-    setIsLoading(true);
-    try {
-      const result = await createSubscriptionPreference({
-        userId: user.id,
-        userEmail: user.primaryEmailAddress?.emailAddress || "",
-        userName: user.fullName || undefined,
-        successUrl: `${window.location.origin}/meu-painel/guia`,
-        cancelUrl: `${window.location.origin}/meu-painel/guia/assinar`,
-      });
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    toast.success("Assinatura ativada!", {
+      description: "Redirecionando para o painel de guia...",
+    });
+    setTimeout(() => {
+      router.push("/meu-painel/guia");
+    }, 2000);
+  };
 
-      if (result.success && result.preferenceUrl) {
-        window.location.href = result.preferenceUrl;
-      } else {
-        toast.error(result.error || "Erro ao criar preferência de pagamento");
-      }
-    } catch (error) {
-      console.error("Error creating subscription:", error);
-      toast.error("Erro ao processar compra");
-    } finally {
-      setIsLoading(false);
-    }
+  const handlePaymentError = (error: string) => {
+    console.error("Payment error:", error);
+    // Modal permanece aberto para usuário tentar novamente
   };
 
   const heroHighlights = [
@@ -100,20 +95,11 @@ export default function GuideSubscriptionPage() {
               <div className="flex flex-wrap items-center gap-4">
                 <Button
                   onClick={handleBuyGuide}
-                  disabled={isLoading}
                   className="gap-2 rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 px-6 py-6 text-lg font-semibold text-white shadow-lg hover:from-blue-600 hover:via-blue-600 hover:to-blue-500"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      Quero o Guia Exclusivo
-                      <Sparkles className="h-5 w-5" />
-                    </>
-                  )}
+                  <CreditCard className="h-5 w-5" />
+                  Assinar Agora
+                  <Sparkles className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center gap-2 text-sm text-blue-900">
                   <ShieldCheck className="h-5 w-5" /> Atualizações gratuitas por 6 meses
@@ -154,17 +140,10 @@ export default function GuideSubscriptionPage() {
               <CardFooter className="relative flex flex-col gap-3 pt-4 text-center text-sm text-gray-600">
                 <Button
                   onClick={handleBuyGuide}
-                  disabled={isLoading}
                   className="w-full rounded-full bg-blue-600 py-6 text-base font-semibold text-white shadow-lg hover:bg-blue-700"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    "Assinar agora"
-                  )}
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Assinar agora
                 </Button>
                 <p>Pagamento protegido pelo Mercado Pago.</p>
                 <p className="text-xs text-gray-500">
@@ -188,17 +167,10 @@ export default function GuideSubscriptionPage() {
             <div className="flex flex-col gap-3">
               <Button
                 onClick={handleBuyGuide}
-                disabled={isLoading}
                 className="rounded-full bg-white px-6 py-6 text-base font-semibold text-blue-600 shadow-lg hover:bg-blue-50"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  "Quero receber agora"
-                )}
+                <CreditCard className="mr-2 h-5 w-5" />
+                Assinar Agora
               </Button>
               <p className="text-center text-xs text-white/80">
                 Assinatura anual de R$ 99,90 via Mercado Pago • Acesso imediato
@@ -207,6 +179,70 @@ export default function GuideSubscriptionPage() {
           </div>
         </section>
       </div>
+
+      {/* Payment Modal */}
+      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <Sparkles className="h-6 w-6 text-blue-600" />
+              Finalizar Assinatura
+            </DialogTitle>
+            <DialogDescription>
+              Complete o pagamento para ter acesso ao Guia Exclusivo de Fernando de Noronha
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Resumo da assinatura */}
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">Assinatura Anual</h3>
+                    <p className="text-sm text-gray-600">Guia Exclusivo de Noronha</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-blue-600">R$ 99,90</p>
+                    <p className="text-xs text-gray-500">pagamento único anual</p>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Acesso imediato ao painel de guia</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Atualizações gratuitas por 6 meses</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Válido por 1 ano</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Brick */}
+            {user && (
+              <SubscriptionPaymentBrick
+                userId={user.id}
+                userEmail={user.primaryEmailAddress?.emailAddress || ""}
+                userName={user.fullName || undefined}
+                amount={99.90}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            )}
+
+            <div className="text-center text-xs text-gray-500">
+              <p>🔒 Pagamento 100% seguro via Mercado Pago</p>
+              <p className="mt-1">Seus dados estão protegidos com certificação PCI-DSS</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -455,8 +455,8 @@ function ActivityForm({ activity, onSave, onCancel }: {
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="md:col-span-2">
               <Label htmlFor="title" className="text-sm font-medium">Título</Label>
               <Input 
                 id="title" 
@@ -469,7 +469,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
               />
             </div>
             
-            <div className="col-span-2">
+            <div className="md:col-span-2">
               <Label htmlFor="shortDescription" className="text-sm font-medium">Descrição Curta</Label>
               <Textarea 
                 id="shortDescription" 
@@ -484,7 +484,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
             </div>
           </div>
             
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <Label htmlFor="price" className="text-sm font-medium">
                 Preço (R$) {formData.isFree && <span className="text-xs text-gray-500">(Desabilitado - Atividade Gratuita)</span>}
@@ -559,7 +559,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <Label htmlFor="category" className="text-sm font-medium">Categoria</Label>
               <Select 
@@ -677,7 +677,7 @@ function ActivityForm({ activity, onSave, onCancel }: {
             </div>
           </div>
             
-          <div className="grid grid-cols-2 gap-6 p-4 bg-blue-50/50 rounded-lg">
+          <div className="grid grid-cols-1 gap-6 p-4 bg-blue-50/50 rounded-lg md:grid-cols-2">
             <div className="flex items-center gap-3">
               <Button
                 type="button"

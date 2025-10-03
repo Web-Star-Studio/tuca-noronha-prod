@@ -793,8 +793,7 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
                 rows={5}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="date">Data *</Label>
                 <Input
@@ -838,7 +837,7 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="price">Preço (R$)</Label>
                 <Input
@@ -908,7 +907,7 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="speaker">Palestrante/Artista</Label>
               <Input
@@ -950,7 +949,7 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
             />
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"

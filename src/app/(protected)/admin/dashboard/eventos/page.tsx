@@ -577,7 +577,7 @@ export default function EventsPage() {
               )}
               
               {/* Event Info */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Descrição</label>
                   <p className="text-foreground mt-1">{selectedEvent.description}</p>

@@ -385,7 +385,7 @@ export default function AutoConfirmacaoPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                           <Label>Horário Inicial</Label>
                           <Input
@@ -456,7 +456,7 @@ export default function AutoConfirmacaoPage() {
                   </div>
                   
                   {formData.conditions.amountThresholds.enableAmountThresholds && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <Label>Valor Mínimo (R$)</Label>
                         <Input
@@ -633,7 +633,7 @@ export default function AutoConfirmacaoPage() {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                           <Label>Antecedência Mínima (dias)</Label>
                           <Input

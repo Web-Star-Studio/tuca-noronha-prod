@@ -438,7 +438,7 @@ export default function PackageProposalsPage() {
                             Proposta #{proposal.proposalNumber}
                           </p>
                           
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 md:grid-cols-4">
                             <div>
                               <span className="font-medium">Valor: </span>
                               <span className="text-green-600 font-semibold">
@@ -690,7 +690,7 @@ export default function PackageProposalsPage() {
           {selectedProposal && (
             <div className="space-y-6">
               {/* Proposal Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
                   <span className="font-medium">Status: </span>
                   <Badge className={`${statusConfig[selectedProposal.status as keyof typeof statusConfig]?.color} text-white`}>

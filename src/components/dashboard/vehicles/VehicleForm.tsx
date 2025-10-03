@@ -243,7 +243,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Marca*</Label>
                 <Input
@@ -270,7 +270,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="category" className="text-sm font-medium text-gray-700">Categoria*</Label>
                 <Select 
@@ -310,7 +310,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="licensePlate" className="text-sm font-medium text-gray-700">Placa*</Label>
                 <Input
@@ -401,7 +401,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="fuelType" className="text-sm font-medium text-gray-700">Combustível*</Label>
                 <Select 
@@ -461,7 +461,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
               <Label className="text-sm font-medium text-gray-700 mb-3 block">Características e Acessórios</Label>
               <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto bg-muted/20 rounded-lg p-4">
                 {commonFeatures.map((feature) => (
-                  <div key={feature} className="flex items-center space-x-3">
+                  <div key={feature} className="flex flex-wrap items-center gap-3">
                     <Checkbox 
                       id={`feature-${feature}`}
                       checked={vehicleData.features.includes(feature)}
