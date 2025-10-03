@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -232,17 +232,6 @@ export function SimpleProposalModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createProposal = useMutation(api.domains.packageProposals.mutations.createPackageProposal);
   const updateProposal = useMutation(api.domains.packageProposals.mutations.updatePackageProposal);
-
-  const requestSummary = useMemo(() => {
-    if (!requestDetails) return null;
-    const trip = requestDetails.tripDetails;
-    return {
-      period: formatTripPeriodFromRequest(requestDetails),
-      nights: trip?.duration,
-      origin: trip?.originCity,
-      includesAirfare: trip?.includesAirfare,
-    };
-  }, [requestDetails]);
 
   useEffect(() => {
     if (!isOpen) {
