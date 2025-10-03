@@ -1343,7 +1343,7 @@ export const startFlightBooking = mutation({
       const customer = await ctx.db.get(packageRequest.userId);
       if (customer?.email) {
         try {
-          await ctx.runAction(internal.domains.email.actions.sendPackageFlightBookingStartedEmail, {
+          await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageFlightBookingStartedEmail, {
             customerEmail: customer.email,
             customerName: customer.name || packageRequest.customerInfo.name,
             proposalNumber: proposal.proposalNumber,
@@ -1423,7 +1423,7 @@ export const confirmFlightBooked = mutation({
       const customer = await ctx.db.get(packageRequest.userId);
       if (customer?.email) {
         try {
-          await ctx.runAction(internal.domains.email.actions.sendPackageFlightsConfirmedEmail, {
+          await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageFlightsConfirmedEmail, {
             customerEmail: customer.email,
             customerName: customer.name || packageRequest.customerInfo.name,
             proposalNumber: proposal.proposalNumber,
@@ -1514,7 +1514,7 @@ export const uploadContractDocuments = mutation({
       const customer = await ctx.db.get(packageRequest.userId);
       if (customer?.email) {
         try {
-          await ctx.runAction(internal.domains.email.actions.sendPackageDocumentsReadyEmail, {
+          await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageDocumentsReadyEmail, {
             customerEmail: customer.email,
             customerName: customer.name || packageRequest.customerInfo.name,
             proposalNumber: proposal.proposalNumber,
