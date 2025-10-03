@@ -76,12 +76,8 @@ export function SubscriptionPaymentBrick({
           });
         }
 
-        // Get public key from API route (since it's not NEXT_PUBLIC_)
-        const response = await fetch('/api/mercadopago/public-key');
-        if (!response.ok) {
-          throw new Error("Mercado Pago public key not configured");
-        }
-        const { publicKey } = await response.json();
+        // Get public key from environment
+        const publicKey = process.env.MERCADO_PAGO_PUBLIC_KEY;
         if (!publicKey) {
           throw new Error("Mercado Pago public key not configured");
         }
