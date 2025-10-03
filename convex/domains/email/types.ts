@@ -10,6 +10,9 @@ export type EmailType =
   | "package_request_received"
   | "package_request_status_update"
   | "package_proposal_sent"
+  | "package_flight_booking_started"
+  | "package_flights_confirmed"
+  | "package_documents_ready"
   | "partner_new_booking"
   | "welcome_new_user"
   | "new_partner_registration"
@@ -157,6 +160,30 @@ export interface PackageProposalEmailData extends BaseEmailData {
   proposalUrl: string;
 }
 
+export interface PackageFlightBookingStartedEmailData extends BaseEmailData {
+  type: "package_flight_booking_started";
+  customerName: string;
+  proposalNumber: string;
+  proposalTitle: string;
+  message?: string;
+}
+
+export interface PackageFlightsConfirmedEmailData extends BaseEmailData {
+  type: "package_flights_confirmed";
+  customerName: string;
+  proposalNumber: string;
+  proposalTitle: string;
+  flightDetails: string;
+}
+
+export interface PackageDocumentsReadyEmailData extends BaseEmailData {
+  type: "package_documents_ready";
+  customerName: string;
+  proposalNumber: string;
+  proposalTitle: string;
+  documentCount: number;
+}
+
 // Generic email data for custom emails
 export interface GenericEmailData extends BaseEmailData {
   type?: string;
@@ -170,6 +197,9 @@ export type EmailData =
   | BookingCancelledEmailData
   | PackageRequestReceivedEmailData
   | PackageProposalEmailData
+  | PackageFlightBookingStartedEmailData
+  | PackageFlightsConfirmedEmailData
+  | PackageDocumentsReadyEmailData
   | PartnerNewBookingEmailData
   | WelcomeNewUserEmailData
   | SupportMessageEmailData

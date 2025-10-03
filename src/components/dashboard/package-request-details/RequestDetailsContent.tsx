@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, MapPin, Heart, Info, Users, Calendar, DollarSign, Briefcase, Mail, Phone } from "lucide-react";
+import { User, MapPin, Heart, Info, Users, Calendar, DollarSign, Briefcase, Mail, Phone, Navigation } from "lucide-react";
 import { formatCurrency, formatDate } from "./helpers";
 
 const DetailItem = ({ icon, label, children }: { icon: React.ReactNode, label: string, children: React.ReactNode }) => (
@@ -43,6 +43,29 @@ const formatTripDates = (tripDetails: any) => {
     }
     return "Datas a definir";
   }
+};
+
+const formatGroupDescription = (tripDetails: any) => {
+  const adults = typeof tripDetails.adults === "number" ? tripDetails.adults : undefined;
+  const children = typeof tripDetails.children === "number" ? tripDetails.children : undefined;
+
+  if (adults === undefined && children === undefined) {
+    return `${tripDetails.groupSize} pessoas${tripDetails.companions ? ` (${tripDetails.companions})` : ""}`;
+  }
+
+  const parts: string[] = [];
+
+  if (adults !== undefined) {
+    parts.push(`${adults} ${adults === 1 ? "adulto" : "adultos"}`);
+  }
+
+  if (children !== undefined) {
+    parts.push(`${children} ${children === 1 ? "criança" : "crianças"}`);
+  }
+
+  const breakdown = parts.length > 0 ? parts.join(" e ") : undefined;
+
+  return `${tripDetails.groupSize} ${tripDetails.groupSize === 1 ? "pessoa" : "pessoas"}${breakdown ? ` • ${breakdown}` : ""}${tripDetails.companions ? ` (${tripDetails.companions})` : ""}`;
 };
 
 export function RequestDetailsContent({ request }: { request: any }) {
@@ -104,11 +127,16 @@ export function RequestDetailsContent({ request }: { request: any }) {
               <DetailItem icon={<MapPin className="h-4 w-4"/>} label="Destino">
                 {request.tripDetails.destination}
               </DetailItem>
-               <DetailItem icon={<Calendar className="h-4 w-4"/>} label="Datas da Viagem">
+              {request.tripDetails.originCity && (
+                <DetailItem icon={<Navigation className="h-4 w-4"/>} label="Cidade de Origem">
+                  {request.tripDetails.originCity}
+                </DetailItem>
+              )}
+              <DetailItem icon={<Calendar className="h-4 w-4"/>} label="Período da Viagem">
                 {formatTripDates(request.tripDetails)}
               </DetailItem>
               <DetailItem icon={<Users className="h-4 w-4"/>} label="Tamanho do Grupo">
-                {request.tripDetails.groupSize} pessoas ({request.tripDetails.companions})
+                {formatGroupDescription(request.tripDetails)}
               </DetailItem>
               <DetailItem 
                 icon={

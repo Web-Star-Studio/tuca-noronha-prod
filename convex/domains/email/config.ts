@@ -104,6 +104,18 @@ export const EMAIL_SETTINGS = {
     priority: "high" as const,
     replyTo: SYSTEM_EMAILS.SUPPORT,
   },
+  package_flight_booking_started: {
+    priority: "normal" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
+  package_flights_confirmed: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
+  package_documents_ready: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
   partner_new_booking: {
     priority: "high" as const,
     replyTo: SYSTEM_EMAILS.SUPPORT,

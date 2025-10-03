@@ -168,6 +168,7 @@ export function PackageRequestDetailsPageClient({ requestId }: PackageRequestDet
         packageRequestId={convexRequestId}
         onSuccess={handleProposalSuccess}
         customerName={requestDetails?.customerInfo?.name}
+        requestDetails={requestDetails}
       />
 
       <Dialog open={isChatModalOpen} onOpenChange={setIsChatModalOpen}>

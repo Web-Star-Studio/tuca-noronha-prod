@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -29,6 +29,7 @@ interface SimpleProposalModalProps {
   isEditing?: boolean;
   existingProposal?: any;
   customerName?: string;
+  requestDetails?: any;
 }
 
 const initialFormData = {
@@ -48,9 +49,120 @@ const initialFormData = {
   exclusions: "",
 };
 
-function mapExistingProposalToFormData(existingProposal: any) {
+const formatMonthLabel = (monthStr: string) => {
+  const [year, month] = monthStr.split("-");
+  if (!year || !month) {
+    return monthStr;
+  }
+  const date = new Date(parseInt(year), parseInt(month) - 1);
+  return date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+};
+
+const formatTripPeriodFromRequest = (requestDetails?: any) => {
+  if (!requestDetails?.tripDetails) {
+    return "";
+  }
+
+  const trip = requestDetails.tripDetails;
+
+  if (trip.flexibleDates) {
+    if (trip.startMonth && trip.endMonth) {
+      const startLabel = formatMonthLabel(trip.startMonth);
+      const endLabel = formatMonthLabel(trip.endMonth);
+      return startLabel === endLabel
+        ? `${startLabel} (datas flexíveis)`
+        : `${startLabel} - ${endLabel} (datas flexíveis)`;
+    }
+    return "Datas flexíveis";
+  }
+
+  if (trip.startDate && trip.endDate) {
+    const start = new Date(trip.startDate).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    const end = new Date(trip.endDate).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    return `${start} a ${end}`;
+  }
+
+  return "Período a definir";
+};
+
+const formatGroupBreakdown = (tripDetails?: any) => {
+  if (!tripDetails) return "";
+  const adults = typeof tripDetails.adults === "number" ? tripDetails.adults : undefined;
+  const children = typeof tripDetails.children === "number" ? tripDetails.children : undefined;
+  const parts: string[] = [];
+
+  if (adults !== undefined) {
+    parts.push(`${adults} ${adults === 1 ? "adulto" : "adultos"}`);
+  }
+
+  if (children !== undefined) {
+    parts.push(`${children} ${children === 1 ? "criança" : "crianças"}`);
+  }
+
+  return parts.join(" e ");
+};
+
+const buildFormDataFromRequest = (requestDetails?: any) => {
+  const trip = requestDetails?.tripDetails;
+  const preferences = requestDetails?.preferences;
+
+  const travelPeriod = formatTripPeriodFromRequest(requestDetails);
+  const nights = trip?.duration ? String(trip.duration) : "";
+  const accommodationType = preferences?.accommodationType?.[0] || "";
+  const accommodationDetails = preferences?.accommodationType?.join(", ") || "";
+  const includesAirfare = trip?.includesAirfare;
+  const companions = formatGroupBreakdown(trip);
+
+  const baseDescriptionLines: string[] = [];
+  if (travelPeriod) {
+    baseDescriptionLines.push(`- **Período da Viagem:** ${travelPeriod}`);
+  }
+  if (trip?.originCity) {
+    baseDescriptionLines.push(`- **Origem:** ${trip.originCity}`);
+  }
+  if (companions) {
+    baseDescriptionLines.push(`- **Grupo:** ${companions}`);
+  }
+  if (trip?.includesAirfare !== undefined) {
+    baseDescriptionLines.push(`- **Passagens Aéreas:** ${includesAirfare ? "Incluídas" : "Não incluídas"}`);
+  }
+
+  const descriptionHeader = baseDescriptionLines.length > 0
+    ? `**Resumo da Viagem:**
+${baseDescriptionLines.join("\n")}
+
+`
+    : "";
+
+  return {
+    ...initialFormData,
+    travelPeriod,
+    nights,
+    departureLocation: trip?.originCity || "",
+    accommodationType,
+    accommodationDetails,
+    fullPackageDescription: `${descriptionHeader}`.trim(),
+    pricePerPerson: "",
+    totalPrice: "",
+    additionalNotes: includesAirfare === false ? "Este pacote não inclui passagens aéreas." : "",
+    inclusions: preferences?.activities?.length
+      ? preferences.activities.map((activity: string) => `Atividade: ${activity}`).join("\n")
+      : "",
+    exclusions: includesAirfare === false ? "Passagens aéreas" : "",
+  };
+};
+
+function mapExistingProposalToFormData(existingProposal: any, requestDetails?: any) {
   if (!existingProposal) {
-    return initialFormData;
+    return buildFormDataFromRequest(requestDetails);
   }
 
   const component = existingProposal.components?.[0];
@@ -73,8 +185,10 @@ function mapExistingProposalToFormData(existingProposal: any) {
     return match?.[1]?.trim() ?? "";
   };
 
+  const baseFromRequest = buildFormDataFromRequest(requestDetails);
+
   return {
-    ...initialFormData,
+    ...baseFromRequest,
     travelPeriod: extractFromDescription("Periodo da Viagem") || extractFromDescription("Período da Viagem") || extractValue("Período da Viagem"),
     nights: extractFromDescription("Noites") || extractValue("Noites"),
     departureLocation: extractFromDescription("Local de Saida") || extractFromDescription("Local de Saída") || extractValue("Local de Saída"),
@@ -108,15 +222,27 @@ export function SimpleProposalModal({
   isEditing = false,
   existingProposal,
   customerName,
+  requestDetails,
 }: SimpleProposalModalProps) {
   const [formData, setFormData] = useState(() =>
     isEditing && existingProposal
-      ? mapExistingProposalToFormData(existingProposal)
-      : initialFormData
+      ? mapExistingProposalToFormData(existingProposal, requestDetails)
+      : buildFormDataFromRequest(requestDetails)
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createProposal = useMutation(api.domains.packageProposals.mutations.createPackageProposal);
   const updateProposal = useMutation(api.domains.packageProposals.mutations.updatePackageProposal);
+
+  const requestSummary = useMemo(() => {
+    if (!requestDetails) return null;
+    const trip = requestDetails.tripDetails;
+    return {
+      period: formatTripPeriodFromRequest(requestDetails),
+      nights: trip?.duration,
+      origin: trip?.originCity,
+      includesAirfare: trip?.includesAirfare,
+    };
+  }, [requestDetails]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -124,11 +250,11 @@ export function SimpleProposalModal({
     }
 
     if (isEditing && existingProposal) {
-      setFormData(mapExistingProposalToFormData(existingProposal));
+      setFormData(mapExistingProposalToFormData(existingProposal, requestDetails));
     } else {
-      setFormData(initialFormData);
+      setFormData(buildFormDataFromRequest(requestDetails));
     }
-  }, [isOpen, isEditing, existingProposal]);
+  }, [isOpen, isEditing, existingProposal, requestDetails]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -178,9 +304,12 @@ export function SimpleProposalModal({
     }
 
     // Incluir nome do cliente no título
-    const baseTitle = formData.accommodationType && formData.departureLocation
-      ? `${formData.accommodationType} em ${formData.departureLocation}`
-      : "Pacote Personalizado";
+    let baseTitle = "Pacote Personalizado";
+    if (requestDetails?.tripDetails?.destination) {
+      baseTitle = `Pacote para ${requestDetails.tripDetails.destination}`;
+    } else if (formData.accommodationType && formData.departureLocation) {
+      baseTitle = `${formData.accommodationType} em ${formData.departureLocation}`;
+    }
     
     const title = customerName 
       ? `Proposta para ${customerName}: ${baseTitle}`
@@ -191,12 +320,12 @@ export function SimpleProposalModal({
 
     // Build the enhanced description with travel info
     const travelInfoLines = [
-      `- **Periodo da Viagem:** ${travelPeriod}`,
-      `- **Noites:** ${nights}`,
-      departureLocation ? `- **Local de Saida:** ${departureLocation}` : null,
-      airline ? `- **Companhia Aerea:** ${airline}` : null,
-      `- **Acomodacao:** ${accommodationType} - ${accommodationDetails}`,
-      additionalNotes ? `- **Observacoes:** ${additionalNotes}` : null,
+      travelPeriod ? `- **Período da Viagem:** ${travelPeriod}` : null,
+      nights ? `- **Noites:** ${nights}` : null,
+      departureLocation ? `- **Origem:** ${departureLocation}` : null,
+      airline ? `- **Companhia Aérea:** ${airline}` : null,
+      accommodationType || accommodationDetails ? `- **Acomodação:** ${[accommodationType, accommodationDetails].filter(Boolean).join(" - ")}` : null,
+      additionalNotes ? `- **Observações:** ${additionalNotes}` : null,
     ].filter(Boolean).join('\n');
     
     const enhancedDescription = `**Informacoes da Viagem:**

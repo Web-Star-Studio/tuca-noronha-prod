@@ -1318,6 +1318,16 @@ export const startFlightBooking = mutation({
       throw new Error("Dados dos participantes ainda não foram enviados");
     }
 
+    // Check if airfare is included in the package request
+    const packageRequest = await ctx.db.get(proposal.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Solicitação de pacote não encontrada");
+    }
+
+    if (packageRequest.tripDetails.includesAirfare === false) {
+      throw new Error("Este pacote não inclui passagens aéreas. Não é necessário reservar voos.");
+    }
+
     const now = Date.now();
 
     // Update status to flight booking in progress
@@ -1327,6 +1337,25 @@ export const startFlightBooking = mutation({
       flightBookingNotes: args.notes,
       updatedAt: now,
     });
+
+    // Send email notification to customer if they have an email
+    if (packageRequest?.userId) {
+      const customer = await ctx.db.get(packageRequest.userId);
+      if (customer?.email) {
+        try {
+          await ctx.runAction(internal.domains.email.actions.sendPackageFlightBookingStartedEmail, {
+            customerEmail: customer.email,
+            customerName: customer.name || packageRequest.customerInfo.name,
+            proposalNumber: proposal.proposalNumber,
+            proposalTitle: proposal.title,
+            message: args.notes,
+          });
+        } catch (emailError) {
+          console.error("Failed to send flight booking started email:", emailError);
+          // Don't fail the mutation if email fails
+        }
+      }
+    }
 
     return {
       success: true,
@@ -1376,7 +1405,7 @@ export const confirmFlightBooked = mutation({
       updatedAt: now,
     });
 
-    // Get package request for notification
+    // Get package request for notification and email
     const packageRequest = await ctx.db.get(proposal.packageRequestId);
     
     // Notify customer if they have a user account
@@ -1389,6 +1418,23 @@ export const confirmFlightBooked = mutation({
         relatedId: proposal._id,
         relatedType: "package_proposal",
       });
+
+      // Send email notification
+      const customer = await ctx.db.get(packageRequest.userId);
+      if (customer?.email) {
+        try {
+          await ctx.runAction(internal.domains.email.actions.sendPackageFlightsConfirmedEmail, {
+            customerEmail: customer.email,
+            customerName: customer.name || packageRequest.customerInfo.name,
+            proposalNumber: proposal.proposalNumber,
+            proposalTitle: proposal.title,
+            flightDetails: args.flightDetails,
+          });
+        } catch (emailError) {
+          console.error("Failed to send flights confirmed email:", emailError);
+          // Don't fail the mutation if email fails
+        }
+      }
     }
 
     return {
@@ -1450,7 +1496,7 @@ export const uploadContractDocuments = mutation({
       updatedAt: now,
     });
 
-    // Get package request for notification
+    // Get package request for notification and email
     const packageRequest = await ctx.db.get(proposal.packageRequestId);
     
     // Notify customer if they have a user account
@@ -1463,6 +1509,23 @@ export const uploadContractDocuments = mutation({
         relatedId: proposal._id,
         relatedType: "package_proposal",
       });
+
+      // Send email notification
+      const customer = await ctx.db.get(packageRequest.userId);
+      if (customer?.email) {
+        try {
+          await ctx.runAction(internal.domains.email.actions.sendPackageDocumentsReadyEmail, {
+            customerEmail: customer.email,
+            customerName: customer.name || packageRequest.customerInfo.name,
+            proposalNumber: proposal.proposalNumber,
+            proposalTitle: proposal.title,
+            documentCount: args.documents.length,
+          });
+        } catch (emailError) {
+          console.error("Failed to send documents ready email:", emailError);
+          // Don't fail the mutation if email fails
+        }
+      }
     }
 
     return {

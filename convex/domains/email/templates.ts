@@ -710,6 +710,174 @@ export const getPackageProposalTemplate = (data: any): string => {
   return getBaseTemplate(content);
 };
 
+// Template para início de reserva de voos
+export const getPackageFlightBookingStartedTemplate = (data: any): string => {
+  const content = `
+    <div class="container">
+        <div class="header">
+            <h1>✈️ Reserva de Voos Iniciada</h1>
+            <p>Estamos trabalhando na reserva dos seus voos</p>
+        </div>
+        
+        <div class="content">
+            <p>Olá <strong>${data.customerName}</strong>,</p>
+            <p>Temos uma ótima notícia! Nossa equipe iniciou o processo de reserva dos voos para sua viagem.</p>
+            
+            <div class="highlight-box">
+                <h3>Detalhes da Proposta</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Proposta</div>
+                        <div class="info-value">#${data.proposalNumber}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Pacote</div>
+                        <div class="info-value">${data.proposalTitle}</div>
+                    </div>
+                </div>
+            </div>
+            
+            ${data.message ? `
+            <div class="highlight-box success">
+                <p style="margin: 0;"><strong>Mensagem da equipe:</strong></p>
+                <p style="margin: 0.5rem 0 0 0;">${data.message}</p>
+            </div>
+            ` : ''}
+            
+            <p><strong>Próximos passos:</strong></p>
+            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                <li>Nossa equipe está buscando as melhores opções de voos</li>
+                <li>Você receberá um novo email assim que os voos forem confirmados</li>
+                <li>Os detalhes completos dos voos serão compartilhados com você</li>
+            </ul>
+            
+            <p>Estamos empenhados em garantir os melhores voos para sua viagem! 🛫</p>
+        </div>
+        
+        <div class="footer">
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
+        </div>
+    </div>
+  `;
+  
+  return getBaseTemplate(content);
+};
+
+// Template para voos confirmados
+export const getPackageFlightsConfirmedTemplate = (data: any): string => {
+  const content = `
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Voos Confirmados!</h1>
+            <p>Seus voos foram reservados com sucesso</p>
+        </div>
+        
+        <div class="content">
+            <p>Olá <strong>${data.customerName}</strong>,</p>
+            <p>Excelente notícia! Os voos para sua viagem foram confirmados! ✈️</p>
+            
+            <div class="confirmation-code">
+                Proposta #${data.proposalNumber}
+            </div>
+            
+            <div class="highlight-box success">
+                <h3>✈️ Detalhes dos Voos</h3>
+                <div class="bg-white border border-green-200 rounded p-3">
+                    <p style="margin: 0; white-space: pre-wrap;">${data.flightDetails}</p>
+                </div>
+            </div>
+            
+            <div class="highlight-box">
+                <h3>Pacote</h3>
+                <p style="margin: 0;">${data.proposalTitle}</p>
+            </div>
+            
+            <p><strong>Próximos passos:</strong></p>
+            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                <li>Nossa equipe está preparando toda a documentação da viagem</li>
+                <li>Em breve você receberá os vouchers e informações completas</li>
+                <li>Revise os detalhes dos voos e entre em contato se tiver dúvidas</li>
+            </ul>
+            
+            <p>Sua viagem está cada vez mais próxima! Estamos ansiosos para proporcionar uma experiência inesquecível! 🏝️</p>
+        </div>
+        
+        <div class="footer">
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
+        </div>
+    </div>
+  `;
+  
+  return getBaseTemplate(content);
+};
+
+// Template para documentos prontos
+export const getPackageDocumentsReadyTemplate = (data: any): string => {
+  const content = `
+    <div class="container">
+        <div class="header">
+            <h1>📄 Documentos Prontos!</h1>
+            <p>Sua documentação de viagem está disponível</p>
+        </div>
+        
+        <div class="content">
+            <p>Olá <strong>${data.customerName}</strong>,</p>
+            <p>Temos uma novidade importante! Toda a documentação da sua viagem está pronta! 🎉</p>
+            
+            <div class="confirmation-code">
+                Proposta #${data.proposalNumber}
+            </div>
+            
+            <div class="highlight-box success">
+                <h3>📋 Documentos Disponíveis</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Pacote</div>
+                        <div class="info-value">${data.proposalTitle}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Documentos</div>
+                        <div class="info-value">${data.documentCount} ${data.documentCount === 1 ? 'documento' : 'documentos'}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p><strong>O que você precisa fazer agora:</strong></p>
+            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                <li>Acesse sua conta no painel do viajante</li>
+                <li>Revise todos os documentos com atenção</li>
+                <li>Confirme se todas as informações estão corretas</li>
+                <li>Dê sua confirmação final para prosseguirmos com o pagamento</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 2rem 0;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/meu-painel/pacotes" class="button">
+                    Acessar Documentos
+                </a>
+            </div>
+            
+            <div class="highlight-box urgent">
+                <p style="margin: 0;"><strong>⏰ Importante:</strong> Revise os documentos o quanto antes para não atrasar sua viagem!</p>
+            </div>
+            
+            <p>Estamos quase lá! Qualquer dúvida, nossa equipe está à disposição. 🌴</p>
+        </div>
+        
+        <div class="footer">
+            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
+            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
+            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
+        </div>
+    </div>
+  `;
+  
+  return getBaseTemplate(content);
+};
+
 // Função principal para obter template por tipo
 export const getEmailTemplate = (data: EmailData): string => {
   switch (data.type) {
@@ -721,6 +889,12 @@ export const getEmailTemplate = (data: EmailData): string => {
       return getPackageRequestReceivedTemplate(data);
     case 'package_proposal_sent':
       return getPackageProposalTemplate(data);
+    case 'package_flight_booking_started':
+      return getPackageFlightBookingStartedTemplate(data);
+    case 'package_flights_confirmed':
+      return getPackageFlightsConfirmedTemplate(data);
+    case 'package_documents_ready':
+      return getPackageDocumentsReadyTemplate(data);
     case 'partner_new_booking':
       return getPartnerNewBookingTemplate(data);
     case 'welcome_new_user':

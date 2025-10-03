@@ -406,8 +406,8 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
                             </Button>
                           )}
                           
-                          {/* Contract flow buttons */}
-                          {proposal.status === "participants_data_completed" && (
+                          {/* Contract flow buttons - conditional based on includesAirfare */}
+                          {proposal.status === "participants_data_completed" && requestDetails?.tripDetails?.includesAirfare === true && (
                             <Button
                               size="sm"
                               variant="default"
@@ -416,6 +416,21 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
                             >
                               <Plane className="h-4 w-4 mr-2" />
                               Iniciar Reserva Voos
+                            </Button>
+                          )}
+                          
+                          {proposal.status === "participants_data_completed" && requestDetails?.tripDetails?.includesAirfare === false && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="text-white bg-purple-600 hover:bg-purple-700"
+                              onClick={() => {
+                                setSelectedProposal(proposal);
+                                setShowDocumentUploadDialog(true);
+                              }}
+                            >
+                              <FileUp className="h-4 w-4 mr-2" />
+                              Upload Documentos
                             </Button>
                           )}
                           

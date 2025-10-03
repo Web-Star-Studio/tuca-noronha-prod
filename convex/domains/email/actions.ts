@@ -658,6 +658,171 @@ export const sendPackageProposalEmail = internalAction({
 });
 
 /**
+ * Enviar email quando admin inicia reserva de voos
+ */
+export const sendPackageFlightBookingStartedEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    proposalNumber: v.string(),
+    proposalTitle: v.string(),
+    message: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const emailData = {
+        type: "package_flight_booking_started" as const,
+        to: args.customerEmail,
+        subject: `Reserva de Voos Iniciada - ${args.proposalTitle}`,
+        customerName: args.customerName,
+        proposalNumber: args.proposalNumber,
+        proposalTitle: args.proposalTitle,
+        message: args.message,
+      };
+
+      const result = await sendQuickEmail(emailData);
+      
+      // Salvar log no banco de dados
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "package_flight_booking_started",
+          to: result.to,
+          subject: result.subject,
+          status: result.status,
+          error: result.error,
+          sentAt: result.sentAt,
+        });
+      }
+
+      return {
+        success: result.status === "sent",
+        error: result.error,
+      };
+    } catch (error) {
+      console.error("Failed to send flight booking started email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Enviar email quando voos são confirmados
+ */
+export const sendPackageFlightsConfirmedEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    proposalNumber: v.string(),
+    proposalTitle: v.string(),
+    flightDetails: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const emailData = {
+        type: "package_flights_confirmed" as const,
+        to: args.customerEmail,
+        subject: `Voos Confirmados - ${args.proposalTitle}`,
+        customerName: args.customerName,
+        proposalNumber: args.proposalNumber,
+        proposalTitle: args.proposalTitle,
+        flightDetails: args.flightDetails,
+      };
+
+      const result = await sendQuickEmail(emailData);
+      
+      // Salvar log no banco de dados
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "package_flights_confirmed",
+          to: result.to,
+          subject: result.subject,
+          status: result.status,
+          error: result.error,
+          sentAt: result.sentAt,
+        });
+      }
+
+      return {
+        success: result.status === "sent",
+        error: result.error,
+      };
+    } catch (error) {
+      console.error("Failed to send flights confirmed email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Enviar email quando documentos estão prontos
+ */
+export const sendPackageDocumentsReadyEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    proposalNumber: v.string(),
+    proposalTitle: v.string(),
+    documentCount: v.number(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const emailData = {
+        type: "package_documents_ready" as const,
+        to: args.customerEmail,
+        subject: `Documentos Prontos - ${args.proposalTitle}`,
+        customerName: args.customerName,
+        proposalNumber: args.proposalNumber,
+        proposalTitle: args.proposalTitle,
+        documentCount: args.documentCount,
+      };
+
+      const result = await sendQuickEmail(emailData);
+      
+      // Salvar log no banco de dados
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "package_documents_ready",
+          to: result.to,
+          subject: result.subject,
+          status: result.status,
+          error: result.error,
+          sentAt: result.sentAt,
+        });
+      }
+
+      return {
+        success: result.status === "sent",
+        error: result.error,
+      };
+    } catch (error) {
+      console.error("Failed to send documents ready email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
  * Ação para testar o serviço de email
  */
 export const testEmailService = action({
