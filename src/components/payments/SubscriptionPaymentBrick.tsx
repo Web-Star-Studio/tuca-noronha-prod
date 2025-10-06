@@ -121,10 +121,15 @@ export function SubscriptionPaymentBrick({
               console.log("[Subscription Payment Brick] Form submitted:", formData);
 
               try {
+                // MP Brick nests data in formData.formData
+                const innerFormData = formData.formData || formData;
+                
                 // Try to get payment method from different possible fields
-                const paymentMethodId = formData.payment_method_id || 
+                const paymentMethodId = innerFormData.payment_method_id || 
                                        formData.selectedPaymentMethod || 
                                        formData.paymentType;
+
+                console.log("[Subscription Payment Brick] Extracted payment method:", paymentMethodId);
 
                 if (!paymentMethodId) {
                   console.error("[Subscription Payment Brick] No payment method found in formData:", formData);
@@ -136,16 +141,16 @@ export function SubscriptionPaymentBrick({
                   userId: propsRef.current.userId,
                   userEmail: propsRef.current.userEmail,
                   userName: propsRef.current.userName,
-                  token: formData.token || undefined,
+                  token: innerFormData.token || formData.token || undefined,
                   paymentMethodId: paymentMethodId,
-                  issuerId: formData.issuer_id || undefined,
-                  installments: formData.installments || 1,
-                  payer: formData.payer ? {
-                    email: formData.payer.email,
-                    identification: formData.payer.identification
+                  issuerId: innerFormData.issuer_id || formData.issuer_id || undefined,
+                  installments: innerFormData.installments || formData.installments || 1,
+                  payer: (innerFormData.payer || formData.payer) ? {
+                    email: (innerFormData.payer || formData.payer).email,
+                    identification: (innerFormData.payer || formData.payer).identification
                       ? {
-                          type: formData.payer.identification.type,
-                          number: formData.payer.identification.number,
+                          type: (innerFormData.payer || formData.payer).identification.type,
+                          number: (innerFormData.payer || formData.payer).identification.number,
                         }
                       : undefined,
                   } : undefined,

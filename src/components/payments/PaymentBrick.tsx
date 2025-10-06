@@ -131,15 +131,17 @@ export function PaymentBrick({
             onSubmit: async (formData: any) => {
               setIsProcessing(true);
               console.log("[Payment Brick] Form submitted:", formData);
-              console.log("[Payment Brick] payment_method_id:", formData.payment_method_id);
-              console.log("[Payment Brick] selectedPaymentMethod:", formData.selectedPaymentMethod);
-              console.log("[Payment Brick] paymentType:", formData.paymentType);
 
               try {
+                // MP Brick nests data in formData.formData
+                const innerFormData = formData.formData || formData;
+                
                 // Try to get payment method from different possible fields
-                const paymentMethodId = formData.payment_method_id || 
+                const paymentMethodId = innerFormData.payment_method_id || 
                                        formData.selectedPaymentMethod || 
                                        formData.paymentType;
+
+                console.log("[Payment Brick] Extracted payment method:", paymentMethodId);
 
                 if (!paymentMethodId) {
                   console.error("[Payment Brick] No payment method found in formData:", formData);
@@ -155,17 +157,17 @@ export function PaymentBrick({
                 const result = await createPayment({
                   bookingId: propsRef.current.bookingId,
                   assetType: propsRef.current.assetType,
-                  token: formData.token || undefined,
+                  token: innerFormData.token || formData.token || undefined,
                   paymentMethodId: paymentMethodId,
-                  issuerId: formData.issuer_id || undefined,
+                  issuerId: innerFormData.issuer_id || formData.issuer_id || undefined,
                   amount: propsRef.current.amount,
-                  installments: formData.installments || 1,
-                  payer: formData.payer ? {
-                    email: formData.payer.email,
-                    identification: formData.payer.identification
+                  installments: innerFormData.installments || formData.installments || 1,
+                  payer: (innerFormData.payer || formData.payer) ? {
+                    email: (innerFormData.payer || formData.payer).email,
+                    identification: (innerFormData.payer || formData.payer).identification
                       ? {
-                          type: formData.payer.identification.type,
-                          number: formData.payer.identification.number,
+                          type: (innerFormData.payer || formData.payer).identification.type,
+                          number: (innerFormData.payer || formData.payer).identification.number,
                         }
                       : undefined,
                   } : undefined,

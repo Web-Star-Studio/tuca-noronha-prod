@@ -340,9 +340,15 @@ export const createPaymentWithManualCapture = action({
         token: paymentBody.token ? "***" : undefined
       });
 
+      // Generate idempotency key to prevent duplicate payments
+      const idempotencyKey = `${args.bookingId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       // Call Mercado Pago Payments API
       const payment = await mpFetch<any>('/v1/payments', {
         method: 'POST',
+        headers: {
+          'X-Idempotency-Key': idempotencyKey
+        },
         body: JSON.stringify(paymentBody)
       });
 
