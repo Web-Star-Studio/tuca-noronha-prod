@@ -131,15 +131,23 @@ export function PaymentBrick({
             onSubmit: async (formData: any) => {
               setIsProcessing(true);
               console.log("[Payment Brick] Form submitted:", formData);
+              console.log("[Payment Brick] payment_method_id:", formData.payment_method_id);
+              console.log("[Payment Brick] selectedPaymentMethod:", formData.selectedPaymentMethod);
+              console.log("[Payment Brick] paymentType:", formData.paymentType);
 
               try {
-                // Validate required fields
-                if (!formData.payment_method_id) {
+                // Try to get payment method from different possible fields
+                const paymentMethodId = formData.payment_method_id || 
+                                       formData.selectedPaymentMethod || 
+                                       formData.paymentType;
+
+                if (!paymentMethodId) {
+                  console.error("[Payment Brick] No payment method found in formData:", formData);
                   throw new Error("Método de pagamento não identificado. Por favor, tente novamente.");
                 }
 
                 // Identificar tipo de pagamento
-                const paymentType = formData.payment_method_id;
+                const paymentType = paymentMethodId;
                 const isTicket = paymentType === "bolbradesco" || paymentType === "pec";
                 const isPix = paymentType === "pix";
                 
@@ -148,7 +156,7 @@ export function PaymentBrick({
                   bookingId: propsRef.current.bookingId,
                   assetType: propsRef.current.assetType,
                   token: formData.token || undefined,
-                  paymentMethodId: formData.payment_method_id,
+                  paymentMethodId: paymentMethodId,
                   issuerId: formData.issuer_id || undefined,
                   amount: propsRef.current.amount,
                   installments: formData.installments || 1,
