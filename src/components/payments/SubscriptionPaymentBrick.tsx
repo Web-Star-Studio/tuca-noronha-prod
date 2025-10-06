@@ -121,14 +121,19 @@ export function SubscriptionPaymentBrick({
               console.log("[Subscription Payment Brick] Form submitted:", formData);
 
               try {
+                // Validate required fields
+                if (!formData.payment_method_id) {
+                  throw new Error("Método de pagamento não identificado. Por favor, tente novamente.");
+                }
+
                 // Call backend to create subscription payment
                 const result = await createSubscriptionPayment({
                   userId: propsRef.current.userId,
                   userEmail: propsRef.current.userEmail,
                   userName: propsRef.current.userName,
-                  token: formData.token,
+                  token: formData.token || undefined,
                   paymentMethodId: formData.payment_method_id,
-                  issuerId: formData.issuer_id,
+                  issuerId: formData.issuer_id || undefined,
                   installments: formData.installments || 1,
                   payer: formData.payer ? {
                     email: formData.payer.email,

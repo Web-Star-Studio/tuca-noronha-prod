@@ -267,7 +267,7 @@ export const createPaymentWithManualCapture = action({
     bookingId: v.string(),
     assetType: assetTypeValidator,
     token: v.optional(v.string()),
-    paymentMethodId: v.optional(v.string()),
+    paymentMethodId: v.string(), // Required by Mercado Pago API
     issuerId: v.optional(v.string()),
     amount: v.number(),
     installments: v.number(),
@@ -295,6 +295,7 @@ export const createPaymentWithManualCapture = action({
       // Create payment with capture=false (authorization only)
       const paymentBody: any = {
         transaction_amount: args.amount,
+        payment_method_id: args.paymentMethodId, // Required by MP API
         installments: args.installments,
         capture: false,  // 🔑 THIS IS THE KEY - Manual capture
         description: args.description,
@@ -308,10 +309,6 @@ export const createPaymentWithManualCapture = action({
       // Add optional fields if provided
       if (args.token) {
         paymentBody.token = args.token;
-      }
-      
-      if (args.paymentMethodId) {
-        paymentBody.payment_method_id = args.paymentMethodId;
       }
       
       if (args.payer) {

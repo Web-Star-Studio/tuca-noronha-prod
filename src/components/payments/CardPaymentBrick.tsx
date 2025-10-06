@@ -121,13 +121,18 @@ export function CardPaymentBrick({
               console.log("[Card Payment Brick] Form submitted:", formData);
 
               try {
+                // Validate required fields
+                if (!formData.payment_method_id) {
+                  throw new Error("Método de pagamento não identificado. Por favor, tente novamente.");
+                }
+
                 // Call backend to create payment with manual capture
                 const result = await createPayment({
                   bookingId: propsRef.current.bookingId,
                   assetType: propsRef.current.assetType,
-                  token: formData.token,
+                  token: formData.token || undefined,
                   paymentMethodId: formData.payment_method_id,
-                  issuerId: formData.issuer_id,
+                  issuerId: formData.issuer_id || undefined,
                   amount: propsRef.current.amount,
                   installments: formData.installments,
                   payer: formData.payer ? {
