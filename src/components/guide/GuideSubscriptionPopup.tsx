@@ -1,32 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { 
-  Dialog, 
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarClock,
+  Camera,
+  CheckCircle2,
+  Compass,
+  Map,
+  Shield,
+  Sparkles,
+  Star,
+  Users,
+  Zap,
+  X,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  X, 
-  Sparkles, 
-  Map, 
-  Camera, 
-  ChevronRight,
-  Star,
-  Clock,
-  Users,
-  TrendingUp,
-  Shield,
-  Zap,
-  CheckCircle2
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { api } from "../../../convex/_generated/api";
+import { guaranteePoints, launchBonuses } from "./guideHighlights";
 
 interface GuideSubscriptionPopupProps {
   isOpen: boolean;
@@ -36,14 +40,13 @@ interface GuideSubscriptionPopupProps {
 export function GuideSubscriptionPopup({ isOpen, onClose }: GuideSubscriptionPopupProps) {
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState<"benefits" | "content" | "social">("benefits");
-  
+  const [activePanel, setActivePanel] = useState<"benefits" | "content" | "reviews">("benefits");
+
   const currentSubscription = useQuery(
     api.domains.subscriptions.queries.getCurrentSubscription,
-    isLoaded && user ? {} : "skip"
+    isLoaded && user ? {} : "skip",
   );
 
-  // Close if user has active subscription
   useEffect(() => {
     if (currentSubscription?.status === "authorized") {
       onClose();
@@ -51,351 +54,426 @@ export function GuideSubscriptionPopup({ isOpen, onClose }: GuideSubscriptionPop
   }, [currentSubscription, onClose]);
 
   const handleCTA = () => {
+    const target = "/meu-painel/guia/assinar";
     if (!user) {
-      // Redirect to sign in, then to subscription page
-      router.push("/sign-in?redirect_url=/meu-painel/guia/assinar");
+      router.push(`/sign-in?redirect_url=${target}`);
     } else {
-      router.push("/meu-painel/guia/assinar");
+      router.push(target);
     }
     onClose();
   };
 
-  const stats = [
-    { icon: Users, value: "500+", label: "Viajantes satisfeitos" },
-    { icon: Star, value: "4.9", label: "Avaliação média" },
-    { icon: TrendingUp, value: "95%", label: "Taxa de sucesso" },
-  ];
+  const stats = useMemo(
+    () => [
+      {
+        icon: Users,
+        label: "Viajantes guiados",
+        helper: "desde 2022",
+        value: "500+",
+      },
+      {
+        icon: Star,
+        label: "Avaliação média",
+        helper: "avaliações reais",
+        value: "4,9",
+      },
+      {
+        icon: BadgeCheck,
+        label: "Planejamentos concluídos",
+        helper: "sem estresse",
+        value: "95%",
+      },
+    ],
+    [],
+  );
 
-  const benefits = [
-    {
-      icon: Map,
-      title: "Roteiros Dia a Dia",
-      description: "Planejamento completo com horários otimizados para aproveitar cada minuto",
-      gradient: "from-blue-500 to-cyan-500"
-    },
-    {
-      icon: Camera,
-      title: "Spots Secretos",
-      description: "Lugares exclusivos para fotos que só quem mora na ilha conhece",
-      gradient: "from-purple-500 to-pink-500"
-    },
-    {
-      icon: Zap,
-      title: "Acesso Imediato",
-      description: "Comece a planejar agora mesmo, disponível 24/7 no seu dispositivo",
-      gradient: "from-orange-500 to-red-500"
-    },
-    {
-      icon: Shield,
-      title: "Atualizações Grátis",
-      description: "6 meses de updates com novos conteúdos e dicas exclusivas",
-      gradient: "from-green-500 to-emerald-500"
-    },
-  ];
+  const benefitCards = useMemo(
+    () => [
+      {
+        icon: Map,
+        title: "Roteiro sob medida",
+        description: "Sequências prontas para 4 a 7 dias com horários ideais e alertas de maré.",
+      },
+      {
+        icon: Camera,
+        title: "Spots secretos",
+        description: "Locais pouco conhecidos, com dicas para fotos sem multidão.",
+      },
+      {
+        icon: Compass,
+        title: "Decisões rápidas",
+        description: "Tabela de clima, logística e valores para comparar passeios em minutos.",
+      },
+    ],
+    [],
+  );
 
-  const contentHighlights = [
-    "Melhores praias por período do dia",
-    "Contatos confiáveis de guias locais",
-    "Dicas de economia e otimização",
-    "Rotas de mergulho e trilhas",
-    "Restaurantes testados e aprovados",
-    "Checklist completo pré-viagem"
-  ];
+  const contentHighlights = useMemo(
+    () => [
+      "Checklists editáveis para mala, mergulho e crianças",
+      "Calendário de maré e vento integrado ao roteiro",
+      "Contatos verificados de guias, transfers e experiências",
+      "Alertas automáticos quando houver bloqueios ou obras",
+      "Planilhas de custos para controlar o orçamento da viagem",
+      "Recomendações gastronômicas testadas pela equipe local",
+    ],
+    [],
+  );
 
-  const socialProof = [
-    {
-      name: "Marina S.",
-      text: "Economizei dias de pesquisa! O guia é completo e atualizado. Valeu cada centavo.",
-      rating: 5
-    },
-    {
-      name: "Carlos R.",
-      text: "Os spots secretos fizeram toda diferença. Conseguimos fotos incríveis sem aglomeração!",
-      rating: 5
-    },
-    {
-      name: "Ana Paula",
-      text: "Roteiro perfeito! Seguimos dia a dia e aproveitamos tudo sem estresse.",
-      rating: 5
-    }
-  ];
+  const testimonials = useMemo(
+    () => [
+      {
+        name: "Marina Souza",
+        quote:
+          "Fizemos tudo sem perder tempo com filas ou pesquisa. O guia te segura pela mão do começo ao fim!",
+        rating: 5,
+      },
+      {
+        name: "Carlos Ribeiro",
+        quote:
+          "Reservamos os passeios certos e economizamos nos deslocamentos. Os alertas de maré salvaram nosso dia.",
+        rating: 5,
+      },
+      {
+        name: "Ana Paula",
+        quote:
+          "A curadoria gastronômica vale sozinha o investimento. Seguimos o plano e aproveitamos cada noite.",
+        rating: 5,
+      },
+    ],
+    [],
+  );
+
+  const steps = useMemo(
+    () => [
+      {
+        title: "Assine em 2 minutos",
+        body: "Pagamento seguro via Mercado Pago com liberação imediata do acesso.",
+      },
+      {
+        title: "Personalize o roteiro",
+        body: "Atualize as datas, escolha os passeios favoritos e receba alertas conforme o clima.",
+      },
+      {
+        title: "Viaje com suporte",
+        body: "Time local disponível no WhatsApp para ajustes de última hora durante toda a estada.",
+      },
+    ],
+    [],
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-6xl max-h-[95vh] overflow-hidden p-0 gap-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 border-2 border-blue-200/50"
+      <DialogContent
+        className="relative flex w-[min(96vw,1120px)] max-h-[95vh] flex-col overflow-hidden rounded-3xl border-2 border-blue-200/60 bg-gradient-to-br from-slate-50 via-white to-blue-50 p-0 shadow-2xl lg:h-[90vh]"
         aria-describedby="guide-subscription-description"
       >
         <DialogTitle className="sr-only">
-          Guia Exclusivo de Fernando de Noronha - Oferta Especial
+          Plano premium do Guia Interativo de Fernando de Noronha
         </DialogTitle>
-        
-        <div id="guide-subscription-description" className="sr-only">
-          Assine o guia exclusivo de Fernando de Noronha e tenha acesso a roteiros completos, spots secretos e dicas de quem vive na ilha.
-        </div>
+        <p id="guide-subscription-description" className="sr-only">
+          Tenha acesso a roteiros, alertas e suporte local para viajar por Fernando de Noronha sem perrengues.
+        </p>
 
-        {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-50 rounded-full bg-white/90 p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 group"
-          aria-label="Fechar"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:-translate-y-0.5 hover:scale-105 hover:bg-white"
+          aria-label="Fechar oferta do guia"
         >
-          <X className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
+          <X className="h-5 w-5 text-slate-500" />
         </button>
 
-        <div className="grid lg:grid-cols-[1.2fr,1fr] h-full overflow-hidden">
-          {/* LEFT SIDE - Main Content */}
-          <div className="relative overflow-y-auto p-8 lg:p-12 bg-white/40 backdrop-blur-sm">
-            {/* Floating particles decoration */}
-            <div className="absolute top-20 right-10 w-32 h-32 bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-20 left-10 w-40 h-40 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-1000" />
-            
-            <div className="relative z-10 space-y-8">
-              {/* Header */}
-              <div className="space-y-4">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <Badge className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white border-0 px-4 py-1.5 text-sm font-semibold shadow-lg">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Oferta Exclusiva 2025
-                  </Badge>
-                </motion.div>
-
-                <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="text-4xl lg:text-5xl font-bold leading-tight"
-                >
-                  <span className="bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-clip-text text-transparent">
-                    Desvende Noronha
-                  </span>
-                  <br />
-                  <span className="text-gray-900">como um Local</span>
-                </motion.h2>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="text-lg text-gray-600 max-w-xl"
-                >
-                  Pare de perder tempo pesquisando. Acesse roteiros prontos, contatos confiáveis e os segredos da ilha em um só lugar.
-                </motion.p>
-              </div>
-
-              {/* Stats */}
+        <div className="grid flex-1 overflow-hidden lg:grid-cols-[1.1fr,0.9fr]">
+          {/* Informational column */}
+          <div className="flex flex-col bg-white/70 backdrop-blur">
+            <div className="flex-1 space-y-8 overflow-y-auto px-6 py-8 lg:px-10">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="grid grid-cols-3 gap-4"
+                transition={{ duration: 0.5 }}
+                className="space-y-4"
               >
-                {stats.map((stat, idx) => (
-                  <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                    <stat.icon className="h-6 w-6 text-blue-500 mb-2" />
-                    <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                    <div className="text-xs text-gray-500">{stat.label}</div>
-                  </div>
-                ))}
-              </motion.div>
-
-              {/* Tabs */}
-              <div className="space-y-6">
-                <div className="flex gap-2 bg-gray-100 p-1.5 rounded-xl">
-                  {(["benefits", "content", "social"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                        activeTab === tab
-                          ? "bg-white text-blue-600 shadow-sm"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      {tab === "benefits" && "Benefícios"}
-                      {tab === "content" && "Conteúdo"}
-                      {tab === "social" && "Avaliações"}
-                    </button>
-                  ))}
-                </div>
-
-                <AnimatePresence mode="wait">
-                  {activeTab === "benefits" && (
-                    <motion.div
-                      key="benefits"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="grid sm:grid-cols-2 gap-4"
-                    >
-                      {benefits.map((benefit, idx) => (
-                        <div
-                          key={idx}
-                          className="group relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 overflow-hidden"
-                        >
-                          <div className={`absolute inset-0 bg-gradient-to-br ${benefit.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${benefit.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                            <benefit.icon className="h-6 w-6 text-white" />
-                          </div>
-                          <h4 className="font-bold text-gray-900 mb-2">{benefit.title}</h4>
-                          <p className="text-sm text-gray-600">{benefit.description}</p>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-
-                  {activeTab === "content" && (
-                    <motion.div
-                      key="content"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
-                    >
-                      <h4 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-blue-500" />
-                        O que você vai encontrar
-                      </h4>
-                      <div className="grid gap-3">
-                        {contentHighlights.map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-3 group">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                            <span className="text-gray-700">{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {activeTab === "social" && (
-                    <motion.div
-                      key="social"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="space-y-4"
-                    >
-                      {socialProof.map((review, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="flex">
-                              {[...Array(review.rating)].map((_, i) => (
-                                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              ))}
-                            </div>
-                            <span className="font-semibold text-gray-900 text-sm">{review.name}</span>
-                          </div>
-                          <p className="text-sm text-gray-600 italic">&ldquo;{review.text}&rdquo;</p>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT SIDE - CTA Section */}
-          <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-8 lg:p-10 flex flex-col justify-between overflow-hidden">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400/20 rounded-full blur-3xl" />
-            
-            <div className="relative z-10 space-y-8">
-              {/* Price Section */}
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
-                  <Clock className="h-4 w-4 text-white" />
-                  <span className="text-sm text-white font-semibold">Acesso por 1 ano completo</span>
-                </div>
-
+                <Badge className="inline-flex items-center gap-2 border-0 bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-1.5 text-white shadow-lg">
+                  <Sparkles className="h-4 w-4" />
+                  Atualização verão 2025
+                </Badge>
                 <div className="space-y-2">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-6xl font-bold text-white">R$ 99</span>
-                    <div className="text-white/80">
-                      <div className="text-sm">,90</div>
-                      <div className="text-xs">único</div>
-                    </div>
-                  </div>
-                  <p className="text-blue-100 text-sm">Menos de R$ 8,50 por mês</p>
-                </div>
-              </div>
-
-              {/* Included Features */}
-              <div className="space-y-3">
-                <h4 className="text-white font-bold text-lg">Incluso na assinatura:</h4>
-                {[
-                  "✨ Guia completo atualizado 2025",
-                  "🗺️ Roteiros dia a dia detalhados",
-                  "📸 Spots secretos para fotos",
-                  "🔄 Atualizações grátis por 6 meses",
-                  "📱 Acesso ilimitado em todos dispositivos",
-                  "🎯 Suporte via WhatsApp"
-                ].map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-3 text-white/90">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    <span className="text-sm">{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* CTA Button */}
-              <div className="space-y-4">
-                <Button
-                  onClick={handleCTA}
-                  className="w-full bg-white text-blue-600 hover:bg-blue-50 text-lg font-bold py-6 rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 group"
-                >
-                  <span>Garantir Meu Acesso Agora</span>
-                  <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-
-                <div className="text-center space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-white/90 text-sm">
-                    <Shield className="h-4 w-4" />
-                    <span>Pagamento 100% seguro via Mercado Pago</span>
-                  </div>
-                  <p className="text-xs text-white/70">
-                    Acesso imediato após confirmação do pagamento
+                  <h2 className="text-3xl font-bold leading-tight text-slate-900 lg:text-5xl">
+                    Planeje Noronha
+                    <span className="block bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-clip-text text-transparent">
+                      como um morador
+                    </span>
+                  </h2>
+                  <p className="text-base text-slate-600 lg:text-lg">
+                    Receba um plano diário validado por quem vive na ilha, com alertas de maré, contatos confiáveis e ajustes em tempo real.
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Urgency Element */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="flex items-start gap-3">
-                  <Zap className="h-5 w-5 text-yellow-300 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-white">
-                    <p className="font-semibold mb-1">Planeje sua viagem agora!</p>
-                    <p className="text-white/80 text-xs">
-                      Mais de 100 pessoas acessaram o guia esta semana. Não deixe para última hora.
+              <div className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl">
+                <div className="relative h-56 w-full">
+                  <Image
+                    src="/images/praias-hero.png"
+                    alt="Vista aérea das praias de Fernando de Noronha"
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 500px, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/50 via-blue-600/20 to-transparent" />
+                  <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between gap-4 text-white">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.28em] text-white/70">Preview do guia</p>
+                      <p className="text-lg font-semibold leading-tight">
+                        Sequência perfeita para 7 dias de Noronha
+                      </p>
+                    </div>
+                    <div className="hidden rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider sm:flex sm:items-center sm:gap-2">
+                      <Compass className="h-4 w-4" />
+                      Insider tips
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-4 border-t border-blue-100/80 bg-white/80 px-6 py-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600">Atualizado em</p>
+                    <p className="text-base font-semibold text-slate-900">Janeiro 2025</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-blue-500" />
+                    <p className="text-sm font-medium text-slate-600">
+                      Alertas climáticos incluídos durante 6 meses
                     </p>
                   </div>
                 </div>
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-lg"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <stat.icon className="relative z-10 mb-2 h-6 w-6 text-blue-500" />
+                    <p className="relative z-10 text-2xl font-bold text-slate-900">{stat.value}</p>
+                    <p className="relative z-10 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      {stat.helper}
+                    </p>
+                    <p className="relative z-10 mt-1 text-sm text-slate-600">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100/80 p-2">
+                  {(
+                    [
+                      { id: "benefits", label: "Por que funciona" },
+                      { id: "content", label: "O que está incluso" },
+                      { id: "reviews", label: "Quem já usou" },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActivePanel(tab.id)}
+                      className={`${
+                        activePanel === tab.id
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      } rounded-xl px-4 py-2 text-sm font-semibold transition-all`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                  <AnimatePresence mode="wait">
+                    {activePanel === "benefits" && (
+                      <motion.div
+                        key="benefits"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.25 }}
+                        className="grid gap-5 px-6 py-6 sm:grid-cols-3"
+                      >
+                        {benefitCards.map((item) => (
+                          <div key={item.title} className="flex flex-col gap-3">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
+                              <item.icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                              <p className="text-sm text-slate-600">{item.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+
+                    {activePanel === "content" && (
+                      <motion.div
+                        key="content"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.25 }}
+                        className="space-y-4 px-6 py-6"
+                      >
+                        {contentHighlights.map((line) => (
+                          <div key={line} className="flex items-start gap-3">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                            <p className="text-sm text-slate-600">{line}</p>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+
+                    {activePanel === "reviews" && (
+                      <motion.div
+                        key="reviews"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.25 }}
+                        className="space-y-4 px-6 py-6"
+                      >
+                        {testimonials.map((review) => (
+                          <div key={review.name} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                            <div className="flex items-center gap-2">
+                              {Array.from({ length: review.rating }).map((_, idx) => (
+                                <Star key={idx} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                              ))}
+                              <span className="text-sm font-semibold text-slate-800">{review.name}</span>
+                            </div>
+                            <p className="mt-3 text-sm italic text-slate-600">“{review.quote}”</p>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6">
+                <div className="mb-6 flex items-center gap-3">
+                  <Badge className="border border-blue-200 bg-blue-100 text-blue-700">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Em três passos simples
+                  </Badge>
+                  <span className="hidden text-sm text-slate-500 lg:block">Do pagamento à viagem sem perrengue</span>
+                </div>
+                <div className="space-y-5">
+                  {steps.map((step, index) => (
+                    <div key={step.title} className="flex items-start gap-4">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 text-sm font-semibold text-white shadow-lg">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{step.title}</p>
+                        <p className="text-sm text-slate-600">{step.body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Offer column */}
+          <div className="flex flex-col bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500">
+            <div className="flex-1 space-y-8 overflow-y-auto px-6 py-8 text-white lg:px-9">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
+                  <Shield className="h-4 w-4" />
+                  Acesso por 12 meses
+                </div>
+                <div className="flex items-end gap-3">
+                  <div className="text-5xl font-bold lg:text-6xl">R$ 99</div>
+                  <div className="text-white/80">
+                    <div className="text-sm">,90</div>
+                    <div className="text-xs">pagamento único</div>
+                  </div>
+                </div>
+                <p className="text-sm text-blue-100 lg:text-base">Menos de R$ 8,50 por mês para viajar com suporte local.</p>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">O que você destrava:</h3>
+                {[
+                  "Roteiros prontos e ajustáveis por duração",
+                  "Calendário inteligente de marés e clima",
+                  "Contatos verificados de passeios e transfers",
+                  "Alertas instantâneos quando houver mudanças",
+                  "Suporte pelo WhatsApp antes e durante a viagem",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm text-white/90">
+                    <div className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
+                  <Zap className="h-4 w-4" />
+                  Bônus de lançamento
+                </div>
+                <div className="space-y-3">
+                  {launchBonuses.map((bonus) => (
+                    <div key={bonus.title} className="rounded-2xl border border-white/20 bg-white/15 p-4">
+                      <p className="text-sm font-semibold">{bonus.title}</p>
+                      <p className="text-xs text-white/80">{bonus.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <Button
+                  onClick={handleCTA}
+                  className="group w-full justify-center rounded-2xl bg-white px-6 py-6 text-lg font-bold text-blue-600 shadow-xl transition-all hover:-translate-y-0.5 hover:bg-blue-50"
+                >
+                  Garantir acesso agora
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Button>
+                <div className="rounded-2xl border border-white/20 bg-white/10 p-4 text-sm text-white/90">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    <Shield className="h-4 w-4" />
+                    Garantia tranquilidade
+                  </div>
+                  <p className="mb-3 text-xs text-white/80">
+                    Ajustamos o plano com você ou devolvemos o investimento em até 7 dias se o guia não encantar.
+                  </p>
+                  <ul className="space-y-2 text-xs text-white/80">
+                    {guaranteePoints.map((point) => (
+                      <li key={point} className="flex items-start gap-2">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-200" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
 
-            {/* Trust badges at bottom */}
-            <div className="relative z-10 pt-6 border-t border-white/20">
-              <div className="flex items-center justify-center gap-6 text-white/80 text-xs">
-                <div className="flex items-center gap-2">
+            <div className="border-t border-white/20 px-6 py-5 text-xs text-white/80 lg:px-9">
+                  <div className="flex flex-wrap items-center justify-center gap-6">
+                <span className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  <span>Seguro</span>
-                </div>
-                <div className="flex items-center gap-2">
+                  Pagamento seguro
+                </span>
+                <span className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
-                  <span>4.9/5 estrelas</span>
-                </div>
-                <div className="flex items-center gap-2">
+                  Avaliado em 4,9/5
+                </span>
+                <span className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span>500+ clientes</span>
-                </div>
+                  500+ viajantes felizes
+                </span>
               </div>
             </div>
           </div>

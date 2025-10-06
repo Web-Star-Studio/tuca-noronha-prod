@@ -1,19 +1,22 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  X, 
-  Sparkles, 
+import {
+  X,
+  Sparkles,
   ChevronRight,
   Star,
   Shield,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Gift,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { launchBonuses, guaranteePoints } from "./guideHighlights";
 
 interface GuidePopupMobileProps {
   isOpen: boolean;
@@ -86,6 +89,44 @@ export function GuidePopupMobile({ isOpen, onClose }: GuidePopupMobileProps) {
             </p>
           </div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm"
+          >
+            <div className="relative h-48">
+              <Image
+                src="/images/praias-hero.png"
+                alt="Vista aérea das praias de Fernando de Noronha"
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/60 via-blue-700/20 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 text-white">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">Preview do guia</p>
+                  <p className="text-base font-semibold leading-tight">Sequência ideal de praias para 7 dias</p>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Insider tips
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 px-4 py-4">
+              <div className="flex items-center justify-between text-sm text-blue-600">
+                <span className="font-semibold uppercase tracking-wide text-blue-500">Atualizado em janeiro 2025</span>
+                <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">Novos spots</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Conteúdo preparado por quem vive na ilha com alertas de clima e logística.
+              </p>
+            </div>
+          </motion.div>
+
           {/* Stats */}
           <div className="flex gap-3 overflow-x-auto pb-2">
             <div className="flex-shrink-0 bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[100px]">
@@ -120,6 +161,21 @@ export function GuidePopupMobile({ isOpen, onClose }: GuidePopupMobileProps) {
                 <span className="text-gray-700">{item}</span>
               </div>
             ))}
+          </div>
+
+          <div className="space-y-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+              <Gift className="h-4 w-4" />
+              Bônus de lançamento
+            </div>
+            <div className="space-y-3">
+              {launchBonuses.map((bonus) => (
+                <div key={bonus.title} className="rounded-xl bg-white/80 p-3 shadow-sm">
+                  <p className="text-sm font-semibold text-blue-800">{bonus.title}</p>
+                  <p className="text-xs text-blue-700/80">{bonus.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Social Proof */}
@@ -173,6 +229,24 @@ export function GuidePopupMobile({ isOpen, onClose }: GuidePopupMobileProps) {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="space-y-3 rounded-2xl border border-blue-100 bg-white p-5 text-blue-700 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <p className="text-sm font-semibold uppercase tracking-wide">Garantia tranquilidade</p>
+            </div>
+            <p className="text-sm text-blue-700/90">
+              Ajustamos o roteiro com você ou devolvemos o investimento em até 7 dias caso não seja perfeito.
+            </p>
+            <ul className="space-y-1 text-sm">
+              {guaranteePoints.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </motion.div>
