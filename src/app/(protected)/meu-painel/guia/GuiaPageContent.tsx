@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 // date-fns imports removidos (não utilizados)
 
-import { MapPin, Calendar, Utensils, Waves, Building, Star, Plane, Home, Car, UtensilsCrossed, Sun, Clock, Heart, Camera, CheckCircle, AlertCircle, Shirt, Wallet, Play, BarChart3, Lightbulb, Compass, Info, Thermometer, Users, Map, Navigation, Activity, Globe, Trophy, CloudRain, ArrowLeft, Menu, ArrowUp, CreditCard, DollarSign, Droplets, FileText, Fish, Key, Phone, Shield, Trash2, TrendingDown, Wifi, Wind, Zap } from "lucide-react";
+import { MapPin, Calendar, Utensils, Waves, Building, Star, Plane, Home, Car, UtensilsCrossed, Sun, Clock, Heart, Camera, CheckCircle, AlertCircle, Shirt, Wallet, Play, BarChart3, Lightbulb, Compass, Info, Thermometer, Users, Map, Navigation, Activity, Globe, Trophy, CloudRain, ArrowLeft, Menu, ArrowUp, CreditCard, DollarSign, Droplets, FileText, Fish, Key, Phone, Shield, Trash2, TrendingDown, Wifi, Wind, Zap, Church, Sailboat } from "lucide-react";
 import { cardStyles, decorativeBackgrounds, ui } from "@/lib/ui-config";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -2586,7 +2586,7 @@ function SectionContent({
                   <h5 className="font-semibold text-gray-900 mb-2">❌ Não Incluso</h5>
                   <ul className="text-sm text-gray-700 space-y-1">
                     <li>• Equipamento de mergulho</li>
-                    <li>• Almoço</li>
+                    <li>• Alimentação e Bebidas</li>
                     <li>• Ingresso PARNAMAR</li>
                   </ul>
                 </div>
@@ -2596,6 +2596,50 @@ function SectionContent({
                       <strong>💡 Dica do Tuca:</strong> Ideal para quem visita a ilha pela primeira vez e quer conhecer 70% desse paraíso em um dia.
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+
+            {/* Passeio Barco Regular */}
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Sailboat className="w-6 h-6 text-purple-600" />
+                Passeio de Barco Regular
+              </h4>
+              <p className="text-gray-700 mb-4">
+                Saída do Porto de Santo Antônio. Navegação pelo Mar de Dentro com vista para: Praias da região, Ilhas secundárias, Buraco do Rugido do Leão.
+              </p>
+
+              <p className="text-gray-700 mb-4">
+                Parada na Baía do Sancho (uma das praias mais bonitas do mundo!)
+                -  Desembarque opcional
+                -  Nadar ao redor do barco
+                -  Curtir a vista paradisíaca
+              </p>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">DURAÇÃO:</h5>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>• Aproximadamente 4h (das 08h às 12h)</li>
+                    <li>• Passeios diários</li>
+                  </ul>
+                </div>
+              
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">INCLUSO:</h5>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>• Transfer in/out a partir das 07h30</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white/70 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">IMPORTANTE:</h5>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>• Não é permitido levar cooler ou bebidas</li>
+                    <li>• Bebidas disponíveis à venda no barco (cerveja, água e refrigerante)</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -2703,7 +2747,7 @@ function SectionContent({
 
               <div className="bg-pink-50 rounded-xl p-4">
                 <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-pink-600" />
+                  <Church className="w-4 h-4 text-pink-600" />
                   Igreja dos Remédios
                 </h5>
                 <p className="text-sm text-gray-700 mb-2">
@@ -3219,6 +3263,22 @@ function SectionContent({
                   <p><strong>📞 Telefone:</strong> +55 81 3619-0450</p>
                   <p><strong>🕒 Funcionamento:</strong> Segunda a sábado, 8h às 20h | Domingo, 8h às 13h</p>
                   <p><strong>💊 Serviços:</strong> Medicamentos, produtos de higiene e cuidados pessoais</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Transporte */}
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6">
+              <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Car className="w-6 h-6 text-yellow-600" />
+                Transporte
+              </h4>
+              
+              <div className="bg-white/70 rounded-xl p-4">
+                <h5 className="font-semibold text-gray-900 mb-3">💊 Farmácia Mix</h5>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p><strong>📍 Endereço:</strong> Rua São Miguel, S/N, Fernando de Noronha - PE, 53990-000</p>
+                  <p><strong>📞 Telefone:</strong> +55 81 9 9323-1118</p>
                 </div>
               </div>
             </div>

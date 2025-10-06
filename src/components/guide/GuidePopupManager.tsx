@@ -22,10 +22,10 @@ export function GuidePopupManager() {
   const { user, isLoaded } = useUser();
   const [showPopup, setShowPopup] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
-  const currentSubscription = useQuery(
-    api.domains.subscriptions.queries.getCurrentSubscription,
-    isLoaded && user ? {} : "skip"
+
+  const hasGuideAccess = useQuery(
+    api.domains.subscriptions.queries.hasGuideAccess,
+    isLoaded ? {} : "skip"
   );
 
   // Detect mobile viewport
@@ -61,9 +61,10 @@ export function GuidePopupManager() {
     
     // Don't show if not loaded yet
     if (!isLoaded) return;
+    if (hasGuideAccess === undefined) return;
 
-    // Don't show if user has active subscription
-    if (currentSubscription?.status === "authorized") {
+    // Don't show if user already has access (active subscription or master role)
+    if (hasGuideAccess) {
       return;
     }
 
@@ -89,7 +90,14 @@ export function GuidePopupManager() {
     }, 3000); // 3 seconds delay
 
     return () => clearTimeout(timer);
-  }, [isLoaded, currentSubscription]);
+  }, [isLoaded, hasGuideAccess]);
+
+  // Close popup automatically when access is granted (e.g., after assinatura)
+  useEffect(() => {
+    if (hasGuideAccess) {
+      setShowPopup(false);
+    }
+  }, [hasGuideAccess]);
 
   const handleClose = () => {
     setShowPopup(false);
