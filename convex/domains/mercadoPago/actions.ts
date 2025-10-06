@@ -271,13 +271,13 @@ export const createPaymentWithManualCapture = action({
     issuerId: v.optional(v.string()),
     amount: v.number(),
     installments: v.number(),
-    payer: v.object({
+    payer: v.optional(v.object({
       email: v.string(),
       identification: v.optional(v.object({
         type: v.string(),
         number: v.string()
       }))
-    }),
+    })),
     description: v.string(),
     metadata: v.optional(v.any())
   },
