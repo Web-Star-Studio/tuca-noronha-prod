@@ -266,8 +266,8 @@ export const createPaymentWithManualCapture = action({
   args: {
     bookingId: v.string(),
     assetType: assetTypeValidator,
-    token: v.string(),
-    paymentMethodId: v.string(),
+    token: v.optional(v.string()),
+    paymentMethodId: v.optional(v.string()),
     issuerId: v.optional(v.string()),
     amount: v.number(),
     installments: v.number(),
@@ -295,18 +295,28 @@ export const createPaymentWithManualCapture = action({
       // Create payment with capture=false (authorization only)
       const paymentBody: any = {
         transaction_amount: args.amount,
-        token: args.token,
-        payment_method_id: args.paymentMethodId,
         installments: args.installments,
         capture: false,  // 🔑 THIS IS THE KEY - Manual capture
         description: args.description,
-        payer: args.payer,
         metadata: {
           bookingId: args.bookingId,
           assetType: args.assetType,
           ...(args.metadata || {})
         }
       };
+
+      // Add optional fields if provided
+      if (args.token) {
+        paymentBody.token = args.token;
+      }
+      
+      if (args.paymentMethodId) {
+        paymentBody.payment_method_id = args.paymentMethodId;
+      }
+      
+      if (args.payer) {
+        paymentBody.payer = args.payer;
+      }
 
       // Add issuer if provided (required for some payment methods)
       if (args.issuerId) {
