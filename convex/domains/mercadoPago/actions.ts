@@ -287,6 +287,9 @@ export const createPaymentWithManualCapture = action({
     status: v.optional(v.string()),
     statusDetail: v.optional(v.string()),
     requiresManualCapture: v.optional(v.boolean()),
+    pixQrCode: v.optional(v.string()),
+    pixQrCodeBase64: v.optional(v.string()),
+    boletoUrl: v.optional(v.string()),
     error: v.optional(v.string())
   }),
   handler: async (ctx, args) => {
@@ -372,8 +375,35 @@ export const createPaymentWithManualCapture = action({
         status: payment.status,
         statusDetail: payment.status_detail,
         captured: payment.captured,
-        isCreditCard: isCreditCard
+        isCreditCard: isCreditCard,
+        paymentMethodId: args.paymentMethodId,
+        hasTransactionData: !!payment.point_of_interaction?.transaction_data
       });
+
+      // Extract PIX/boleto specific data
+      let pixQrCode = undefined;
+      let pixQrCodeBase64 = undefined;
+      let boletoUrl = undefined;
+      
+      if (payment.point_of_interaction?.transaction_data) {
+        const transactionData = payment.point_of_interaction.transaction_data;
+        
+        // PIX data
+        if (transactionData.qr_code) {
+          pixQrCode = transactionData.qr_code;
+          console.log("[MP] PIX QR code generated");
+        }
+        if (transactionData.qr_code_base64) {
+          pixQrCodeBase64 = transactionData.qr_code_base64;
+          console.log("[MP] PIX QR code base64 generated");
+        }
+        
+        // Boleto URL
+        if (transactionData.ticket_url) {
+          boletoUrl = transactionData.ticket_url;
+          console.log("[MP] Boleto URL generated:", boletoUrl);
+        }
+      }
 
       // Map MP status to our internal status
       // For credit cards with manual capture: authorized -> needs admin approval
@@ -421,7 +451,10 @@ export const createPaymentWithManualCapture = action({
         paymentId: String(payment.id),
         status: payment.status,
         statusDetail: payment.status_detail,
-        requiresManualCapture: isCreditCard && payment.status === "authorized"
+        requiresManualCapture: isCreditCard && payment.status === "authorized",
+        pixQrCode: pixQrCode,
+        pixQrCodeBase64: pixQrCodeBase64,
+        boletoUrl: boletoUrl
       };
 
     } catch (error) {

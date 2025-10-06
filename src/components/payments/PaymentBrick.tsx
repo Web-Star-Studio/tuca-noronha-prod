@@ -6,6 +6,15 @@ import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+interface PaymentResult {
+  paymentId: string;
+  paymentType: string;
+  status: string;
+  pixQrCode?: string;
+  pixQrCodeBase64?: string;
+  boletoUrl?: string;
+}
+
 interface PaymentBrickProps {
   bookingId: string;
   assetType: "activity" | "event" | "restaurant" | "vehicle" | "package";
@@ -20,7 +29,7 @@ interface PaymentBrickProps {
     firstName?: string;
     lastName?: string;
   };
-  onSuccess?: (paymentId: string, paymentType: string) => void;
+  onSuccess?: (result: PaymentResult) => void;
   onError?: (error: string) => void;
   className?: string;
 }
@@ -57,8 +66,8 @@ export function PaymentBrick({
   const createPayment = useAction(api.domains.mercadoPago.actions.createPaymentWithManualCapture);
 
   // Estabilizar callbacks com useCallback
-  const handleSuccess = useCallback((paymentId: string, paymentType: string = "credit_card") => {
-    onSuccess?.(paymentId, paymentType);
+  const handleSuccess = useCallback((result: PaymentResult) => {
+    onSuccess?.(result);
   }, [onSuccess]);
 
   const handleError = useCallback((error: string) => {
@@ -183,6 +192,17 @@ export function PaymentBrick({
                 });
 
                 if (result.success && result.paymentId) {
+                  const paymentResult: PaymentResult = {
+                    paymentId: result.paymentId,
+                    paymentType: paymentType,
+                    status: result.status || "unknown",
+                    pixQrCode: result.pixQrCode,
+                    pixQrCodeBase64: result.pixQrCodeBase64,
+                    boletoUrl: result.boletoUrl
+                  };
+
+                  console.log("[Payment Brick] Payment result:", paymentResult);
+
                   // Check payment status
                   if (result.status === "authorized") {
                     toast.success(
@@ -192,10 +212,10 @@ export function PaymentBrick({
                         duration: 5000,
                       }
                     );
-                    handleSuccess(result.paymentId, paymentType);
+                    handleSuccess(paymentResult);
                   } else if (result.status === "approved") {
                     toast.success("Pagamento aprovado com sucesso!");
-                    handleSuccess(result.paymentId, paymentType);
+                    handleSuccess(paymentResult);
                   } else if (result.status === "pending") {
                     if (isTicket) {
                       toast.info("Boleto gerado com sucesso!", {
@@ -204,15 +224,19 @@ export function PaymentBrick({
                       });
                     } else if (isPix) {
                       toast.info("PIX gerado com sucesso!", {
-                        description: "Use o QR Code ou cole o código PIX para pagar.",
+                        description: result.pixQrCode 
+                          ? "Use o QR Code ou cole o código PIX para pagar."
+                          : "Aguarde... gerando código PIX.",
                         duration: 8000,
                       });
+                      console.log("[Payment Brick] PIX QR Code:", result.pixQrCode);
+                      console.log("[Payment Brick] PIX QR Code Base64:", result.pixQrCodeBase64 ? "present" : "missing");
                     } else {
                       toast.info("Pagamento em processamento", {
                         description: "Você será notificado quando for confirmado.",
                       });
                     }
-                    handleSuccess(result.paymentId, paymentType);
+                    handleSuccess(paymentResult);
                   } else if (result.status === "rejected") {
                     toast.error("Pagamento rejeitado", {
                       description: result.statusDetail || "Tente novamente com outro método.",
@@ -222,7 +246,7 @@ export function PaymentBrick({
                     toast.info("Pagamento em processamento", {
                       description: "Você será notificado quando for confirmado.",
                     });
-                    handleSuccess(result.paymentId, paymentType);
+                    handleSuccess(paymentResult);
                   }
                 } else {
                   throw new Error(result.error || "Failed to create payment");
