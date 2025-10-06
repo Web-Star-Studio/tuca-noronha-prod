@@ -5,6 +5,7 @@ import { useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { PixPaymentDisplay } from "./PixPaymentDisplay";
 
 interface PaymentResult {
   paymentId: string;
@@ -52,6 +53,7 @@ export function PaymentBrick({
 }: PaymentBrickProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pixPaymentData, setPixPaymentData] = useState<PaymentResult | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const brickRef = useRef<any>(null);
   const isInitialized = useRef(false);
@@ -223,14 +225,21 @@ export function PaymentBrick({
                         duration: 8000,
                       });
                     } else if (isPix) {
-                      toast.info("PIX gerado com sucesso!", {
-                        description: result.pixQrCode 
-                          ? "Use o QR Code ou cole o código PIX para pagar."
-                          : "Aguarde... gerando código PIX.",
-                        duration: 8000,
-                      });
-                      console.log("[Payment Brick] PIX QR Code:", result.pixQrCode);
-                      console.log("[Payment Brick] PIX QR Code Base64:", result.pixQrCodeBase64 ? "present" : "missing");
+                      if (result.pixQrCode) {
+                        // Armazenar dados do PIX para exibir
+                        setPixPaymentData(paymentResult);
+                        toast.success("PIX gerado com sucesso!", {
+                          description: "Use o QR Code ou copie o código para pagar.",
+                          duration: 8000,
+                        });
+                        console.log("[Payment Brick] PIX QR Code:", result.pixQrCode);
+                        console.log("[Payment Brick] PIX QR Code Base64:", result.pixQrCodeBase64 ? "present" : "missing");
+                      } else {
+                        toast.info("PIX gerado!", {
+                          description: "Aguarde... gerando código PIX.",
+                          duration: 8000,
+                        });
+                      }
                     } else {
                       toast.info("Pagamento em processamento", {
                         description: "Você será notificado quando for confirmado.",
@@ -309,6 +318,20 @@ export function PaymentBrick({
       isInitialized.current = false;
     };
   }, []); // Dependências vazias - inicializa apenas uma vez
+
+  // Se tiver dados de PIX, mostrar o componente de exibição
+  if (pixPaymentData && pixPaymentData.pixQrCode) {
+    return (
+      <div className={className}>
+        <PixPaymentDisplay
+          pixQrCode={pixPaymentData.pixQrCode}
+          pixQrCodeBase64={pixPaymentData.pixQrCodeBase64}
+          amount={amount}
+          expiresIn={30}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`payment-brick-wrapper ${className}`}>
