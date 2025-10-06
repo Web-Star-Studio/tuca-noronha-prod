@@ -267,7 +267,7 @@ export const createPaymentWithManualCapture = action({
     bookingId: v.string(),
     assetType: assetTypeValidator,
     token: v.optional(v.string()),
-    paymentMethodId: v.string(), // Required by Mercado Pago API
+    paymentMethodId: v.optional(v.string()), // Optional - MP Brick doesn't always provide it initially
     issuerId: v.optional(v.string()),
     amount: v.number(),
     installments: v.number(),
@@ -291,6 +291,21 @@ export const createPaymentWithManualCapture = action({
   handler: async (ctx, args) => {
     try {
       console.log("[MP] Creating payment with MANUAL capture for booking:", args.bookingId);
+      console.log("[MP] Args received:", {
+        paymentMethodId: args.paymentMethodId,
+        token: args.token ? "present" : "missing",
+        payer: args.payer ? "present" : "missing"
+      });
+
+      // Validate required fields for MP API
+      if (!args.paymentMethodId) {
+        console.error("[MP] Missing paymentMethodId - cannot proceed");
+        return {
+          success: false,
+          error: "Método de pagamento não identificado. Por favor, selecione um método de pagamento válido.",
+          status: "error"
+        };
+      }
 
       // Create payment with capture=false (authorization only)
       const paymentBody: any = {
@@ -319,6 +334,11 @@ export const createPaymentWithManualCapture = action({
       if (args.issuerId) {
         paymentBody.issuer_id = args.issuerId;
       }
+
+      console.log("[MP] Payment body prepared:", {
+        ...paymentBody,
+        token: paymentBody.token ? "***" : undefined
+      });
 
       // Call Mercado Pago Payments API
       const payment = await mpFetch<any>('/v1/payments', {
