@@ -286,6 +286,7 @@ export const createPaymentWithManualCapture = action({
     paymentId: v.optional(v.string()),
     status: v.optional(v.string()),
     statusDetail: v.optional(v.string()),
+    requiresManualCapture: v.optional(v.boolean()),
     error: v.optional(v.string())
   }),
   handler: async (ctx, args) => {
@@ -307,12 +308,17 @@ export const createPaymentWithManualCapture = action({
         };
       }
 
-      // Create payment with capture=false (authorization only)
+      // Determine if this payment method supports manual capture
+      // Only credit cards support capture=false (authorization)
+      // PIX, boleto, bank transfers require immediate capture
+      const creditCardMethods = ['visa', 'master', 'amex', 'elo', 'hipercard', 'diners', 'discover'];
+      const isCreditCard = creditCardMethods.includes(args.paymentMethodId.toLowerCase());
+      
+      // Create payment body
       const paymentBody: any = {
         transaction_amount: args.amount,
-        payment_method_id: args.paymentMethodId, // Required by MP API
+        payment_method_id: args.paymentMethodId,
         installments: args.installments,
-        capture: false,  // 🔑 THIS IS THE KEY - Manual capture
         description: args.description,
         metadata: {
           bookingId: args.bookingId,
@@ -320,6 +326,15 @@ export const createPaymentWithManualCapture = action({
           ...(args.metadata || {})
         }
       };
+
+      // Only add capture=false for credit cards (manual capture)
+      // Other methods (PIX, boleto, etc) don't support it
+      if (isCreditCard) {
+        paymentBody.capture = false;  // Manual capture for credit cards
+        console.log("[MP] Using MANUAL capture (authorization only) for credit card");
+      } else {
+        console.log("[MP] Using IMMEDIATE capture for", args.paymentMethodId);
+      }
 
       // Add optional fields if provided
       if (args.token) {
@@ -356,15 +371,18 @@ export const createPaymentWithManualCapture = action({
         id: payment.id,
         status: payment.status,
         statusDetail: payment.status_detail,
-        captured: payment.captured
+        captured: payment.captured,
+        isCreditCard: isCreditCard
       });
 
       // Map MP status to our internal status
+      // For credit cards with manual capture: authorized -> needs admin approval
+      // For PIX/boleto/etc with immediate capture: approved -> paid immediately
       const statusMap: Record<string, string> = {
-        authorized: "authorized",
-        approved: "paid",
-        in_process: "processing",
-        pending: "pending",
+        authorized: "authorized",  // Credit card - awaiting capture
+        approved: isCreditCard ? "paid" : "paid",  // Approved and captured
+        in_process: "processing",  // Payment being processed
+        pending: "pending",        // PIX waiting payment, boleto generated
         rejected: "failed",
         cancelled: "cancelled"
       };
@@ -379,13 +397,22 @@ export const createPaymentWithManualCapture = action({
         paymentStatus: paymentStatus
       });
 
-      // If payment is authorized, update booking status to awaiting_confirmation
+      // Update booking status based on payment result
       if (payment.status === "authorized") {
+        // Credit card authorized - awaiting admin approval
         await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
           bookingId: args.bookingId,
           assetType: args.assetType,
           status: "awaiting_confirmation",
           paymentStatus: "authorized"
+        });
+      } else if (payment.status === "approved") {
+        // Payment approved immediately (PIX paid, card captured, etc)
+        await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          status: "confirmed",
+          paymentStatus: "paid"
         });
       }
 
@@ -393,7 +420,8 @@ export const createPaymentWithManualCapture = action({
         success: true,
         paymentId: String(payment.id),
         status: payment.status,
-        statusDetail: payment.status_detail
+        statusDetail: payment.status_detail,
+        requiresManualCapture: isCreditCard && payment.status === "authorized"
       };
 
     } catch (error) {
