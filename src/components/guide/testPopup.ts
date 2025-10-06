@@ -21,6 +21,7 @@ export const guidePopupTestUtils = {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem("guide_popup_shown");
     localStorage.removeItem("guide_popup_dismissed_at");
+    localStorage.removeItem("guide_popup_version");
     console.log("✅ Popup state cleared. Refresh the page to see the popup.");
   },
 
@@ -31,6 +32,7 @@ export const guidePopupTestUtils = {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem("guide_popup_shown");
     localStorage.removeItem("guide_popup_dismissed_at");
+    localStorage.removeItem("guide_popup_version");
     console.log("✅ Popup completely reset. Refresh to test again.");
   },
 

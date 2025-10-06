@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { parseDateInput } from "@/lib/utils";
 import { Search, Plus, Package, MapPin, Calendar, Users, DollarSign, MessageCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,11 +162,10 @@ const PackageRequestsSection: React.FC = () => {
     } else {
       // For specific dates
       if (tripDetails.startDate && tripDetails.endDate) {
-        const startDate = new Date(tripDetails.startDate);
-        const endDate = new Date(tripDetails.endDate);
-        
-        // Check if dates are valid
-        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        const startDate = parseDateInput(tripDetails.startDate);
+        const endDate = parseDateInput(tripDetails.endDate);
+
+        if (startDate && endDate) {
           return `${format(startDate, "dd/MM/yyyy", { locale: ptBR })} - ${format(endDate, "dd/MM/yyyy", { locale: ptBR })}`;
         }
       }

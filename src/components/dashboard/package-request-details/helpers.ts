@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { parseDateInput } from "@/lib/utils";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -15,8 +16,8 @@ export const formatCurrency = (value?: number) => {
 
 export const formatDate = (dateString: string | number | undefined) => {
   if (!dateString) return "Data não definida";
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? "Data inválida" : date.toLocaleDateString('pt-BR');
+  const parsed = parseDateInput(dateString);
+  return parsed ? parsed.toLocaleDateString("pt-BR") : "Data inválida";
 };
 
 export const formatDateTime = (timestamp: number) => {

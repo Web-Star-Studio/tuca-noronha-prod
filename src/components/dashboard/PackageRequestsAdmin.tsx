@@ -18,6 +18,7 @@ import {
 } from "../../../convex/domains/packages/types";
 import { Id } from "@/../convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
+import { parseDateInput } from "@/lib/utils";
 
 export default function PackageRequestsAdmin() {
   const router = useRouter();
@@ -52,8 +53,8 @@ export default function PackageRequestsAdmin() {
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Data não definida";
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "Data inválida" : date.toLocaleDateString('pt-BR');
+    const parsed = parseDateInput(dateString);
+    return parsed ? parsed.toLocaleDateString('pt-BR') : "Data inválida";
   };
 
   // Helper function to format trip dates (handles both specific and flexible dates)

@@ -5,6 +5,35 @@ import { createAuditLog } from "../audit/utils";
 import { internal } from "../../_generated/api";
 import type { Doc, Id } from "../../_generated/dataModel";
 
+const formatDisplayDate = (value: string | number | Date | undefined) => {
+  if (value === undefined || value === null) return "";
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? "" : value.toLocaleDateString("pt-BR");
+  }
+
+  if (typeof value === "number") {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? "" : parsed.toLocaleDateString("pt-BR");
+  }
+
+  if (typeof value === "string") {
+    const isoDate = value.split("T")[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+      const [year, month, day] = isoDate.split("-").map(Number);
+      if (year && month && day) {
+        const parsed = new Date(year, month - 1, day);
+        return parsed.toLocaleDateString("pt-BR");
+      }
+    }
+
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? "" : parsed.toLocaleDateString("pt-BR");
+  }
+
+  return "";
+};
+
 /**
  * Helper function to check if a traveler has access to a package request
  */
@@ -531,7 +560,7 @@ export const generatePDFContent = internalAction({
             <p><strong>Email:</strong> ${packageRequest.customerInfo?.email || 'Não informado'}</p>
             <p><strong>Telefone:</strong> ${packageRequest.customerInfo?.phone || 'Não informado'}</p>
             <p><strong>Destino:</strong> ${packageRequest.destination}</p>
-            <p><strong>Período:</strong> ${new Date(packageRequest.startDate).toLocaleDateString('pt-BR')} a ${new Date(packageRequest.endDate).toLocaleDateString('pt-BR')}</p>
+            <p><strong>Período:</strong> ${formatDisplayDate(packageRequest.startDate)} a ${formatDisplayDate(packageRequest.endDate)}</p>
             <p><strong>Pessoas:</strong> ${packageRequest.adults} adultos${packageRequest.children ? ` + ${packageRequest.children} crianças` : ''}</p>
         </div>
     </div>
@@ -616,7 +645,7 @@ export const generatePDFContent = internalAction({
             <p>${proposal.cancellationPolicy}</p>
             
             <p><strong>Validade da Proposta:</strong></p>
-            <p>Esta proposta é válida até ${new Date(proposal.validUntil).toLocaleDateString('pt-BR')}.</p>
+            <p>Esta proposta é válida até ${formatDisplayDate(proposal.validUntil)}.</p>
         </div>
     </div>
     ` : ''}

@@ -8,19 +8,47 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format a date object to a readable string in Portuguese format
  */
+/**
+ * Convert different date inputs (string/number/Date) to a Date object without
+ * applying unintended timezone offsets for date-only ISO strings.
+ */
+export function parseDateInput(date: Date | number | string): Date | null {
+  if (date instanceof Date) {
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  if (typeof date === "number") {
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof date === "string") {
+    const isoDate = date.split("T")[0];
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+      const [year, month, day] = isoDate.split("-").map(Number);
+      const parsed = new Date(year, (month ?? 1) - 1, day ?? 1);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
 export function formatDate(date: Date | number | string): string {
-  // Options for formatting the date
-  const options: Intl.DateTimeFormatOptions = { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
+  const options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
   };
-  
-  // Convert to Date object if needed
-  const dateObj = date instanceof Date ? date : new Date(date);
-  
-  // Return formatted date in PT-BR (Portuguese Brazil) format
-  return dateObj.toLocaleDateString('pt-BR', options);
+
+  const parsed = parseDateInput(date);
+  if (!parsed) return "Data inválida";
+
+  return parsed.toLocaleDateString("pt-BR", options);
 }
 
 /**

@@ -7,6 +7,7 @@ import { api } from '@/../convex/_generated/api';
 import { Id } from '@/../convex/_generated/dataModel';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateInput } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
@@ -199,10 +200,10 @@ export default function ClientPackageRequestDetailsPage() {
       return "Datas flexíveis";
     } else {
       if (tripDetails.startDate && tripDetails.endDate) {
-        const startDate = new Date(tripDetails.startDate);
-        const endDate = new Date(tripDetails.endDate);
-        
-        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        const startDate = parseDateInput(tripDetails.startDate);
+        const endDate = parseDateInput(tripDetails.endDate);
+
+        if (startDate && endDate) {
           return `${format(startDate, "dd/MM/yyyy", { locale: ptBR })} - ${format(endDate, "dd/MM/yyyy", { locale: ptBR })}`;
         }
       }

@@ -552,6 +552,20 @@ export const applyProposalTemplate = query({
       };
     }
 
+    const formatRequestDate = (value?: string) => {
+      if (!value) return "";
+      const isoDate = value.split("T")[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+        const [year, month, day] = isoDate.split("-").map(Number);
+        if (year && month && day) {
+          const parsed = new Date(year, month - 1, day);
+          return parsed.toLocaleDateString("pt-BR");
+        }
+      }
+      const parsed = new Date(value);
+      return isNaN(parsed.getTime()) ? "" : parsed.toLocaleDateString("pt-BR");
+    };
+
     // Build default variables from package request
     const defaultVariables = {
       destination: packageRequest.tripDetails?.destination || "",
@@ -559,8 +573,8 @@ export const applyProposalTemplate = query({
       children: "0", // Not tracked separately in current schema
       budget: packageRequest.tripDetails?.budget?.toString() || "0",
       duration: packageRequest.tripDetails?.duration?.toString() || "3",
-      startDate: packageRequest.tripDetails?.startDate ? new Date(packageRequest.tripDetails.startDate).toLocaleDateString("pt-BR") : "",
-      endDate: packageRequest.tripDetails?.endDate ? new Date(packageRequest.tripDetails.endDate).toLocaleDateString("pt-BR") : "",
+      startDate: formatRequestDate(packageRequest.tripDetails?.startDate),
+      endDate: formatRequestDate(packageRequest.tripDetails?.endDate),
     };
 
     const variables = { ...defaultVariables, ...(args.variables || {}) };

@@ -14,6 +14,8 @@ if (process.env.NODE_ENV === "development") {
 
 const POPUP_SHOWN_KEY = "guide_popup_shown";
 const POPUP_DISMISSED_KEY = "guide_popup_dismissed_at";
+const POPUP_VERSION_KEY = "guide_popup_version";
+const POPUP_VERSION = "guide-ui-v2";
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function GuidePopupManager() {
@@ -38,6 +40,18 @@ export function GuidePopupManager() {
     window.addEventListener("resize", checkMobile);
     
     return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Reset storage when popup version changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storedVersion = localStorage.getItem(POPUP_VERSION_KEY);
+    if (storedVersion !== POPUP_VERSION) {
+      sessionStorage.removeItem(POPUP_SHOWN_KEY);
+      localStorage.removeItem(POPUP_DISMISSED_KEY);
+      localStorage.setItem(POPUP_VERSION_KEY, POPUP_VERSION);
+    }
   }, []);
 
   // Popup display logic
