@@ -124,16 +124,14 @@ export function CardPaymentBrick({
                 // MP Brick nests data in formData.formData
                 const innerFormData = formData.formData || formData;
                 
-                // Try to get payment method from different possible fields
-                const paymentMethodId = innerFormData.payment_method_id || 
-                                       formData.selectedPaymentMethod || 
-                                       formData.paymentType;
+                // CRITICAL: payment_method_id from innerFormData is the ONLY valid MP ID
+                const paymentMethodId = innerFormData.payment_method_id;
 
-                console.log("[Card Payment Brick] Extracted payment method:", paymentMethodId);
+                console.log("[Card Payment Brick] Extracted payment_method_id:", paymentMethodId);
 
                 if (!paymentMethodId) {
-                  console.error("[Card Payment Brick] No payment method found in formData:", formData);
-                  throw new Error("Método de pagamento não identificado. Por favor, tente novamente.");
+                  console.error("[Card Payment Brick] Missing payment_method_id in innerFormData");
+                  throw new Error("Método de pagamento não identificado. Por favor, selecione um método válido e tente novamente.");
                 }
 
                 // Call backend to create payment with manual capture
