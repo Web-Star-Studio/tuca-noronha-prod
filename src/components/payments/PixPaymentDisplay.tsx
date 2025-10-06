@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check, QrCode, Clock } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -29,7 +30,7 @@ export function PixPaymentDisplay({
         description: "Cole no seu app de pagamento para pagar."
       });
       setTimeout(() => setCopied(false), 3000);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao copiar código", {
         description: "Tente selecionar e copiar manualmente."
       });
@@ -78,10 +79,13 @@ export function PixPaymentDisplay({
               1. Escaneie o QR Code com seu app de pagamento:
             </p>
             <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
-              <img
+              <Image
                 src={`data:image/png;base64,${pixQrCodeBase64}`}
                 alt="QR Code PIX"
+                width={256}
+                height={256}
                 className="w-64 h-64"
+                unoptimized
               />
             </div>
           </div>
