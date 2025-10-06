@@ -118,10 +118,16 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
     });
   };
 
+  // Helper function to parse date strings without timezone issues
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const calculateDuration = () => {
     if (formData.tripDetails.startDate && formData.tripDetails.endDate) {
-      const start = new Date(formData.tripDetails.startDate);
-      const end = new Date(formData.tripDetails.endDate);
+      const start = parseLocalDate(formData.tripDetails.startDate);
+      const end = parseLocalDate(formData.tripDetails.endDate);
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       updateFormData("tripDetails", "duration", diffDays);

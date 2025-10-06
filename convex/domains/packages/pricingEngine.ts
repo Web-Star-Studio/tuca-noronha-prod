@@ -270,8 +270,14 @@ async function calculatePricingFactors(
     factors.valuePerceptionScore = 50; // Budget-conscious customer
   }
 
+  // Helper function to parse date strings without timezone issues
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   // Urgency factor (based on booking advance)
-  const tripStart = request.tripDetails.startDate ? new Date(request.tripDetails.startDate) : null;
+  const tripStart = request.tripDetails.startDate ? parseLocalDate(request.tripDetails.startDate) : null;
   if (tripStart) {
     const daysUntilTrip = Math.ceil((tripStart.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     if (daysUntilTrip <= 7) factors.urgencyFactor = 1.2; // Last minute

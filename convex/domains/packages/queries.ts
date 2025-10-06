@@ -349,18 +349,24 @@ export const getPackageAvailability = query({
       throw new Error("Pacote não encontrado");
     }
 
+    // Helper function to parse date strings without timezone issues
+    const parseLocalDate = (dateString: string): Date => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     // Check if package is available in the date range
-    const availableFrom = new Date(packageData.availableFromDate);
-    const availableTo = new Date(packageData.availableToDate);
-    const checkStart = new Date(startDate);
-    const checkEnd = new Date(endDate);
+    const availableFrom = parseLocalDate(packageData.availableFromDate);
+    const availableTo = parseLocalDate(packageData.availableToDate);
+    const checkStart = parseLocalDate(startDate);
+    const checkEnd = parseLocalDate(endDate);
 
     if (checkStart < availableFrom || checkEnd > availableTo) {
       return { available: false, reason: "Pacote não disponível neste período" };
     }
 
     // Check blackout dates
-    const blackoutDates = packageData.blackoutDates.map(date => new Date(date));
+    const blackoutDates = packageData.blackoutDates.map(date => parseLocalDate(date));
     const requestedDates: Date[] = [];
     for (let d = new Date(checkStart); d <= checkEnd; d.setDate(d.getDate() + 1)) {
       requestedDates.push(new Date(d));

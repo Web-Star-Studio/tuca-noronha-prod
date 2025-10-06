@@ -21,12 +21,21 @@ export function validateEmailFormat(email: string): boolean {
 }
 
 /**
+ * Helper function to parse date strings without timezone issues
+ */
+function parseLocalDate(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Validate date range for package requests
  */
 export function validateDateRange(startDate: string, endDate: string): { isValid: boolean; error?: string } {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset to midnight for accurate comparison
   
   if (start < today) {
     return { isValid: false, error: "Start date cannot be in the past" };

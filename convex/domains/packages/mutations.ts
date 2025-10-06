@@ -774,15 +774,22 @@ export const createPackageRequest = mutation({
       throw new Error("Invalid email format");
     }
 
+    // Helper function to parse date strings without timezone issues
+    const parseLocalDate = (dateString: string): Date => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     // Validate dates (only for specific dates, not flexible dates)
     if (!args.tripDetails.flexibleDates) {
       if (!args.tripDetails.startDate || !args.tripDetails.endDate) {
         throw new Error("Start date and end date are required when not using flexible dates");
       }
       
-      const startDate = new Date(args.tripDetails.startDate);
-      const endDate = new Date(args.tripDetails.endDate);
+      const startDate = parseLocalDate(args.tripDetails.startDate);
+      const endDate = parseLocalDate(args.tripDetails.endDate);
       const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset to midnight for accurate comparison
       
       if (startDate < today) {
         throw new Error("Start date cannot be in the past");

@@ -56,6 +56,23 @@ export function ParticipantsDataModal({
       [field]: value,
     };
     setParticipants(newParticipants);
+    
+    // Limpar erros quando o usuário começar a editar
+    if (errors.length > 0) {
+      setErrors([]);
+    }
+  };
+
+  // Verificar se um CPF está duplicado em tempo real
+  const isCPFDuplicated = (currentIndex: number, cpf: string): boolean => {
+    if (!cpf || cpf.replace(/\D/g, '').length < 11) return false;
+    
+    const normalizedCPF = cpf.replace(/\D/g, '');
+    return participants.some((p, idx) => 
+      idx !== currentIndex && 
+      p.cpf.replace(/\D/g, '') === normalizedCPF &&
+      p.cpf.replace(/\D/g, '').length === 11
+    );
   };
 
   const formatCPF = (value: string) => {
@@ -87,6 +104,9 @@ export function ParticipantsDataModal({
   const handleSubmit = () => {
     const newErrors: string[] = [];
     
+    // Map para rastrear CPFs e detectar duplicados
+    const cpfMap = new Map<string, number[]>(); // CPF -> índices dos participantes
+    
     participants.forEach((participant, index) => {
       if (!participant.fullName.trim()) {
         newErrors.push(`Nome completo do participante ${index + 1} é obrigatório`);
@@ -96,9 +116,24 @@ export function ParticipantsDataModal({
       }
       if (!participant.cpf || !validateCPF(participant.cpf)) {
         newErrors.push(`CPF válido do participante ${index + 1} é obrigatório`);
+      } else {
+        // Normalizar CPF (remover formatação) para comparação
+        const normalizedCPF = participant.cpf.replace(/\D/g, '');
+        if (cpfMap.has(normalizedCPF)) {
+          cpfMap.get(normalizedCPF)!.push(index + 1);
+        } else {
+          cpfMap.set(normalizedCPF, [index + 1]);
+        }
       }
       if (participant.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participant.email)) {
         newErrors.push(`E-mail inválido para o participante ${index + 1}`);
+      }
+    });
+
+    // Verificar CPFs duplicados
+    cpfMap.forEach((indices) => {
+      if (indices.length > 1) {
+        newErrors.push(`CPF duplicado detectado nos participantes ${indices.join(', ')}. Cada participante deve ter um CPF único.`);
       }
     });
 
@@ -185,7 +220,14 @@ export function ParticipantsDataModal({
                     placeholder="123.456.789-00"
                     maxLength={14}
                     required
+                    className={isCPFDuplicated(index, participant.cpf) ? 'border-red-500 focus:ring-red-500' : ''}
                   />
+                  {isCPFDuplicated(index, participant.cpf) && (
+                    <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      CPF já cadastrado para outro participante
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

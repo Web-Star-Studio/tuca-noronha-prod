@@ -15,7 +15,7 @@ import { ProposalDocumentManager } from '../ProposalDocumentManager';
 import { ProposalDetailsView } from './ProposalDetailsView';
 import { SimpleProposalModal } from './SimpleProposalModal';
 
-import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp } from "lucide-react";
+import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp, FileCheck } from "lucide-react";
 
 import { formatCurrency, formatDate } from './helpers';
 
@@ -461,6 +461,24 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
                             >
                               <FileUp className="h-4 w-4 mr-2" />
                               Upload Documentos
+                            </Button>
+                          )}
+                          
+                          {/* View Confirmation Document - for accepted proposals */}
+                          {(proposal.status === "accepted" || 
+                            proposal.status === "participants_data_completed" || 
+                            proposal.status === "flight_booking_in_progress" || 
+                            proposal.status === "flight_booked" || 
+                            proposal.status === "documents_uploaded" || 
+                            proposal.status === "confirmed") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-green-600 text-green-600 hover:bg-green-50"
+                              onClick={() => window.open(`/admin/proposals/${proposal._id}/confirmacao`, '_blank')}
+                            >
+                              <FileCheck className="h-4 w-4 mr-2" />
+                              Ver Confirmação
                             </Button>
                           )}
                         </div>

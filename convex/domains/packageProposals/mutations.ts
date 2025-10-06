@@ -79,6 +79,23 @@ export const createPackageProposal = mutation({
     // Generate unique proposal number
     const proposalNumber = `PROP-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
+    // Generate title with customer name pattern if not provided or if empty
+    let proposalTitle = args.title;
+    if (!proposalTitle || proposalTitle.trim() === "") {
+      const customerName = packageRequest.customerInfo.name;
+      const tripDate = packageRequest.tripDetails.startDate || new Date().toISOString();
+      const date = new Date(tripDate);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      
+      const normalizedName = customerName.trim().toUpperCase();
+      const nameParts = normalizedName.split(/\s+/);
+      const firstName = nameParts[0] || 'CLIENTE';
+      const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+      
+      proposalTitle = `Proposta ${day}${month} - ${lastName} ${firstName}`;
+    }
+
     const user = await ctx.db.get(currentUserId);
 
     // Create the proposal
@@ -86,7 +103,7 @@ export const createPackageProposal = mutation({
       packageRequestId: args.packageRequestId,
       adminId: currentUserId,
       proposalNumber,
-      title: args.title,
+      title: proposalTitle,
       description: args.description,
       summary: args.summary,
       components: args.components,
@@ -120,14 +137,14 @@ export const createPackageProposal = mutation({
     await createAuditLog(ctx, {
       event: {
         type: "package_proposal_create",
-        action: `Proposta de pacote criada: ${args.title}`,
+        action: `Proposta de pacote criada: ${proposalTitle}`,
         category: "package_management",
         severity: "medium",
       },
       resource: {
         type: "package_proposal",
         id: proposalId.toString(),
-        name: args.title,
+        name: proposalTitle,
         partnerId: user?.partnerId,
       },
       metadata: {
@@ -1475,8 +1492,18 @@ export const uploadContractDocuments = mutation({
       throw new Error("Proposta não encontrada");
     }
 
-    if (proposal.status !== "flight_booked") {
+    // Get package request to check if airfare is included
+    const packageRequest = await ctx.db.get(proposal.packageRequestId);
+    const includesAirfare = packageRequest?.tripDetails?.includesAirfare ?? false;
+
+    // Only validate flight booking status if airfare is included in the package
+    if (includesAirfare && proposal.status !== "flight_booked") {
       throw new Error("Voos ainda não foram confirmados");
+    }
+
+    // If no airfare, must be at least in participants_data_completed status
+    if (!includesAirfare && proposal.status !== "participants_data_completed") {
+      throw new Error("Dados dos participantes ainda não foram recebidos");
     }
 
     const now = Date.now();
@@ -1495,9 +1522,6 @@ export const uploadContractDocuments = mutation({
       documentsUploadedAt: now,
       updatedAt: now,
     });
-
-    // Get package request for notification and email
-    const packageRequest = await ctx.db.get(proposal.packageRequestId);
     
     // Notify customer if they have a user account
     if (packageRequest?.userId) {

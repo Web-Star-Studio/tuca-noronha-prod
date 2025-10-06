@@ -19,7 +19,7 @@ const POPUP_VERSION = "guide-ui-v2";
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function GuidePopupManager() {
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const [showPopup, setShowPopup] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 

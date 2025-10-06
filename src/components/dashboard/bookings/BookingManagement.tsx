@@ -146,7 +146,7 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
       const args = {
         bookingId: bookingId as Id<any>,
         supplierId: supplierId as Id<"suppliers">,
-        notes: notes.trim() || undefined,
+        partnerNotes: notes.trim() || undefined,
       };
 
       switch (bookingType) {
@@ -158,8 +158,9 @@ function ConfirmBookingDialog({ bookingId, bookingType, currentStatus, onSuccess
           break;
         case "restaurant":
           await confirmRestaurantReservation({ 
-            reservationId: bookingId as Id<"restaurantReservations">,
-            notes: notes.trim() || undefined,
+            bookingId: bookingId as Id<"restaurantReservations">,
+            supplierId: supplierId as Id<"suppliers">,
+            partnerNotes: notes.trim() || undefined,
           });
           break;
         case "vehicle":

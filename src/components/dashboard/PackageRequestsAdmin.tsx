@@ -25,13 +25,14 @@ export default function PackageRequestsAdmin() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedRequest, setSelectedRequest] = useState<Id<"packageRequests"> | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [paginationCursor, setPaginationCursor] = useState<string | null>(null);
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]); // Stack de cursores para voltar
   const itemsPerPage = 10;
 
   // Queries with pagination
   const requestsStats = useQuery(api.packages.getPackageRequestStats);
   const requestsResult = useQuery(api.packages.listPackageRequests, {
-    paginationOpts: { numItems: itemsPerPage, cursor: null },
+    paginationOpts: { numItems: itemsPerPage, cursor: paginationCursor },
     status: selectedStatus || undefined,
   });
 
@@ -120,6 +121,12 @@ export default function PackageRequestsAdmin() {
     router.push(`/admin/dashboard/solicitacoes-pacotes/${requestId}`);
   };
 
+  // Reset pagination quando filtro mudar (MOVED BEFORE EARLY RETURN)
+  React.useEffect(() => {
+    setPaginationCursor(null);
+    setCursorHistory([null]);
+  }, [selectedStatus]);
+
   if (!requestsStats || !requestsResult) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -133,6 +140,25 @@ export default function PackageRequestsAdmin() {
 
   const requests = requestsResult.page;
   const hasMore = requestsResult.isDone === false;
+  const continueCursor = requestsResult.continueCursor;
+
+  // Handlers de paginação
+  const handleNextPage = () => {
+    if (hasMore && continueCursor) {
+      setCursorHistory([...cursorHistory, paginationCursor]);
+      setPaginationCursor(continueCursor);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (cursorHistory.length > 1) {
+      const newHistory = [...cursorHistory];
+      newHistory.pop(); // Remove o cursor atual
+      const previousCursor = newHistory[newHistory.length - 1];
+      setCursorHistory(newHistory);
+      setPaginationCursor(previousCursor);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -328,13 +354,14 @@ export default function PackageRequestsAdmin() {
             <div className="flex justify-between items-center mt-6">
               <p className="text-sm text-gray-700">
                 Mostrando {requests.length} solicitações
+                {hasMore && " (há mais resultados)"}
               </p>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage === 0}
-                  onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                  disabled={cursorHistory.length <= 1}
+                  onClick={handlePreviousPage}
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Anterior
@@ -343,7 +370,7 @@ export default function PackageRequestsAdmin() {
                   variant="outline"
                   size="sm"
                   disabled={!hasMore}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  onClick={handleNextPage}
                 >
                   Próximo
                   <ChevronRight className="h-4 w-4" />

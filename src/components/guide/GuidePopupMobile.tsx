@@ -16,7 +16,10 @@ import {
   Gift,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { launchBonuses, guaranteePoints } from "./guideHighlights";
+import { 
+  launchBonuses, 
+  guaranteePoints,
+} from "./guideHighlights";
 
 interface GuidePopupMobileProps {
   isOpen: boolean;
@@ -42,12 +45,18 @@ export function GuidePopupMobile({ isOpen, onClose }: GuidePopupMobileProps) {
     onClose();
   };
 
+  // Total bonus value calculation (for potential display)
+  // const totalBonusValue = launchBonuses.reduce((acc, bonus) => {
+  //   const value = parseInt(bonus.value.replace(/\D/g, ''));
+  //   return acc + value;
+  // }, 0);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -55,7 +64,7 @@ export function GuidePopupMobile({ isOpen, onClose }: GuidePopupMobileProps) {
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative w-full max-h-[95vh] overflow-y-auto bg-gradient-to-b from-white to-blue-50 rounded-t-3xl sm:rounded-3xl shadow-2xl"
+        className="relative w-full max-h-[95vh] overflow-y-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

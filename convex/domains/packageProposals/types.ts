@@ -76,7 +76,7 @@ export const ProposalAttachment = v.object({
 // Input validators
 export const CreatePackageProposalArgs = v.object({
   packageRequestId: v.id("packageRequests"),
-  title: v.string(),
+  title: v.optional(v.string()), // Optional - will be auto-generated from customer name if not provided
   description: v.string(),
   summary: v.optional(v.string()),
   components: v.array(PackageComponent),

@@ -900,3 +900,58 @@ export const getProposalStats = query({
   },
 });
 
+/**
+ * Get confirmation data for accepted proposal
+ * Includes proposal, package request, and participants data
+ */
+export const getConfirmacaoData = query({
+  args: {
+    proposalId: v.id("packageProposals"),
+  },
+  returns: v.union(v.null(), v.any()),
+  handler: async (ctx, args) => {
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    const currentUserRole = await getCurrentUserRole(ctx);
+
+    if (!currentUserId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Only admins can access confirmation documents
+    if (!["master", "partner", "employee"].includes(currentUserRole)) {
+      throw new Error("Apenas administradores podem acessar documentos de confirmação");
+    }
+
+    const proposal = await ctx.db.get(args.proposalId);
+    if (!proposal || !proposal.isActive) {
+      return null;
+    }
+
+    // Check if proposal is accepted
+    if (proposal.status !== "accepted") {
+      throw new Error("Apenas propostas aceitas têm documento de confirmação");
+    }
+
+    // Get package request
+    const packageRequest = await ctx.db.get(proposal.packageRequestId);
+    if (!packageRequest) {
+      return null;
+    }
+
+    // Check permissions for partner/employee
+    if (currentUserRole !== "master") {
+      if (proposal.adminId !== currentUserId && proposal.partnerId !== currentUserId) {
+        throw new Error("Você não tem permissão para acessar esta confirmação");
+      }
+    }
+
+    // Return all necessary data
+    return {
+      proposal,
+      packageRequest,
+      reservationNumber: packageRequest.requestNumber,
+      customerInfo: packageRequest.customerInfo,
+      tripDetails: packageRequest.tripDetails,
+    };
+  },
+});
