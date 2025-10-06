@@ -130,7 +130,7 @@ export function SubscriptionPaymentBrick({
                   paymentMethodId: formData.payment_method_id,
                   issuerId: formData.issuer_id,
                   installments: formData.installments || 1,
-                  payer: {
+                  payer: formData.payer ? {
                     email: formData.payer.email,
                     identification: formData.payer.identification
                       ? {
@@ -138,7 +138,7 @@ export function SubscriptionPaymentBrick({
                           number: formData.payer.identification.number,
                         }
                       : undefined,
-                  },
+                  } : undefined,
                 });
 
                 if (result.success && result.paymentId) {

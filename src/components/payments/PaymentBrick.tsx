@@ -147,7 +147,7 @@ export function PaymentBrick({
                   issuerId: formData.issuer_id,
                   amount: propsRef.current.amount,
                   installments: formData.installments || 1,
-                  payer: {
+                  payer: formData.payer ? {
                     email: formData.payer.email,
                     identification: formData.payer.identification
                       ? {
@@ -155,7 +155,7 @@ export function PaymentBrick({
                           number: formData.payer.identification.number,
                         }
                       : undefined,
-                  },
+                  } : undefined,
                   description: propsRef.current.description,
                   metadata: {
                     assetType: propsRef.current.assetType,
