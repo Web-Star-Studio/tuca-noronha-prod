@@ -560,7 +560,7 @@ function SectionContent({
               details: "Transfer privativo recomendado",
               color: "blue",
               gradient: "from-blue-600 to-indigo-600",
-              tips: ["Evite transfers compartilhados", "Reserve com antecedência", "Voos diretos limitados"]
+              tips: ["Reserve com antecedência", "Voos diretos limitados"]
             }
           ].map((item, index) => {
             const itemColor = colorMap[item.color as keyof typeof colorMap];
@@ -852,29 +852,29 @@ function SectionContent({
               icon: Home,
               color: "purple",
               description: "Charme e hospitalidade local",
-              price: "R$ 150-400",
+              price: "A partir de R$580",
               features: ["Café da manhã", "Atendimento pessoal", "Localização central", "Dicas locais"],
               pros: ["Experiência autêntica", "Preço acessível", "Proximidade dos pontos turísticos"],
               cons: ["Conforto básico", "Pode ter barulho"]
             },
             {
-              type: "Hotéis",
+              type: "Pousadas com mais comodidades",
               icon: Building,
               color: "blue",
               description: "Conforto e serviços completos",
-              price: "R$ 300-800",
+              price: "A partir de R$1.350",
               features: ["Ar condicionado", "Piscina", "Restaurante", "Serviço de quarto"],
               pros: ["Maior conforto", "Serviços inclusos", "Estrutura completa"],
               cons: ["Preço elevado", "Experiência menos local"]
             },
             {
-              type: "Apartamentos",
+              type: "Hostels",
               icon: Key,
               color: "green",
               description: "Independência e privacidade",
-              price: "R$ 200-600",
+              price: "A partir de R$350",
               features: ["Cozinha equipada", "Espaço amplo", "Privacidade", "Flexibilidade"],
-              pros: ["Liberdade total", "Economia com comida", "Ideal para grupos"],
+              pros: ["Liberdade total", "Sem alimentação inclusa", "Ideal para mochileiros"],
               cons: ["Sem serviços", "Pode ser isolado"]
             }
           ].map((accommodation, index) => (
@@ -1094,11 +1094,6 @@ function SectionContent({
                 icon: Calendar,
                 title: "Antecedência",
                 tip: "Reserve com 3-6 meses de antecedência para melhor preço e disponibilidade"
-              },
-              {
-                icon: DollarSign,
-                title: "Negociação",
-                tip: "Para estadias longas, negocie desconto diretamente com a hospedagem"
               },
               {
                 icon: Star,
@@ -2203,7 +2198,7 @@ function SectionContent({
               <div className="space-y-3">
                 {[
                   { activity: "Mergulhadores", quality: "Setembro e Outubro", icon: Activity },
-                  { activity: "Amantes de Praia e Famílias", quality: "Agosto e Setembro", icon: Users },
+                  { activity: "Amantes de Praia e Famílias", quality: "Agosto a Novembro", icon: Users },
                   { activity: "Surfistas", quality: "Janeiro e Fevereiro", icon: Waves }
                 ].map((item) => (
                   <div key={item.activity} className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
@@ -2230,7 +2225,7 @@ function SectionContent({
                 {[
                   { activity: "Economizar e Fugir das Multidões", quality: "Abril a Junho", icon: TrendingDown },
                   { activity: "Temporada de Swell", quality: "Dezembro a Março", icon: Waves },
-                  { activity: "Temporada Flat", quality: "Abril a Setembro", icon: Wind }
+                  { activity: "Temporada Flat", quality: "Abril a Novembro", icon: Wind }
                 ].map((item) => (
                   <div key={item.activity} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                     <item.icon className="w-5 h-5 text-blue-600" />
@@ -2255,7 +2250,7 @@ function SectionContent({
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               { event: "Desova das Tartarugas Marinhas", date: "Dezembro a Julho", description: "Pico entre Fevereiro e Abril, principalmente na Praia do Leão." },
-              { event: "Festivais Anuais", date: "Agosto", description: "O Love Noronha, um festival de música e cultura LGBTQ+, acontece geralmente em Agosto." }
+              { event: "Festivais Anuais", date: "Outubro", description: "O Love Noronha, um festival de música e cultura LGBTQ+, acontece geralmente em Outubro." }
             ].map((event) => (
               <div key={event.event} className="p-4 bg-white rounded-lg border border-purple-200">
                 <h4 className="font-medium text-gray-900">{event.event}</h4>
@@ -2513,12 +2508,17 @@ function SectionContent({
                 <div className="bg-white/70 rounded-xl p-4">
                   <h5 className="font-semibold text-gray-900 mb-2">Batismo</h5>
                   <p className="text-sm text-gray-700 mb-2">Para iniciantes, com um instrutor por pessoa. Inclui aula no barco sobre uso de equipamentos e normas de segurança.</p>
-                  <p className="text-xs text-blue-600">📅 Horários: Manhã 7h30 / Tarde 13h45</p>
+                  <p className="text-xs text-blue-600">📅 Horário: Tarde 13h15</p>
                 </div>
                 <div className="bg-white/70 rounded-xl p-4">
                   <h5 className="font-semibold text-gray-900 mb-2">Credenciado</h5>
                   <p className="text-sm text-gray-700 mb-2">Para mergulhadores certificados, com dois mergulhos em diferentes pontos da ilha.</p>
-                  <p className="text-xs text-blue-600">📅 Horários: Manhã 7h30 / Tarde 13h45</p>
+                  <p className="text-xs text-blue-600">📅 Horário: Manhã 7h15</p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-4 w-full">
+                  <h5 className="font-semibold text-gray-900 mb-2">Noturno</h5>
+                  <p className="text-sm text-gray-700 mb-2">Saída noturna para credenciados avançados</p>
+                  <p className="text-xs text-blue-600">📅 Horários (Segundas, Quartas e Sextas): Noite 17h30</p>
                 </div>
               </div>
 

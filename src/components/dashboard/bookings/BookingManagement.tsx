@@ -288,7 +288,7 @@ function CancelBookingDialog({ bookingId, bookingType, currentStatus, onSuccess 
       setIsOpen(false);
       setReason("");
       onSuccess();
-    } catch {
+    } catch (error) {
       console.error("Erro ao cancelar reserva:", error);
       toast.error("Erro ao cancelar reserva. Tente novamente.");
     }

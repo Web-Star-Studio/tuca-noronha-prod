@@ -72,7 +72,7 @@ export default function VehiclesPage() {
       await deleteVehicle(vehicleToRemove);
       toast.success("Veículo removido com sucesso");
       setConfirmDialogOpen(false);
-    } catch {
+    } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "Erro ao remover veículo");
     } finally {
