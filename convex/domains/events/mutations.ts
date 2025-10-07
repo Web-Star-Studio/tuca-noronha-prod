@@ -54,6 +54,9 @@ export const create = mutationWithRole(["partner", "master"])({
       }
     }
     
+    console.log("🔍 [CREATE] Args recebidos no Convex:", args);
+    console.log("🔗 [CREATE] externalBookingUrl:", args.externalBookingUrl);
+    
     // Creating the event
     const eventId = await ctx.db.insert("events", {
       ...args,
@@ -62,6 +65,8 @@ export const create = mutationWithRole(["partner", "master"])({
       acceptsOnlinePayment: args.price > 0, // automaticamente true quando price > 0
       requiresUpfrontPayment: args.price > 0, // automaticamente true quando price > 0
     });
+    
+    console.log("✅ [CREATE] Evento criado com ID:", eventId);
 
     // Log the event creation for audit
     try {
@@ -133,6 +138,10 @@ export const update = mutationWithRole(["partner", "master"])({
         throw new Error("Unauthorized");
       }
     }
+    
+    console.log("🔍 [UPDATE] Args recebidos no Convex:", args);
+    console.log("🔗 [UPDATE] externalBookingUrl:", args.externalBookingUrl);
+    
     const { id, ...otherFields } = args;
     
     // Define a more specific type for the updates

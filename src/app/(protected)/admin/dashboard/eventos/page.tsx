@@ -132,6 +132,9 @@ export default function EventsPage() {
     }
 
     try {
+      console.log("📝 EventData recebido:", eventData);
+      console.log("🔗 externalBookingUrl:", eventData.externalBookingUrl);
+      
       const formattedData = {
         title: eventData.title,
         description: eventData.description,
@@ -161,6 +164,9 @@ export default function EventsPage() {
         externalBookingUrl: eventData.externalBookingUrl || "",
         whatsappContact: eventData.whatsappContact || "",
       }
+      
+      console.log("📦 FormattedData a ser enviado:", formattedData);
+      console.log("🔗 externalBookingUrl formatado:", formattedData.externalBookingUrl);
 
       if (selectedEvent?._id) {
         // Update existing event
