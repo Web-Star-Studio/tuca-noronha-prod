@@ -458,8 +458,8 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
 
           {/* Sidebar - Sticky on desktop */}
           <div className="lg:sticky lg:top-24 h-fit space-y-6">
-            {/* External Booking Link - Show if externalBookingUrl exists */}
-            {event.externalBookingUrl ? (
+            {/* External Booking Link - Show if externalBookingUrl OR symplaUrl exists */}
+            {event.externalBookingUrl || event.symplaUrl ? (
               <Card className="border-gray-200 shadow-sm">
                 <CardContent className="p-6">
                   <div className="space-y-4">
@@ -469,18 +469,23 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                       </div>
                     </div>
                     <div className="text-center">
-                      <h3 className="font-semibold text-lg mb-2">Reserva Externa</h3>
+                      <h3 className="font-semibold text-lg mb-2">
+                        {event.symplaUrl ? 'Ingressos via Sympla' : 'Reserva Externa'}
+                      </h3>
                       <p className="text-sm text-gray-600 mb-4">
-                        As reservas para este evento são realizadas em plataforma externa.
+                        {event.symplaUrl 
+                          ? 'Os ingressos para este evento são vendidos através da plataforma Sympla.'
+                          : 'As reservas para este evento são realizadas em plataforma externa.'
+                        }
                       </p>
                     </div>
                     <a
-                      href={event.externalBookingUrl}
+                      href={event.externalBookingUrl || event.symplaUrl || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex w-full items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
                     >
-                      Fazer Reserva
+                      {event.symplaUrl ? 'Comprar Ingressos' : 'Fazer Reserva'}
                       <ExternalLink className="h-4 w-4" />
                     </a>
                     <p className="text-xs text-gray-500 text-center">
@@ -489,7 +494,7 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                   </div>
                 </CardContent>
               </Card>
-            ) : !event.symplaUrl && (
+            ) : (
               /* Event Booking Form - Only show if no external link */
               isAuthenticated ? (
                 <EventBookingForm

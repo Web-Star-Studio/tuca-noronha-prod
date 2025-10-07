@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { PixPaymentDisplay } from "./PixPaymentDisplay";
+import { PixPaymentModal } from "./PixPaymentModal";
 
 interface PaymentResult {
   paymentId: string;
@@ -54,6 +55,7 @@ export function PaymentBrick({
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pixPaymentData, setPixPaymentData] = useState<PaymentResult | null>(null);
+  const [showPixModal, setShowPixModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const brickRef = useRef<any>(null);
   const isInitialized = useRef(false);
@@ -226,8 +228,9 @@ export function PaymentBrick({
                       });
                     } else if (isPix) {
                       if (result.pixQrCode) {
-                        // Armazenar dados do PIX para exibir
+                        // Armazenar dados do PIX e abrir modal
                         setPixPaymentData(paymentResult);
+                        setShowPixModal(true);
                         toast.success("PIX gerado com sucesso!", {
                           description: "Use o QR Code ou copie o código para pagar.",
                           duration: 8000,
@@ -319,19 +322,11 @@ export function PaymentBrick({
     };
   }, []); // Dependências vazias - inicializa apenas uma vez
 
-  // Se tiver dados de PIX, mostrar o componente de exibição
-  if (pixPaymentData && pixPaymentData.pixQrCode) {
-    return (
-      <div className={className}>
-        <PixPaymentDisplay
-          pixQrCode={pixPaymentData.pixQrCode}
-          pixQrCodeBase64={pixPaymentData.pixQrCodeBase64}
-          amount={amount}
-          expiresIn={30}
-        />
-      </div>
-    );
-  }
+  // Modal PIX - mantém dados mesmo após brick fechar
+  const handlePixModalClose = () => {
+    setShowPixModal(false);
+    // Não limpar pixPaymentData para permitir reabrir
+  };
 
   return (
     <div className={`payment-brick-wrapper ${className}`}>
@@ -364,6 +359,23 @@ export function PaymentBrick({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal PIX */}
+      {pixPaymentData && pixPaymentData.pixQrCode && (
+        <PixPaymentModal
+          open={showPixModal}
+          onOpenChange={handlePixModalClose}
+          pixQrCode={pixPaymentData.pixQrCode}
+          pixQrCodeBase64={pixPaymentData.pixQrCodeBase64}
+          amount={amount}
+          expiresIn={30}
+          paymentId={pixPaymentData.paymentId}
+          onPaymentConfirmed={() => {
+            setShowPixModal(false);
+            handleSuccess(pixPaymentData);
+          }}
+        />
       )}
     </div>
   );
