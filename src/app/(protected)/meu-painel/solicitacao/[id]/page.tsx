@@ -479,6 +479,17 @@ export default function ClientPackageRequestDetailsPage() {
                             <Eye className="h-4 w-4 mr-2" />
                             Ver Detalhes Completos
                           </Button>
+                          {['awaiting_participants_data', 'participants_data_completed', 'flight_booking_in_progress', 'flight_booked', 'documents_uploaded', 'awaiting_final_confirmation', 'payment_pending', 'payment_completed', 'contracted'].includes(proposal.status) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-green-300 text-green-700 hover:bg-green-50"
+                              onClick={() => router.push(`/meu-painel/proposta/${proposal._id}/confirmacao`)}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Ver Confirmação
+                            </Button>
+                          )}
                           {['sent', 'viewed', 'under_negotiation'].includes(proposal.status) && !isExpired && (
                             <Button
                               size="sm"

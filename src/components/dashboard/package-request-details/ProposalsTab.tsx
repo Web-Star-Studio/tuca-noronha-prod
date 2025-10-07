@@ -15,7 +15,7 @@ import { ProposalDocumentManager } from '../ProposalDocumentManager';
 import { ProposalDetailsView } from './ProposalDetailsView';
 import { SimpleProposalModal } from './SimpleProposalModal';
 
-import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp, FileCheck } from "lucide-react";
+import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp, FileCheck, Link2 } from "lucide-react";
 
 import { formatCurrency, formatDate } from './helpers';
 
@@ -471,15 +471,30 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
                             proposal.status === "flight_booked" || 
                             proposal.status === "documents_uploaded" || 
                             proposal.status === "confirmed") && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-600 text-green-600 hover:bg-green-50"
-                              onClick={() => window.open(`/admin/proposals/${proposal._id}/confirmacao`, '_blank')}
-                            >
-                              <FileCheck className="h-4 w-4 mr-2" />
-                              Ver Confirmação
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                                onClick={() => window.open(`/admin/proposals/${proposal._id}/confirmacao`, '_blank')}
+                              >
+                                <FileCheck className="h-4 w-4 mr-2" />
+                                Ver Confirmação
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                onClick={() => {
+                                  const clientLink = `${window.location.origin}/meu-painel/proposta/${proposal._id}/confirmacao`;
+                                  navigator.clipboard.writeText(clientLink);
+                                  toast.success("Link copiado! Compartilhe com o cliente.");
+                                }}
+                              >
+                                <Link2 className="h-4 w-4 mr-2" />
+                                Copiar Link Cliente
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
