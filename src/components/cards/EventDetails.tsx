@@ -12,6 +12,7 @@ import {
   CalendarCheck,
   Tag,
   Star,
+  ExternalLink,
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
@@ -457,8 +458,39 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
 
           {/* Sidebar - Sticky on desktop */}
           <div className="lg:sticky lg:top-24 h-fit space-y-6">
-            {/* Event Booking Form - Only show if no Sympla URL */}
-            {!event.symplaUrl && (
+            {/* External Booking Link - Show if externalBookingUrl exists */}
+            {event.externalBookingUrl ? (
+              <Card className="border-gray-200 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center">
+                      <div className="bg-blue-50 p-3 rounded-full">
+                        <ExternalLink className="h-6 w-6 text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-semibold text-lg mb-2">Reserva Externa</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        As reservas para este evento são realizadas em plataforma externa.
+                      </p>
+                    </div>
+                    <a
+                      href={event.externalBookingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
+                    >
+                      Fazer Reserva
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                    <p className="text-xs text-gray-500 text-center">
+                      Você será redirecionado para outra página
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : !event.symplaUrl && (
+              /* Event Booking Form - Only show if no external link */
               isAuthenticated ? (
                 <EventBookingForm
                   eventId={event.id as any}
