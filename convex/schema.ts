@@ -557,6 +557,7 @@ export default defineSchema({
     partnerId: v.id("users"),
     supplierId: v.optional(v.id("suppliers")), // Fornecedor associado
     symplaUrl: v.optional(v.string()),   // URL for Sympla event
+    externalBookingUrl: v.optional(v.string()), // URL externa genérica para reserva (qualquer plataforma)
     whatsappContact: v.optional(v.string()), // WhatsApp contact number for reservations
     // New Sympla fields
     symplaId: v.optional(v.string()),    // ID of the event in Sympla

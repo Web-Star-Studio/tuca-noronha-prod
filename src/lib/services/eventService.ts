@@ -70,6 +70,7 @@ export type EventFromConvex = {
     image?: string;
   } | null; // Creator information when available
   symplaUrl?: string; // Link para o evento no Sympla
+  externalBookingUrl?: string; // URL externa genérica para reserva (qualquer plataforma)
   symplaId?: string; // ID do evento no Sympla
   symplaHost?: {
     name: string;
@@ -122,6 +123,7 @@ export type Event = {
   creatorImage?: string;
   tickets?: EventTicket[];
   symplaUrl?: string; // Link para o evento no Sympla
+  externalBookingUrl?: string; // URL externa genérica para reserva (qualquer plataforma)
   symplaId?: string; // ID do evento no Sympla
   symplaHost?: {
     name: string;
@@ -173,6 +175,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     creatorEmail: event.creator?.email,
     creatorImage: event.creator?.image,
     symplaUrl: event.symplaUrl,
+    externalBookingUrl: event.externalBookingUrl,
     symplaId: event.symplaId,
     symplaHost: event.symplaHost,
     sympla_private_event: event.sympla_private_event,
@@ -232,6 +235,7 @@ export const mapEventToConvex = (event: Event, convexUserId: Id<"users"> | null)
     hasMultipleTickets: event.hasMultipleTickets || false,
     partnerId: convexUserId,
     symplaUrl: event.symplaUrl,
+    externalBookingUrl: event.externalBookingUrl,
     symplaId: event.symplaId,
     symplaHost: event.symplaHost,
     sympla_private_event: event.sympla_private_event,

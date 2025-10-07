@@ -32,9 +32,13 @@ export default function EventCard({ event }: { event: Event }) {
   // Check if event was synced from Sympla
   const isSyncedFromSympla = Boolean(event.symplaId || event.external_id);
   
-  // Determine where to link - Sympla URL for synced events, local URL for local events
-  const eventUrl = (isSyncedFromSympla && event.symplaUrl) ? event.symplaUrl : `/eventos/${event.id}`;
-  const isExternalLink = Boolean(event.symplaUrl);
+  // Determine where to link - Priority: externalBookingUrl > Sympla URL > local URL
+  const eventUrl = event.externalBookingUrl 
+    ? event.externalBookingUrl 
+    : (isSyncedFromSympla && event.symplaUrl) 
+      ? event.symplaUrl 
+      : `/eventos/${event.id}`;
+  const isExternalLink = Boolean(event.externalBookingUrl || event.symplaUrl);
   
   return (
     <div className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
@@ -98,6 +102,13 @@ export default function EventCard({ event }: { event: Event }) {
             {event.isFeatured && (
               <div className="bg-yellow-500 text-white px-2.5 py-1 rounded-full text-xs font-medium shadow-md">
                 Destaque
+              </div>
+            )}
+            {/* External link badge */}
+            {event.externalBookingUrl && !event.symplaUrl && (
+              <div className="bg-white shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-blue-600 flex items-center gap-1">
+                <ExternalLink className="h-3 w-3" />
+                Link Externo
               </div>
             )}
             {/* Sympla badge for linked events */}
@@ -183,7 +194,8 @@ export default function EventCard({ event }: { event: Event }) {
           {isExternalLink 
             ? (
               <span className="flex items-center justify-center gap-1">
-                Comprar no Sympla <ExternalLink className="h-3 w-3 ml-1" />
+                {event.symplaUrl ? 'Comprar no Sympla' : 'Reservar Externamente'} 
+                <ExternalLink className="h-3 w-3 ml-1" />
               </span>
             ) 
             : event.isActive 

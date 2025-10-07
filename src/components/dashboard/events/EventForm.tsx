@@ -63,6 +63,7 @@ export function EventForm({
           speaker: "",
           speakerBio: "",
           whatsappContact: "",
+          externalBookingUrl: "",
           createdAt: new Date(),
           updatedAt: new Date()
         }
@@ -539,6 +540,22 @@ export function EventForm({
               type="tel"
             />
             <p className="text-xs text-gray-500 mt-1">Informe o número no formato internacional (ex: 5511999999999) para que o botão de reserva leve para o chat do WhatsApp</p>
+          </div>
+
+          <div className="md:col-span-2">
+            <Label htmlFor="externalBookingUrl" className="text-sm font-medium">Link Externo para Reserva (opcional)</Label>
+            <Input 
+              id="externalBookingUrl" 
+              name="externalBookingUrl" 
+              value={formData.externalBookingUrl || ""} 
+              onChange={handleInputChange} 
+              className="mt-1.5 bg-white shadow-sm"
+              placeholder="https://exemplo.com/reserva"
+              type="url"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Se preenchido, o botão de reserva levará os usuários diretamente para este link externo (ex: Sympla, Eventbrite, site próprio, etc.)
+            </p>
           </div>
 
           <div>
