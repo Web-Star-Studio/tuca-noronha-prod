@@ -78,8 +78,13 @@ export default function EventCard({ event }: { event: Event }) {
             <div className="absolute inset-0 bg-gray-100 animate-pulse" />
           )}
           {/* Price badge */}
-          <div className="absolute bottom-3 right-3 bg-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md">
-            {event.price > 0 ? formatCurrency(event.price) : 'Gratuito'}
+          <div className={`absolute bottom-3 right-3 px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md ${
+            event.externalBookingUrl ? 'bg-blue-500 text-white' : 'bg-white'
+          }`}>
+            {event.externalBookingUrl 
+              ? 'Reserva Externa' 
+              : event.price > 0 ? formatCurrency(event.price) : 'Gratuito'
+            }
           </div>
           {/* Category badge */}
           <div className="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-medium shadow-md">
