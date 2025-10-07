@@ -5,7 +5,6 @@ import { useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { PixPaymentDisplay } from "./PixPaymentDisplay";
 import { PixPaymentModal } from "./PixPaymentModal";
 
 interface PaymentResult {

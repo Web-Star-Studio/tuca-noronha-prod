@@ -27,7 +27,7 @@ export const create = mutationWithRole(["partner", "master"])({
     price: v.number(),
     netRate: v.optional(v.number()),
     category: v.string(),
-    maxParticipants: v.number(),
+    maxParticipants: v.int64(),
     imageUrl: v.string(),
     galleryImages: v.array(v.string()),
     highlights: v.array(v.string()),
@@ -42,6 +42,7 @@ export const create = mutationWithRole(["partner", "master"])({
     partnerId: v.id("users"),
     supplierId: v.optional(v.id("suppliers")),
     symplaUrl: v.optional(v.string()),
+    externalBookingUrl: v.optional(v.string()),
     whatsappContact: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -52,14 +53,11 @@ export const create = mutationWithRole(["partner", "master"])({
         throw new Error("Unauthorized: partners can only create events for themselves");
       }
     }
-    // Convert number to BigInt for the database
-    const maxParticipants = BigInt(args.maxParticipants);
     
     // Creating the event
     const eventId = await ctx.db.insert("events", {
       ...args,
       netRate: args.netRate ?? args.price,
-      maxParticipants,
       hasMultipleTickets: args.hasMultipleTickets || false, // valor padrão é false
       acceptsOnlinePayment: args.price > 0, // automaticamente true quando price > 0
       requiresUpfrontPayment: args.price > 0, // automaticamente true quando price > 0
@@ -75,7 +73,7 @@ export const create = mutationWithRole(["partner", "master"])({
         args.title,
         {
           amount: args.price,
-          quantity: Number(maxParticipants),
+          quantity: Number(args.maxParticipants),
           after: {
             category: args.category,
             isActive: args.isActive,
@@ -108,7 +106,7 @@ export const update = mutationWithRole(["partner", "master"])({
     price: v.optional(v.number()),
     netRate: v.optional(v.number()),
     category: v.optional(v.string()),
-    maxParticipants: v.optional(v.number()),
+    maxParticipants: v.optional(v.int64()),
     imageUrl: v.optional(v.string()),
     galleryImages: v.optional(v.array(v.string())),
     highlights: v.optional(v.array(v.string())),
@@ -123,6 +121,7 @@ export const update = mutationWithRole(["partner", "master"])({
     partnerId: v.optional(v.id("users")),
     supplierId: v.optional(v.id("suppliers")),
     symplaUrl: v.optional(v.string()),
+    externalBookingUrl: v.optional(v.string()),
     whatsappContact: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -134,7 +133,7 @@ export const update = mutationWithRole(["partner", "master"])({
         throw new Error("Unauthorized");
       }
     }
-    const { id, maxParticipants, ...otherFields } = args;
+    const { id, ...otherFields } = args;
     
     // Define a more specific type for the updates
     type Updates = {
@@ -158,9 +157,12 @@ export const update = mutationWithRole(["partner", "master"])({
       speakerBio?: string;
       isFeatured?: boolean;
       isActive?: boolean;
+      isFree?: boolean;
       hasMultipleTickets?: boolean;
       partnerId?: Id<"users">;
+      supplierId?: Id<"suppliers">;
       symplaUrl?: string;
+      externalBookingUrl?: string;
       whatsappContact?: string;
       acceptsOnlinePayment?: boolean;
       requiresUpfrontPayment?: boolean;
@@ -170,11 +172,6 @@ export const update = mutationWithRole(["partner", "master"])({
     const updates: Updates = {
       ...otherFields
     };
-    
-    // Convert participant numbers to BigInt if provided
-    if (maxParticipants !== undefined) {
-      updates.maxParticipants = BigInt(maxParticipants);
-    }
     
     // Automatically set acceptsOnlinePayment and requiresUpfrontPayment when price is updated
     if (args.price !== undefined) {
@@ -359,8 +356,8 @@ export const createEventTicket = mutationWithRole(["partner", "master"])({
     name: v.string(),
     description: v.string(),
     price: v.number(),
-    availableQuantity: v.number(),
-    maxPerOrder: v.number(),
+    availableQuantity: v.int64(),
+    maxPerOrder: v.int64(),
     type: v.string(),
     benefits: v.array(v.string()),
     isActive: v.boolean()
@@ -384,8 +381,8 @@ export const createEventTicket = mutationWithRole(["partner", "master"])({
       name: args.name,
       description: args.description,
       price: args.price,
-      availableQuantity: BigInt(args.availableQuantity),
-      maxPerOrder: BigInt(args.maxPerOrder),
+      availableQuantity: args.availableQuantity,
+      maxPerOrder: args.maxPerOrder,
       type: args.type,
       benefits: args.benefits,
       isActive: args.isActive
@@ -404,28 +401,19 @@ export const updateEventTicket = mutationWithRole(["partner", "master"])({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     price: v.optional(v.number()),
-    availableQuantity: v.optional(v.number()),
-    maxPerOrder: v.optional(v.number()),
+    availableQuantity: v.optional(v.int64()),
+    maxPerOrder: v.optional(v.int64()),
     type: v.optional(v.string()),
     benefits: v.optional(v.array(v.string())),
     isActive: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
-    const { id, availableQuantity, maxPerOrder, ...otherFields } = args;
+    const { id, ...otherFields } = args;
     
     // Criar um objeto com todos os campos a serem atualizados
     const updates: EventTicketUpdates = {
       ...otherFields
     };
-    
-    // Converter números para BigInt se fornecidos
-    if (availableQuantity !== undefined) {
-      updates.availableQuantity = BigInt(availableQuantity);
-    }
-    
-    if (maxPerOrder !== undefined) {
-      updates.maxPerOrder = BigInt(maxPerOrder);
-    }
     
     await ctx.db.patch(id, updates);
     return id;
