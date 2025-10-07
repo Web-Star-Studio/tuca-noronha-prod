@@ -1033,7 +1033,7 @@ export const confirmActivityBooking = mutation({
     bookingId: v.id("activityBookings"),
     supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
-    assetInfo: assetInfoValidator, // Adicionado
+    assetInfo: v.optional(assetInfoValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -1157,7 +1157,7 @@ export const confirmEventBooking = mutation({
     bookingId: v.id("eventBookings"),
     supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
-    assetInfo: assetInfoValidator,
+    assetInfo: v.optional(assetInfoValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -1283,7 +1283,7 @@ export const confirmRestaurantReservation = mutation({
     bookingId: v.id("restaurantReservations"),
     supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
-    assetInfo: assetInfoValidator,
+    assetInfo: v.optional(assetInfoValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -1407,7 +1407,7 @@ export const confirmVehicleBooking = mutation({
     bookingId: v.id("vehicleBookings"),
     supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
-    assetInfo: assetInfoValidator,
+    assetInfo: v.optional(assetInfoValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
