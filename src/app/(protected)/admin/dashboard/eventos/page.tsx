@@ -141,6 +141,7 @@ export default function EventsPage() {
         location: eventData.location,
         address: eventData.address,
         price: eventData.price,
+        netRate: eventData.netRate,
         category: eventData.category,
         maxParticipants: eventData.maxParticipants,
         imageUrl: eventData.imageUrl,
@@ -152,9 +153,12 @@ export default function EventsPage() {
         speakerBio: eventData.speakerBio || "",
         isFeatured: eventData.isFeatured,
         isActive: eventData.isActive,
+        isFree: eventData.isFree || false,
         hasMultipleTickets: eventData.hasMultipleTickets || false,
         partnerId: currentUser.user._id,
+        supplierId: eventData.supplierId,
         symplaUrl: eventData.symplaUrl || "",
+        externalBookingUrl: eventData.externalBookingUrl || "",
         whatsappContact: eventData.whatsappContact || "",
       }
 
