@@ -1026,11 +1026,12 @@ export const cancelVehicleBooking = mutation({
 
 /**
  * Confirm activity booking (Partner only)
+ * Supplier is required to track which supplier is responsible for the booking
  */
 export const confirmActivityBooking = mutation({
   args: {
     bookingId: v.id("activityBookings"),
-    supplierId: v.optional(v.id("suppliers")),
+    supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator, // Adicionado
   },
@@ -1079,7 +1080,7 @@ export const confirmActivityBooking = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.supplierId && { supplierId: args.supplierId }),
+      supplierId: args.supplierId, // Sempre obrigatório
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
@@ -1134,11 +1135,12 @@ export const confirmActivityBooking = mutation({
 
 /**
  * Confirm event booking (Partner only)
+ * Supplier is required to track which supplier is responsible for the booking
  */
 export const confirmEventBooking = mutation({
   args: {
     bookingId: v.id("eventBookings"),
-    supplierId: v.optional(v.id("suppliers")),
+    supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator,
   },
@@ -1188,7 +1190,7 @@ export const confirmEventBooking = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.supplierId && { supplierId: args.supplierId }),
+      supplierId: args.supplierId, // Sempre obrigatório
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
@@ -1244,11 +1246,12 @@ export const confirmEventBooking = mutation({
 
 /**
  * Confirm restaurant reservation (Partner only)
+ * Supplier is required to track which supplier is responsible for the booking
  */
 export const confirmRestaurantReservation = mutation({
   args: {
     bookingId: v.id("restaurantReservations"),
-    supplierId: v.optional(v.id("suppliers")),
+    supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator,
   },
@@ -1298,7 +1301,7 @@ export const confirmRestaurantReservation = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.supplierId && { supplierId: args.supplierId }),
+      supplierId: args.supplierId, // Sempre obrigatório
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
@@ -1352,11 +1355,12 @@ export const confirmRestaurantReservation = mutation({
 
 /**
  * Confirm vehicle booking (Partner only)
+ * Supplier is required to track which supplier is responsible for the booking
  */
 export const confirmVehicleBooking = mutation({
   args: {
     bookingId: v.id("vehicleBookings"),
-    supplierId: v.optional(v.id("suppliers")),
+    supplierId: v.id("suppliers"), // Obrigatório
     partnerNotes: v.optional(v.string()),
     assetInfo: assetInfoValidator,
   },
@@ -1406,7 +1410,7 @@ export const confirmVehicleBooking = mutation({
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
-      ...(args.supplierId && { supplierId: args.supplierId }),
+      supplierId: args.supplierId, // Sempre obrigatório
       ...(args.partnerNotes && { partnerNotes: args.partnerNotes }),
       updatedAt: Date.now(),
     });
