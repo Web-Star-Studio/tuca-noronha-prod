@@ -927,9 +927,22 @@ export const getConfirmacaoData = query({
       return null;
     }
 
-    // Check if proposal is accepted
-    if (proposal.status !== "accepted") {
-      throw new Error("Apenas propostas aceitas têm documento de confirmação");
+    // Check if proposal is in contracting process or completed
+    const validStatuses = [
+      "accepted",
+      "awaiting_participants_data",
+      "participants_data_completed",
+      "flight_booking_in_progress",
+      "flight_booked",
+      "documents_uploaded",
+      "awaiting_final_confirmation",
+      "payment_pending",
+      "payment_completed",
+      "contracted"
+    ];
+    
+    if (!validStatuses.includes(proposal.status)) {
+      throw new Error("Esta proposta ainda não foi aceita pelo cliente");
     }
 
     // Get package request

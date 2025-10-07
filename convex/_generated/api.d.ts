@@ -184,6 +184,7 @@ import type * as guide from "../guide.js";
 import type * as http from "../http.js";
 import type * as openaiActions from "../openaiActions.js";
 import type * as packageComparison from "../packageComparison.js";
+import type * as packageProposals from "../packageProposals.js";
 import type * as packages from "../packages.js";
 import type * as rbac from "../rbac.js";
 import type * as recommendations from "../recommendations.js";
@@ -388,6 +389,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   openaiActions: typeof openaiActions;
   packageComparison: typeof packageComparison;
+  packageProposals: typeof packageProposals;
   packages: typeof packages;
   rbac: typeof rbac;
   recommendations: typeof recommendations;
