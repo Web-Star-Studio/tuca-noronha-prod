@@ -1077,6 +1077,21 @@ export const confirmActivityBooking = mutation({
       throw new Error("Não é possível confirmar uma reserva cancelada");
     }
 
+    // Capture payment if authorized (credit card with manual capture)
+    // PIX payments are automatically captured when paid
+    if (booking.mpPaymentId && booking.paymentStatus === "authorized") {
+      console.log(`[CONFIRM ACTIVITY] Scheduling payment capture for ${booking.mpPaymentId}`);
+      
+      // Schedule immediate payment capture via action (will update status to paid)
+      await ctx.scheduler.runAfter(0, internal.domains.mercadoPago.actions.capturePayment, {
+        paymentId: booking.mpPaymentId,
+        bookingId: args.bookingId,
+        assetType: "activity",
+      });
+      
+      console.log(`[CONFIRM ACTIVITY] Payment capture scheduled`);
+    }
+
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
@@ -1185,6 +1200,21 @@ export const confirmEventBooking = mutation({
 
     if (booking.status === BOOKING_STATUS.CANCELED) {
       throw new Error("Não é possível confirmar uma reserva cancelada");
+    }
+
+    // Capture payment if authorized (credit card with manual capture)
+    // PIX payments are automatically captured when paid
+    if (booking.mpPaymentId && booking.paymentStatus === "authorized") {
+      console.log(`[CONFIRM EVENT] Scheduling payment capture for ${booking.mpPaymentId}`);
+      
+      // Schedule immediate payment capture via action (will update status to paid)
+      await ctx.scheduler.runAfter(0, internal.domains.mercadoPago.actions.capturePayment, {
+        paymentId: booking.mpPaymentId,
+        bookingId: args.bookingId,
+        assetType: "event",
+      });
+      
+      console.log(`[CONFIRM EVENT] Payment capture scheduled`);
     }
 
     // Update booking status
@@ -1298,6 +1328,21 @@ export const confirmRestaurantReservation = mutation({
       throw new Error("Não é possível confirmar uma reserva cancelada");
     }
 
+    // Capture payment if authorized (credit card with manual capture)
+    // PIX payments are automatically captured when paid
+    if (booking.mpPaymentId && booking.paymentStatus === "authorized") {
+      console.log(`[CONFIRM RESTAURANT] Scheduling payment capture for ${booking.mpPaymentId}`);
+      
+      // Schedule immediate payment capture via action (will update status to paid)
+      await ctx.scheduler.runAfter(0, internal.domains.mercadoPago.actions.capturePayment, {
+        paymentId: booking.mpPaymentId,
+        bookingId: args.bookingId,
+        assetType: "restaurant",
+      });
+      
+      console.log(`[CONFIRM RESTAURANT] Payment capture scheduled`);
+    }
+
     // Update booking status
     await ctx.db.patch(args.bookingId, {
       status: BOOKING_STATUS.CONFIRMED,
@@ -1405,6 +1450,21 @@ export const confirmVehicleBooking = mutation({
 
     if (booking.status === BOOKING_STATUS.CANCELED) {
       throw new Error("Não é possível confirmar uma reserva cancelada");
+    }
+
+    // Capture payment if authorized (credit card with manual capture)
+    // PIX payments are automatically captured when paid
+    if (booking.mpPaymentId && booking.paymentStatus === "authorized") {
+      console.log(`[CONFIRM VEHICLE] Scheduling payment capture for ${booking.mpPaymentId}`);
+      
+      // Schedule immediate payment capture via action (will update status to paid)
+      await ctx.scheduler.runAfter(0, internal.domains.mercadoPago.actions.capturePayment, {
+        paymentId: booking.mpPaymentId,
+        bookingId: args.bookingId,
+        assetType: "vehicle",
+      });
+      
+      console.log(`[CONFIRM VEHICLE] Payment capture scheduled`);
     }
 
     // Update booking status

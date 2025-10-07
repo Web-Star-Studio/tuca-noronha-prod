@@ -469,20 +469,34 @@ export const createPaymentWithManualCapture = action({
 
 
 /**
- * Capture an authorized payment
+ * Capture an authorized payment and update booking status
  */
 export const capturePayment = internalAction({
   args: {
     paymentId: v.string(),
     amount: v.optional(v.number()),
+    bookingId: v.optional(v.union(
+      v.id("activityBookings"),
+      v.id("eventBookings"),
+      v.id("restaurantReservations"),
+      v.id("vehicleBookings")
+    )),
+    assetType: v.optional(v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle")
+    )),
   },
   returns: v.object({
     success: v.boolean(),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
   }),
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     try {
+      console.log(`[MP CAPTURE] Capturing payment ${args.paymentId}`);
+      
       const body: any = { capture: true };
       if (args.amount) {
         body.transaction_amount = args.amount;
@@ -492,6 +506,26 @@ export const capturePayment = internalAction({
         method: "PUT",
         body: JSON.stringify(body),
       });
+      
+      console.log(`[MP CAPTURE] Payment captured successfully, status: ${res.status}`);
+      
+      // Update booking payment status to paid if bookingId provided
+      if (args.bookingId && args.assetType) {
+        const tableName = 
+          args.assetType === "activity" ? "activityBookings" :
+          args.assetType === "event" ? "eventBookings" :
+          args.assetType === "restaurant" ? "restaurantReservations" :
+          "vehicleBookings";
+        
+        await ctx.runMutation(internal.domains.bookings.mutations.updateBookingStatusInternal, {
+          bookingId: args.bookingId,
+          assetType: args.assetType,
+          paymentStatus: "paid",
+        });
+        
+        console.log(`[MP CAPTURE] Updated ${args.assetType} booking ${args.bookingId} to paid`);
+      }
+      
       return { success: true, status: res.status };
     } catch (error) {
       console.error("[MP] Failed to capture payment:", error);
