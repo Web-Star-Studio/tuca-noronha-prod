@@ -348,7 +348,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                 {isAuthenticated ? (
                   <VehicleBookingForm 
                     vehicleId={vehicle._id} 
-                    pricePerDay={vehicle.estimatedPricePerDay} 
+                    estimatedPricePerDay={vehicle.estimatedPricePerDay ?? 0} 
                     className="shadow-sm"
                   />
                 ) : (

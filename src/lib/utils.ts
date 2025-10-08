@@ -52,6 +52,31 @@ export function formatDate(date: Date | number | string): string {
 }
 
 /**
+ * Format a date string (YYYY-MM-DD) for display without timezone conversion
+ * This is specifically for calendar dates where we don't want timezone shifts
+ */
+export function formatCalendarDate(dateString: string, formatType: "short" | "long" = "long"): string {
+  if (!dateString) return "Data inválida";
+  
+  // Extract year, month, day from YYYY-MM-DD string
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateString;
+  
+  const [, year, month, day] = match;
+  
+  // Create date in local timezone to avoid offset issues
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  
+  if (isNaN(date.getTime())) return "Data inválida";
+  
+  const options: Intl.DateTimeFormatOptions = formatType === "long"
+    ? { day: "numeric", month: "long", year: "numeric" }
+    : { day: "2-digit", month: "2-digit", year: "numeric" };
+  
+  return date.toLocaleDateString("pt-BR", options);
+}
+
+/**
  * Format a number as currency in Brazilian Real (R$) format
  */
 export function formatCurrency(value: number): string {

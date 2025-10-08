@@ -2,7 +2,7 @@ import { Event } from "@/lib/services/eventService";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, Clock, MapPin, Users, ExternalLink, RefreshCw } from "lucide-react";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatCalendarDate, formatCurrency } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { QuickStats } from "@/components/reviews";
 import { useReviewStats } from "@/lib/hooks/useReviews";
@@ -12,7 +12,7 @@ import { SmartMedia } from "@/components/ui/smart-media";
 
 export default function EventCard({ event }: { event: Event }) {
   // Format date for display - pass string directly to avoid timezone issues
-  const formattedDate = formatDate(event.date);
+  const formattedDate = formatCalendarDate(event.date);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const coverEntry = parseMediaEntry(event.imageUrl ?? "");
   const hasCover = coverEntry.url && coverEntry.url.trim() !== "";

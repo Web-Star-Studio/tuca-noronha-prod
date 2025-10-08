@@ -12,11 +12,7 @@ const galleryImages = [
   {
     src: '/images/morro-dois-irmaos.jpg',
     alt: 'Morro Dois Irmãos em Fernando de Noronha',
-  },
-  {
-    src: '/images/tartaruga-nascimento.jpg',
-    alt: 'Tartaruga marinha nadando em Fernando de Noronha',
-  },
+  }
 ]
 
 export default function SobrePage() {

@@ -274,7 +274,20 @@ export default function EventosMasterPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+    if (!dateString) return "Data inválida";
+    
+    // Extract year, month, day from YYYY-MM-DD string
+    const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return dateString;
+    
+    const [, year, month, day] = match;
+    
+    // Create date in local timezone to avoid offset issues
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
+    if (isNaN(date.getTime())) return "Data inválida";
+    
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: '2-digit'

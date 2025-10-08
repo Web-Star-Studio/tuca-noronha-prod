@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../../convex/_generated/api"
 import { useState } from "react"
+import { useAuth } from "@clerk/nextjs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,17 +17,23 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 
 export default function WishlistPage() {
+  const { userId } = useAuth()
   const [activeTab, setActiveTab] = useState("all")
   const isMobile = useIsMobile()
   const wishlistItems = useQuery(api.wishlist.getUserWishlist, {})
   const removeFromWishlist = useMutation(api.wishlist.removeFromWishlist)
 
   const handleRemoveFromWishlist = async (itemType: string, itemId: string) => {
+    if (!userId) {
+      toast.error("Você precisa estar autenticado para remover itens dos favoritos.")
+      return
+    }
+
     try {
-      await removeFromWishlist({ itemType, itemId, userId: "" })
+      await removeFromWishlist({ itemType, itemId, userId })
       toast.success("Removido dos favoritos")
-    } catch {
-      toast.error("Não foi possível remover o item dos favoritos.")
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível remover o item dos favoritos.")
     }
   }
 
