@@ -147,7 +147,7 @@ export default function VehicleList({
             
             <div className="flex items-baseline justify-between pt-3 border-t">
               <div className="text-lg font-bold text-blue-700">
-                {formatCurrency(vehicle.pricePerDay)}
+                {formatCurrency(vehicle.estimatedPricePerDay)}
                 <span className="text-xs font-normal text-muted-foreground ml-1">/dia</span>
               </div>
 

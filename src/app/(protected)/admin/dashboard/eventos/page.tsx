@@ -41,6 +41,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { parseDateInput } from "@/lib/utils"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { EventForm } from "@/components/dashboard/events/EventForm"
@@ -474,7 +475,7 @@ export default function EventsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Calendar className="w-4 h-4" />
-                                {format(new Date(event.date), "PPP", { locale: ptBR })}
+                                {parseDateInput(event.date) ? format(parseDateInput(event.date)!, "PPP", { locale: ptBR }) : event.date}
                               </div>
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Clock className="w-4 h-4" />
@@ -599,7 +600,7 @@ export default function EventsPage() {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Data do Evento</label>
                   <p className="text-foreground mt-1">
-                    {format(new Date(selectedEvent.date), "PPP", { locale: ptBR })}
+                    {parseDateInput(selectedEvent.date) ? format(parseDateInput(selectedEvent.date)!, "PPP", { locale: ptBR }) : selectedEvent.date}
                   </p>
                 </div>
                 <div>

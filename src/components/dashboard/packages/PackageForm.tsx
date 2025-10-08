@@ -333,7 +333,7 @@ export function PackageForm({ package: pkg, onSubmit, onCancel, isSubmitting }: 
                   <SelectItem value="none">Nenhum veículo</SelectItem>
                   {vehiclesQuery?.vehicles?.map((vehicle) => (
                     <SelectItem key={vehicle._id} value={vehicle._id}>
-                      {vehicle.name} - {formatPrice(vehicle.pricePerDay)}/dia
+                      {vehicle.name} - {formatPrice(vehicle.estimatedPricePerDay)}/dia
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -11,9 +11,8 @@ import { parseMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
 
 export default function EventCard({ event }: { event: Event }) {
-  // Format date for display
-  const eventDate = new Date(event.date);
-  const formattedDate = formatDate(eventDate);
+  // Format date for display - pass string directly to avoid timezone issues
+  const formattedDate = formatDate(event.date);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const coverEntry = parseMediaEntry(event.imageUrl ?? "");
   const hasCover = coverEntry.url && coverEntry.url.trim() !== "";
@@ -32,21 +31,15 @@ export default function EventCard({ event }: { event: Event }) {
   // Check if event was synced from Sympla
   const isSyncedFromSympla = Boolean(event.symplaId || event.external_id);
   
-  // Determine where to link - Priority: externalBookingUrl > Sympla URL > local URL
-  const eventUrl = event.externalBookingUrl 
-    ? event.externalBookingUrl 
-    : (isSyncedFromSympla && event.symplaUrl) 
-      ? event.symplaUrl 
-      : `/eventos/${event.id}`;
-  const isExternalLink = Boolean(event.externalBookingUrl || event.symplaUrl);
+  // Always link to details page - external links are handled there
+  const eventUrl = `/eventos/${event.id}`;
+  const hasExternalLink = Boolean(event.externalBookingUrl || event.symplaUrl);
   
   return (
     <div className="group overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 rounded-xl flex flex-col h-full w-full bg-white">
       <Link 
         href={eventUrl} 
         className="flex flex-col h-full w-full"
-        target={isExternalLink ? "_blank" : undefined}
-        rel={isExternalLink ? "noopener noreferrer" : undefined}
       >
         {/* Main image - no padding at top */}
         <div className="relative aspect-4/3 overflow-hidden rounded-t-xl">
@@ -190,16 +183,16 @@ export default function EventCard({ event }: { event: Event }) {
 
         {/* Status indicator */}
         <div className={`w-full py-2 text-center text-sm font-medium ${
-          isExternalLink 
+          hasExternalLink 
             ? 'bg-blue-100 text-blue-800 shadow-inner' 
             : event.isActive 
               ? 'bg-green-100 text-green-800 shadow-inner' 
               : 'bg-red-100 text-red-800 shadow-inner'
         }`}>
-          {isExternalLink 
+          {hasExternalLink 
             ? (
               <span className="flex items-center justify-center gap-1">
-                {event.symplaUrl ? 'Comprar no Sympla' : 'Reservar Externamente'} 
+                {event.symplaUrl ? 'Ver detalhes • Sympla' : 'Ver detalhes • Reserva Externa'} 
                 <ExternalLink className="h-3 w-3 ml-1" />
               </span>
             ) 

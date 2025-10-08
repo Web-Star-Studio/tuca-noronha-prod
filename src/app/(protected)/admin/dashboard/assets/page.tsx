@@ -81,7 +81,7 @@ const getAssetIcon = (assetType: string) => {
           return [
             asset.category && { label: 'Categoria', value: asset.category },
             asset.licensePlate && { label: 'Placa', value: asset.licensePlate },
-            asset.pricePerDay && { label: 'Diária', value: formatPrice(asset.pricePerDay) }
+            asset.estimatedPricePerDay && { label: 'Diária', value: formatPrice(asset.estimatedPricePerDay) }
           ].filter(Boolean);
         
         case 'accommodations':
@@ -806,7 +806,7 @@ export default function AssetsManagementPage() {
                     <>
                       <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Categoria</p><p>{selectedAsset.category}</p></div>
                       <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Placa</p><p>{selectedAsset.licensePlate}</p></div>
-                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Preço/dia</p><p>{selectedAsset.pricePerDay ? formatPrice(selectedAsset.pricePerDay) : '-'}</p></div>
+                      <div className="space-y-1"><p className="text-sm font-semibold text-gray-500">Preço/dia</p><p>{selectedAsset.estimatedPricePerDay ? formatPrice(selectedAsset.estimatedPricePerDay) : '-'}</p></div>
                     </>
                   )}
                   {selectedAsset.assetType === 'accommodations' && (

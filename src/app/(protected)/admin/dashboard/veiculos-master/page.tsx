@@ -55,7 +55,7 @@ type VehicleData = {
   seats: number | bigint;
   fuelType: string;
   transmission: string;
-  pricePerDay: number | bigint;
+  estimatedPricePerDay: number | bigint;
   description?: string;
   features: string[];
   imageUrl?: string;
@@ -173,8 +173,8 @@ export default function VehiclesMasterPage() {
     available: vehicles.filter(v => v.status === "available").length,
     rented: vehicles.filter(v => v.status === "rented").length,
     maintenance: vehicles.filter(v => v.status === "maintenance").length,
-    totalRevenuePotential: vehicles.reduce((sum, v) => sum + Number(v.pricePerDay), 0),
-    avgPricePerDay: vehicles.length > 0 ? vehicles.reduce((sum, v) => sum + Number(v.pricePerDay), 0) / vehicles.length : 0,
+    totalRevenuePotential: vehicles.reduce((sum, v) => sum + Number(v.estimatedPricePerDay), 0),
+    avgPricePerDay: vehicles.length > 0 ? vehicles.reduce((sum, v) => sum + Number(v.estimatedPricePerDay), 0) / vehicles.length : 0,
   } : null;
 
   return (
@@ -431,7 +431,7 @@ export default function VehiclesMasterPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(Number(vehicle.pricePerDay))}
+                        {formatCurrency(Number(vehicle.estimatedPricePerDay))}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

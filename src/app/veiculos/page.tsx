@@ -22,7 +22,7 @@ interface Vehicle {
   seats: number;
   fuelType: string;
   transmission: string;
-  pricePerDay: number;
+  estimatedPricePerDay: number;
   imageUrl?: string;
   status: string;
 }
@@ -131,10 +131,10 @@ export default function VeiculosPage() {
         return `${b.brand} ${b.model}`.localeCompare(`${a.brand} ${a.model}`);
       }
       if (sortBy === 'price-asc') {
-        return a.pricePerDay - b.pricePerDay;
+        return a.estimatedPricePerDay - b.estimatedPricePerDay;
       }
       if (sortBy === 'price-desc') {
-        return b.pricePerDay - a.pricePerDay;
+        return b.estimatedPricePerDay - a.estimatedPricePerDay;
       }
       if (sortBy === 'year-asc') {
         return a.year - b.year;

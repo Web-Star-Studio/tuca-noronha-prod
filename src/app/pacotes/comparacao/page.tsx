@@ -265,7 +265,7 @@ export default function PackageComparisonPage() {
                           </div>
                           <div className="text-xs text-gray-600">{pkg.vehicle.category}</div>
                           <div className="text-xs text-green-600 font-medium">
-                            R$ {pkg.vehicle.pricePerDay}/dia
+                            R$ {pkg.vehicle.pricePerDay ?? 0}/dia
                           </div>
                         </div>
                       ) : (

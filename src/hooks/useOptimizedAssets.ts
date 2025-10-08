@@ -31,7 +31,7 @@ export interface EnrichedAsset {
   category?: string;
   cuisine?: string[];
   price?: number;
-  pricePerDay?: number;
+  estimatedPricePerDay?: number;
   pricePerNight?: number;
   date?: string;
   time?: string;
@@ -173,7 +173,7 @@ export function useOptimizedAssets(options: AssetQueryOptions): OptimizedAssetHo
           category: asset.category,
           type: asset.type,
           licensePlate: asset.licensePlate,
-          pricePerDay: asset.pricePerDay,
+          estimatedPricePerDay: asset.estimatedPricePerDay,
           capacity: asset.capacity,
           transmission: asset.transmission,
           fuelType: asset.fuelType,

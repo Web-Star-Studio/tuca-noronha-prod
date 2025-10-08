@@ -286,11 +286,11 @@ export default function CouponAssetSelection({
                                     {asset.location}
                                   </span>
                                 )}
-                                {(asset.price || asset.pricePerDay || asset.pricePerNight) && (
+                                {(asset.price || asset.estimatedPricePerDay || asset.pricePerNight) && (
                                   <span className="flex items-center gap-1">
                                     <DollarSign className="h-3 w-3" />
-                                    {formatPrice(asset.price || asset.pricePerDay || asset.pricePerNight)}
-                                    {asset.pricePerDay && "/dia"}
+                                    {formatPrice(asset.price || asset.estimatedPricePerDay || asset.pricePerNight)}
+                                    {asset.estimatedPricePerDay && "/dia"}
                                     {asset.pricePerNight && "/noite"}
                                   </span>
                                 )}

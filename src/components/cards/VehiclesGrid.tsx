@@ -13,7 +13,7 @@ interface Vehicle {
   seats: number;
   fuelType: string;
   transmission: string;
-  pricePerDay: number;
+  estimatedPricePerDay: number;
   imageUrl?: string;
   status: string;
 }

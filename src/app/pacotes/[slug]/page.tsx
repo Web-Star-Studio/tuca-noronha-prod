@@ -356,7 +356,7 @@ export default function PackageDetailPage(props: { params: Promise<{ slug: strin
                           </h4>
                           <p className="text-gray-600">{packageData.vehicle.category}</p>
                           <p className="text-sm text-green-600 font-medium">
-                            R$ {packageData.vehicle.pricePerDay}/dia incluído
+                            R$ {packageData.vehicle.pricePerDay ?? 0}/dia incluído
                           </p>
                         </div>
                       </div>

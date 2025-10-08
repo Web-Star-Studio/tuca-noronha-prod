@@ -20,7 +20,7 @@ interface VehicleCardProps {
     seats: number;
     fuelType: string;
     transmission: string;
-    pricePerDay: number;
+    estimatedPricePerDay: number;
     imageUrl?: string;
   };
 }
@@ -84,7 +84,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           {/* Preço */}
           <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
             <p className="text-xs text-gray-600 mb-0.5">A partir de</p>
-            <p className="text-lg font-bold text-gray-900">R$ {vehicle.pricePerDay.toFixed(2)}/dia</p>
+            <p className="text-lg font-bold text-gray-900">R$ {(vehicle.estimatedPricePerDay ?? 0).toFixed(2)}/dia</p>
           </div>
         </div>
 
