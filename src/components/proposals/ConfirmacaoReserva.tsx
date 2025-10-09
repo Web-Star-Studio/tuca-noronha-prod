@@ -110,7 +110,7 @@ export function ConfirmacaoReserva({
         <div className="text-right">
           <Image 
             src="/images/tuca-logo.jpeg" 
-            alt="Noronha Travel" 
+            alt="Tuca Noronha" 
             width={120} 
             height={60}
             className="mb-2"
@@ -429,34 +429,10 @@ export function ConfirmacaoReserva({
           <p className="text-sm whitespace-pre-wrap">{cancellationPolicy}</p>
         </div>
 
-        {/* Airline Duplicate Bookings */}
-        <div className="mb-6">
-          <h4 className="font-bold mb-2">DUPLICIDADE DE RESERVAS AÉREAS - (DUPE)</h4>
-          <div className="text-sm space-y-2">
-            <p>A reserva com duplicidade de reservas (ou em segmentos redundantes), consideradas aquelas em que o mesmo passageiro se encontra em reservas que fixadas pelo mesmo itinerário, cidades pela mesma agência de viagens e que estiverem simultaneamente ATIVAS será caracterizado DUPLICIDADE e é passível CANCELAMENTO DA RESERVA por parte da Cia. Aérea ou de cobrança de débito que poderá ser gerado pela mesma e este repassado para a agência de viagens.</p>
-            <p className="font-semibold mt-3">Características:</p>
-            <ul className="list-disc pl-6 space-y-1">
-              <li>Repetição de mesmo nome do passageiro;</li>
-              <li>Rota similar;</li>
-              <li>Reserva(s) realizadas pela mesma agência de viagens.</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Churning */}
-        <div className="mb-6">
-          <h4 className="font-bold mb-2">CHURNING Recomendações</h4>
-          <div className="text-sm space-y-2">
-            <p>Somente realize mudanças em uma reserva quando for solicitado pelo passageiro, sem exceder o máximo permitido (3 cancelamentos).</p>
-            <p>Antes de efetuar a reserva ou fazer mudanças nas classes de serviço, verifique a disponibilidade da classe desejada para não fazer bookings desnecessários.</p>
-            <p>O bilhete deve ser emitido antes do último cancelamento e rebooking do mesmo segmento.Em caso de cobrança por parte da Cia Aérea/IATA, por excesso de reservas, o valor será repassado à Agência de Viagem envolvida.</p>
-          </div>
-        </div>
-
         {/* Contact */}
         <div className="mt-8 pt-6 border-t">
           <h4 className="text-lg font-bold mb-3">Atenciosamente</h4>
-          <p className="font-semibold">Equipe Noronha Travel</p>
+          <p className="font-semibold">Equipe Tuca Noronha</p>
           <p className="text-sm text-gray-600">✉️ contato@noronhabrasil.com.br</p>
         </div>
       </div>

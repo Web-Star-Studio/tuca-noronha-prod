@@ -58,15 +58,17 @@ export function WishlistButton({
 
     try {
       if (isInWishlist) {
+        // Note: userId is deprecated, backend now uses auth context directly
         await removeFromWishlist({
-          userId,
+          userId: userId || "",
           itemType,
           itemId,
         })
         toast.success("Item removido dos favoritos.")
       } else {
+        // Note: userId is deprecated, backend now uses auth context directly
         await addToWishlist({
-          userId,
+          userId: userId || "",
           itemType,
           itemId,
         })

@@ -24,13 +24,9 @@ export default function WishlistPage() {
   const removeFromWishlist = useMutation(api.wishlist.removeFromWishlist)
 
   const handleRemoveFromWishlist = async (itemType: string, itemId: string) => {
-    if (!userId) {
-      toast.error("Você precisa estar autenticado para remover itens dos favoritos.")
-      return
-    }
-
     try {
-      await removeFromWishlist({ itemType, itemId, userId })
+      // Note: userId is deprecated, backend now uses auth context directly
+      await removeFromWishlist({ itemType, itemId, userId: userId || "" })
       toast.success("Removido dos favoritos")
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível remover o item dos favoritos.")

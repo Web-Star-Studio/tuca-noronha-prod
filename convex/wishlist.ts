@@ -5,20 +5,26 @@ import { Id } from "./_generated/dataModel";
 // Add item to wishlist
 export const addToWishlist = mutation({
   args: {
-    userId: v.string(), // Clerk User ID
+    userId: v.string(), // Clerk User ID (deprecated, now using auth context)
     itemType: v.string(),
     itemId: v.string(),
   },
   returns: v.id("wishlistItems"),
   handler: async (ctx, args) => {
+    // Get authenticated user from context
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Você precisa estar autenticado para adicionar aos favoritos");
+    }
+
     // Find the internal user document from the Clerk ID.
     const user = await ctx.db
       .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", args.userId))
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .first();
 
     if (!user) {
-      throw new Error("Usuário não encontrado");
+      throw new Error("Usuário não encontrado. Tente fazer logout e login novamente.");
     }
 
     // Check if item already exists in wishlist
@@ -47,20 +53,26 @@ export const addToWishlist = mutation({
 // Remove item from wishlist
 export const removeFromWishlist = mutation({
   args: {
-    userId: v.string(), // Clerk User ID
+    userId: v.string(), // Clerk User ID (deprecated, now using auth context)
     itemType: v.string(),
     itemId: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Get authenticated user from context
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Você precisa estar autenticado para remover dos favoritos");
+    }
+
     // Find the internal user document from the Clerk ID.
     const user = await ctx.db
       .query("users")
-      .withIndex("clerkId", (q) => q.eq("clerkId", args.userId))
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
       .first();
 
     if (!user) {
-      throw new Error("Usuário não encontrado");
+      throw new Error("Usuário não encontrado. Tente fazer logout e login novamente.");
     }
 
     const existing = await ctx.db
