@@ -122,6 +122,7 @@ export default function AdminBookingsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [partnerNotes, setPartnerNotes] = useState("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
@@ -134,6 +135,11 @@ export default function AdminBookingsPage() {
 
   // Asset context
   const { selectedAsset } = useAsset();
+
+  // Fetch suppliers list for the confirm dialog
+  const suppliers = useQuery(api.domains.suppliers.queries.listSupplierOptions, {
+    isActive: true,
+  });
 
   // Actions for booking approval/rejection with payment capture
   const approveBooking = useAction(api.domains.mercadoPago.actions.approveBookingAndCapturePayment);
@@ -325,6 +331,12 @@ export default function AdminBookingsPage() {
     // Masters can confirm any booking, others need selectedAsset
     if (!isMaster && !selectedAsset) return;
 
+    // Validate supplier selection
+    if (!selectedSupplierId) {
+      toast.error("Por favor, selecione um fornecedor antes de confirmar a reserva.");
+      return;
+    }
+
     try {
       // Check if booking has payment that requires capture
       const hasPaymentToCapture = booking.paymentStatus === "requires_capture" || 
@@ -390,6 +402,7 @@ export default function AdminBookingsPage() {
           case "activities":
             await confirmActivityBooking({
               bookingId: booking._id,
+              supplierId: selectedSupplierId as any,
               partnerNotes: partnerNotes || undefined,
               assetInfo,
             });
@@ -397,13 +410,15 @@ export default function AdminBookingsPage() {
           case "events":
             await confirmEventBooking({
               bookingId: booking._id,
+              supplierId: selectedSupplierId as any,
               partnerNotes: partnerNotes || undefined,
               assetInfo,
             });
             break;
           case "restaurants":
             await confirmRestaurantReservation({
-              reservationId: booking._id,
+              bookingId: booking._id,
+              supplierId: selectedSupplierId as any,
               partnerNotes: partnerNotes || undefined,
               assetInfo,
             });
@@ -411,6 +426,7 @@ export default function AdminBookingsPage() {
           case "vehicles":
             await confirmVehicleBooking({
               bookingId: booking._id,
+              supplierId: selectedSupplierId as any,
               partnerNotes: partnerNotes || undefined,
               assetInfo,
             });
@@ -420,11 +436,11 @@ export default function AdminBookingsPage() {
         toast.success("Reserva confirmada com sucesso!");
       }
       
-      await refreshBookings();
       setShowConfirmDialog(false);
       setSelectedBooking(null);
       setPartnerNotes("");
-    } catch {
+      setSelectedSupplierId("");
+    } catch (error) {
       toast.error("Erro ao confirmar reserva");
       console.error(error);
     }
@@ -1049,6 +1065,23 @@ export default function AdminBookingsPage() {
           </DialogHeader>
           
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="supplier">Fornecedor *</Label>
+              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecione o fornecedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers?.map((supplier) => (
+                    <SelectItem key={supplier._id} value={supplier._id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">Selecione o fornecedor responsável pela reserva</p>
+            </div>
+
             <div>
               <Label htmlFor="notes">Observações (opcional)</Label>
               <Textarea
