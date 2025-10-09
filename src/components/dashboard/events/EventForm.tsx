@@ -11,7 +11,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, ChevronRight, Loader2, Plus, Star, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { MediaSelector } from "@/components/dashboard/media";
-import { SupplierSelect } from "@/components/dashboard/SupplierSelect";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { Media } from "@/lib/services/mediaService";
@@ -59,7 +58,6 @@ export function EventForm({
           isFree: false,
           hasMultipleTickets: false,
           partnerId: "",
-          supplierId: undefined,
           speaker: "",
           speakerBio: "",
           whatsappContact: "",
@@ -379,13 +377,6 @@ export function EventForm({
               <p className="mt-2 text-xs text-slate-500">
                 Quando ativado, os usuários não passarão pelo fluxo de pagamento ao fazer reservas.
               </p>
-            </div>
-
-            <div className="col-span-2">
-              <SupplierSelect
-                value={formData.supplierId}
-                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
-              />
             </div>
           </div>
             

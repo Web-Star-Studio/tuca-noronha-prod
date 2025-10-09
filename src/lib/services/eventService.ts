@@ -396,7 +396,7 @@ export const useCreateEvent = () => {
       // Create the event in Convex
       const eventId = await createEventMutation(convexData);
       return eventId;
-    } catch {
+    } catch (error) {
       console.error("Error creating event:", error);
       throw error;
     }
@@ -445,7 +445,7 @@ export const useUpdateEvent = () => {
       });
       
       return result;
-    } catch {
+    } catch (error) {
       console.error("Error updating event:", error);
       throw error;
     }
@@ -497,7 +497,7 @@ export const useUserEvents = () => {
         // Map to frontend events
         const mappedEvents = userEvents.map(mapConvexEvent);
         setEvents(mappedEvents);
-      } catch {
+      } catch (error) {
         console.error("Error fetching user events:", error);
       } finally {
         setIsLoading(false);
@@ -584,7 +584,7 @@ export const useCreateEventTicket = () => {
     try {
       const ticketId = await createTicketMutation(convexData as any);
       return ticketId;
-    } catch {
+    } catch (error) {
       console.error("Error creating ticket:", error);
       throw error;
     }

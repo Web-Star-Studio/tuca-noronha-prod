@@ -286,9 +286,18 @@ supplier?: {
 ## 🚀 **Status Atual**
 
 ✅ **Backend 100% pronto e deployado**
-⏳ **Frontend 0% implementado**
+✅ **Modal de seleção implementado na página de reservas**
+✅ **Campo de fornecedor REMOVIDO dos formulários de cadastro de assets**
 
-**Total: 50% Completo**
+**Mudanças Recentes (09/01/2025)**:
+- ✅ Adicionado select de fornecedor no modal de confirmação de reservas
+- ✅ Validação obrigatória antes de confirmar
+- ✅ Campo `supplierId` salvo nas reservas ao confirmar
+- ✅ Removido campo `supplierId` dos formulários de atividades e eventos
+- ✅ Removido `supplierId` das mutations de `createActivity`, `updateActivity`, `createEvent`, `updateEvent`
+- ✅ Informações do fornecedor já aparecem no voucher automaticamente
+
+**Total: 85% Completo**
 
 ---
 

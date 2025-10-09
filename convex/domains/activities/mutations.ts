@@ -40,7 +40,6 @@ export const create = mutationWithRole(["partner", "master"])({
     isFree: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.id("users"),
-    supplierId: v.optional(v.id("suppliers")),
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);
@@ -99,7 +98,6 @@ export const update = mutationWithRole(["partner", "master"])({
     isFree: v.optional(v.boolean()),
     hasMultipleTickets: v.optional(v.boolean()),
     partnerId: v.optional(v.id("users")),
-    supplierId: v.optional(v.id("suppliers")),
   },
   handler: async (ctx, args) => {
     const role = await getCurrentUserRole(ctx);

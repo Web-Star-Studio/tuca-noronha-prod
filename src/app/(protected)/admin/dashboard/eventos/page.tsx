@@ -160,7 +160,6 @@ export default function EventsPage() {
         isFree: eventData.isFree || false,
         hasMultipleTickets: eventData.hasMultipleTickets || false,
         partnerId: currentUser.user._id,
-        supplierId: eventData.supplierId,
         symplaUrl: eventData.symplaUrl || "",
         externalBookingUrl: eventData.externalBookingUrl || "",
         whatsappContact: eventData.whatsappContact || "",
