@@ -215,31 +215,6 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
                   </p>
                 </div>
 
-                <div>
-                  <span className="font-medium text-gray-500 block mb-2">Incluído</span>
-                  <ul className="text-sm space-y-1">
-                    {proposal.inclusions.map((item: string, index: number) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {proposal.exclusions.length > 0 && (
-                  <div>
-                    <span className="font-medium text-gray-500 block mb-2">Não Incluído</span>
-                    <ul className="text-sm space-y-1">
-                      {proposal.exclusions.map((item: string, index: number) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <X className="h-4 w-4 text-red-500 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </CardContent>
             </Card>
 

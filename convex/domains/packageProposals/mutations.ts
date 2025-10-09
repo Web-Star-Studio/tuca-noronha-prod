@@ -106,7 +106,6 @@ export const createPackageProposal = mutation({
       title: proposalTitle,
       description: args.description,
       summary: args.summary,
-      components: args.components,
       subtotal: args.subtotal,
       taxes: args.taxes || 0,
       fees: args.fees || 0,
@@ -116,8 +115,6 @@ export const createPackageProposal = mutation({
       validUntil: args.validUntil,
       paymentTerms: args.paymentTerms,
       cancellationPolicy: args.cancellationPolicy,
-      inclusions: args.inclusions,
-      exclusions: args.exclusions,
       attachments: args.attachments || [],
       status: "draft",
       negotiationRounds: 0,
@@ -149,7 +146,6 @@ export const createPackageProposal = mutation({
       },
       metadata: {
         amount: args.totalPrice,
-        quantity: args.components.length,
       },
       status: "success",
     });

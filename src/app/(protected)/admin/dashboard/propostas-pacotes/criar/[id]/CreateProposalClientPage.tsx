@@ -101,9 +101,6 @@ export default function CreateProposalClientPage({ packageRequestId }: CreatePro
             <DetailItem icon={<User className="h-5 w-5"/>} label="Cliente">
               {packageRequest.customerInfo.name}
             </DetailItem>
-             <DetailItem icon={<MapPin className="h-5 w-5"/>} label="Destino">
-              {packageRequest.tripDetails.destination}
-            </DetailItem>
             <DetailItem icon={<Users className="h-5 w-5"/>} label="Grupo">
               {packageRequest.tripDetails?.groupSize || 'N/A'} pessoas
             </DetailItem>

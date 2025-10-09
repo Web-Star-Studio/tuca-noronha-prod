@@ -12,7 +12,6 @@ export type {
   PackageProposalId,
   PackageProposalStatusType,
   PackageProposalPriorityType,
-  PackageProposalComponentType,
 } from "./types";
 
 // Export status and priority constants
@@ -21,6 +20,4 @@ export {
   PROPOSAL_STATUS_COLORS,
   PROPOSAL_PRIORITY_LABELS,
   PROPOSAL_PRIORITY_COLORS,
-  COMPONENT_TYPE_LABELS,
-  COMPONENT_TYPE_ICONS,
 } from "./types";

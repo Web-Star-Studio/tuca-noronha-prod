@@ -182,6 +182,7 @@ import type * as domains_vouchers_utils from "../domains/vouchers/utils.js";
 import type * as functions from "../functions.js";
 import type * as guide from "../guide.js";
 import type * as http from "../http.js";
+import type * as migrations_removeComponentsFromProposals from "../migrations/removeComponentsFromProposals.js";
 import type * as openaiActions from "../openaiActions.js";
 import type * as packageComparison from "../packageComparison.js";
 import type * as packageProposals from "../packageProposals.js";
@@ -387,6 +388,7 @@ declare const fullApi: ApiFromModules<{
   functions: typeof functions;
   guide: typeof guide;
   http: typeof http;
+  "migrations/removeComponentsFromProposals": typeof migrations_removeComponentsFromProposals;
   openaiActions: typeof openaiActions;
   packageComparison: typeof packageComparison;
   packageProposals: typeof packageProposals;

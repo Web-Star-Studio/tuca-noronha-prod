@@ -36,31 +36,7 @@ export const PackageProposalApprovalStatus = v.union(
   v.literal("rejected")
 );
 
-export const PackageComponentType = v.union(
-  
-  v.literal("activity"),
-  v.literal("event"),
-  v.literal("restaurant"),
-  v.literal("vehicle"),
-  v.literal("transfer"),
-  v.literal("guide"),
-  v.literal("insurance"),
-  v.literal("other")
-);
-
-// Package Component validator
-export const PackageComponent = v.object({
-  type: PackageComponentType,
-  assetId: v.optional(v.string()),
-  name: v.string(),
-  description: v.string(),
-  quantity: v.number(),
-  unitPrice: v.number(),
-  totalPrice: v.number(),
-  included: v.boolean(),
-  optional: v.boolean(),
-  notes: v.optional(v.string()),
-});
+// Removed: PackageComponentType and PackageComponent (no longer used)
 
 // Attachment validator
 export const ProposalAttachment = v.object({
@@ -79,7 +55,6 @@ export const CreatePackageProposalArgs = v.object({
   title: v.optional(v.string()), // Optional - will be auto-generated from customer name if not provided
   description: v.string(),
   summary: v.optional(v.string()),
-  components: v.array(PackageComponent),
   subtotal: v.number(),
   taxes: v.optional(v.number()),
   fees: v.optional(v.number()),
@@ -89,8 +64,6 @@ export const CreatePackageProposalArgs = v.object({
   validUntil: v.number(),
   paymentTerms: v.string(),
   cancellationPolicy: v.string(),
-  inclusions: v.array(v.string()),
-  exclusions: v.array(v.string()),
   attachments: v.optional(v.array(ProposalAttachment)),
   requiresApproval: v.boolean(),
   priority: PackageProposalPriority,
@@ -103,7 +76,6 @@ export const UpdatePackageProposalArgs = v.object({
   title: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
-  components: v.optional(v.array(PackageComponent)),
   subtotal: v.optional(v.number()),
   taxes: v.optional(v.number()),
   fees: v.optional(v.number()),
@@ -113,8 +85,6 @@ export const UpdatePackageProposalArgs = v.object({
   validUntil: v.optional(v.number()),
   paymentTerms: v.optional(v.string()),
   cancellationPolicy: v.optional(v.string()),
-  inclusions: v.optional(v.array(v.string())),
-  exclusions: v.optional(v.array(v.string())),
   attachments: v.optional(v.array(ProposalAttachment)),
   status: v.optional(PackageProposalStatus),
   priority: v.optional(PackageProposalPriority),
@@ -211,43 +181,12 @@ export const PROPOSAL_PRIORITY_COLORS = {
   urgent: "red",
 } as const;
 
-export const COMPONENT_TYPE_LABELS = {
-
-  activity: "Atividade",
-  event: "Evento",
-  restaurant: "Restaurante",
-  vehicle: "Veículo",
-  transfer: "Transfer",
-  guide: "Guia",
-  insurance: "Seguro",
-  other: "Outros",
-} as const;
-
-export const COMPONENT_TYPE_ICONS = {
-
-  activity: "🏃",
-  event: "🎉",
-  restaurant: "🍽️",
-  vehicle: "🚗",
-  transfer: "🚌",
-  guide: "🗺️",
-  insurance: "🛡️",
-  other: "📋",
-} as const;
+// Removed: COMPONENT_TYPE_LABELS and COMPONENT_TYPE_ICONS (no longer used)
 
 // Type exports
 export type PackageProposalDoc = Doc<"packageProposals">;
 export type PackageProposalId = Id<"packageProposals">;
-export type PackageProposalComponentType = 
-  | "accommodation"
-  | "activity"
-  | "event"
-  | "restaurant"
-  | "vehicle"
-  | "transfer"
-  | "guide"
-  | "insurance"
-  | "other";
+// Removed: PackageProposalComponentType (no longer used)
 
 export type PackageProposalStatusType = 
   | "draft"

@@ -268,47 +268,6 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
               </CardContent>
             </Card>
 
-            {/* Inclusions and Exclusions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                    O que está incluído
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {proposal.inclusions.map((inclusion, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircleIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{inclusion}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <XCircleIcon className="h-5 w-5 text-red-500" />
-                    O que NÃO está incluído
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {proposal.exclusions.map((exclusion, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <XCircleIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{exclusion}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Terms and Policies */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>

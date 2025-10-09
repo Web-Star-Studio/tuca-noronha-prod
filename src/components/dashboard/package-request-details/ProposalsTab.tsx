@@ -349,10 +349,6 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
                               <span>{formatDate(proposal.validUntil)}</span>
                             </div>
                             <div>
-                              <span className="font-medium text-gray-500 block">Componentes</span>
-                              <span>{proposal.components.length}</span>
-                            </div>
-                            <div>
                               <span className="font-medium text-gray-500 block">Criada</span>
                               <span>{formatDate(proposal.createdAt)}</span>
                             </div>

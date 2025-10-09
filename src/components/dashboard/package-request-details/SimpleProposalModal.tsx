@@ -45,8 +45,6 @@ const initialFormData = {
   additionalNotes: "",
   paymentTerms: "",
   cancellationPolicy: "",
-  inclusions: "",
-  exclusions: "",
 };
 
 // Helper function to parse date strings without timezone issues
@@ -159,10 +157,6 @@ ${baseDescriptionLines.join("\n")}
     pricePerPerson: "",
     totalPrice: "",
     additionalNotes: includesAirfare === false ? "Este pacote não inclui passagens aéreas." : "",
-    inclusions: preferences?.activities?.length
-      ? preferences.activities.map((activity: string) => `Atividade: ${activity}`).join("\n")
-      : "",
-    exclusions: includesAirfare === false ? "Passagens aéreas" : "",
   };
 };
 
@@ -170,19 +164,6 @@ function mapExistingProposalToFormData(existingProposal: any, requestDetails?: a
   if (!existingProposal) {
     return buildFormDataFromRequest(requestDetails);
   }
-
-  const component = existingProposal.components?.[0];
-  const descriptionText: string = component?.description ?? "";
-
-  const extractValue = (label: string) => {
-    const regex = new RegExp(`\\*\\*${label}:\\*\\*\\s*(.*)`, "i");
-    const match = descriptionText.match(regex);
-    return match?.[1]?.trim() ?? "";
-  };
-
-  const accommodationValue = extractValue("Acomodação");
-  const [accommodationType, ...accommodationDetailsParts] = accommodationValue.split(" - ");
-  const accommodationDetails = accommodationDetailsParts.join(" - ").trim();
 
   // Extract travel info from the main description
   const extractFromDescription = (label: string) => {
@@ -195,28 +176,21 @@ function mapExistingProposalToFormData(existingProposal: any, requestDetails?: a
 
   return {
     ...baseFromRequest,
-    travelPeriod: extractFromDescription("Periodo da Viagem") || extractFromDescription("Período da Viagem") || extractValue("Período da Viagem"),
-    nights: extractFromDescription("Noites") || extractValue("Noites"),
-    departureLocation: extractFromDescription("Local de Saida") || extractFromDescription("Local de Saída") || extractValue("Local de Saída"),
-    airline: extractFromDescription("Companhia Aerea") || extractFromDescription("Companhia Aérea") || extractValue("Companhia Aérea"),
-    accommodationType: ((extractFromDescription("Acomodacao") || extractFromDescription("Acomodação"))?.split(" - ")[0] || accommodationType?.trim()) ?? "",
-    accommodationDetails: (extractFromDescription("Acomodacao") || extractFromDescription("Acomodação"))?.split(" - ").slice(1).join(" - ") || accommodationDetails,
+    travelPeriod: extractFromDescription("Periodo da Viagem") || extractFromDescription("Período da Viagem"),
+    nights: extractFromDescription("Noites"),
+    departureLocation: extractFromDescription("Local de Saida") || extractFromDescription("Local de Saída"),
+    airline: extractFromDescription("Companhia Aerea") || extractFromDescription("Companhia Aérea"),
+    accommodationType: (extractFromDescription("Acomodacao") || extractFromDescription("Acomodação"))?.split(" - ")[0] ?? "",
+    accommodationDetails: (extractFromDescription("Acomodacao") || extractFromDescription("Acomodação"))?.split(" - ").slice(1).join(" - ") || "",
     fullPackageDescription: existingProposal.description ?? "",
-    pricePerPerson:
-      component?.unitPrice !== undefined && component?.unitPrice !== null
-        ? String(component.unitPrice)
-        : "",
+    pricePerPerson: "",
     totalPrice:
       existingProposal.totalPrice !== undefined && existingProposal.totalPrice !== null
         ? String(existingProposal.totalPrice)
-        : component?.totalPrice !== undefined && component?.totalPrice !== null
-        ? String(component.totalPrice)
         : "",
-    additionalNotes: extractFromDescription("Observacoes") || extractFromDescription("Observações") || extractValue("Observações"),
+    additionalNotes: extractFromDescription("Observacoes") || extractFromDescription("Observações"),
     paymentTerms: existingProposal.paymentTerms || "",
     cancellationPolicy: existingProposal.cancellationPolicy || "",
-    inclusions: existingProposal.inclusions?.join("\n") || "",
-    exclusions: existingProposal.exclusions?.join("\n") || "",
   };
 }
 
@@ -276,8 +250,6 @@ export function SimpleProposalModal({
       additionalNotes,
       paymentTerms,
       cancellationPolicy,
-      inclusions,
-      exclusions,
     } = formData;
     if (!travelPeriod || !nights || !totalPrice || !fullPackageDescription || !accommodationType || !accommodationDetails) {
       toast.error("Preencha os campos obrigatórios: Período, Noites, Descrição, Preço Total, Tipo de Acomodação e Detalhes da Acomodação.");
@@ -327,13 +299,6 @@ export function SimpleProposalModal({
 ${travelInfoLines}
 
 ${fullPackageDescription}`.trim();
-
-    // Process inclusions and exclusions from textarea to array
-    const inclusionsArray = inclusions ? inclusions.split('\n').filter((item: string) => item.trim()) : [];
-    const exclusionsArray = exclusions ? exclusions.split('\n').filter((item: string) => item.trim()) : [];
-
-    // Componentes removidos do sistema
-    const components = [];
     const requiresApproval = existingProposal?.requiresApproval ?? false;
     const priority = existingProposal?.priority ?? "normal";
     const tags = existingProposal?.tags ?? ["proposta-simples"];
@@ -364,7 +329,6 @@ ${fullPackageDescription}`.trim();
       title,
       description: enhancedDescription,
       summary,
-      components: components.length > 0 ? components : [],
       subtotal,
       taxes,
       fees,
@@ -374,8 +338,6 @@ ${fullPackageDescription}`.trim();
       validUntil,
       paymentTerms: paymentTerms || "",
       cancellationPolicy: cancellationPolicy || "",
-      inclusions: inclusionsArray,
-      exclusions: exclusionsArray,
       requiresApproval,
       priority,
       tags,
@@ -506,31 +468,6 @@ ${fullPackageDescription}`.trim();
                 onChange={handleChange} 
                 placeholder="Ex: Cancelamento gratuito até 30 dias antes da viagem"
                 rows={3}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="inclusions">Inclusões (uma por linha)</Label>
-              <Textarea 
-                id="inclusions" 
-                name="inclusions" 
-                value={formData.inclusions} 
-                onChange={handleChange} 
-                placeholder="Passagens aéreas&#10;Hospedagem com café da manhã&#10;Transfer in/out&#10;Seguro viagem"
-                rows={5}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="exclusions">Exclusões (uma por linha)</Label>
-              <Textarea 
-                id="exclusions" 
-                name="exclusions" 
-                value={formData.exclusions} 
-                onChange={handleChange} 
-                placeholder="Refeições não mencionadas&#10;Passeios opcionais&#10;Despesas pessoais&#10;Gorjetas"
-                rows={5}
               />
             </div>
           </div>

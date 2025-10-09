@@ -124,9 +124,6 @@ export function RequestDetailsContent({ request }: { request: any }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <DetailItem icon={<MapPin className="h-4 w-4"/>} label="Destino">
-                {request.tripDetails.destination}
-              </DetailItem>
               {request.tripDetails.originCity && (
                 <DetailItem icon={<Navigation className="h-4 w-4"/>} label="Cidade de Origem">
                   {request.tripDetails.originCity}

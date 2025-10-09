@@ -42,7 +42,7 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
       occupation: "",
     },
     tripDetails: {
-      destination: "",
+      destination: "Fernando de Noronha",
       startDate: "",
       endDate: "",
       duration: 0,
@@ -325,21 +325,6 @@ export default function PackageRequestForm({ onSuccess }: PackageRequestFormProp
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="destination" className="text-sm font-medium text-gray-700 mb-3 block">
-                  🎯 Destino Principal *
-                </Label>
-                <CitySelector
-                  value={formData.tripDetails.destination}
-                  onValueChange={(value) => updateFormData("tripDetails", "destination", value)}
-                  placeholder="Escolha qualquer cidade do Brasil..."
-                  className="w-full"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Selecione a cidade principal do seu destino dos sonhos
-                </p>
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">

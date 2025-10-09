@@ -287,10 +287,6 @@ const PackageRequestsSection: React.FC = () => {
                     <h4 className="font-medium text-gray-900 mb-3">Detalhes da Viagem</h4>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">{searchResults.tripDetails.destination}</span>
-                      </div>
-                      <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
                           {formatTripDates(searchResults.tripDetails)}

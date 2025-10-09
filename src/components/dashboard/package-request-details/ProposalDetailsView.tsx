@@ -64,10 +64,6 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
               <span>{formatDate(proposal.validUntil)}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-500 block">Componentes</span>
-              <span>{proposal.components.length}</span>
-            </div>
-            <div>
               <span className="font-medium text-gray-500 block">Criada em</span>
               <span>{formatDate(proposal.createdAt)}</span>
             </div>
@@ -87,32 +83,6 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Package className="h-4 w-4" /> Componentes Inclusos
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {proposal.components && proposal.components.length > 0 ? (
-            proposal.components.map((component: any, index: number) => (
-              <div key={index} className="p-3 border rounded-lg hover:bg-gray-50">
-                <p className="font-semibold">{component.name}</p>
-                <p className="text-sm text-gray-600 mt-1">{component.description}</p>
-                <Separator className="my-2" />
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Qtd: {component.quantity}</span>
-                  <span className="text-gray-500">Preço Unit.: {formatCurrency(component.unitPrice)}</span>
-                  <span className="font-medium">Total: {formatCurrency(component.totalPrice)}</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">Nenhum componente detalhado.</p>
-          )}
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -315,43 +285,6 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
         </Card>
       )}
 
-      {/* Inclusões e Exclusões */}
-      {(proposal.inclusions?.length > 0 || proposal.exclusions?.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {proposal.inclusions?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Package className="h-4 w-4" /> O que está incluso
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                  {proposal.inclusions.map((item: string, index: number) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          {proposal.exclusions?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Info className="h-4 w-4" /> O que não está incluso
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                  {proposal.exclusions.map((item: string, index: number) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
     </div>
   );
 }

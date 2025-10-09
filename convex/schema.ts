@@ -2408,30 +2408,6 @@ export default defineSchema({
     description: v.string(),                      // Detailed description
     summary: v.optional(v.string()),              // Executive summary
     
-    // Package Components
-    components: v.array(v.object({
-      type: v.union(
-    
-        v.literal("activity"),
-        v.literal("event"),
-        v.literal("restaurant"),
-        v.literal("vehicle"),
-        v.literal("transfer"),
-        v.literal("guide"),
-        v.literal("insurance"),
-        v.literal("other")
-      ),
-      assetId: v.optional(v.string()),            // Asset ID if applicable
-      name: v.string(),                           // Component name
-      description: v.string(),                    // Component description
-      quantity: v.number(),                       // Quantity
-      unitPrice: v.number(),                      // Unit price
-      totalPrice: v.number(),                     // Total for this component
-      included: v.boolean(),                      // Whether included in package
-      optional: v.boolean(),                      // Whether optional
-      notes: v.optional(v.string()),              // Component notes
-    })),
-    
     // Pricing
     subtotal: v.number(),                         // Subtotal before taxes/fees
     taxes: v.optional(v.number()),                // Tax amount
@@ -2444,8 +2420,11 @@ export default defineSchema({
     validUntil: v.number(),                       // Proposal expiration
     paymentTerms: v.string(),                     // Payment terms
     cancellationPolicy: v.string(),               // Cancellation policy
-    inclusions: v.array(v.string()),              // What's included
-    exclusions: v.array(v.string()),              // What's excluded
+    
+    // TEMPORARY: Fields to be removed after migration
+    components: v.optional(v.any()),              // DEPRECATED - will be removed
+    inclusions: v.optional(v.any()),              // DEPRECATED - will be removed
+    exclusions: v.optional(v.any()),              // DEPRECATED - will be removed
     
     // Documents and Media
     proposalDocument: v.optional(v.string()),     // Main proposal document storage ID
