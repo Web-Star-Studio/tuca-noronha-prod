@@ -49,6 +49,12 @@ const initialFormData = {
   exclusions: "",
 };
 
+// Helper function to parse date strings without timezone issues
+const parseLocalDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 const formatMonthLabel = (monthStr: string) => {
   const [year, month] = monthStr.split("-");
   if (!year || !month) {
@@ -77,12 +83,12 @@ const formatTripPeriodFromRequest = (requestDetails?: any) => {
   }
 
   if (trip.startDate && trip.endDate) {
-    const start = new Date(trip.startDate).toLocaleDateString("pt-BR", {
+    const start = parseLocalDate(trip.startDate).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
-    const end = new Date(trip.endDate).toLocaleDateString("pt-BR", {
+    const end = parseLocalDate(trip.endDate).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "long",
       year: "numeric",
