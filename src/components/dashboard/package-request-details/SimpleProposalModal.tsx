@@ -43,8 +43,8 @@ const initialFormData = {
   pricePerPerson: "",
   totalPrice: "",
   additionalNotes: "",
-  paymentTerms: "50% na reserva, 50% até 30 dias antes da viagem.",
-  cancellationPolicy: "Cancelamento gratuito até 30 dias antes da viagem.",
+  paymentTerms: "",
+  cancellationPolicy: "",
   inclusions: "",
   exclusions: "",
 };
@@ -213,8 +213,8 @@ function mapExistingProposalToFormData(existingProposal: any, requestDetails?: a
         ? String(component.totalPrice)
         : "",
     additionalNotes: extractFromDescription("Observacoes") || extractFromDescription("Observações") || extractValue("Observações"),
-    paymentTerms: existingProposal.paymentTerms || "50% na reserva, 50% até 30 dias antes da viagem.",
-    cancellationPolicy: existingProposal.cancellationPolicy || "Cancelamento gratuito até 30 dias antes da viagem.",
+    paymentTerms: existingProposal.paymentTerms || "",
+    cancellationPolicy: existingProposal.cancellationPolicy || "",
     inclusions: existingProposal.inclusions?.join("\n") || "",
     exclusions: existingProposal.exclusions?.join("\n") || "",
   };
