@@ -16,11 +16,21 @@ export async function mpFetch<T = any>(
 ): Promise<T> {
   const url = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const headers: Record<string, string> = {
+  // Properly merge headers, ensuring custom headers override defaults when needed
+  const baseHeaders: Record<string, string> = {
     "Authorization": `Bearer ${getAccessToken()}`,
     "Content-Type": "application/json",
-    ...(init.headers as Record<string, string> | undefined),
   };
+
+  // Merge custom headers
+  const customHeaders = init.headers as Record<string, string> | undefined;
+  const headers: Record<string, string> = {
+    ...baseHeaders,
+    ...(customHeaders || {}),
+  };
+
+  // Log headers for debugging (remove in production if needed)
+  console.log("[mpFetch] Request headers:", Object.keys(headers));
 
   const res = await fetch(url, { ...init, headers });
   const text = await res.text();

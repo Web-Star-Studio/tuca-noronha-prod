@@ -360,6 +360,12 @@ export const createPaymentWithManualCapture = action({
 
       // Generate idempotency key to prevent duplicate payments
       const idempotencyKey = `${args.bookingId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log("[MP] Generated idempotency key:", idempotencyKey);
+
+      if (!idempotencyKey) {
+        throw new Error("Failed to generate idempotency key");
+      }
 
       // Call Mercado Pago Payments API
       const payment = await mpFetch<any>('/v1/payments', {
