@@ -264,11 +264,65 @@ export function PaymentBrick({
                 }
               } catch (error) {
                 console.error("[Payment Brick] Payment error:", error);
-                const errorMessage = error instanceof Error ? error.message : "Erro ao processar pagamento";
-                toast.error("Erro ao processar pagamento", {
-                  description: errorMessage,
+                
+                // Parse error message for better UX
+                let errorTitle = "Erro ao processar pagamento";
+                let errorDescription = "Tente novamente em alguns instantes";
+                
+                if (error instanceof Error) {
+                  const errorMsg = error.message.toLowerCase();
+                  
+                  // Mercado Pago API errors
+                  if (errorMsg.includes("mercado pago api error")) {
+                    errorTitle = "Erro no processamento do pagamento";
+                    
+                    if (errorMsg.includes("idempotency") || errorMsg.includes("header")) {
+                      errorDescription = "Ocorreu um erro temporário. Por favor, recarregue a página e tente novamente.";
+                    } else if (errorMsg.includes("400") || errorMsg.includes("bad request")) {
+                      errorDescription = "Dados do pagamento inválidos. Verifique as informações e tente novamente.";
+                    } else if (errorMsg.includes("401") || errorMsg.includes("unauthorized")) {
+                      errorDescription = "Erro de autenticação. Por favor, entre em contato com o suporte.";
+                    } else if (errorMsg.includes("404")) {
+                      errorDescription = "Serviço de pagamento temporariamente indisponível. Tente novamente em alguns minutos.";
+                    } else if (errorMsg.includes("500") || errorMsg.includes("502") || errorMsg.includes("503")) {
+                      errorDescription = "Serviço de pagamento temporariamente indisponível. Tente novamente em alguns minutos.";
+                    } else {
+                      errorDescription = "Não foi possível processar o pagamento. Tente novamente ou entre em contato com o suporte.";
+                    }
+                  }
+                  // Card/payment method errors
+                  else if (errorMsg.includes("payment_method") || errorMsg.includes("método de pagamento")) {
+                    errorTitle = "Método de pagamento inválido";
+                    errorDescription = "Por favor, selecione um método de pagamento válido e tente novamente.";
+                  }
+                  // Token errors
+                  else if (errorMsg.includes("token")) {
+                    errorTitle = "Erro nos dados do pagamento";
+                    errorDescription = "Verifique os dados e tente novamente.";
+                  }
+                  // Network errors
+                  else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+                    errorTitle = "Erro de conexão";
+                    errorDescription = "Verifique sua conexão com a internet e tente novamente.";
+                  }
+                  // Generic errors - show original message if it's user-friendly
+                  else if (error.message && error.message.length < 100 && !errorMsg.includes("error:")) {
+                    errorDescription = error.message;
+                  }
+                }
+                
+                toast.error(errorTitle, {
+                  description: errorDescription,
+                  duration: 6000,
+                  action: errorTitle.includes("temporário") || errorTitle.includes("indisponível") 
+                    ? {
+                        label: "Recarregar",
+                        onClick: () => window.location.reload(),
+                      }
+                    : undefined,
                 });
-                handleError(errorMessage);
+                
+                handleError(error instanceof Error ? error.message : "Erro ao processar pagamento");
               } finally {
                 setIsProcessing(false);
               }

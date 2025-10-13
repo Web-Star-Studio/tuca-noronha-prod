@@ -152,11 +152,55 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
           window.location.href = checkoutUrl!;
         }, 1000);
       } else {
-        toast.error(paymentResult.error || "Erro ao criar pagamento");
+        // Parse error for better UX
+        let errorTitle = "Erro ao criar pagamento";
+        let errorDescription = paymentResult.error || "Tente novamente em alguns instantes";
+        
+        if (paymentResult.error) {
+          const errorMsg = paymentResult.error.toLowerCase();
+          
+          if (errorMsg.includes("mercado pago") && (errorMsg.includes("idempotency") || errorMsg.includes("header"))) {
+            errorTitle = "Erro temporário no pagamento";
+            errorDescription = "Ocorreu um erro temporário. Por favor, recarregue a página e tente novamente.";
+          } else if (errorMsg.includes("token") || errorMsg.includes("access")) {
+            errorTitle = "Erro de configuração";
+            errorDescription = "Por favor, entre em contato com o suporte.";
+          } else if (errorMsg.includes("timeout") || errorMsg.includes("connection")) {
+            errorTitle = "Erro de conexão";
+            errorDescription = "Verifique sua conexão com a internet e tente novamente.";
+          }
+        }
+        
+        toast.error(errorTitle, {
+          description: errorDescription,
+          duration: 6000,
+        });
       }
     } catch (error) {
       console.error("Error in final confirmation:", error);
-      toast.error("Erro na confirmação final");
+      
+      // Better error parsing
+      let errorTitle = "Erro na confirmação final";
+      let errorDescription = "Tente novamente em alguns instantes";
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        
+        if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+          errorTitle = "Erro de conexão";
+          errorDescription = "Verifique sua conexão com a internet e tente novamente.";
+        } else if (errorMsg.includes("mercado pago")) {
+          errorTitle = "Erro no processamento do pagamento";
+          errorDescription = "Não foi possível processar o pagamento. Tente novamente ou entre em contato com o suporte.";
+        } else if (error.message && error.message.length < 100) {
+          errorDescription = error.message;
+        }
+      }
+      
+      toast.error(errorTitle, {
+        description: errorDescription,
+        duration: 6000,
+      });
     }
   };
 

@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CitySelector } from "@/components/ui/city-selector";
 import { Calendar, Users, MapPin, DollarSign, Clock, Send, CheckCircle, Heart } from "lucide-react";
 import { 
   COMPANIONS_OPTIONS,

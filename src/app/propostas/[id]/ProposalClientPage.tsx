@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
-import { CheckCircleIcon, XCircleIcon, ShieldExclamationIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon, ShieldExclamationIcon } from "@heroicons/react/24/solid";
 import { FileText, Download, Plane } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";

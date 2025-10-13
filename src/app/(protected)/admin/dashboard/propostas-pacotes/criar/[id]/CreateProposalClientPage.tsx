@@ -12,7 +12,6 @@ import { formatCurrency } from "@/lib/utils";
 import { 
   ArrowLeftIcon, 
   User, 
-  MapPin, 
   Users, 
   Calendar, 
   DollarSign, 

@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate } from "./helpers";
 import { Package, FileText, Calendar, DollarSign, Info, Download, Plane, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
