@@ -196,8 +196,12 @@ export const createSubscriptionPreference = action({
         auto_return: body.auto_return,
       });
 
+      // X-Idempotency-Key prevents duplicate preference creation on retries
       const preference = await mpFetch<any>("/checkout/preferences", {
         method: "POST",
+        headers: {
+          "X-Idempotency-Key": `guide-pref-${args.userId}-${Date.now()}`,
+        },
         body: JSON.stringify(body),
       });
 
@@ -275,8 +279,12 @@ export const createSubscriptionPayment = action({
       }
 
       // Call Mercado Pago Payments API
+      // Note: X-Idempotency-Key is REQUIRED by Mercado Pago to prevent duplicate charges
       const payment = await mpFetch<any>('/v1/payments', {
         method: 'POST',
+        headers: {
+          "X-Idempotency-Key": `guide-${args.userId}-${Date.now()}`,
+        },
         body: JSON.stringify(paymentBody)
       });
 

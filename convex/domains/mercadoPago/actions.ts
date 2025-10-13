@@ -100,8 +100,12 @@ export const createCheckoutPreference = internalAction({
       });
 
       // Create preference via Mercado Pago API
+      // X-Idempotency-Key prevents duplicate preference creation on retries
       const preference = await mpFetch<any>("/checkout/preferences", {
         method: "POST",
+        headers: {
+          "X-Idempotency-Key": `booking-pref-${args.bookingId}-${Date.now()}`,
+        },
         body: JSON.stringify(body),
       });
 
@@ -508,8 +512,12 @@ export const capturePayment = internalAction({
         body.transaction_amount = args.amount;
       }
       
+      // X-Idempotency-Key prevents duplicate capture attempts
       const res = await mpFetch<any>(`/v1/payments/${args.paymentId}`, {
         method: "PUT",
+        headers: {
+          "X-Idempotency-Key": `capture-${args.paymentId}-${Date.now()}`,
+        },
         body: JSON.stringify(body),
       });
       
@@ -554,8 +562,12 @@ export const cancelPayment = internalAction({
   }),
   handler: async (_ctx, args) => {
     try {
+      // X-Idempotency-Key prevents duplicate cancellation attempts
       const res = await mpFetch<any>(`/v1/payments/${args.paymentId}`, {
         method: "PUT",
+        headers: {
+          "X-Idempotency-Key": `cancel-${args.paymentId}-${Date.now()}`,
+        },
         body: JSON.stringify({ status: "cancelled" }),
       });
       return { success: true, status: res.status };
@@ -582,8 +594,12 @@ export const refundPayment = internalAction({
   }),
   handler: async (ctx, args) => {
     try {
+      // X-Idempotency-Key prevents duplicate refund creation
       const res = await mpFetch<any>(`/v1/payments/${args.paymentId}/refunds`, {
         method: "POST",
+        headers: {
+          "X-Idempotency-Key": `refund-${args.paymentId}-${Date.now()}`,
+        },
         body: JSON.stringify({ 
           amount: args.amount, 
           reason: args.reason 
