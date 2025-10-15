@@ -195,7 +195,7 @@ export function EmployeesPage() {
     try {
       await removeEmployee({ employeeId });
       toast.success("Colaborador removido com sucesso");
-    } catch {
+    } catch (error) {
       console.error("Error removing employee:", error);
       toast.error("Erro ao remover colaborador");
     }

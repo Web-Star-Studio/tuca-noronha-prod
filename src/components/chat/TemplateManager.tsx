@@ -129,7 +129,8 @@ export function TemplateManager() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch {
+    } catch (error) {
+      console.error("Error creating template:", error);
       toast({
         title: "Erro ao criar template",
         description: "Tente novamente",
@@ -161,7 +162,8 @@ export function TemplateManager() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch {
+    } catch (error) {
+      console.error("Error updating template:", error);
       toast({
         title: "Erro ao atualizar template",
         description: "Tente novamente",
@@ -177,7 +179,8 @@ export function TemplateManager() {
         title: "Template deletado",
         description: "Template deletado com sucesso"
       });
-    } catch {
+    } catch (error) {
+      console.error("Error deleting template:", error);
       toast({
         title: "Erro ao deletar template",
         description: "Tente novamente",

@@ -70,7 +70,8 @@ export default function VehicleBookingDetailsPage() {
       });
       toast.success("Pagamento realizado com sucesso!");
       router.refresh();
-    } catch {
+    } catch (error) {
+      console.error("Error processing payment:", error);
       toast.error("Erro ao confirmar pagamento");
     }
   };

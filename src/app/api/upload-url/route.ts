@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       uploadUrl, 
       storageId 
     });
-  } catch {
+  } catch (error) {
     console.error('Error generating upload URL:', error);
     return NextResponse.json(
       { error: 'Failed to generate upload URL' },

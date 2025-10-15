@@ -65,7 +65,7 @@ export interface EventCreateInput {
   price: number;
   netRate?: number;
   category: string;
-  maxParticipants: number;
+  maxParticipants: bigint;
   imageUrl: string;
   galleryImages: string[];
   highlights: string[];
@@ -93,7 +93,7 @@ export interface EventUpdateInput {
   price?: number;
   netRate?: number;
   category?: string;
-  maxParticipants?: number;
+  maxParticipants?: bigint;
   imageUrl?: string;
   galleryImages?: string[];
   highlights?: string[];

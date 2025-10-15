@@ -76,7 +76,8 @@ const PackageRequestsSection: React.FC = () => {
       setTimeout(() => {
         setIsSearching(false);
       }, 100);
-    } catch {
+    } catch (error) {
+      console.error("Error searching for package request:", error);
       toast.error("Erro ao buscar solicitação");
       setSearchResults(null);
       setIsSearching(false);

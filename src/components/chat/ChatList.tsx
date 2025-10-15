@@ -84,7 +84,7 @@ export const ChatList: React.FC<ChatListProps> = ({
     try {
       await updateChatRoomStatus({ chatRoomId, status });
       toast.success(`Conversa ${getChatStatusText(status).toLowerCase()}`);
-    } catch {
+    } catch (error) {
       console.error("Erro ao atualizar status:", error);
       toast.error("Erro ao atualizar status da conversa");
     }

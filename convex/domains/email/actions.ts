@@ -289,74 +289,6 @@ export const sendPackageRequestReceivedEmail = internalAction({
 });
 
 /**
- * Notificar master sobre nova solicitação de pacote
- */
-export const notifyMasterNewPackageRequest = internalAction({
-  args: {
-    customerName: v.string(),
-    customerEmail: v.string(),
-    requestNumber: v.string(),
-    duration: v.number(),
-    guests: v.number(),
-    budget: v.number(),
-    destination: v.string(),
-    requestDetails: v.any(),
-  },
-  returns: v.object({
-    success: v.boolean(),
-    error: v.optional(v.string()),
-  }),
-  handler: async (ctx, args) => {
-    try {
-      // Buscar email do master nas variáveis de ambiente ou usar padrão
-      const masterEmail = process.env.MASTER_EMAIL || "master@tucanoronha.com";
-      
-      const emailData: PackageRequestReceivedEmailData = {
-        type: "package_request_received",
-        to: masterEmail,
-        subject: `[MASTER] Nova Solicitação de Pacote - #${args.requestNumber} - ${args.customerName}`,
-        customerName: args.customerName,
-        requestNumber: args.requestNumber,
-        duration: args.duration,
-        guests: args.guests,
-        budget: args.budget,
-        destination: args.destination,
-        requestDetails: {
-          ...args.requestDetails,
-          customerEmail: args.customerEmail,
-          isForMaster: true,
-        },
-      };
-
-      const result = await sendQuickEmail(emailData);
-      
-      // Salvar log no banco de dados
-      if (result.id) {
-        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
-          type: result.type,
-          to: result.to,
-          subject: result.subject,
-          status: result.status,
-          error: result.error,
-          sentAt: result.sentAt,
-        });
-      }
-
-      return {
-        success: result.status === "sent",
-        error: result.error,
-      };
-    } catch (error) {
-      console.error("Failed to notify master about new package request:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  },
-});
-
-/**
  * Enviar email de boas-vindas para novos usuários
  */
 export const sendWelcomeEmail = internalAction({
@@ -1125,6 +1057,358 @@ export const sendBookingConfirmationEmailById = internalAction({
 
     } catch (error) {
       console.error(`[EMAIL] Failed to send confirmation email for booking ${args.bookingId}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Send proposal to traveler
+ */
+export const sendProposalToTraveler = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    proposalNumber: v.string(),
+    proposalTitle: v.string(),
+    totalPrice: v.number(),
+    validUntil: v.number(),
+    proposalId: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      // Log dados recebidos
+      console.log("📧 sendProposalToTraveler - Dados recebidos:", {
+        customerEmail: args.customerEmail,
+        customerName: args.customerName,
+        proposalNumber: args.proposalNumber,
+        proposalTitle: args.proposalTitle,
+        totalPrice: args.totalPrice,
+        validUntil: args.validUntil,
+        proposalId: args.proposalId,
+      });
+
+      const { 
+        proposalSentTravelerEmail 
+      } = await import("./templates/packageRequests");
+
+      const formatCurrency = (value: number): string => {
+        return new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(value);
+      };
+
+      const formatDate = (timestamp: number): string => {
+        return new Date(timestamp).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      };
+
+      const proposalLink = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/propostas/${args.proposalId}`;
+
+      // Template genérico com apenas o link da proposta
+      const html = proposalSentTravelerEmail({
+        proposalLink,
+      });
+
+      const result = await emailService.sendEmail({
+        type: "package_proposal_sent",
+        to: args.customerEmail,
+        subject: `Sua Proposta de Viagem está Pronta! #${args.proposalNumber}`,
+        html,
+      });
+
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "proposal_sent",
+          to: args.customerEmail,
+          subject: `Sua Proposta de Viagem está Pronta! #${args.proposalNumber}`,
+          status: "sent",
+          sentAt: Date.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send proposal email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Notify admin when proposal is accepted (SIMPLIFICADO - Email Genérico)
+ */
+export const notifyAdminProposalAccepted = internalAction({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { proposalAcceptedAdminEmail } = await import("./templates/packageRequests");
+
+      const adminEmail = process.env.ADMIN_EMAIL;
+      
+      if (!adminEmail) {
+        console.warn("ADMIN_EMAIL não configurado nas variáveis de ambiente do Convex");
+        return {
+          success: false,
+          error: "ADMIN_EMAIL não configurado",
+        };
+      }
+
+      // Template genérico sem dados específicos
+      const html = proposalAcceptedAdminEmail();
+
+      const result = await emailService.sendEmail({
+        type: "package_proposal_sent",
+        to: adminEmail,
+        subject: "Proposta Aceita por Cliente",
+        html,
+      });
+
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "proposal_accepted_admin",
+          to: adminEmail,
+          subject: "Proposta Aceita por Cliente",
+          status: "sent",
+          sentAt: Date.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to notify admin of proposal acceptance:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Notify admin when proposal is rejected (SIMPLIFICADO - Email Genérico)
+ */
+export const notifyAdminProposalRejected = internalAction({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { proposalRejectedAdminEmail } = await import("./templates/packageRequests");
+
+      const adminEmail = process.env.ADMIN_EMAIL;
+      
+      if (!adminEmail) {
+        console.warn("ADMIN_EMAIL não configurado nas variáveis de ambiente do Convex");
+        return {
+          success: false,
+          error: "ADMIN_EMAIL não configurado",
+        };
+      }
+
+      // Template genérico sem dados específicos
+      const html = proposalRejectedAdminEmail();
+
+      const result = await emailService.sendEmail({
+        type: "package_proposal_sent",
+        to: adminEmail,
+        subject: "Proposta Rejeitada por Cliente",
+        html,
+      });
+
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "proposal_rejected_admin",
+          to: adminEmail,
+          subject: "Proposta Rejeitada por Cliente",
+          status: "sent",
+          sentAt: Date.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to notify admin of proposal rejection:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Notify admin when proposal revision is requested (SIMPLIFICADO - Email Genérico)
+ */
+export const notifyAdminProposalRevisionRequested = internalAction({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { proposalRevisionRequestedAdminEmail } = await import("./templates/packageRequests");
+
+      const adminEmail = process.env.ADMIN_EMAIL;
+      
+      if (!adminEmail) {
+        console.warn("ADMIN_EMAIL não configurado nas variáveis de ambiente do Convex");
+        return {
+          success: false,
+          error: "ADMIN_EMAIL não configurado",
+        };
+      }
+
+      // Template genérico sem dados específicos
+      const html = proposalRevisionRequestedAdminEmail();
+
+      const result = await emailService.sendEmail({
+        type: "package_proposal_sent",
+        to: adminEmail,
+        subject: "Cliente Solicitou Revisão de Proposta",
+        html,
+      });
+
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "proposal_revision_admin",
+          to: adminEmail,
+          subject: "Cliente Solicitou Revisão de Proposta",
+          status: "sent",
+          sentAt: Date.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to notify admin of proposal revision request:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Send new package request notification to admin (SIMPLIFICADO - Email Genérico)
+ */
+export const sendNewPackageRequestAdminEmail = internalAction({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { newPackageRequestAdminEmail } = await import("./templates/packageRequests");
+
+      const adminEmail = process.env.ADMIN_EMAIL;
+      
+      if (!adminEmail) {
+        console.warn("ADMIN_EMAIL não configurado nas variáveis de ambiente do Convex");
+        return {
+          success: false,
+          error: "ADMIN_EMAIL não configurado",
+        };
+      }
+
+      // Template genérico sem dados específicos
+      const html = newPackageRequestAdminEmail();
+      
+      console.log("🔍 [ADMIN EMAIL] Sending new package request email to admin");
+      console.log("📧 [ADMIN EMAIL] Template length:", html.length);
+      console.log("📧 [ADMIN EMAIL] Template preview:", html.substring(0, 200));
+
+      const result = await emailService.sendEmail({
+        type: "package_request_admin",
+        to: adminEmail,
+        subject: "Nova Solicitação de Pacote Recebida",
+        html,
+      });
+
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "package_request_admin",
+          to: adminEmail,
+          subject: "Nova Solicitação de Pacote Recebida",
+          status: "sent",
+          sentAt: Date.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send new package request email to admin:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Send package request confirmation to traveler (SIMPLIFICADO - Email Genérico)
+ */
+export const sendPackageRequestConfirmationEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { packageRequestReceivedTravelerEmail } = await import("./templates/packageRequests");
+
+      // Template genérico sem dados específicos
+      const html = packageRequestReceivedTravelerEmail();
+
+      const result = await emailService.sendEmail({
+        type: "package_request_received",
+        to: args.customerEmail,
+        subject: "Solicitação de Pacote Recebida com Sucesso",
+        html,
+      });
+
+      if (result.id) {
+        await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+          type: "package_request_confirmation",
+          to: args.customerEmail,
+          subject: "Solicitação de Pacote Recebida com Sucesso",
+          status: "sent",
+          sentAt: Date.now(),
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send package request confirmation:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),

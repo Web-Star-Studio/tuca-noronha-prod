@@ -32,8 +32,9 @@ export const handleMercadoPagoWebhook = httpAction(async (ctx, request) => {
     let body: any = {};
     try {
       body = rawBody ? JSON.parse(rawBody) : {};
-    } catch {
+    } catch (e) {
       // Non-JSON payloads are rare but we tolerate; continue with empty object
+      console.warn("Could not parse Mercado Pago webhook body as JSON.", e);
       body = {};
     }
 

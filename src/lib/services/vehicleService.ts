@@ -18,6 +18,7 @@ export interface Vehicle {
   transmission: string;
   estimatedPricePerDay: number;
   netRate?: number;
+  adminRating?: number; // Classificação definida pelo admin (0-5)
   description?: string;
   features: string[];
   imageUrl?: string;
@@ -124,7 +125,7 @@ export function useCreateVehicle() {
       try {
         const vehicleId = await createVehicleMutation(vehicleData);
         return vehicleId;
-      } catch {
+      } catch (error) {
         console.error("Error creating vehicle:", error);
         throw error;
       }
@@ -150,7 +151,7 @@ export function useUpdateVehicle() {
           ...vehicleData,
         });
         return vehicleId;
-      } catch {
+      } catch (error) {
         console.error("Error updating vehicle:", error);
         throw error;
       }
@@ -170,7 +171,7 @@ export function useDeleteVehicle() {
       try {
         await deleteVehicleMutation({ id });
         return true;
-      } catch {
+      } catch (error) {
         console.error("Error deleting vehicle:", error);
         throw error;
       }
@@ -214,7 +215,7 @@ export function useCreateVehicleBooking() {
       try {
         const bookingId = await createBookingMutation(bookingData);
         return bookingId;
-      } catch {
+      } catch (error) {
         console.error("Error creating booking:", error);
         throw error;
       }
@@ -240,7 +241,7 @@ export function useUpdateVehicleBooking() {
           ...bookingData,
         });
         return bookingId;
-      } catch {
+      } catch (error) {
         console.error("Error updating booking:", error);
         throw error;
       }

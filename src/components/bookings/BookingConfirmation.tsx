@@ -37,7 +37,8 @@ export function BookingConfirmation({
     try {
       await navigator.clipboard.writeText(text);
       toast.success("Copiado para a área de transferência");
-    } catch {
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
       toast.error("Erro ao copiar");
     }
   };
@@ -50,7 +51,8 @@ export function BookingConfirmation({
           text: `Reserva confirmada! Código: ${confirmationCode}`,
           url: window.location.href,
         });
-      } catch {
+      } catch (error) {
+        console.error("Share API failed, falling back to copy:", error);
         // Fallback to copy link
         copyToClipboard(window.location.href);
       }

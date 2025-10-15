@@ -90,7 +90,8 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
         messageType: "text"
       });
       setNewMessage("");
-    } catch {
+    } catch (error) {
+      console.error("Error sending message:", error);
       toast({
         title: "Erro ao enviar mensagem",
         description: "Tente novamente",
@@ -115,7 +116,8 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
         title: "Mensagem enviada",
         description: "Template aplicado com sucesso"
       });
-    } catch {
+    } catch (error) {
+      console.error("Error sending template message:", error);
       toast({
         title: "Erro ao enviar template",
         description: "Tente novamente",
@@ -146,7 +148,8 @@ export function EnhancedChatWindow({ chatRoomId, currentUserId, currentUserRole 
           variant: "destructive"
         });
       }
-    } catch {
+    } catch (error) {
+      console.error("Error executing quick action:", error);
       toast({
         title: "Erro ao executar ação",
         description: "Tente novamente",

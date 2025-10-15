@@ -62,7 +62,8 @@ function BookingCard({ booking }: { booking: any }) {
       if (!dateString) return 'Data não informada';
       try {
         return new Date(dateString).toLocaleDateString('pt-BR');
-      } catch {
+      } catch (error) {
+        console.error("Error formatting date:", error);
         return dateString;
       }
     };

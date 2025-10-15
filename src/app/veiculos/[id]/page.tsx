@@ -19,6 +19,7 @@ import { VehicleBookingForm } from "@/components/bookings/VehicleBookingForm";
 import { cn } from "@/lib/utils";
 import { parseMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
+import { ImageGallery } from "@/components/ui/image-gallery";
 
 import { HelpSection } from "@/components/contact";
 
@@ -271,50 +272,26 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                 </TabsContent>
 
                 {/* Photos tab */}
-                <TabsContent value="photos" className="space-y-10 mt-2">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Galeria</h3>
-                    {galleryEntries.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {galleryEntries.map((mediaEntry, index) => (
-                          <div
-                            key={`${vehicle._id}-gallery-${index}`}
-                            className="relative aspect-video overflow-hidden rounded-lg"
-                          >
-                            <SmartMedia
-                              entry={mediaEntry}
-                              alt={`${vehicle.brand} ${vehicle.model} - Mídia ${index + 1}`}
-                              className="h-full w-full object-cover"
-                              imageProps={{ fill: true }}
-                              videoProps={{ controls: true, preload: "metadata" }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="relative aspect-video overflow-hidden rounded-lg">
-                          <Image
-                            src={
-                              vehicle.imageUrl ||
-                              "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-                            }
-                            alt={`${vehicle.brand} ${vehicle.model}`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="relative aspect-video overflow-hidden rounded-lg">
-                          <Image
-                            src="https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-                            alt="Interior do veículo"
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                <TabsContent value="photos" className="mt-2">
+                  {galleryEntries.length > 0 ? (
+                    <ImageGallery
+                      images={galleryEntries.map((entry, index) => ({
+                        id: `${vehicle._id}-${index}`,
+                        src: entry.url,
+                        alt: `${vehicle.brand} ${vehicle.model} - Foto ${index + 1}`,
+                        caption: `${vehicle.brand} ${vehicle.model}`,
+                        category: vehicle.category,
+                      }))}
+                      title="Galeria de Fotos"
+                    />
+                  ) : (
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4">Galeria</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma mídia cadastrada para este veículo ainda.
+                      </p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Reviews tab */}

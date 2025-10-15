@@ -30,6 +30,7 @@ export interface Activity {
   minParticipants: number;
   difficulty: string; 
   rating: number;
+  adminRating?: number; // Classificação definida pelo admin (0-5)
   imageUrl: string;
   galleryImages: string[];
   highlights: string[];

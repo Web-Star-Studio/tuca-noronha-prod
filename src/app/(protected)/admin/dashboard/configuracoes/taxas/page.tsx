@@ -58,7 +58,8 @@ export default function TaxasPage() {
       });
       setIsEditingDefaultFee(false);
       setNewDefaultFee("");
-    } catch {
+    } catch (error) {
+      console.error("Error updating default fee:", error);
       toast({
         title: "Erro ao atualizar taxa padrão",
         description: "Não foi possível atualizar a taxa padrão",

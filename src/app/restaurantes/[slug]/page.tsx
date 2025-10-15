@@ -10,6 +10,7 @@ import { useConvexAuth } from "convex/react";
 import { cn } from "@/lib/utils";
 import { parseMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
+import { ImageGallery } from "@/components/ui/image-gallery";
 
 import type { Id } from "@/../convex/_generated/dataModel";
 
@@ -291,29 +292,25 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                   </div>
                 </TabsContent>
 
-                <TabsContent value="photos">
-                  <h2 className="text-2xl font-semibold mb-4">Galeria</h2>
+                <TabsContent value="photos" className="mt-2">
                   {galleryEntries.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                      {galleryEntries.map((mediaEntry, index) => (
-                        <div
-                          key={`${restaurant.id}-gallery-${index}`}
-                          className="relative aspect-video overflow-hidden rounded-lg"
-                        >
-                          <SmartMedia
-                            entry={mediaEntry}
-                            alt={`Mídia ${index + 1}`}
-                            className="h-full w-full object-cover"
-                            imageProps={{ fill: true }}
-                            videoProps={{ controls: true, preload: "metadata" }}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    <ImageGallery
+                      images={galleryEntries.map((entry, index) => ({
+                        id: `${restaurant.id}-${index}`,
+                        src: entry.url,
+                        alt: `${restaurant.name} - Foto ${index + 1}`,
+                        caption: restaurant.name,
+                        category: restaurant.cuisineType,
+                      }))}
+                      title="Galeria de Fotos"
+                    />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Nenhuma mídia cadastrada para este local ainda.
-                    </p>
+                    <div>
+                      <h2 className="text-2xl font-semibold mb-4">Galeria</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma mídia cadastrada para este local ainda.
+                      </p>
+                    </div>
                   )}
                 </TabsContent>
                 

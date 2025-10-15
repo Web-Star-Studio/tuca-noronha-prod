@@ -71,7 +71,7 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
       setMessage("");
       setPriority("medium");
       onClose();
-    } catch {
+    } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Erro ao enviar mensagem. Tente novamente.");
     } finally {

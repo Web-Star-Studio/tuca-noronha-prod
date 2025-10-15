@@ -86,7 +86,8 @@ export default function AdminReservasPage() {
     try {
       await confirmReservation({ id: id as any });
       toast.success("Reserva confirmada com sucesso!");
-    } catch {
+    } catch (error) {
+      console.error("Error confirming reservation:", error);
       toast.error("Erro ao confirmar reserva");
     }
   };

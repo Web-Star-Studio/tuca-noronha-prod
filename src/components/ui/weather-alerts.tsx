@@ -112,7 +112,7 @@ export function WeatherAlerts({ className }: WeatherAlertsProps) {
       const data = await fetchWeatherSummary();
       setWeatherSummary(data);
       setLastUpdate(new Date());
-    } catch {
+    } catch (error) {
       console.error('Error fetching weather data:', error);
     } finally {
       setIsLoading(false);

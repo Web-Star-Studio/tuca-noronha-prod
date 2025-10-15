@@ -851,40 +851,13 @@ export const createPackageRequest = mutation({
       updatedAt: Date.now(),
     });
 
-    // Send confirmation email to customer
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageRequestReceivedEmail, {
+    // Send confirmation email to customer (email genérico simplificado)
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendPackageRequestConfirmationEmail, {
       customerEmail: args.customerInfo.email,
-      customerName: args.customerInfo.name,
-      requestNumber,
-      duration: args.tripDetails.duration,
-      guests: normalizedTripDetails.groupSize,
-      adults: normalizedTripDetails.adults,
-      children: normalizedTripDetails.children,
-      budget: args.tripDetails.budget,
-      destination: args.tripDetails.destination,
-      requestDetails: {
-        tripDetails: normalizedTripDetails,
-        preferences: args.preferences,
-        specialRequirements: args.specialRequirements,
-      },
     });
 
-    // Notify master about new package request
-    await ctx.scheduler.runAfter(0, internal.domains.email.actions.notifyMasterNewPackageRequest, {
-      customerName: args.customerInfo.name,
-      customerEmail: args.customerInfo.email,
-      requestNumber,
-      duration: args.tripDetails.duration,
-      guests: args.tripDetails.groupSize,
-      budget: args.tripDetails.budget,
-      destination: args.tripDetails.destination,
-      requestDetails: {
-        customerInfo: args.customerInfo,
-        tripDetails: normalizedTripDetails,
-        preferences: args.preferences,
-        specialRequirements: args.specialRequirements,
-      },
-    });
+    // Notify admin about new package request (email genérico simplificado)
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendNewPackageRequestAdminEmail, {});
 
     return {
       id: packageRequestId,

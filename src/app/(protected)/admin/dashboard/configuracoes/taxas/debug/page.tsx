@@ -34,7 +34,8 @@ export default function DebugTaxasPage() {
         title: "Partner de teste criado",
         description: "O partner foi criado com sucesso para testes.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error creating test partner:", error);
       toast({
         title: "Erro ao criar partner",
         description: "Não foi possível criar o partner de teste.",

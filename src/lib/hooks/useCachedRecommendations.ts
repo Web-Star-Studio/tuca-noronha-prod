@@ -72,7 +72,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
 
       return null;
 
-    } catch {
+    } catch (error) {
       console.error('Erro ao verificar cache:', error);
       return null;
     } finally {
@@ -121,7 +121,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
 
       return result;
 
-    } catch {
+    } catch (error) {
       console.error('Erro ao salvar no cache:', error);
       toast.error('Erro ao salvar cache', {
         description: 'As recomendações funcionarão normalmente',
@@ -149,7 +149,7 @@ export const useCachedRecommendations = (cacheConfig: Partial<CacheConfig> = {})
 
       return result;
 
-    } catch {
+    } catch (error) {
       console.error('Erro ao invalidar cache:', error);
       toast.error('Erro ao atualizar cache');
     }

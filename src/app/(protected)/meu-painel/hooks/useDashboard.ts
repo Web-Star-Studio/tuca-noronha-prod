@@ -173,7 +173,7 @@ export function useDashboard() {
 
       toast.success("Reserva cancelada com sucesso!");
       
-    } catch {
+    } catch (error) {
       console.error('Erro ao cancelar reserva:', error);
       toast.error(`Erro ao cancelar reserva: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
@@ -182,7 +182,7 @@ export function useDashboard() {
   const markNotificationAsRead = async (id: string) => {
     try {
       await markAsReadMutation({ notificationId: id as any });
-    } catch {
+    } catch (error) {
       console.error('Erro ao marcar notificação como lida:', error);
     }
   };

@@ -15,7 +15,7 @@ import { ProposalDocumentManager } from '../ProposalDocumentManager';
 import { ProposalDetailsView } from './ProposalDetailsView';
 import { SimpleProposalModal } from './SimpleProposalModal';
 
-import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp, FileCheck, Link2 } from "lucide-react";
+import { FileText, SendIcon, Eye, Clock, Upload, X, CheckCircle as CheckCircleIcon, Edit, MessageCircle, AlertTriangle, Users, Plane, FileUp, FileCheck, Link2, Trash2 } from "lucide-react";
 
 import { formatCurrency, formatDate } from './helpers';
 
@@ -51,6 +51,8 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [proposalToDelete, setProposalToDelete] = useState<any>(null);
   const [activeSubTab, setActiveSubTab] = useState("proposals");
   const [showFlightBookingDialog, setShowFlightBookingDialog] = useState(false);
   const [showDocumentUploadDialog, setShowDocumentUploadDialog] = useState(false);
@@ -60,6 +62,7 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
   const [isUploading, setIsUploading] = useState(false);
 
   const sendProposal = useMutation(api.domains.packageProposals.mutations.sendPackageProposal);
+  const deleteProposal = useMutation(api.domains.packageProposals.mutations.deletePackageProposal);
   const startFlightBooking = useMutation(api.domains.packageProposals.mutations.startFlightBooking);
   const confirmFlightBooked = useMutation(api.domains.packageProposals.mutations.confirmFlightBooked);
   const uploadContractDocuments = useMutation(api.domains.packageProposals.mutations.uploadContractDocuments);
@@ -82,6 +85,28 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
   const handleEditSuccess = () => {
     setShowEditDialog(false);
     // Data will refetch automatically via Convex
+  };
+
+  const handleDeleteProposal = async () => {
+    if (!proposalToDelete) return;
+    
+    try {
+      const result = await deleteProposal({
+        id: proposalToDelete._id,
+        reason: "Deletada pelo administrador",
+      });
+
+      if (result.success) {
+        toast.success("Proposta excluída com sucesso!");
+        setShowDeleteDialog(false);
+        setProposalToDelete(null);
+      } else {
+        toast.error(result.message || "Erro ao excluir proposta");
+      }
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      toast.error("Erro ao excluir proposta");
+    }
   };
 
   const handleStartFlightBooking = async (proposalId: Id<"packageProposals">) => {
@@ -387,6 +412,21 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               {hasRevisionRequest ? "Revisar Proposta" : isRejected ? "Refazer Proposta" : "Editar"}
+                            </Button>
+                          )}
+                          
+                          {/* Delete button - show for draft and review statuses */}
+                          {["draft", "review"].includes(proposal.status) && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setProposalToDelete(proposal);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir
                             </Button>
                           )}
                           
@@ -724,6 +764,52 @@ export function ProposalsTab({ requestId, requestDetails, proposals, showHeader 
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta proposta? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {proposalToDelete && (
+            <div className="py-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <p className="font-medium text-gray-900">{proposalToDelete.title}</p>
+                <p className="text-sm text-gray-600">#{proposalToDelete.proposalNumber}</p>
+                <p className="text-sm text-gray-600">
+                  Valor: {formatCurrency(proposalToDelete.totalPrice)}
+                </p>
+                <Badge className={statusConfig[proposalToDelete.status]?.color}>
+                  {statusConfig[proposalToDelete.status]?.label}
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setProposalToDelete(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProposal}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir Proposta
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

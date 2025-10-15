@@ -1673,6 +1673,8 @@ export const getEventBookings = query({
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
+      // Mercado Pago integration fields
+      mpPreferenceId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),
@@ -4252,7 +4254,8 @@ export const getBookingByIdInternal = internalQuery({
     try {
       const booking = await ctx.db.get(args.bookingId as any);
       return booking;
-    } catch {
+    } catch (error) {
+      console.error(`Failed to get booking ${args.bookingId} from table ${args.tableName}`, error);
       return null;
     }
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, use } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../../convex/_generated/dataModel';
@@ -10,12 +10,13 @@ import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     proposalId: string;
-  };
+  }>;
 }
 
-export default function ConfirmacaoPage({ params }: PageProps) {
+export default function ConfirmacaoPage(props: PageProps) {
+  const params = use(props.params);
   const router = useRouter();
   const proposalId = params.proposalId as Id<"packageProposals">;
   
@@ -89,10 +90,10 @@ export default function ConfirmacaoPage({ params }: PageProps) {
                 onClick={handlePrint}
                 variant="default"
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Imprimir / PDF
+                Imprimir
               </Button>
             </div>
           </div>

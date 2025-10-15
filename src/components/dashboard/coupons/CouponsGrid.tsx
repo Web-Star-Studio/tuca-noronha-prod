@@ -84,7 +84,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         title: "Cupom criado",
         description: "O cupom foi criado com sucesso.",
       });
-    } catch {
+    } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível criar o cupom. Tente novamente.",
@@ -115,7 +115,7 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         title: "Cupom atualizado",
         description: "O cupom foi atualizado com sucesso.",
       });
-    } catch {
+    } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o cupom. Tente novamente.",
@@ -132,7 +132,8 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
         title: "Cupom excluído",
         description: "O cupom foi excluído com sucesso.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error deleting coupon:", error);
       toast({
         title: "Erro",
         description: "Não foi possível excluir o cupom. Tente novamente.",
@@ -144,7 +145,8 @@ export default function CouponsGrid({ partnerId, organizationId }: CouponsGridPr
   const handleToggleStatus = async (couponId: string, isActive: boolean) => {
     try {
       await toggleStatus({ couponId: couponId as any, isActive });
-    } catch {
+    } catch (error) {
+      console.error("Error toggling coupon status:", error);
       toast({
         title: "Erro",
         description: "Não foi possível alterar o status do cupom.",

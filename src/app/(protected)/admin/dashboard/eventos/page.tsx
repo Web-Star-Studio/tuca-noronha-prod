@@ -120,7 +120,7 @@ export default function EventsPage() {
       await deleteEvent({ id: eventId })
       toast.success("Evento excluído com sucesso!")
       setConfirmDeleteId(null)
-    } catch {
+    } catch (error) {
       toast.error("Erro ao excluir evento")
       console.error(error)
     }
@@ -147,7 +147,7 @@ export default function EventsPage() {
         price: eventData.price,
         netRate: eventData.netRate,
         category: eventData.category,
-        maxParticipants: eventData.maxParticipants,
+        maxParticipants: BigInt(Math.floor(Number(eventData.maxParticipants))),
         imageUrl: eventData.imageUrl,
         galleryImages: eventData.galleryImages || [],
         highlights: eventData.highlights || [],
@@ -180,7 +180,7 @@ export default function EventsPage() {
       
       setShowCreateModal(false)
       setSelectedEvent(null)
-    } catch {
+    } catch (error) {
       toast.error(selectedEvent?._id ? "Erro ao atualizar evento" : "Erro ao criar evento")
       console.error(error)
     }
@@ -206,7 +206,7 @@ export default function EventsPage() {
       toast.success("Sincronização com Sympla realizada com sucesso!")
       setShowSyncModal(false)
       setSymplaToken("")
-    } catch {
+    } catch (error) {
       toast.error("Erro ao sincronizar com Sympla")
       console.error(error)
     } finally {
@@ -218,7 +218,7 @@ export default function EventsPage() {
     try {
       await toggleEventFeatured({ id: eventId, isFeatured: featured })
       toast.success(featured ? "Evento destacado!" : "Destaque removido!")
-    } catch {
+    } catch (error) {
       toast.error("Erro ao alterar destaque")
       console.error(error)
     }

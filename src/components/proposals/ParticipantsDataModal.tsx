@@ -101,6 +101,15 @@ export function ParticipantsDataModal({
     return true;
   };
 
+  // Verificar se há CPFs duplicados no formulário
+  const hasDuplicateCPFs = () => {
+    const cpfs = participants
+      .map(p => p.cpf.replace(/\D/g, ''))
+      .filter(cpf => cpf.length === 11);
+    
+    return cpfs.length !== new Set(cpfs).size;
+  };
+
   const handleSubmit = () => {
     const newErrors: string[] = [];
     
@@ -133,12 +142,17 @@ export function ParticipantsDataModal({
     // Verificar CPFs duplicados
     cpfMap.forEach((indices) => {
       if (indices.length > 1) {
-        newErrors.push(`CPF duplicado detectado nos participantes ${indices.join(', ')}. Cada participante deve ter um CPF único.`);
+        newErrors.push(`❌ CPF duplicado detectado nos participantes ${indices.join(', ')}. Cada participante deve ter um CPF único.`);
       }
     });
 
     if (newErrors.length > 0) {
       setErrors(newErrors);
+      // Scroll to top to show errors
+      const dialogContent = document.querySelector('[role="dialog"]');
+      if (dialogContent) {
+        dialogContent.scrollTop = 0;
+      }
       return;
     }
 
@@ -220,12 +234,12 @@ export function ParticipantsDataModal({
                     placeholder="123.456.789-00"
                     maxLength={14}
                     required
-                    className={isCPFDuplicated(index, participant.cpf) ? 'border-red-500 focus:ring-red-500' : ''}
+                    className={isCPFDuplicated(index, participant.cpf) ? 'border-red-500 focus:ring-red-500 bg-red-50' : ''}
                   />
                   {isCPFDuplicated(index, participant.cpf) && (
-                    <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <p className="text-xs text-red-600 font-medium flex items-center gap-1 mt-1">
                       <AlertCircle className="h-3 w-3" />
-                      CPF já cadastrado para outro participante
+                      ⚠️ Este CPF já foi informado para outro participante. Cada pessoa deve ter um CPF único.
                     </p>
                   )}
                 </div>
@@ -267,17 +281,32 @@ export function ParticipantsDataModal({
               <strong>Importante:</strong> Certifique-se de que todos os dados estão corretos, 
               especialmente o CPF e a data de nascimento, pois serão utilizados para emissão 
               de passagens e documentos de viagem.
+              <br />
+              <strong className="text-red-600">⚠️ Atenção:</strong> Cada participante deve ter um CPF único. 
+              Não é permitido cadastrar o mesmo CPF para pessoas diferentes.
             </AlertDescription>
           </Alert>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-            Confirmar e Aceitar Proposta
-          </Button>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {hasDuplicateCPFs() && (
+            <p className="text-sm text-red-600 flex items-center gap-1 w-full">
+              <AlertCircle className="h-4 w-4" />
+              Corrija os CPFs duplicados para continuar
+            </p>
+          )}
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={hasDuplicateCPFs()}
+            >
+              Confirmar e Aceitar Proposta
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

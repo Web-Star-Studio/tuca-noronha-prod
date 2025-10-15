@@ -49,7 +49,7 @@ export default function CreatePartnerModal({ isOpen, onClose, onSuccess }: Creat
       setFormData({ name: "", email: "", password: "", phone: "" });
       onSuccess();
       onClose();
-    } catch {
+    } catch (error) {
       console.error("Error creating partner:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao criar partner");
     } finally {

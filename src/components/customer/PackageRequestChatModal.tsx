@@ -124,7 +124,7 @@ export default function PackageRequestChatModal({
       }, 100);
 
       toast.success("Mensagem enviada!");
-    } catch {
+    } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
       toast.error("Erro ao enviar mensagem");
     } finally {

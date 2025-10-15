@@ -61,7 +61,8 @@ export default function CouponUserAssignment({
         title: "Usuários atribuídos",
         description: `${selectedUsers.length} usuário(s) atribuído(s) ao cupom com sucesso.`,
       });
-    } catch {
+    } catch (error) {
+      console.error("Error assigning users to coupon:", error);
       toast({
         title: "Erro",
         description: "Não foi possível atribuir usuários ao cupom.",
@@ -83,7 +84,8 @@ export default function CouponUserAssignment({
         title: "Usuário removido",
         description: "Usuário removido do cupom com sucesso.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error removing user from coupon:", error);
       toast({
         title: "Erro",
         description: "Não foi possível remover o usuário do cupom.",

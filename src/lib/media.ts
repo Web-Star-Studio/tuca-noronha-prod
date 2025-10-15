@@ -23,6 +23,7 @@ export function isVideoUrl(url: string | null | undefined): boolean {
       normalized.endsWith(`.${extension}`),
     );
   } catch {
+    // URL parsing failed, try simple string split
     const normalized = url.split(/[?#]/)[0]?.toLowerCase() ?? "";
     return VIDEO_EXTENSIONS.some((extension) =>
       normalized.endsWith(`.${extension}`),

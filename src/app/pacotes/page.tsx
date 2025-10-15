@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { ParticipantSelector } from "@/components/ui/participant-selector"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@clerk/nextjs"
+import { useAuth, useUser } from "@clerk/nextjs"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/../convex/_generated/api"
 import { toast } from "sonner"
@@ -56,6 +56,7 @@ const PENDING_PACKAGE_FORM_KEY = "packages:pending-request"
 export default function PackagesPage() {
   const router = useRouter()
   const { userId, isLoaded } = useAuth()
+  const { user } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [requestNumber, setRequestNumber] = useState("")
@@ -182,6 +183,23 @@ export default function PackagesPage() {
       console.error("Erro ao carregar solicitação de pacote salva:", error)
     }
   }, [isLoaded])
+
+  // Preencher dados do usuário logado
+  useEffect(() => {
+    if (!user) return
+    
+    setFormData(prev => {
+      // Só preenche se os campos estiverem vazios
+      const updated = {
+        ...prev,
+        name: prev.name || user.fullName || "",
+        email: prev.email || user.primaryEmailAddress?.emailAddress || "",
+        phone: prev.phone || user.primaryPhoneNumber?.phoneNumber || "",
+      }
+      updateCompletionState(updated)
+      return updated
+    })
+  }, [user])
 
   // Verificar se as datas são válidas sempre que mudarem
   useEffect(() => {

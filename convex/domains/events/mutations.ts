@@ -28,6 +28,7 @@ export const create = mutationWithRole(["partner", "master"])({
     netRate: v.optional(v.number()),
     category: v.string(),
     maxParticipants: v.int64(),
+    adminRating: v.optional(v.number()),
     imageUrl: v.string(),
     galleryImages: v.array(v.string()),
     highlights: v.array(v.string()),
@@ -111,6 +112,7 @@ export const update = mutationWithRole(["partner", "master"])({
     netRate: v.optional(v.number()),
     category: v.optional(v.string()),
     maxParticipants: v.optional(v.int64()),
+    adminRating: v.optional(v.number()),
     imageUrl: v.optional(v.string()),
     galleryImages: v.optional(v.array(v.string())),
     highlights: v.optional(v.array(v.string())),
@@ -155,6 +157,7 @@ export const update = mutationWithRole(["partner", "master"])({
       netRate?: number;
       category?: string;
       maxParticipants?: bigint;
+      adminRating?: number;
       imageUrl?: string;
       galleryImages?: string[];
       highlights?: string[];

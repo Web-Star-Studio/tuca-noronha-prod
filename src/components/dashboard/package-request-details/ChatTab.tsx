@@ -58,7 +58,7 @@ export function ChatTab({ requestId, requestDetails, requestMessages }: ChatTabP
   const handleMarkAsRead = async (messageId: Id<"packageRequestMessages">) => {
     try {
       await markMessageAsRead({ messageId });
-    } catch {
+    } catch (error) {
       console.error("Erro ao marcar mensagem como lida:", error);
     }
   };
@@ -81,7 +81,7 @@ export function ChatTab({ requestId, requestDetails, requestMessages }: ChatTabP
 
       setReplyMessage("");
       toast.success("Mensagem enviada!");
-    } catch {
+    } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
       toast.error("Erro ao enviar mensagem");
     } finally {

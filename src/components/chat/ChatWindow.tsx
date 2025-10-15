@@ -87,7 +87,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         content: messageContent,
         messageType: "text",
       });
-    } catch {
+    } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
       toast.error("Erro ao enviar mensagem");
       setMessageInput(messageContent); // Restaurar mensagem em caso de erro
@@ -109,7 +109,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       toast.success("Conversa fechada");
       onClose();
-    } catch {
+    } catch (error) {
       console.error("Erro ao fechar conversa:", error);
       toast.error("Erro ao fechar conversa");
     }
@@ -123,7 +123,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       toast.success("Conversa arquivada");
       onClose();
-    } catch {
+    } catch (error) {
       console.error("Erro ao arquivar conversa:", error);
       toast.error("Erro ao arquivar conversa");
     }

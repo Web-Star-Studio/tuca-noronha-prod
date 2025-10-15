@@ -44,7 +44,7 @@ export default function PreferencesSection() {
       await saveUserPreferences(data);
       setShowChatbot(false);
       toast.success('Preferências salvas com sucesso!');
-    } catch {
+    } catch (error) {
       console.error('Error saving preferences:', error);
       toast.error('Erro ao salvar preferências');
     } finally {
@@ -61,7 +61,7 @@ export default function PreferencesSection() {
         await removeUserPreferences();
         toast.success('Preferências removidas com sucesso');
         setHasPreferences(false);
-      } catch {
+      } catch (error) {
         console.error('Error removing preferences:', error);
         toast.error('Erro ao remover preferências');
       } finally {

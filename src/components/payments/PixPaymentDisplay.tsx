@@ -30,7 +30,8 @@ export function PixPaymentDisplay({
         description: "Cole no seu app de pagamento para pagar."
       });
       setTimeout(() => setCopied(false), 3000);
-    } catch {
+    } catch (error) {
+      console.error("Failed to copy PIX code:", error);
       toast.error("Erro ao copiar código", {
         description: "Tente selecionar e copiar manualmente."
       });

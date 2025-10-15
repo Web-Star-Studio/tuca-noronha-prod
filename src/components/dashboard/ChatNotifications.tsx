@@ -57,7 +57,7 @@ export function ChatNotifications({
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       await markAsRead({ notificationId });
-    } catch {
+    } catch (error) {
       toast.error("Erro ao marcar notificação como lida");
       console.error(error);
     }
@@ -67,7 +67,7 @@ export function ChatNotifications({
     try {
       await deleteNotification({ notificationId });
       toast.success("Notificação removida");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao remover notificação");
       console.error(error);
     }

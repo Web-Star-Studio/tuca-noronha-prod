@@ -323,7 +323,7 @@ export const generateProposalPDF = action({
       }
 
       // Get package request data for customer info
-      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.internalGetPackageRequest, {
+      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.getPackageRequest, {
         id: proposal.packageRequestId,
       });
 
@@ -332,9 +332,9 @@ export const generateProposalPDF = action({
       }
 
       // Get admin/partner info
-      const admin = await ctx.runQuery(internal.domains.users.queries.internalGetUser, {
-        id: proposal.adminId,
-      });
+      const admin = proposal.adminId ? await ctx.runQuery(internal.domains.users.queries.getUserById, {
+        userId: proposal.adminId,
+      }) : null;
 
       // Prepare data for PDF generation
       const pdfData = {
@@ -722,9 +722,11 @@ export const getAttachmentDownloadUrl = query({
       throw new Error("Acesso negado ao anexo");
     }
 
-    // Check if attachment exists in proposal
+    // Check if attachment exists in proposal (both in attachments and contractDocuments)
     const attachment = proposal.attachments?.find(att => att.storageId === args.storageId);
-    if (!attachment) {
+    const contractDoc = proposal.contractDocuments?.find(doc => doc.storageId === args.storageId);
+    
+    if (!attachment && !contractDoc) {
       return null;
     }
 

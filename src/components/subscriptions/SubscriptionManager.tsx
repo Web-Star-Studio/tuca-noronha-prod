@@ -48,7 +48,7 @@ export function SubscriptionManager() {
       } else {
         toast.error(result.error || "Erro ao abrir portal");
       }
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar sessão do portal:", error);
       toast.error("Erro ao abrir portal de gerenciamento");
     } finally {

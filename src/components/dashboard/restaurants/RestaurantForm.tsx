@@ -148,6 +148,7 @@ export function RestaurantForm({
         noiseLevel: "Quiet",
         totalReviews: 0,
       },
+      adminRating: undefined,
       acceptsReservations: true,
       netRate: undefined,
       tags: [],
@@ -676,6 +677,29 @@ export function RestaurantForm({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="adminRating">Classificação do Restaurante</Label>
+            <Select
+              defaultValue={preparedRestaurant?.adminRating?.toString() || "0"}
+              onValueChange={(value) => setValue("adminRating", value === "0" ? undefined : parseFloat(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a classificação (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Nenhuma classificação</SelectItem>
+                <SelectItem value="1">⭐ 1 Estrela</SelectItem>
+                <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
+                <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
+                <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
+                <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              Classificação oficial do restaurante definida pela administração
+            </p>
           </div>
 
           <div className="space-y-2">

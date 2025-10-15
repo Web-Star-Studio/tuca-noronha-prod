@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Car, Settings, ImageIcon, FileText } from "lucide-react";
+import { Loader2, Car, ImageIcon, FileText, Sparkles, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from "@/lib/services/vehicleService";
 import { Id } from "@/../convex/_generated/dataModel";
 import { SmartMedia } from "@/components/ui/smart-media";
 import { parseMediaEntry } from "@/lib/media";
+import { cn } from "@/lib/utils";
 import { getCategoryBasePrice } from "@/lib/constants/vehicleCategories";
 
 type VehicleFormProps = {
@@ -27,6 +28,20 @@ const getCurrentYear = () => {
   const now = new Date();
   return now.getFullYear();
 };
+
+const FEATURE_OPTIONS = [
+  "Ar-condicionado",
+  "Direção hidráulica",
+  "Airbag",
+  "ABS",
+  "Vidros elétricos",
+  "Travas elétricas",
+  "Sensor de estacionamento",
+  "Câmera de ré",
+  "Bluetooth",
+  "Wi-Fi",
+  "GPS",
+];
 
 export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFormProps) {
   // Get vehicle data if in edit mode
@@ -48,6 +63,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     transmission: "",
     estimatedPricePerDay: 0,
     netRate: 0,
+    adminRating: undefined,
     description: "",
     features: [] as string[],
     imageUrl: "",
@@ -59,6 +75,27 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
 
   const mainImageEntry = parseMediaEntry(vehicleData.imageUrl ?? "");
   const hasMainImage = Boolean(mainImageEntry.url && mainImageEntry.url.trim() !== "");
+  const isEditing = Boolean(editMode);
+
+  const statusStyles: Record<string, { label: string; badgeClass: string }> = {
+    available: {
+      label: "Disponível",
+      badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    },
+    rented: {
+      label: "Alugado",
+      badgeClass: "bg-amber-100 text-amber-700 border-amber-200",
+    },
+    maintenance: {
+      label: "Em manutenção",
+      badgeClass: "bg-rose-100 text-rose-700 border-rose-200",
+    },
+  };
+
+  const currentStatus = statusStyles[vehicleData.status] ?? {
+    label: "Status indefinido",
+    badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
+  };
 
   // Load vehicle data when in edit mode
   useEffect(() => {
@@ -76,6 +113,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         transmission: vehicle.transmission,
         estimatedPricePerDay: vehicle.estimatedPricePerDay,
         netRate: vehicle.netRate ?? vehicle.estimatedPricePerDay,
+        adminRating: vehicle.adminRating,
         description: vehicle.description || "",
         features: vehicle.features,
         imageUrl: vehicle.imageUrl || "",
@@ -133,11 +171,19 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     setVehicleData((prev) => ({ ...prev, [name]: Number(value) }));
   };
 
+  const handleAdminRatingChange = (value: string) => {
+    setVehicleData((prev) => ({
+      ...prev,
+      adminRating: value === "0" ? undefined : Number(value),
+    }));
+  };
+
   const handleFeatureToggle = (feature: string) => {
     setVehicleData((prev) => {
       const features = prev.features.includes(feature)
-        ? prev.features.filter(f => f !== feature)
+        ? prev.features.filter((item) => item !== feature)
         : [...prev.features, feature];
+
       return { ...prev, features };
     });
   };
@@ -184,7 +230,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       }
       
       onSubmit();
-    } catch {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao salvar veículo";
       console.error(error);
       toast.error(errorMessage);
@@ -192,21 +238,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       setIsSubmitting(false);
     }
   };
-
-  // Common vehicle features for the checkboxes
-  const commonFeatures = [
-    "Ar-condicionado",
-    "Direção hidráulica",
-    "Airbag",
-    "ABS",
-    "Vidros elétricos",
-    "Travas elétricas",
-    "Sensor de estacionamento",
-    "Câmera de ré",
-    "Bluetooth",
-    "Wi-Fi",
-    "GPS"
-  ];
 
   // Show loading state while fetching vehicle data in edit mode
   if (editMode && isLoadingVehicle) {
@@ -220,31 +251,68 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid gap-4 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4 text-sm text-blue-900 shadow-sm md:flex md:items-start md:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow-inner">
+            <Sparkles className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-semibold text-blue-900">
+              {isEditing ? "Revise as informações antes de salvar" : "Complete os campos para adicionar o veículo"}
+            </p>
+            <p className="mt-1 text-xs text-blue-700/80">
+              Campos marcados com * são obrigatórios. Adicione dados precisos para acelerar aprovações e reservas.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          <Badge
+            variant="outline"
+            className={`uppercase tracking-wide ${currentStatus.badgeClass}`}
+          >
+            {currentStatus.label}
+          </Badge>
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
+            <Gauge className="h-4 w-4" />
+            {vehicleData.category ? vehicleData.category.replace(/-/g, " ") : "Sem categoria"}
+          </div>
+          {isEditing && vehicle && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
+              Placa
+              <span className="rounded bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">
+                {vehicle.licensePlate.toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Informações Básicas */}
-        <Card className="border-0 shadow-sm">
+        <Card className="rounded-2xl border border-slate-200/70 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Car className="h-5 w-5" />
               Informações Básicas
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">Nome do Veículo*</Label>
-              <Input
-                id="name"
-                name="name"
-                value={vehicleData.name}
-                onChange={handleChange}
-                placeholder="Ex: Toyota Corolla XEi"
-                className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                required
-              />
-            </div>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+              <div className="md:col-span-2 xl:col-span-12">
+                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Nome do Veículo*</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={vehicleData.name}
+                  onChange={handleChange}
+                  placeholder="Ex: Toyota Corolla XEi"
+                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
+                  required
+                />
+              </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
+              <div className="md:col-span-1 xl:col-span-4">
                 <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Marca*</Label>
                 <Input
                   id="brand"
@@ -256,7 +324,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   required
                 />
               </div>
-              <div>
+              <div className="md:col-span-1 xl:col-span-4">
                 <Label htmlFor="model" className="text-sm font-medium text-gray-700">Modelo*</Label>
                 <Input
                   id="model"
@@ -268,10 +336,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   required
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
+              <div className="md:col-span-2 xl:col-span-4">
                 <Label htmlFor="category" className="text-sm font-medium text-gray-700">Categoria*</Label>
                 <Select 
                   value={vehicleData.category} 
@@ -294,7 +359,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+
+              <div className="md:col-span-1 xl:col-span-3">
                 <Label htmlFor="year" className="text-sm font-medium text-gray-700">Ano*</Label>
                 <Input
                   id="year"
@@ -308,10 +374,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   required
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
+              <div className="md:col-span-1 xl:col-span-3">
                 <Label htmlFor="licensePlate" className="text-sm font-medium text-gray-700">Placa*</Label>
                 <Input
                   id="licensePlate"
@@ -323,7 +386,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   required
                 />
               </div>
-              <div>
+              <div className="md:col-span-1 xl:col-span-3">
                 <Label htmlFor="color" className="text-sm font-medium text-gray-700">Cor*</Label>
                 <Input
                   id="color"
@@ -335,10 +398,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   required
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div>
+              <div className="md:col-span-1 xl:col-span-3">
                 <Label htmlFor="seats" className="text-sm font-medium text-gray-700">Lugares*</Label>
                 <Input
                   id="seats"
@@ -352,7 +412,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   required
                 />
               </div>
-              <div>
+
+              <div className="md:col-span-1 xl:col-span-4">
                 <Label htmlFor="estimatedPricePerDay" className="text-sm font-medium text-gray-700">
                   Valor Base Estimado (por dia) (R$)*
                   <span className="block text-xs font-normal text-gray-500 mt-1">
@@ -366,12 +427,13 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   value={vehicleData.estimatedPricePerDay}
                   onChange={handleNumberChange}
                   min={0}
-                  step={10}
+                  step={0.01}
+                  placeholder="Ex: 150.50"
                   className="bg-muted/30 border-0 focus:bg-white transition-colors"
                   required
                 />
               </div>
-              <div>
+              <div className="md:col-span-1 xl:col-span-4">
                 <Label htmlFor="netRate" className="text-sm font-medium text-gray-700">Tarifa net (R$)*</Label>
                 <Input
                   id="netRate"
@@ -380,7 +442,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   value={vehicleData.netRate ?? 0}
                   onChange={handleNumberChange}
                   min={0}
-                  step={10}
+                  step={0.01}
+                  placeholder="Ex: 135.75"
                   className="bg-muted/30 border-0 focus:bg-white transition-colors"
                   required
                 />
@@ -388,24 +451,27 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   Valor líquido combinado para repasse ao fornecedor.
                 </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Especificações Técnicas */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Settings className="h-5 w-5" />
-              Especificações Técnicas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="fuelType" className="text-sm font-medium text-gray-700">Combustível*</Label>
+              <div className="md:col-span-1 xl:col-span-4">
+                <Label htmlFor="status" className="text-sm font-medium text-gray-700">Status*</Label>
                 <Select 
-                  value={vehicleData.fuelType} 
+                  value={vehicleData.status} 
+                  onValueChange={(value) => handleSelectChange("status", value)}
+                >
+                  <SelectTrigger id="status" className="bg-muted/30 border-0">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Disponível</SelectItem>
+                    <SelectItem value="rented">Alugado</SelectItem>
+                    <SelectItem value="maintenance">Manutenção</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-1 xl:col-span-4">
+                <Label htmlFor="fuelType" className="text-sm font-medium text-gray-700">Combustível*</Label>
+                <Select
+                  value={vehicleData.fuelType}
                   onValueChange={(value) => handleSelectChange("fuelType", value)}
                 >
                   <SelectTrigger id="fuelType" className="bg-muted/30 border-0">
@@ -413,18 +479,18 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Gasolina">Gasolina</SelectItem>
-                    <SelectItem value="Etanol">Etanol</SelectItem>
-                    <SelectItem value="Flex">Flex</SelectItem>
                     <SelectItem value="Diesel">Diesel</SelectItem>
+                    <SelectItem value="Álcool">Álcool</SelectItem>
+                    <SelectItem value="Flex">Flex</SelectItem>
                     <SelectItem value="Elétrico">Elétrico</SelectItem>
                     <SelectItem value="Híbrido">Híbrido</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="md:col-span-1 xl:col-span-4">
                 <Label htmlFor="transmission" className="text-sm font-medium text-gray-700">Transmissão*</Label>
-                <Select 
-                  value={vehicleData.transmission} 
+                <Select
+                  value={vehicleData.transmission}
                   onValueChange={(value) => handleSelectChange("transmission", value)}
                 >
                   <SelectTrigger id="transmission" className="bg-muted/30 border-0">
@@ -438,44 +504,54 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+              <div className="md:col-span-2 xl:col-span-4">
+                <Label htmlFor="adminRating" className="text-sm font-medium text-gray-700">Classificação interna</Label>
+                <Select
+                  value={vehicleData.adminRating !== undefined ? vehicleData.adminRating.toString() : "0"}
+                  onValueChange={handleAdminRatingChange}
+                >
+                  <SelectTrigger id="adminRating" className="bg-muted/30 border-0">
+                    <SelectValue placeholder="Selecione a classificação (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Nenhuma classificação</SelectItem>
+                    <SelectItem value="1">⭐ 1 Estrela</SelectItem>
+                    <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
+                    <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
+                    <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
+                    <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Utilize para priorizar veículos na vitrine e apoiar a curadoria interna.
+                </p>
+              </div>
 
-            <div>
-              <Label htmlFor="status" className="text-sm font-medium text-gray-700">Status*</Label>
-              <Select 
-                value={vehicleData.status} 
-                onValueChange={(value) => handleSelectChange("status", value)}
-              >
-                <SelectTrigger id="status" className="bg-muted/30 border-0">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="available">Disponível</SelectItem>
-                  <SelectItem value="rented">Alugado</SelectItem>
-                  <SelectItem value="maintenance">Manutenção</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">Características e Acessórios</Label>
-              <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto bg-muted/20 rounded-lg p-4">
-                {commonFeatures.map((feature) => (
-                  <div key={feature} className="flex flex-wrap items-center gap-3">
-                    <Checkbox 
-                      id={`feature-${feature}`}
-                      checked={vehicleData.features.includes(feature)}
-                      onCheckedChange={() => handleFeatureToggle(feature)}
-                      className="border-gray-300"
-                    />
-                    <label
-                      htmlFor={`feature-${feature}`}
-                      className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      {feature}
-                    </label>
-                  </div>
-                ))}
+              <div className="md:col-span-2 xl:col-span-12">
+                <Label className="text-sm font-medium text-gray-700">Características e acessórios</Label>
+                <p className="mt-1 text-xs text-slate-500">
+                  Destaque diferenciais que ajudam o viajante a comparar opções semelhantes.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {FEATURE_OPTIONS.map((feature) => {
+                    const isActive = vehicleData.features.includes(feature);
+                    return (
+                      <button
+                        key={feature}
+                        type="button"
+                        onClick={() => handleFeatureToggle(feature)}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150",
+                          isActive
+                            ? "border-blue-500 bg-blue-600 text-white shadow-sm shadow-blue-500/30"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-600"
+                        )}
+                      >
+                        {feature}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -484,7 +560,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
 
       {/* Imagem e Descrição */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-0 shadow-sm">
+        <Card className="rounded-2xl border border-slate-200/70 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
               <ImageIcon className="h-5 w-5" />
@@ -531,7 +607,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm">
+        <Card className="rounded-2xl border border-slate-200/70 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
               <FileText className="h-5 w-5" />
@@ -556,7 +632,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         </Card>
       </div>
 
-      <DialogFooter className="gap-3">
+      <DialogFooter className="gap-3 rounded-2xl border border-slate-200/70 bg-white/95 px-4 py-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:justify-end">
         <Button variant="outline" type="button" onClick={onCancel} disabled={isSubmitting}>
           Cancelar
         </Button>

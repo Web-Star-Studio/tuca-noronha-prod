@@ -215,6 +215,7 @@ const createEmptyActivity = (): Activity => ({
   minParticipants: 1,
   difficulty: "Fácil",
   rating: 5,
+  adminRating: undefined,
   imageUrl: "",
   galleryImages: [],
   highlights: [],
@@ -597,6 +598,29 @@ function ActivityForm({ activity, onSave, onCancel }: {
                   <SelectItem value="Extremo">Extremo</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="adminRating" className="text-sm font-medium">Classificação da Atividade</Label>
+              <Select 
+                value={formData.adminRating?.toString() || "0"} 
+                onValueChange={(value) => handleSelectChange("adminRating", value === "0" ? undefined : parseFloat(value))}
+              >
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                  <SelectValue placeholder="Selecione a classificação (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Nenhuma classificação</SelectItem>
+                  <SelectItem value="1">⭐ 1 Estrela</SelectItem>
+                  <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Classificação oficial da atividade definida pela administração
+              </p>
             </div>
 
             <div>

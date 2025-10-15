@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Share2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -183,46 +183,12 @@ export function ImageGallery({ images, title, className }: ImageGalleryProps) {
                 >
                   {isZoomed ? <ZoomOut className="h-4 w-4" /> : <ZoomIn className="h-4 w-4" />}
                 </Button>
-                
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20"
-                  onClick={() => {
-                    // Implementar download da imagem
-                    const link = document.createElement('a');
-                    link.href = selectedImage.src;
-                    link.download = selectedImage.alt;
-                    link.click();
-                  }}
-                  aria-label="Baixar imagem"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20"
-                  onClick={() => {
-                    // Implementar compartilhamento
-                    if (navigator.share) {
-                      navigator.share({
-                        title: selectedImage.alt,
-                        url: selectedImage.src,
-                      });
-                    }
-                  }}
-                  aria-label="Compartilhar imagem"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
 
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={closeImage}
-                  className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                  className="bg-white/90 hover:bg-white text-gray-900 shadow-lg"
                   aria-label="Fechar galeria"
                 >
                   <X className="h-4 w-4" />

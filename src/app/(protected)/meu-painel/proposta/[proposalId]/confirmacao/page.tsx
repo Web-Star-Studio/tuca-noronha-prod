@@ -1,21 +1,22 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, use } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 import { Id } from '@/../convex/_generated/dataModel';
 import { ConfirmacaoReserva } from '@/components/proposals/ConfirmacaoReserva';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, Download } from 'lucide-react';
+import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     proposalId: string;
-  };
+  }>;
 }
 
-export default function ConfirmacaoClientePage({ params }: PageProps) {
+export default function ConfirmacaoClientePage(props: PageProps) {
+  const params = use(props.params);
   const router = useRouter();
   const proposalId = params.proposalId as Id<"packageProposals">;
   
@@ -66,10 +67,6 @@ export default function ConfirmacaoClientePage({ params }: PageProps) {
     window.print();
   };
 
-  const handleDownloadPDF = () => {
-    window.print();
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Action Bar - Hidden when printing */}
@@ -90,18 +87,10 @@ export default function ConfirmacaoClientePage({ params }: PageProps) {
                 {customerInfo.name} • Reserva {reservationNumber}
               </p>
               <Button
-                onClick={handleDownloadPDF}
-                variant="outline"
-                size="sm"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Baixar PDF
-              </Button>
-              <Button
                 onClick={handlePrint}
                 variant="default"
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimir

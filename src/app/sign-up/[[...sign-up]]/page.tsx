@@ -19,9 +19,15 @@ import {playfairDisplay} from '@/lib/fonts'
 import Link from "next/link";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { translateClerkError } from "@/lib/clerk-error-translator";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignUpPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-[url('/images/bg-pattern.png')] bg-cover bg-center bg-no-repeat bg-blend-overlay bg-white/80 backdrop-blur-sm relative">
@@ -134,7 +140,9 @@ export default function SignUpPage() {
                                 placeholder="seu@email.com"
                               />
                             </Clerk.Input>
-                            <Clerk.FieldError className="block text-sm text-red-600" />
+                            <Clerk.FieldError className="block text-sm text-red-600">
+                              {({ message, code }) => translateClerkError({ message, code })}
+                            </Clerk.FieldError>
                           </Clerk.Field>
                         </motion.div>
                         <motion.div
@@ -146,14 +154,83 @@ export default function SignUpPage() {
                             <Clerk.Label asChild>
                               <Label className="text-gray-700">Senha</Label>
                             </Clerk.Label>
-                            <Clerk.Input type="password" required asChild>
-                              <Input
-                                className="h-11 border-gray-300 focus:border-blue-500 bg-white/70 focus:bg-white transition-all duration-300"
-                                placeholder="Mínimo 8 caracteres"
-                              />
-                            </Clerk.Input>
-                            <Clerk.FieldError className="block text-sm text-red-600" />
+                            <div className="relative">
+                              <Clerk.Input 
+                                type={showPassword ? "text" : "password"} 
+                                required 
+                                asChild
+                              >
+                                <Input
+                                  className="h-11 pr-10 border-gray-300 focus:border-blue-500 bg-white/70 focus:bg-white transition-all duration-300"
+                                  placeholder="Mínimo 8 caracteres"
+                                  onChange={(e) => {
+                                    if (confirmPassword && e.target.value !== confirmPassword) {
+                                      setPasswordError("As senhas não coincidem");
+                                    } else {
+                                      setPasswordError("");
+                                    }
+                                  }}
+                                />
+                              </Clerk.Input>
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                                tabIndex={-1}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-5 w-5" />
+                                ) : (
+                                  <Eye className="h-5 w-5" />
+                                )}
+                              </button>
+                            </div>
+                            <Clerk.FieldError className="block text-sm text-red-600">
+                              {({ message, code }) => translateClerkError({ message, code })}
+                            </Clerk.FieldError>
                           </Clerk.Field>
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.75, duration: 0.4 }}
+                        >
+                          <div className="space-y-3">
+                            <Label className="text-gray-700">Confirmar Senha</Label>
+                            <div className="relative">
+                              <Input
+                                type={showConfirmPassword ? "text" : "password"}
+                                required
+                                value={confirmPassword}
+                                onChange={(e) => {
+                                  setConfirmPassword(e.target.value);
+                                  const passwordInput = document.querySelector('input[name="password"]') as HTMLInputElement;
+                                  if (passwordInput && passwordInput.value !== e.target.value) {
+                                    setPasswordError("As senhas não coincidem");
+                                  } else {
+                                    setPasswordError("");
+                                  }
+                                }}
+                                className="h-11 pr-10 border-gray-300 focus:border-blue-500 bg-white/70 focus:bg-white transition-all duration-300"
+                                placeholder="Digite a senha novamente"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                                tabIndex={-1}
+                              >
+                                {showConfirmPassword ? (
+                                  <EyeOff className="h-5 w-5" />
+                                ) : (
+                                  <Eye className="h-5 w-5" />
+                                )}
+                              </button>
+                            </div>
+                            {passwordError && (
+                              <p className="text-sm text-red-600">{passwordError}</p>
+                            )}
+                          </div>
                         </motion.div>
                       </CardContent>
                       <CardFooter className="pb-6 pt-2">
@@ -198,9 +275,19 @@ export default function SignUpPage() {
                             </label>
                           </div>
 
-                          <SignUp.Action submit asChild>
+                          <SignUp.Action 
+                            submit 
+                            asChild
+                            onClick={(e) => {
+                              const passwordInput = document.querySelector('input[name="password"]') as HTMLInputElement;
+                              if (passwordInput && passwordInput.value !== confirmPassword) {
+                                e.preventDefault();
+                                setPasswordError("As senhas não coincidem");
+                              }
+                            }}
+                          >
                             <Button
-                              disabled={isGlobalLoading || !termsAccepted}
+                              disabled={isGlobalLoading || !termsAccepted || !!passwordError || !confirmPassword}
                               className="h-11 bg-blue-700 hover:bg-blue-800 text-white font-medium transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Clerk.Loading>

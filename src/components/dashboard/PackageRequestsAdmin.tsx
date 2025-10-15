@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -101,7 +101,7 @@ export default function PackageRequestsAdmin() {
       });
       setIsUpdateDialogOpen(false);
       setUpdateForm({ status: "", adminNotes: "", proposalDetails: "" });
-    } catch {
+    } catch (error) {
       console.error("Erro ao atualizar solicitação:", error);
       alert("Erro ao atualizar solicitação");
     }
@@ -122,10 +122,16 @@ export default function PackageRequestsAdmin() {
   };
 
   // Reset pagination quando filtro mudar (MOVED BEFORE EARLY RETURN)
-  React.useEffect(() => {
+  useEffect(() => {
     setPaginationCursor(null);
     setCursorHistory([null]);
   }, [selectedStatus]);
+
+  // Reset pagination on mount to clear any stale cursors
+  useEffect(() => {
+    setPaginationCursor(null);
+    setCursorHistory([null]);
+  }, []);
 
   if (!requestsStats || !requestsResult) {
     return (

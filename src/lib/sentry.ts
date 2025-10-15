@@ -102,7 +102,7 @@ export async function withSentry<T>(
     }
     
     return result;
-  } catch {
+  } catch (error) {
     captureException(error, context?.data);
     throw error;
   } finally {

@@ -38,8 +38,12 @@ const statusConfig = {
 };
 
 // Função para verificar se as informações do cliente devem ser exibidas
-function shouldShowCustomerInfo(status: BookingStatus): boolean {
-  // Apenas exibe informações do cliente após confirmação
+function shouldShowCustomerInfo(status: BookingStatus, userRole?: string): boolean {
+  // Usuários master podem ver sempre
+  if (userRole === "master") {
+    return true;
+  }
+  // Outros usuários: apenas após confirmação
   return status === "confirmed" || status === "completed" || status === "in_progress";
 }
 
@@ -50,7 +54,8 @@ function CustomerInfoSection({
   specialRequests, 
   partnerNotes,
   pickupLocation,
-  notes
+  notes,
+  userRole
 }: {
   customerInfo: { name: string; email: string; phone: string } | { name: string; email: string; phone: string };
   status: BookingStatus;
@@ -58,8 +63,9 @@ function CustomerInfoSection({
   partnerNotes?: string;
   pickupLocation?: string;
   notes?: string;
+  userRole?: string;
 }) {
-  const showInfo = shouldShowCustomerInfo(status);
+  const showInfo = shouldShowCustomerInfo(status, userRole);
   
   if (!showInfo) {
     return (
@@ -344,9 +350,10 @@ function CancelBookingDialog({ bookingId, bookingType, currentStatus, onSuccess 
 interface ActivityBookingCardProps {
   booking: any;
   onRefresh: () => void;
+  userRole?: string;
 }
 
-function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
+function ActivityBookingCard({ booking, onRefresh, userRole }: ActivityBookingCardProps) {
   const statusInfo = statusConfig[booking.status as BookingStatus];
   const StatusIcon = statusInfo.icon;
 
@@ -380,6 +387,7 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
             <div className="flex items-center space-x-2">
               <BookingDetailsModal
                 data={booking}
+                userRole={userRole}
                 trigger={
                   <Button size="sm" variant="outline" title="Ver detalhes">
                     <Eye className="h-4 w-4" />
@@ -438,6 +446,7 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
           status={booking.status}
           specialRequests={booking.specialRequests}
           partnerNotes={booking.partnerNotes}
+          userRole={userRole}
         />
       </CardContent>
     </Card>
@@ -447,9 +456,10 @@ function ActivityBookingCard({ booking, onRefresh }: ActivityBookingCardProps) {
 interface RestaurantReservationCardProps {
   reservation: any;
   onRefresh: () => void;
+  userRole?: string;
 }
 
-function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReservationCardProps) {
+function RestaurantReservationCard({ reservation, onRefresh, userRole }: RestaurantReservationCardProps) {
   const statusInfo = statusConfig[reservation.status as BookingStatus];
   const StatusIcon = statusInfo.icon;
 
@@ -483,6 +493,7 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
             <div className="flex items-center space-x-2">
               <BookingDetailsModal
                 data={reservation}
+                userRole={userRole}
                 trigger={
                   <Button size="sm" variant="outline" title="Ver detalhes">
                     <Eye className="h-4 w-4" />
@@ -536,6 +547,7 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
           status={reservation.status}
           specialRequests={reservation.specialRequests}
           partnerNotes={reservation.partnerNotes}
+          userRole={userRole}
         />
       </CardContent>
     </Card>
@@ -545,9 +557,10 @@ function RestaurantReservationCard({ reservation, onRefresh }: RestaurantReserva
 interface VehicleBookingCardProps {
   booking: any;
   onRefresh: () => void;
+  userRole?: string;
 }
 
-function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
+function VehicleBookingCard({ booking, onRefresh, userRole }: VehicleBookingCardProps) {
   const statusInfo = statusConfig[booking.status as BookingStatus];
   const StatusIcon = statusInfo.icon;
 
@@ -587,6 +600,7 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
             <div className="flex items-center space-x-2">
               <BookingDetailsModal
                 data={booking}
+                userRole={userRole}
                 trigger={
                   <Button size="sm" variant="outline" title="Ver detalhes">
                     <Eye className="h-4 w-4" />
@@ -638,6 +652,7 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
           specialRequests={booking.notes}
           partnerNotes={booking.partnerNotes}
           pickupLocation={booking.pickupLocation}
+          userRole={userRole}
         />
       </CardContent>
     </Card>
@@ -647,9 +662,10 @@ function VehicleBookingCard({ booking, onRefresh }: VehicleBookingCardProps) {
 interface BookingDetailsModalProps {
   data: any;
   trigger?: React.ReactNode;
+  userRole?: string;
 }
 
-export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps) {
+export function BookingDetailsModal({ data, trigger, userRole }: BookingDetailsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Função para formatar datas
@@ -780,7 +796,7 @@ export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps)
                 <Users className="h-4 w-4 mr-2 text-gray-500" />
                 Informações do Cliente
               </h4>
-              {shouldShowCustomerInfo(data.status) ? (
+              {shouldShowCustomerInfo(data.status, userRole) ? (
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center">
                     <span className="text-gray-600 w-20">Nome:</span>
@@ -918,9 +934,10 @@ export function BookingDetailsModal({ data, trigger }: BookingDetailsModalProps)
 interface EventBookingCardProps {
   booking: any;
   onRefresh: () => void;
+  userRole?: string;
 }
 
-function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
+function EventBookingCard({ booking, onRefresh, userRole }: EventBookingCardProps) {
   const statusInfo = statusConfig[booking.status as BookingStatus];
   const StatusIcon = statusInfo.icon;
 
@@ -954,6 +971,7 @@ function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
             <div className="flex items-center space-x-2">
               <BookingDetailsModal
                 data={booking}
+                userRole={userRole}
                 trigger={
                   <Button size="sm" variant="outline" title="Ver detalhes">
                     <Eye className="h-4 w-4" />
@@ -1010,6 +1028,7 @@ function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
           status={booking.status}
           specialRequests={booking.specialRequests}
           partnerNotes={booking.partnerNotes}
+          userRole={userRole}
         />
       </CardContent>
     </Card>
@@ -1019,6 +1038,9 @@ function EventBookingCard({ booking, onRefresh }: EventBookingCardProps) {
 export default function BookingManagement() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   // refreshKey removido (não utilizado)
+
+  // Buscar informações do usuário atual para verificar role
+  const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
 
   const partnerBookings = useQuery(api.domains.bookings.queries.getPartnerBookings, {
     paginationOpts: { numItems: 50, cursor: null },
@@ -1135,6 +1157,7 @@ export default function BookingManagement() {
                   key={booking._id}
                   booking={booking}
                   onRefresh={handleRefresh}
+                  userRole={currentUser?.role}
                 />
               ))}
             </div>
@@ -1161,6 +1184,7 @@ export default function BookingManagement() {
                   key={reservation._id}
                   reservation={reservation}
                   onRefresh={handleRefresh}
+                  userRole={currentUser?.role}
                 />
               ))}
             </div>
@@ -1187,6 +1211,7 @@ export default function BookingManagement() {
                   key={booking._id}
                   booking={booking}
                   onRefresh={handleRefresh}
+                  userRole={currentUser?.role}
                 />
               ))}
             </div>
@@ -1213,6 +1238,7 @@ export default function BookingManagement() {
                   key={booking._id}
                   booking={booking}
                   onRefresh={handleRefresh}
+                  userRole={currentUser?.role}
                 />
               ))}
             </div>

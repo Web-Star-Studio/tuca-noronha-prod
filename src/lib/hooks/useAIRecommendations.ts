@@ -313,8 +313,9 @@ export const useAIRecommendations = () => {
               confidenceScore: aiResult.confidenceScore,
             };
             
-          } catch {
+          } catch (aiError) {
             // OpenAI indisponível, usando algoritmo tradicional
+            console.warn("AI recommendations failed, falling back to traditional algorithm:", aiError);
             
             const totalTime = Date.now() - startTime;
             const avgScore = Math.round(

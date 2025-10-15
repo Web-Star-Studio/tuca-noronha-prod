@@ -6,6 +6,7 @@ import { Package, FileText, Calendar, DollarSign, Info, Download, Plane, Users }
 import { Button } from "@/components/ui/button";
 import { useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
+import { renderMarkdownText } from "@/lib/renderMarkdown";
 
 export function ProposalDetailsView({ proposal }: { proposal: any }) {
   // Query attachments for this proposal
@@ -78,7 +79,9 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{proposal.description}</p>
+            <div className="text-sm text-gray-600">
+              {renderMarkdownText(proposal.description)}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -91,7 +94,9 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{proposal.paymentTerms}</p>
+            <div className="text-sm text-gray-600">
+              {renderMarkdownText(proposal.paymentTerms)}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -101,7 +106,9 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{proposal.cancellationPolicy}</p>
+            <div className="text-sm text-gray-600">
+              {renderMarkdownText(proposal.cancellationPolicy)}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -211,13 +218,17 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
             {proposal.flightDetails && (
               <div className="bg-white rounded-lg p-4 border border-blue-200">
                 <h4 className="font-semibold text-blue-900 mb-2">Detalhes da Confirmação</h4>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{proposal.flightDetails}</p>
+                <div className="text-sm text-gray-700">
+                  {renderMarkdownText(proposal.flightDetails)}
+                </div>
               </div>
             )}
             {proposal.flightBookingNotes && (
               <div className="bg-white rounded-lg p-4 border border-blue-200">
                 <h4 className="font-semibold text-blue-900 mb-2">Observações</h4>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{proposal.flightBookingNotes}</p>
+                <div className="text-sm text-gray-700">
+                  {renderMarkdownText(proposal.flightBookingNotes)}
+                </div>
               </div>
             )}
             {proposal.flightBookingCompletedAt && (
@@ -262,10 +273,7 @@ export function ProposalDetailsView({ proposal }: { proposal: any }) {
                     size="sm"
                     variant="outline"
                     className="border-purple-300 text-purple-700 hover:bg-purple-100"
-                    onClick={() => {
-                      // TODO: Implement document download
-                      console.log("Download document:", doc.fileName);
-                    }}
+                    onClick={() => handleDownload(doc.storageId, doc.fileName)}
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Baixar

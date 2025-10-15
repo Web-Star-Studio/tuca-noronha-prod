@@ -87,7 +87,7 @@ export function MediaEditDialog({ media, open, onOpenChange, onSuccess }: MediaE
       if (onSuccess) {
         onSuccess()
       }
-    } catch {
+    } catch (error) {
       console.error("Erro ao atualizar mídia:", error)
       toast.error("Erro ao atualizar mídia")
     } finally {

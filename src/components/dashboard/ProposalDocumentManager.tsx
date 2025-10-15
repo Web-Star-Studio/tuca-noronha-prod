@@ -129,7 +129,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
         setUploads(prev => prev.filter((_, i) => i !== index));
       }, 2000);
 
-    } catch {
+    } catch (error) {
       console.error("Error uploading file:", error);
       setUploads(prev => prev.map((upload, i) => 
         i === index ? { ...upload, error: "Erro no upload" } : upload
@@ -145,7 +145,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
         storageId,
       });
       toast.success(`Arquivo "${fileName}" removido com sucesso!`);
-    } catch {
+    } catch (error) {
       console.error("Error removing attachment:", error);
       toast.error(`Erro ao remover arquivo "${fileName}"`);
     }
@@ -173,7 +173,7 @@ export function ProposalDocumentManager({ proposalId, canEdit = true }: Proposal
       } else {
         toast.error("Erro ao obter link de download");
       }
-    } catch {
+    } catch (error) {
       console.error("Error downloading file:", error);
       toast.error("Erro ao baixar arquivo");
     }

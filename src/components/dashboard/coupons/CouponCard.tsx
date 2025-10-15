@@ -142,7 +142,8 @@ export default function CouponCard({
         title: "Código copiado!",
         description: "O código do cupom foi copiado para a área de transferência.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Failed to copy code to clipboard:", error);
       toast({
         title: "Erro ao copiar",
         description: "Não foi possível copiar o código do cupom.",
@@ -161,7 +162,8 @@ export default function CouponCard({
         title: coupon.isActive ? "Cupom desativado" : "Cupom ativado",
         description: `O cupom foi ${coupon.isActive ? "desativado" : "ativado"} com sucesso.`,
       });
-    } catch {
+    } catch (error) {
+      console.error("Error toggling coupon status:", error);
       toast({
         title: "Erro",
         description: "Não foi possível alterar o status do cupom.",
@@ -186,7 +188,8 @@ export default function CouponCard({
         title: "Cupom excluído",
         description: "O cupom foi excluído com sucesso.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error deleting coupon:", error);
       toast({
         title: "Erro",
         description: "Não foi possível excluir o cupom.",

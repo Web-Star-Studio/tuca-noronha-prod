@@ -16,8 +16,13 @@ import { Icons } from "@/components/icons";
 import { motion } from "framer-motion";
 import {playfairDisplay} from '@/lib/fonts'
 import Link from "next/link";
+import { translateClerkError } from "@/lib/clerk-error-translator";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 export default function SignInPage() {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-[url('/images/bg-pattern.png')] bg-cover bg-center bg-no-repeat bg-blend-overlay bg-white/80 backdrop-blur-sm relative">
       <motion.div 
@@ -126,7 +131,9 @@ export default function SignInPage() {
                                 placeholder="seu@email.com"
                               />
                             </Clerk.Input>
-                            <Clerk.FieldError className="block text-sm text-red-600" />
+                            <Clerk.FieldError className="block text-sm text-red-600">
+                              {({ message, code }) => translateClerkError({ message, code })}
+                            </Clerk.FieldError>
                           </Clerk.Field>
                         </motion.div>
                       </CardContent>
@@ -154,7 +161,7 @@ export default function SignInPage() {
                             </Button>
                           </SignIn.Action>
 
-                          <div className="text-center">
+                          <div className="text-center space-y-2">
                             <Button
                               variant="link"
                               size="sm"
@@ -165,6 +172,17 @@ export default function SignInPage() {
                                 Não tem uma conta? Cadastre-se
                               </Clerk.Link>
                             </Button>
+                            <div>
+                              <Link href="/recuperar-senha">
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="text-gray-600 hover:text-gray-800 transition-colors duration-300"
+                                >
+                                  Esqueceu sua senha?
+                                </Button>
+                              </Link>
+                            </div>
                           </div>
                         </motion.div>
                       </CardFooter>
@@ -291,13 +309,29 @@ export default function SignInPage() {
                             <Clerk.Label asChild>
                               <Label className="text-gray-700">Senha</Label>
                             </Clerk.Label>
-                            <Clerk.Input type="password" asChild>
-                              <Input
-                                className="h-11 border-gray-300 focus:border-blue-500 bg-white/70 focus:bg-white transition-all duration-300"
-                                placeholder="••••••••"
-                              />
-                            </Clerk.Input>
-                            <Clerk.FieldError className="block text-sm text-red-600" />
+                            <div className="relative">
+                              <Clerk.Input type={showPassword ? "text" : "password"} asChild>
+                                <Input
+                                  className="h-11 pr-10 border-gray-300 focus:border-blue-500 bg-white/70 focus:bg-white transition-all duration-300"
+                                  placeholder="••••••••"
+                                />
+                              </Clerk.Input>
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                                tabIndex={-1}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-5 w-5" />
+                                ) : (
+                                  <Eye className="h-5 w-5" />
+                                )}
+                              </button>
+                            </div>
+                            <Clerk.FieldError className="block text-sm text-red-600">
+                              {({ message, code }) => translateClerkError({ message, code })}
+                            </Clerk.FieldError>
                           </Clerk.Field>
                         </CardContent>
                         <CardFooter className="pb-6 pt-2">
@@ -318,16 +352,28 @@ export default function SignInPage() {
                                 </Clerk.Loading>
                               </Button>
                             </SignIn.Action>
-                            <SignIn.Action navigate="choose-strategy" asChild>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="link"
-                                className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
-                              >
-                                Usar outro método
-                              </Button>
-                            </SignIn.Action>
+                            <div className="flex justify-between items-center">
+                              <SignIn.Action navigate="choose-strategy" asChild>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="link"
+                                  className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
+                                >
+                                  Usar outro método
+                                </Button>
+                              </SignIn.Action>
+                              <Link href="/recuperar-senha">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="link"
+                                  className="text-gray-600 hover:text-gray-800 transition-colors duration-300"
+                                >
+                                  Esqueceu a senha?
+                                </Button>
+                              </Link>
+                            </div>
                           </div>
                         </CardFooter>
                       </Card>
@@ -375,7 +421,9 @@ export default function SignInPage() {
                                   }}
                                 />
                               </div>
-                              <Clerk.FieldError className="block text-sm text-red-600 text-center" />
+                              <Clerk.FieldError className="block text-sm text-red-600 text-center">
+                                {({ message, code }) => translateClerkError({ message, code })}
+                              </Clerk.FieldError>
                               <SignIn.Action
                                 asChild
                                 resend

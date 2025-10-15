@@ -204,7 +204,7 @@ export default function ActivitiesMasterPage() {
       });
       toast.success("Atividade criada com sucesso");
       setAddDialogOpen(false);
-    } catch {
+    } catch (error) {
       console.error("Error creating activity:", error);
       toast.error("Erro ao criar atividade");
     }
@@ -219,7 +219,7 @@ export default function ActivitiesMasterPage() {
       });
       toast.success("Atividade atualizada com sucesso");
       setEditingActivity(null);
-    } catch {
+    } catch (error) {
       console.error("Error updating activity:", error);
       toast.error("Erro ao atualizar atividade");
     }
@@ -230,7 +230,7 @@ export default function ActivitiesMasterPage() {
       await deleteActivity({ id: id as Id<"activities"> });
       toast.success("Atividade excluída com sucesso");
       setConfirmDeleteId(null);
-    } catch {
+    } catch (error) {
       console.error("Error deleting activity:", error);
       toast.error("Erro ao excluir atividade");
     }
@@ -240,7 +240,7 @@ export default function ActivitiesMasterPage() {
     try {
       await toggleFeatured({ id: id as Id<"activities">, isFeatured: featured });
       toast.success(`Atividade ${featured ? "destacada" : "removida dos destaques"} com sucesso`);
-    } catch {
+    } catch (error) {
       console.error("Error toggling featured:", error);
       toast.error("Erro ao alterar status de destaque");
     }
@@ -250,7 +250,7 @@ export default function ActivitiesMasterPage() {
     try {
       await toggleActive({ id: id as Id<"activities">, isActive: active });
       toast.success(`Atividade ${active ? "ativada" : "desativada"} com sucesso`);
-    } catch {
+    } catch (error) {
       console.error("Error toggling active:", error);
       toast.error("Erro ao alterar status ativo");
     }
@@ -691,8 +691,8 @@ function ActivityFormDialog({
         price: Number(activity.price) || 0,
         category: activity.category || "",
         duration: activity.duration || "",
-        maxParticipants: Number(activity.maxParticipants) || 1,
-        minParticipants: Number(activity.minParticipants) || 1,
+        maxParticipants: parseInt(String(activity.maxParticipants)) || 1,
+        minParticipants: parseInt(String(activity.minParticipants)) || 1,
         difficulty: activity.difficulty || "Fácil",
         rating: Number(activity.rating) || 0,
         imageUrl: activity.imageUrl || "",
