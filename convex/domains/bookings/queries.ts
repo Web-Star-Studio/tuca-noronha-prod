@@ -1673,6 +1673,8 @@ export const getEventBookings = query({
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
+      // Mercado Pago integration fields
+      mpPreferenceId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),

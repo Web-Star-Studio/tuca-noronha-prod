@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Bell, BellRing, CheckCircle, Calendar, CreditCard, CheckCircle2, MessageCircle, X, Dot,  } from "lucide-react";
+import { Bell, BellRing, CheckCircle, Calendar, CreditCard, CheckCircle2, MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -141,25 +141,25 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
   const getNotificationVariant = (type: string, isRead: boolean) => {
     if (isRead) {
       return {
-        container: "bg-gray-50/80 hover:bg-gray-100/80 border-transparent",
+        container: "bg-white/60 hover:bg-white border-gray-100 shadow-sm",
         indicator: null
       };
     }
     
     const variants = {
-      booking_confirmed: "border-l-emerald-400 bg-emerald-50/50 hover:bg-emerald-50",
-      booking_canceled: "border-l-red-400 bg-red-50/50 hover:bg-red-50",
-      booking_updated: "border-l-blue-400 bg-blue-50/50 hover:bg-blue-50",
-      booking_reminder: "border-l-orange-400 bg-orange-50/50 hover:bg-orange-50",
-      payment_received: "border-l-emerald-400 bg-emerald-50/50 hover:bg-emerald-50",
-      system_update: "border-l-blue-400 bg-blue-50/50 hover:bg-blue-50",
-      chat_message: "border-l-purple-400 bg-purple-50/50 hover:bg-purple-50",
-      chat_room_created: "border-l-indigo-400 bg-indigo-50/50 hover:bg-indigo-50",
+      booking_confirmed: "border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-white hover:from-emerald-50 shadow-emerald-500/10",
+      booking_canceled: "border-l-red-500 bg-gradient-to-r from-red-50/80 to-white hover:from-red-50 shadow-red-500/10",
+      booking_updated: "border-l-blue-500 bg-gradient-to-r from-blue-50/80 to-white hover:from-blue-50 shadow-blue-500/10",
+      booking_reminder: "border-l-orange-500 bg-gradient-to-r from-orange-50/80 to-white hover:from-orange-50 shadow-orange-500/10",
+      payment_received: "border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-white hover:from-emerald-50 shadow-emerald-500/10",
+      system_update: "border-l-blue-500 bg-gradient-to-r from-blue-50/80 to-white hover:from-blue-50 shadow-blue-500/10",
+      chat_message: "border-l-purple-500 bg-gradient-to-r from-purple-50/80 to-white hover:from-purple-50 shadow-purple-500/10",
+      chat_room_created: "border-l-indigo-500 bg-gradient-to-r from-indigo-50/80 to-white hover:from-indigo-50 shadow-indigo-500/10",
     };
 
     return {
-      container: variants[type] || "border-l-gray-400 bg-gray-50/50 hover:bg-gray-50",
-      indicator: <Dot className="w-4 h-4 text-blue-500 fill-blue-500" />
+      container: variants[type] || "border-l-gray-500 bg-gradient-to-r from-gray-50/80 to-white hover:from-gray-50 shadow-gray-500/10",
+      indicator: <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/50 animate-pulse" />
     };
   };
 
@@ -224,60 +224,66 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
         {renderTrigger()}
       </SheetTrigger>
       
-      <SheetContent className="w-[400px] sm:w-[540px] bg-white shadow-xl border-l">
-        <SheetHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-gray-600" />
-              <SheetTitle className="text-xl font-semibold text-gray-900">
+      <SheetContent className="w-[400px] sm:w-[540px] bg-gradient-to-b from-white to-gray-50/30 shadow-2xl border-l border-gray-200/80">
+        <SheetHeader className="pb-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
+              <Bell className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex items-baseline gap-2.5">
+              <SheetTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 Notificações
               </SheetTitle>
               {hasUnread && (
-                <Badge variant="secondary" className="text-xs font-medium">
-                  {normalizedUnreadCount} novas
+                <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-semibold px-2.5 py-1 shadow-sm">
+                  {normalizedUnreadCount} {normalizedUnreadCount === 1 ? 'nova' : 'novas'}
                 </Badge>
               )}
             </div>
-            {hasUnread && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMarkAllAsRead}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Marcar todas como lidas
-              </Button>
-            )}
           </div>
-          <SheetDescription className="text-gray-500">
+          <SheetDescription className="text-sm text-gray-600 leading-relaxed">
             Suas notificações e atualizações mais recentes
           </SheetDescription>
+          {hasUnread && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              className="w-full flex items-center justify-center gap-2 text-sm font-medium border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Marcar todas como lidas
+            </Button>
+          )}
         </SheetHeader>
 
         <Separator className="my-4" />
 
-        <ScrollArea className="h-[calc(100vh-140px)]">
+        <ScrollArea className="h-[calc(100vh-140px)] px-1">
           {notifications === undefined ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, index) => (
+            <div className="space-y-4 pr-4">
+              {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
-                  className="animate-pulse rounded-xl border border-gray-200/60 bg-gray-50/80 p-4"
+                  className="animate-pulse rounded-2xl border border-gray-200 bg-gradient-to-r from-gray-50 to-white p-5 shadow-lg"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-gray-200" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-24 rounded bg-gray-200" />
-                      <div className="h-4 w-full rounded bg-gray-200" />
-                      <div className="h-4 w-3/4 rounded bg-gray-200" />
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-gray-200" />
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-32 rounded-lg bg-gray-200" />
+                        <div className="h-5 w-20 rounded-lg bg-gray-200" />
+                      </div>
+                      <div className="h-3 w-full rounded-lg bg-gray-200" />
+                      <div className="h-3 w-4/5 rounded-lg bg-gray-200" />
+                      <div className="h-2 w-40 rounded-lg bg-gray-200" />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : notifications.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-3 pr-4">
               {notifications.map((notification) => {
                 const variant = getNotificationVariant(notification.type, notification.isRead);
                 const meta = getNotificationTypeMeta(notification.type);
@@ -291,7 +297,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                   <div
                     key={notification._id}
                     className={cn(
-                      "relative p-4 rounded-xl border-l-2 transition-all duration-200 cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5",
+                      "relative p-5 rounded-2xl border-l-[3px] border transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-xl hover:-translate-y-1",
                       variant.container
                     )}
                     onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
@@ -307,82 +313,86 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                     }}
                     aria-label={`Notificação: ${notification.title}`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="relative w-10 h-10 rounded-lg bg-white/90 flex items-center justify-center border border-gray-200/60 shadow-inner">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="relative w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-gray-200 shadow-md group-hover:scale-110 transition-transform duration-200">
                           {getNotificationIcon(notification.type)}
                           {!notification.isRead && (
-                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-500 shadow-sm" />
+                            <span className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/50 ring-2 ring-white" />
                           )}
                         </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2 gap-2">
-                          <h4 className={cn(
-                            "font-medium text-sm leading-tight",
-                            !notification.isRead ? "text-gray-900" : "text-gray-600"
-                          )}>
-                            {notification.title}
-                          </h4>
-                          <div className="flex items-center gap-2 ml-3">
+                        <div className="flex items-start justify-between mb-2.5 gap-3">
+                          <div className="flex-1">
+                            <h4 className={cn(
+                              "font-semibold text-base leading-snug mb-1.5",
+                              !notification.isRead ? "text-gray-900" : "text-gray-600"
+                            )}>
+                              {notification.title}
+                            </h4>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                                meta.badgeClass
+                              )}
+                            >
+                              {meta.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
                             {variant.indicator}
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6"
+                              className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-1.5 h-7 w-7 rounded-lg hover:bg-red-50"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteNotification(notification._id);
                               }}
                             >
-                              <X className="h-3 w-3 text-gray-400 hover:text-red-500" />
+                              <X className="h-3.5 w-3.5 text-gray-400 hover:text-red-600 transition-colors" />
                             </Button>
                           </div>
                         </div>
-
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "mb-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-                            meta.badgeClass
-                          )}
-                        >
-                          {meta.label}
-                        </Badge>
                         
                         <p className={cn(
                           "text-sm leading-relaxed mb-3",
-                          !notification.isRead ? "text-gray-700" : "text-gray-500"
+                          !notification.isRead ? "text-gray-800" : "text-gray-500"
                         )}>
                           {notification.message}
                         </p>
                         
                         {notification.data && (
-                          <div className="mb-3 p-2 bg-white/60 rounded-lg border border-gray-200/50">
-                            <div className="space-y-1 text-xs">
+                          <div className="mb-3 p-3 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm">
+                            <div className="space-y-1.5 text-xs">
                               {notification.data.confirmationCode && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-gray-500">Código:</span>
-                                  <code className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">
+                                  <span className="text-gray-500 font-medium">Código:</span>
+                                  <code className="font-mono bg-white px-2 py-1 rounded-md text-gray-800 border border-gray-200 shadow-sm">
                                     {notification.data.confirmationCode}
                                   </code>
                                 </div>
                               )}
                               {notification.data.assetName && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-gray-500">Local:</span>
-                                  <span className="text-gray-700">{notification.data.assetName}</span>
+                                  <span className="text-gray-500 font-medium">Local:</span>
+                                  <span className="text-gray-800 font-medium">{notification.data.assetName}</span>
                                 </div>
                               )}
                             </div>
                           </div>
                         )}
                         
-                        <time className="text-xs text-gray-400" dateTime={notification.createdAt}>
+                        <time className="text-xs text-gray-500 font-medium flex items-center gap-1.5" dateTime={notification.createdAt}>
+                          <span className="w-1 h-1 rounded-full bg-gray-300" />
                           {format(new Date(notification.createdAt), "dd 'de' MMMM 'às' HH:mm", {
                             locale: ptBR,
-                          })} · {relativeTimeLabel}
+                          })}
+                          <span className="text-gray-400">·</span>
+                          <span className="text-gray-400">{relativeTimeLabel}</span>
                         </time>
                       </div>
                     </div>
@@ -391,15 +401,20 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <Bell className="h-8 w-8 text-gray-400" />
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shadow-lg">
+                  <Bell className="h-10 w-10 text-blue-500" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-md">
+                  <CheckCircle className="h-5 w-5 text-gray-500" />
+                </div>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhuma notificação
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Tudo em dia!
               </h3>
-              <p className="text-gray-500 max-w-sm leading-relaxed">
-                Você receberá notificações sobre suas reservas e atualizações importantes aqui.
+              <p className="text-sm text-gray-600 max-w-sm leading-relaxed">
+                Você não tem notificações pendentes. Quando houver novidades sobre suas reservas e atualizações importantes, elas aparecerão aqui.
               </p>
             </div>
           )}

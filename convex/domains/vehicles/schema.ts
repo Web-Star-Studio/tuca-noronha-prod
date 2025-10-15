@@ -4,28 +4,29 @@ import { v } from "convex/values";
 // Define the tables related to vehicles
 export default defineSchema({
   vehicles: defineTable({
-    // Basic information
+    // Basic information - Required fields
     name: v.string(),
     brand: v.string(),
     model: v.string(),
     category: v.string(), // economy, compact, sedan, suv, luxury, etc.
     year: v.number(),
-    licensePlate: v.string(),
     color: v.string(),
     seats: v.number(),
     
-    // Technical details
-    fuelType: v.string(), // Gasolina, Etanol, Flex, Diesel, Elétrico, Híbrido
-    transmission: v.string(), // Manual, Automático, CVT, Semi-automático
+    // Optional fields (for backwards compatibility with existing vehicles)
+    licensePlate: v.optional(v.string()),
+    fuelType: v.optional(v.string()), // Gasolina, Etanol, Flex, Diesel, Elétrico, Híbrido
+    transmission: v.optional(v.string()), // Manual, Automático, CVT, Semi-automático
+    features: v.optional(v.array(v.string())),
+    adminRating: v.optional(v.number()), // 1-5 stars rating
     
-    // Business details
-    pricePerDay: v.number(),
-    netRate: v.optional(v.number()),
+    // Business details - Required fields
+    estimatedPricePerDay: v.number(),
+    netRate: v.number(),
     description: v.optional(v.string()),
-    features: v.array(v.string()),
     imageUrl: v.optional(v.string()),
     
-    // Status
+    // Status - Required
     status: v.string(), // available, rented, maintenance
     
     // Metadata

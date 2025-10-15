@@ -975,6 +975,7 @@ export default function AdminBookingsPage() {
                         <div className="flex items-center gap-2 ml-4">
                           <BookingDetailsModal
                             data={booking}
+                            userRole={user?.role}
                             trigger={
                               <Button
                                 size="sm"

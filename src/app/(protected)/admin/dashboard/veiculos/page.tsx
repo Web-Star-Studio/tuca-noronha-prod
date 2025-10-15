@@ -210,14 +210,25 @@ export default function VehiclesPage() {
       </Tabs>
 
       <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CarFront className="h-5 w-5" />
-              {editMode ? "Editar Veículo" : "Adicionar Novo Veículo"}
-            </DialogTitle>
-          </DialogHeader>
-          <VehicleForm onSubmit={() => setDialogOpen(false)} onCancel={handleCloseDialog} editMode={editMode} />
+        <DialogContent className="max-w-5xl overflow-hidden border-0 bg-white p-0 shadow-2xl">
+          <div className="bg-gradient-to-r from-blue-50 via-white to-indigo-50 border-b border-blue-100/60 px-6 py-5">
+            <DialogHeader className="space-y-2 text-left">
+              <DialogTitle className="flex items-center gap-3 text-xl font-semibold text-slate-900">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 shadow-sm">
+                  <CarFront className="h-5 w-5" />
+                </span>
+                {editMode ? "Editar veículo" : "Adicionar novo veículo"}
+              </DialogTitle>
+              <p className="text-sm text-slate-600">
+                {editMode
+                  ? "Atualize os dados do veículo e garanta que a frota fique sempre organizada e pronta para reservas."
+                  : "Cadastre um veículo completo com imagem, tarifas e detalhes para disponibilizá-lo rapidamente aos viajantes."}
+              </p>
+            </DialogHeader>
+          </div>
+          <div className="max-h-[75vh] overflow-y-auto px-6 py-6">
+            <VehicleForm onSubmit={() => setDialogOpen(false)} onCancel={handleCloseDialog} editMode={editMode} />
+          </div>
         </DialogContent>
       </Dialog>
 

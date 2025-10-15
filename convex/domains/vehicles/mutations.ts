@@ -12,20 +12,22 @@ export const createVehicle = mutation({
     model: v.string(),
     category: v.string(),
     year: v.number(),
-    licensePlate: v.string(),
     color: v.string(),
     seats: v.number(),
-    fuelType: v.string(),
-    transmission: v.string(),
     estimatedPricePerDay: v.number(),
-    netRate: v.optional(v.number()),
+    netRate: v.number(),
+    status: v.string(),
+    // Optional fields for backwards compatibility
+    licensePlate: v.optional(v.string()),
+    fuelType: v.optional(v.string()),
+    transmission: v.optional(v.string()),
     adminRating: v.optional(v.number()),
+    features: v.optional(v.array(v.string())),
+    description: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    // Legacy/Partner fields
     isFree: v.optional(v.boolean()),
     supplierId: v.optional(v.id("suppliers")),
-    description: v.optional(v.string()),
-    features: v.array(v.string()),
-    imageUrl: v.optional(v.string()),
-    status: v.string(),
   },
   returns: v.id("vehicles"),
   handler: async (ctx, args) => {
@@ -53,14 +55,33 @@ export const createVehicle = mutation({
         .first();
       orgId = org?._id ?? null;
     }
-    const vehicleId = await ctx.db.insert("vehicles", {
-      ...args,
-      netRate: args.netRate ?? args.estimatedPricePerDay,
+    const vehicleData: any = {
+      name: args.name,
+      brand: args.brand,
+      model: args.model,
+      category: args.category,
+      year: args.year,
+      color: args.color,
+      seats: args.seats,
+      estimatedPricePerDay: args.estimatedPricePerDay,
+      netRate: args.netRate,
+      status: args.status,
       createdAt: currentTime,
       updatedAt: currentTime,
-      ownerId: currentUserId, // Set owner to current user
-      organizationId: orgId || undefined, // Convert null to undefined to fix type error
-    });
+      ownerId: currentUserId,
+      organizationId: orgId || undefined,
+    };
+    
+    // Add optional fields only if provided
+    if (args.licensePlate !== undefined) vehicleData.licensePlate = args.licensePlate;
+    if (args.fuelType !== undefined) vehicleData.fuelType = args.fuelType;
+    if (args.transmission !== undefined) vehicleData.transmission = args.transmission;
+    if (args.adminRating !== undefined) vehicleData.adminRating = args.adminRating;
+    if (args.features !== undefined) vehicleData.features = args.features;
+    if (args.description !== undefined) vehicleData.description = args.description;
+    if (args.imageUrl !== undefined) vehicleData.imageUrl = args.imageUrl;
+    
+    const vehicleId = await ctx.db.insert("vehicles", vehicleData);
     
     // Se existe uma organização, adiciona o veículo à tabela partnerAssets
     if (orgId) {
