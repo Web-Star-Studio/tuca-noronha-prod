@@ -133,7 +133,7 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
               note: organization.note || "Acesso completo concedido automaticamente",
             });
             organizationsGranted++;
-          } catch {
+          } catch (error) {
             console.error("Error granting organization access:", error);
             organizationErrors++;
           }
@@ -165,7 +165,7 @@ export function SimpleCreateEmployeeForm({ onSuccess, onCancel }: SimpleCreateEm
       // Reset form after success
       reset();
       setSelectedOrganizations([]);
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar colaborador:", error);
       setResult({
         success: false,

@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WishlistButton } from "@/components/ui/wishlist-button";
 import { parseMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
+import { ImageGallery } from "@/components/ui/image-gallery";
 
 // Review components
 import { ReviewStats, ReviewsList } from "@/components/reviews";
@@ -189,6 +190,14 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                 >
                   Detalhes
                 </TabsTrigger>
+                {event.galleryImages && event.galleryImages.length > 0 && (
+                  <TabsTrigger
+                    value="gallery"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                  >
+                    Galeria
+                  </TabsTrigger>
+                )}
                 {event.symplaUrl && (
                   <TabsTrigger
                     value="tickets"
@@ -352,6 +361,22 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
                       </div>
                     </div>
                   </div>
+                )}
+              </TabsContent>
+
+              {/* Gallery tab */}
+              <TabsContent value="gallery" className="mt-2">
+                {event.galleryImages && event.galleryImages.length > 0 && (
+                  <ImageGallery
+                    images={galleryEntries.map((entry, index) => ({
+                      id: `${event.id}-${index}`,
+                      src: entry.url,
+                      alt: `${event.title} - Foto ${index + 1}`,
+                      caption: event.title,
+                      category: event.category,
+                    }))}
+                    title="Galeria de Fotos"
+                  />
                 )}
               </TabsContent>
 
@@ -534,32 +559,6 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
               customMessage={`Olá! Gostaria de tirar dúvidas sobre o evento ${event.title}. Vocês podem me ajudar?`}
               showDropdown={false}
             />
-
-            {/* Gallery preview */}
-            {event.galleryImages && event.galleryImages.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Galeria</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {event.galleryImages
-                    .map(parseMediaEntry)
-                    .slice(0, 6)
-                    .map((mediaEntry, idx) => (
-                      <div
-                        key={`${mediaEntry.url}-${idx}`}
-                        className="relative aspect-square overflow-hidden rounded-md"
-                      >
-                        <SmartMedia
-                          entry={mediaEntry}
-                          alt={`Mídia ${idx + 1} do evento`}
-                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                          imageProps={{ fill: true }}
-                          videoProps={{ controls: true, preload: "metadata" }}
-                        />
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

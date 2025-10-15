@@ -94,7 +94,10 @@ export const EMAIL_SETTINGS = {
   package_request_received: {
     priority: "normal" as const,
     replyTo: SYSTEM_EMAILS.SUPPORT,
-    cc: [SYSTEM_EMAILS.ADMIN],
+  },
+  package_request_admin: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
   },
   package_request_status_update: {
     priority: "normal" as const,
@@ -135,5 +138,21 @@ export const EMAIL_SETTINGS = {
   support_message: {
     priority: "high" as const,
     cc: [SYSTEM_EMAILS.SUPPORT],
+  },
+  package_proposal_sent_traveler: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
+  package_proposal_accepted_admin: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
+  package_proposal_rejected_admin: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
+  package_proposal_revision_admin: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
   },
 } as const; 

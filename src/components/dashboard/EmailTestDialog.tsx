@@ -55,7 +55,8 @@ export function EmailTestDialog() {
           variant: "destructive",
         });
       }
-    } catch {
+    } catch (error) {
+      console.error("Error sending test email:", error);
       toast({
         title: "Erro inesperado",
         description: "Não foi possível enviar o email de teste",

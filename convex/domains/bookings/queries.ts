@@ -4252,7 +4252,8 @@ export const getBookingByIdInternal = internalQuery({
     try {
       const booking = await ctx.db.get(args.bookingId as any);
       return booking;
-    } catch {
+    } catch (error) {
+      console.error(`Failed to get booking ${args.bookingId} from table ${args.tableName}`, error);
       return null;
     }
   },

@@ -171,7 +171,7 @@ export function PackageProposalCreationForm({
           description: `${result.suggestions.length} componentes foram sugeridos com base no pedido.`,
         });
       }
-    } catch {
+    } catch (error) {
       console.error("Error analyzing request:", error);
       toast.error("Erro ao analisar solicitação.");
     } finally {
@@ -333,7 +333,7 @@ export function PackageProposalCreationForm({
           toast.error(result.message || "Erro ao criar proposta");
         }
       }
-    } catch {
+    } catch (error) {
       console.error("Error submitting proposal:", error);
       toast.error(`Ocorreu um erro inesperado ao ${isEditing ? 'atualizar' : 'criar'} a proposta.`);
     } finally {

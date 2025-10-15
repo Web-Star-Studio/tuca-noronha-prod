@@ -66,8 +66,9 @@ export function ConvexImage({
         }
         
         setIsLoading(false);
-      } catch {
+      } catch (error) {
         // Em caso de erro, tentar obter uma nova URL
+        console.error("Error verifying image URL, attempting to refresh:", error);
         try {
           const newUrl = await refreshUrl({ id: mediaId });
           setImageSrc(newUrl);

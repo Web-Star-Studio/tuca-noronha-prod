@@ -3,21 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { SubscriptionPaymentBrick } from "@/components/payments/SubscriptionPaymentBrick";
 
 export default function GuideSubscriptionPage() {
   const router = useRouter();
   const { user } = useUser();
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const currentSubscription = useQuery(api.domains.subscriptions.queries.getCurrentSubscription);
+  
+  // Usar API de Preapproval diretamente (funciona melhor com cartões de teste)
+  const createCheckout = useAction(api.domains.subscriptions.actions.createSubscriptionCheckout);
 
   // If user already has an active subscription, redirect to guide panel
   if (currentSubscription?.status === "authorized") {
@@ -25,28 +27,70 @@ export default function GuideSubscriptionPage() {
     return null;
   }
 
-  const handleBuyGuide = () => {
+  const handleBuyGuide = async () => {
     if (!user) {
       toast.error("Você precisa estar logado para comprar o guia");
       return;
     }
-    setShowPaymentModal(true);
+    
+    setIsProcessing(true);
+    
+    try {
+      // ✅ SIMPLIFICADO: Se tem link do plano do MP, usar direto!
+      const subscriptionPlanUrl = process.env.NEXT_PUBLIC_MP_SUBSCRIPTION_PLAN_URL;
+      
+      if (subscriptionPlanUrl) {
+        console.log("[Subscription] ✅ Using direct subscription plan link");
+        console.log("[Subscription] Redirecting to MP plan:", subscriptionPlanUrl);
+        
+        // Toast informativo reforçando o aviso sobre email
+        toast.info("Redirecionando para o Mercado Pago", {
+          description: `⚠️ LEMBRE-SE: Use o email ${user.primaryEmailAddress?.emailAddress} no checkout!`,
+          duration: 4000,
+        });
+        
+        // Redirecionar diretamente para o plano do MP
+        setTimeout(() => {
+          window.location.href = subscriptionPlanUrl;
+        }, 1000);
+        
+        return;
+      }
+      
+      // ⚠️ FALLBACK: Se não tem link, criar via API (antigo método)
+      console.log("[Subscription] No plan URL found, creating via API");
+      console.log("[Subscription] Creating checkout for user:", {
+        userId: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.fullName,
+      });
+
+      const result = await createCheckout({
+        userId: user.id,
+        userEmail: user.primaryEmailAddress?.emailAddress || "",
+        userName: user.fullName || undefined,
+      });
+
+      console.log("[Subscription] API Response:", result);
+
+      if (result.success && result.checkoutUrl) {
+        console.log("[Subscription] ✅ Checkout created successfully!");
+        console.log("[Subscription] Redirecting to:", result.checkoutUrl);
+        
+        window.location.href = result.checkoutUrl;
+      } else {
+        throw new Error(result.error || "Erro ao criar checkout");
+      }
+    } catch (error) {
+      console.error("[Subscription] ❌ Exception:", error);
+      toast.error("Erro ao processar assinatura", {
+        description: error instanceof Error ? error.message : "Configure NEXT_PUBLIC_MP_SUBSCRIPTION_PLAN_URL no .env.local",
+        duration: 10000,
+      });
+      setIsProcessing(false);
+    }
   };
 
-  const handlePaymentSuccess = () => {
-    setShowPaymentModal(false);
-    toast.success("Assinatura ativada!", {
-      description: "Redirecionando para o painel de guia...",
-    });
-    setTimeout(() => {
-      router.push("/meu-painel/guia");
-    }, 2000);
-  };
-
-  const handlePaymentError = (error: string) => {
-    console.error("Payment error:", error);
-    // Modal permanece aberto para usuário tentar novamente
-  };
 
   const heroHighlights = [
     "Páginas atualizadas para 2025",
@@ -95,11 +139,21 @@ export default function GuideSubscriptionPage() {
               <div className="flex flex-wrap items-center gap-4">
                 <Button
                   onClick={handleBuyGuide}
-                  className="gap-2 rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 px-6 py-6 text-lg font-semibold text-white shadow-lg hover:from-blue-600 hover:via-blue-600 hover:to-blue-500"
+                  disabled={isProcessing}
+                  className="gap-2 rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 px-6 py-6 text-lg font-semibold text-white shadow-lg hover:from-blue-600 hover:via-blue-600 hover:to-blue-500 disabled:opacity-50"
                 >
-                  <CreditCard className="h-5 w-5" />
-                  Assinar Agora
-                  <Sparkles className="h-5 w-5" />
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-5 w-5" />
+                      Assinar Agora
+                      <Sparkles className="h-5 w-5" />
+                    </>
+                  )}
                 </Button>
                 <div className="flex items-center gap-2 text-sm text-blue-900">
                   <ShieldCheck className="h-5 w-5" /> Atualizações gratuitas por 6 meses
@@ -137,13 +191,49 @@ export default function GuideSubscriptionPage() {
                   </div>
                 ))}
               </CardContent>
-              <CardFooter className="relative flex flex-col gap-3 pt-4 text-center text-sm text-gray-600">
+              <CardFooter className="relative flex flex-col gap-4 pt-4 text-center text-sm text-gray-600">
+                {/* Aviso sobre o email */}
+                <Alert className="bg-amber-50 border-amber-200 text-left">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <AlertTitle className="text-amber-900 font-semibold mb-2">
+                        ⚠️ Importante antes de pagar
+                      </AlertTitle>
+                      <AlertDescription className="text-amber-800 space-y-2">
+                        <p>
+                          No checkout do Mercado Pago, <strong>use o mesmo email</strong> cadastrado aqui:
+                        </p>
+                        <div className="flex items-center gap-2 bg-amber-100 rounded-lg px-3 py-2 mt-2">
+                          <Mail className="h-4 w-4 text-amber-600" />
+                          <span className="font-mono font-semibold text-amber-900">
+                            {user?.primaryEmailAddress?.emailAddress || "seu-email@example.com"}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-2">
+                          💡 Assim seu acesso será <strong>liberado automaticamente</strong> após o pagamento!
+                        </p>
+                      </AlertDescription>
+                    </div>
+                  </div>
+                </Alert>
+                
                 <Button
                   onClick={handleBuyGuide}
-                  className="w-full rounded-full bg-blue-600 py-6 text-base font-semibold text-white shadow-lg hover:bg-blue-700"
+                  disabled={isProcessing}
+                  className="w-full rounded-full bg-blue-600 py-6 text-base font-semibold text-white shadow-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Assinar agora
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-5 w-5" />
+                      Assinar agora
+                    </>
+                  )}
                 </Button>
                 <p>Pagamento protegido pelo Mercado Pago.</p>
                 <p className="text-xs text-gray-500">
@@ -167,10 +257,20 @@ export default function GuideSubscriptionPage() {
             <div className="flex flex-col gap-3">
               <Button
                 onClick={handleBuyGuide}
-                className="rounded-full bg-white px-6 py-6 text-base font-semibold text-blue-600 shadow-lg hover:bg-blue-50"
+                disabled={isProcessing}
+                className="rounded-full bg-white px-6 py-6 text-base font-semibold text-blue-600 shadow-lg hover:bg-blue-50 disabled:opacity-50"
               >
-                <CreditCard className="mr-2 h-5 w-5" />
-                Assinar Agora
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Assinar Agora
+                  </>
+                )}
               </Button>
               <p className="text-center text-xs text-white/80">
                 Assinatura anual de R$ 99,90 via Mercado Pago • Acesso imediato
@@ -180,69 +280,6 @@ export default function GuideSubscriptionPage() {
         </section>
       </div>
 
-      {/* Payment Modal */}
-      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-2xl">
-              <Sparkles className="h-6 w-6 text-blue-600" />
-              Finalizar Assinatura
-            </DialogTitle>
-            <DialogDescription>
-              Complete o pagamento para ter acesso ao Guia Exclusivo de Fernando de Noronha
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Resumo da assinatura */}
-            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">Assinatura Anual</h3>
-                    <p className="text-sm text-gray-600">Guia Exclusivo de Noronha</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-bold text-blue-600">R$ 99,90</p>
-                    <p className="text-xs text-gray-500">pagamento único anual</p>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Acesso imediato ao painel de guia</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Atualizações gratuitas por 6 meses</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Válido por 1 ano</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment Brick */}
-            {user && (
-              <SubscriptionPaymentBrick
-                userId={user.id}
-                userEmail={user.primaryEmailAddress?.emailAddress || ""}
-                userName={user.fullName || undefined}
-                amount={99.90}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-              />
-            )}
-
-            <div className="text-center text-xs text-gray-500">
-              <p>🔒 Pagamento 100% seguro via Mercado Pago</p>
-              <p className="mt-1">Seus dados estão protegidos com certificação PCI-DSS</p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -114,7 +114,7 @@ export function BookingManagementDashboard({ className }: BookingManagementDashb
       
       toast.success("Reserva cancelada com sucesso");
       setSelectedBooking(null);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao cancelar reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });

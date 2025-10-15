@@ -487,6 +487,7 @@ export default defineSchema({
     minParticipants: v.int64(),
     difficulty: v.string(),
     rating: v.float64(),
+    adminRating: v.optional(v.number()),                // Classificação definida pelo admin (0-5)
     imageUrl: v.string(),
     galleryImages: v.array(v.string()),
     highlights: v.array(v.string()),
@@ -550,6 +551,7 @@ export default defineSchema({
     additionalInfo: v.array(v.string()),
     speaker: v.optional(v.string()),     // Optional speaker/host name
     speakerBio: v.optional(v.string()),  // Optional speaker bio
+    adminRating: v.optional(v.number()),                // Classificação definida pelo admin (0-5)
     isFeatured: v.boolean(),
     isActive: v.boolean(),
     isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
@@ -644,6 +646,7 @@ export default defineSchema({
       noiseLevel: v.string(),                           // Nível de barulho
       totalReviews: v.int64(),                          // Total de avaliações
     }),
+    adminRating: v.optional(v.number()),                // Classificação definida pelo admin (0-5)
     acceptsReservations: v.boolean(),                   // Aceita reservas
     tags: v.array(v.string()),                          // Tags para busca
     executiveChef: v.optional(v.string()),              // Chef executivo (opcional)
@@ -986,6 +989,7 @@ export default defineSchema({
     // Business details
     estimatedPricePerDay: v.number(), // ALTERADO: Valor estimado (exibido como "A partir de R$ X")
     netRate: v.optional(v.number()),
+    adminRating: v.optional(v.number()),                // Classificação definida pelo admin (0-5)
     isFree: v.optional(v.boolean()), // Asset gratuito (sem pagamento)
     description: v.optional(v.string()),
     features: v.array(v.string()),

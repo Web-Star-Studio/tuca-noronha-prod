@@ -20,16 +20,19 @@ import {
 } from "@/components/ui/dialog";
 
 import { 
-  CheckCircle, 
-  Users, 
-  CreditCard, 
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Download,
   FileText, 
-  Plus, 
-  X,
-  Download
+  Plus,
+  Users,
+  X 
 } from "lucide-react";
+import { renderMarkdownText } from "@/lib/renderMarkdown";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Participant {
   fullName: string;
@@ -233,6 +236,17 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
               </p>
             </div>
 
+            {/* Validity Alert */}
+            <Alert className="border-orange-500 bg-orange-50 mb-4">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <AlertTitle className="text-orange-900 font-semibold text-sm">
+                ⏰ Validade de 24 horas
+              </AlertTitle>
+              <AlertDescription className="text-orange-800 text-xs">
+                Esta proposta expira em 24 horas. Aceite agora para garantir os valores e disponibilidade.
+              </AlertDescription>
+            </Alert>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">{proposal.title}</CardTitle>
@@ -254,9 +268,9 @@ export function ProposalAcceptanceFlow({ proposal, onClose, onSuccess }: Proposa
                 
                 <div>
                   <span className="font-medium text-gray-500 block mb-2">Descrição</span>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                    {proposal.description}
-                  </p>
+                  <div className="text-sm text-gray-700">
+                    {renderMarkdownText(proposal.description)}
+                  </div>
                 </div>
 
               </CardContent>

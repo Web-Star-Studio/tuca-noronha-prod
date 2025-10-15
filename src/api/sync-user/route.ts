@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-  } catch {
+  } catch (error) {
     console.error('Error in sync-user API:', error);
     return NextResponse.json(
       { error: 'Failed to process request', details: String(error) },

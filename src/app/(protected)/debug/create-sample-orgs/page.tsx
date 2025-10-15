@@ -19,7 +19,7 @@ export default function CreateSampleOrgsPage() {
     try {
       const orgIds = await createSampleOrganizations({});
       toast.success(`${orgIds.length} organizações de exemplo criadas com sucesso!`);
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar organizações:", error);
       toast.error("Erro ao criar organizações de exemplo");
     } finally {

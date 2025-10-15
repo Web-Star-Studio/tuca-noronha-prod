@@ -116,7 +116,7 @@ export default function RestaurantsPage() {
       toast.success("Restaurante criado com sucesso!")
       setDialogOpen(false)
       setSelectedRestaurant(null)
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar restaurante:", error)
       toast.error("Erro ao criar restaurante")
     } finally {
@@ -131,7 +131,7 @@ export default function RestaurantsPage() {
       toast.success("Restaurante atualizado com sucesso!")
       setDialogOpen(false)
       setSelectedRestaurant(null)
-    } catch {
+    } catch (error) {
       console.error("Erro ao atualizar restaurante:", error)
       toast.error("Erro ao atualizar restaurante")
     } finally {
@@ -144,7 +144,7 @@ export default function RestaurantsPage() {
       await deleteRestaurant(id)
       toast.success("Restaurante excluído com sucesso!")
       setConfirmDeleteId(null)
-    } catch {
+    } catch (error) {
       console.error("Erro ao excluir restaurante:", error)
       toast.error("Erro ao excluir restaurante")
     }
@@ -154,7 +154,7 @@ export default function RestaurantsPage() {
     try {
       await toggleFeatured(id, featured)
       toast.success(featured ? "Restaurante destacado!" : "Destaque removido!")
-    } catch {
+    } catch (error) {
       console.error("Erro ao alterar destaque do restaurante:", error)
       toast.error("Erro ao alterar destaque")
     }
@@ -164,7 +164,7 @@ export default function RestaurantsPage() {
     try {
       await toggleActive(id, active)
       toast.success(active ? "Restaurante ativado!" : "Restaurante desativado!")
-    } catch {
+    } catch (error) {
       console.error("Erro ao alterar status do restaurante:", error)
       toast.error("Erro ao alterar status")
     }

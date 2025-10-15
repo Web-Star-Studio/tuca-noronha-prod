@@ -70,7 +70,7 @@ export function VoucherScanner({ partnerId, onScanSuccess, onScanError }: Vouche
       // Verify voucher with the verification token
       await handleVoucherVerification(qrData.tk);
       
-    } catch {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao verificar voucher";
       setScanError(errorMessage);
       onScanError?.(errorMessage);
@@ -102,7 +102,7 @@ export function VoucherScanner({ partnerId, onScanSuccess, onScanError }: Vouche
     try {
       // For manual input, we'll use the voucher number directly
       await handleVoucherVerification(manualVoucherNumber.trim());
-    } catch {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao verificar voucher";
       setScanError(errorMessage);
       onScanError?.(errorMessage);
@@ -124,7 +124,7 @@ export function VoucherScanner({ partnerId, onScanSuccess, onScanError }: Vouche
       onScanSuccess?.(result);
       toast.success("Voucher verificado com sucesso!");
       
-    } catch {
+    } catch (error) {
       throw error;
     }
   };

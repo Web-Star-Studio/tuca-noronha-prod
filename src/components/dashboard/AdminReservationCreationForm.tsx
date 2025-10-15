@@ -156,7 +156,7 @@ export function AdminReservationCreationForm() {
       });
       setCurrentStep(0);
       
-    } catch {
+    } catch (error) {
       console.error('Erro ao criar reserva:', error);
       toast({
         title: "Erro ao criar reserva",

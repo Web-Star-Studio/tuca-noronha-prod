@@ -32,7 +32,8 @@ export function ModalCleanupButton({
         title: "Limpeza realizada",
         description: "Modais órfãos foram removidos com sucesso.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error cleaning up modals:", error);
       toast({
         title: "Erro na limpeza",
         description: "Ocorreu um erro ao limpar os modais. Tente recarregar a página.",
@@ -68,7 +69,8 @@ export function EmergencyModalCleanupButton() {
         title: "🚨 Limpeza de emergência realizada",
         description: "Todos os overlays e modais órfãos foram removidos.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error during emergency modal cleanup:", error);
       toast({
         title: "Erro na limpeza de emergência",
         description: "Recarregue a página se o problema persistir.",

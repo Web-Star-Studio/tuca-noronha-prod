@@ -60,6 +60,7 @@ export function EventForm({
           partnerId: "",
           speaker: "",
           speakerBio: "",
+          adminRating: undefined,
           whatsappContact: "",
           externalBookingUrl: "",
           createdAt: new Date(),
@@ -122,6 +123,13 @@ export function EventForm({
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: Number(value) });
+  };
+
+  const handleIntegerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Ensure integer by using Math.floor to handle any decimal values
+    const intValue = Math.floor(Number(value)) || 0;
+    setFormData({ ...formData, [name]: intValue });
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -228,8 +236,14 @@ export function EventForm({
     
     if (!isValid()) return;
     
+    // Ensure maxParticipants is an integer before submission
+    const sanitizedData = {
+      ...formData,
+      maxParticipants: Math.floor(Number(formData.maxParticipants)) || 0,
+    };
+    
     // Submit the form data without ticket validation
-    onSubmit(formData);
+    onSubmit(sanitizedData);
   };
 
   return (
@@ -556,8 +570,9 @@ export function EventForm({
               name="maxParticipants" 
               type="number" 
               value={formData.maxParticipants} 
-              onChange={handleNumberChange} 
+              onChange={handleIntegerChange} 
               min="1" 
+              step="1"
               className="mt-1.5 bg-white shadow-sm"
               required 
             />
@@ -587,6 +602,29 @@ export function EventForm({
                 placeholder="Breve biografia do palestrante"
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="adminRating" className="text-sm font-medium">Classificação do Evento</Label>
+            <Select 
+              value={formData.adminRating?.toString() || "0"} 
+              onValueChange={(value) => setFormData({...formData, adminRating: value === "0" ? undefined : parseFloat(value)})}
+            >
+              <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                <SelectValue placeholder="Selecione a classificação (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Nenhuma classificação</SelectItem>
+                <SelectItem value="1">⭐ 1 Estrela</SelectItem>
+                <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
+                <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
+                <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
+                <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              Classificação oficial do evento definida pela administração
+            </p>
           </div>
         </TabsContent>
 

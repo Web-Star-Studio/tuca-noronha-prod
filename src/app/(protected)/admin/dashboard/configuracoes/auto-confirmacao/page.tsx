@@ -198,7 +198,7 @@ export default function AutoConfirmacaoPage() {
       setSelectedAssetType("");
       setSelectedAssetId("");
       setIsCreating(false);
-    } catch {
+    } catch (error) {
       console.error("Error saving auto-confirmation settings:", error);
       toast.error("Erro ao salvar configurações");
     } finally {

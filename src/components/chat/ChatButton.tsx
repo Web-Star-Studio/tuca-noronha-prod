@@ -70,7 +70,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   try {
     contextId = ensureValidId(bookingId || assetId);
     hasValidId = true;
-  } catch {
+  } catch (error) {
+    console.error("Error ensuring valid ID:", error);
     contextId = ""; // valor padrão para evitar problemas
   }
 
@@ -167,7 +168,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
       setInitialMessage("");
       
       toast.success("Conversa iniciada!");
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar conversa:", error);
       toast.error("Erro ao iniciar conversa");
     }

@@ -133,7 +133,7 @@ export default function UsersPage() {
     try {
       await toggleUserActive({ userId, isActive: !currentStatus });
       toast.success(currentStatus ? "Usuário desativado!" : "Usuário ativado!");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao alterar status do usuário");
       console.error(error);
     }
@@ -143,7 +143,7 @@ export default function UsersPage() {
     try {
       await updateUserRole({ userId, role: newRole });
       toast.success("Papel do usuário atualizado!");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao atualizar papel do usuário");
       console.error(error);
     }

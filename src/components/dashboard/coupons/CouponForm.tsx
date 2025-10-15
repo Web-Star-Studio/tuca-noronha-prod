@@ -217,7 +217,8 @@ export default function CouponForm({
       };
 
       await onSubmit(submitData);
-    } catch {
+    } catch (error) {
+      console.error("Error saving coupon:", error);
       toast({
         title: "Erro",
         description: "Não foi possível salvar o cupom. Tente novamente.",

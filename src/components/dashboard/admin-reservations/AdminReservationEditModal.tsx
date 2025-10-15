@@ -84,7 +84,7 @@ export function AdminReservationEditModal({
       toast.success("Reserva atualizada com sucesso!");
       onUpdate();
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       console.error("Error updating reservation:", error);
       toast.error("Erro ao atualizar reserva");
     } finally {

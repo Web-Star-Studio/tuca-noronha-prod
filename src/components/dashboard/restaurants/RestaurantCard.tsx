@@ -98,6 +98,22 @@ export function RestaurantCard({
                 ⭐ Destacado
               </Badge>
             )}
+            
+            {restaurant.adminRating && restaurant.adminRating > 0 ? (
+              <Badge 
+                variant="default"
+                className="bg-blue-600 text-white border-blue-600 shadow-lg"
+              >
+                {"⭐".repeat(restaurant.adminRating)} {restaurant.adminRating} Estrelas
+              </Badge>
+            ) : restaurant.rating?.overall > 0 && (
+              <Badge 
+                variant="default"
+                className="bg-yellow-500 text-white border-yellow-500 shadow-lg"
+              >
+                ★ {restaurant.rating?.overall.toFixed(1)} ({restaurant.rating?.totalReviews})
+              </Badge>
+            )}
           </div>
 
           {/* Price range badge com melhor contraste */}
@@ -198,10 +214,20 @@ export function RestaurantCard({
 
         <CardFooter separator={true} className="px-4 py-3 bg-gray-50/50">
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center space-x-1">
-              <span className="text-yellow-500">★</span>
-              <span className="font-medium">{restaurant.rating?.overall.toFixed(1)}</span>
-              <span className="text-gray-500 text-sm">({restaurant.rating?.totalReviews})</span>
+            <div className="flex items-center gap-3">
+              {restaurant.adminRating && restaurant.adminRating > 0 ? (
+                <div className="flex items-center space-x-1">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                    {"⭐".repeat(restaurant.adminRating)} {restaurant.adminRating} Estrelas
+                  </Badge>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1">
+                  <span className="text-yellow-500">★</span>
+                  <span className="font-medium">{restaurant.rating?.overall.toFixed(1)}</span>
+                  <span className="text-gray-500 text-sm">({restaurant.rating?.totalReviews})</span>
+                </div>
+              )}
             </div>
 
             <div className="flex space-x-2">

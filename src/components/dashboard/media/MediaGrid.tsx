@@ -239,57 +239,31 @@ export function MediaGrid({ media, onDelete, onEdit, isLoading, className }: Med
       
       {/* Dialog de confirmação de exclusão */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-w-[95vw] bg-white">
+        <DialogContent className="sm:max-w-[425px] max-w-[95vw] bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
               Confirmar exclusão
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-base">
               Tem certeza que deseja excluir esta mídia? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           
-          {mediaToDelete && (
-            <div className="flex items-center gap-3 my-2 p-3 bg-muted rounded-md">
-              {mediaToDelete.fileType.startsWith("image/") || mediaToDelete.fileType.startsWith("video/") ? (
-                <div className="h-14 w-14 rounded overflow-hidden flex-shrink-0">
-                  <SmartMedia
-                    entry={{ url: mediaToDelete.url, type: mediaToDelete.fileType } as MediaEntry}
-                    alt={mediaToDelete.description || mediaToDelete.fileName}
-                    className="w-full h-full object-cover"
-                    imageProps={{ fill: true }}
-                    videoProps={{ controls: true, preload: "metadata" }}
-                  />
-                </div>
-              ) : (
-                <div className="h-14 w-14 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-mono">{mediaToDelete.fileType.split('/')[1]}</span>
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate" title={mediaToDelete.fileName}>
-                  {mediaToDelete.fileName}
-                </p>
-                <p className="text-xs text-muted-foreground">{formatFileSize(mediaToDelete.fileSize)}</p>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter className="">
+          <DialogFooter className="mt-6 gap-2">
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
-              className="bg-gray-500 text-white hover:bg-gray-600 transition-colors hover:cursor-pointer"
+              className="flex-1 sm:flex-initial"
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
-              className="bg-red-800 text-white hover:bg-red-500 transition-colors hover:cursor-pointer"
+              className="flex-1 sm:flex-initial bg-red-600 hover:bg-red-700"
             >
-              Excluir
+              Confirmar Exclusão
             </Button>
           </DialogFooter>
         </DialogContent>

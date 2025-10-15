@@ -136,7 +136,7 @@ export default function SupportPage() {
       setIsDialogOpen(false);
       setSelectedMessage(null);
       setResponseText("");
-    } catch {
+    } catch (error) {
       console.error("Erro ao atualizar status:", error);
       toast.error("Erro ao atualizar status da mensagem");
     }

@@ -2,6 +2,21 @@
 
 import type { EmailData } from "./types";
 import { voucherEmailTemplate } from "./templates/voucher";
+import {
+  newPackageRequestAdminEmail,
+  proposalAcceptedAdminEmail,
+  proposalRejectedAdminEmail,
+  proposalRevisionRequestedAdminEmail,
+  proposalSentTravelerEmail,
+  packageRequestReceivedTravelerEmail,
+  flightBookingStartedTravelerEmail,
+  flightsConfirmedTravelerEmail,
+  documentsReadyTravelerEmail,
+  bookingConfirmationEmail,
+  bookingCancelledEmail,
+  welcomeNewUserEmail,
+  partnerNewBookingEmail,
+} from "./templates/packageRequests";
 
 // Função auxiliar para formatar moeda
 const formatCurrency = (value: number): string => {
@@ -359,72 +374,11 @@ export const getBookingCancelledTemplate = (data: any): string => {
   return getBaseTemplate(content);
 };
 
-// Template para solicitação de pacote recebida
+// Template para solicitação de pacote recebida (GENÉRICO - SEM DADOS ESPECÍFICOS)
+// Este template é apenas para o viajante. O admin recebe um email separado.
 export const getPackageRequestReceivedTemplate = (data: any): string => {
-  const content = `
-    <div class="container">
-        <div class="header">
-            <h1>📝 Solicitação Recebida!</h1>
-            <p>Sua solicitação de pacote personalizado foi recebida</p>
-        </div>
-        
-        <div class="content">
-            <p>Olá <strong>${data.customerName}</strong>,</p>
-            <p>Recebemos sua solicitação de pacote personalizado para Fernando de Noronha!</p>
-            
-            <div class="confirmation-code">
-                Número de Acompanhamento: ${data.requestNumber}
-            </div>
-            
-            <div class="highlight-box">
-                <h3>Resumo da Sua Solicitação</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Destino</div>
-                        <div class="info-value">${data.destination}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Duração</div>
-                        <div class="info-value">${data.duration} ${data.duration === 1 ? 'dia' : 'dias'}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Pessoas</div>
-                        <div class="info-value">${data.guests} ${data.guests === 1 ? 'pessoa' : 'pessoas'}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Orçamento</div>
-                        <div class="info-value">${formatCurrency(data.budget)}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <p><strong>Próximos passos:</strong></p>
-            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-                <li>Nossa equipe analisará sua solicitação</li>
-                <li>Criaremos uma proposta personalizada para você</li>
-                <li>Entraremos em contato em até 24 horas</li>
-            </ul>
-            
-            <div style="text-align: center; margin: 2rem 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}/meu-painel" class="button">
-                    Acompanhar Solicitação
-                </a>
-            </div>
-            
-            <p>Você pode usar o número de acompanhamento <strong>${data.requestNumber}</strong> para verificar o status da sua solicitação a qualquer momento.</p>
-            
-            <p>Obrigado por confiar no Tuca Noronha para criar sua experiência perfeita! 🏝️</p>
-        </div>
-        
-        <div class="footer">
-            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
-        </div>
-    </div>
-  `;
-  
-  return getBaseTemplate(content);
+  const { packageRequestReceivedTravelerEmail } = require("./templates/packageRequests");
+  return packageRequestReceivedTravelerEmail();
 };
 
 // Template para nova reserva (para parceiros)
@@ -628,86 +582,11 @@ export const getWelcomeNewUserTemplate = (data: any): string => {
   return getBaseTemplate(content);
 };
 
-// Template para proposta de pacote enviada
+// Template para proposta de pacote enviada - USAR O NOVO TEMPLATE MINIMALISTA
 export const getPackageProposalTemplate = (data: any): string => {
-  const content = `
-    <div class="container">
-        <div class="header">
-            <h1>🎁 Nova Proposta de Pacote!</h1>
-            <p>Sua proposta personalizada está pronta</p>
-        </div>
-        
-        <div class="content">
-            <p>Olá <strong>${data.customerName}</strong>,</p>
-            <p>Temos o prazer de apresentar uma proposta personalizada especialmente criada para você!</p>
-            
-            <div class="confirmation-code">
-                Proposta #${data.proposalNumber}
-            </div>
-            
-            <div class="highlight-box success">
-                <h3>${data.proposalTitle}</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Valor Total</div>
-                        <div class="info-value">${formatCurrency(data.totalPrice)}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Válida até</div>
-                        <div class="info-value">${data.validUntil}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Responsável</div>
-                        <div class="info-value">${data.adminName}</div>
-                    </div>
-                    ${data.adminEmail ? `
-                    <div class="info-item">
-                        <div class="info-label">Contato</div>
-                        <div class="info-value">${data.adminEmail}</div>
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-            
-            ${data.customMessage ? `
-            <div class="highlight-box">
-                <h3>Mensagem Personalizada</h3>
-                <p style="margin: 0;">${data.customMessage}</p>
-            </div>
-            ` : ''}
-            
-            <p><strong>O que fazer agora:</strong></p>
-            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-                <li>Clique no botão abaixo para visualizar todos os detalhes</li>
-                <li>Revise os componentes e preços do pacote</li>
-                <li>Entre em contato conosco para dúvidas ou ajustes</li>
-                <li>Confirme sua reserva diretamente pela plataforma</li>
-            </ul>
-            
-            <div style="text-align: center; margin: 2rem 0;">
-                <a href="${data.proposalUrl}" class="button">
-                    Visualizar Proposta Completa
-                </a>
-            </div>
-            
-            <div class="highlight-box urgent">
-                <p style="margin: 0;"><strong>⏰ Atenção:</strong> Esta proposta é válida até <strong>${data.validUntil}</strong>. Não perca esta oportunidade!</p>
-            </div>
-            
-            <p>Nossa equipe está à disposição para esclarecer qualquer dúvida e ajudar você a ter a experiência perfeita em Fernando de Noronha!</p>
-            
-            <p>Estamos ansiosos para tornar sua viagem inesquecível! 🏝️✈️</p>
-        </div>
-        
-        <div class="footer">
-            <p>Tuca Noronha - Sua experiência em Fernando de Noronha</p>
-            <p>📧 atendimentotucanoronha@gmail.com | 📱 (81) 979097547</p>
-            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://tuca-noronha.vercel.app"}">${process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "www.tuca-noronha.vercel.app"}</a></p>
-        </div>
-    </div>
-  `;
-  
-  return getBaseTemplate(content);
+  // Importar a função do arquivo packageRequests
+  const { proposalSentTravelerEmail } = require("./templates/packageRequests");
+  return proposalSentTravelerEmail({ proposalLink: data.proposalUrl });
 };
 
 // Template para início de reserva de voos
@@ -882,29 +761,39 @@ export const getPackageDocumentsReadyTemplate = (data: any): string => {
 export const getEmailTemplate = (data: EmailData): string => {
   switch (data.type) {
     case 'booking_confirmation':
-      return getBookingConfirmationTemplate(data);
+      return bookingConfirmationEmail({ bookingLink: (data as any).bookingUrl || process.env.NEXT_PUBLIC_URL + '/meu-painel/reservas' });
     case 'booking_cancelled':
-      return getBookingCancelledTemplate(data);
+      return bookingCancelledEmail();
     case 'package_request_received':
-      return getPackageRequestReceivedTemplate(data);
+      return packageRequestReceivedTravelerEmail();
     case 'package_proposal_sent':
-      return getPackageProposalTemplate(data);
+      return proposalSentTravelerEmail({ proposalLink: (data as any).proposalUrl });
     case 'package_flight_booking_started':
-      return getPackageFlightBookingStartedTemplate(data);
+      return flightBookingStartedTravelerEmail();
     case 'package_flights_confirmed':
-      return getPackageFlightsConfirmedTemplate(data);
+      return flightsConfirmedTravelerEmail();
     case 'package_documents_ready':
-      return getPackageDocumentsReadyTemplate(data);
+      return documentsReadyTravelerEmail({ panelLink: (data as any).panelLink || process.env.NEXT_PUBLIC_URL + '/meu-painel' });
     case 'partner_new_booking':
-      return getPartnerNewBookingTemplate(data);
+      return partnerNewBookingEmail({ bookingLink: (data as any).bookingUrl || process.env.NEXT_PUBLIC_URL + '/meu-painel/reservas' });
     case 'welcome_new_user':
-      return getWelcomeNewUserTemplate(data);
+      return welcomeNewUserEmail({ loginLink: (data as any).loginUrl || process.env.NEXT_PUBLIC_URL + '/entrar' });
     case 'voucher_ready':
       if (data.type === 'voucher_ready') {
         return voucherEmailTemplate(data as any);
       }
       // Fallback for type mismatch, though it shouldn't happen with proper type guarding
       return getBaseTemplate('<p>Error: Invalid data for voucher email.</p>');
+    case 'package_request_admin':
+      return newPackageRequestAdminEmail();
+    case 'package_proposal_accepted_admin':
+      return proposalAcceptedAdminEmail();
+    case 'package_proposal_rejected_admin':
+      return proposalRejectedAdminEmail();
+    case 'package_proposal_revision_admin':
+      return proposalRevisionRequestedAdminEmail();
+    case 'package_proposal_sent_traveler':
+      return proposalSentTravelerEmail(data as any);
     default:
       // Template genérico para tipos não implementados
       return getBaseTemplate(`
@@ -924,4 +813,26 @@ export const getEmailTemplate = (data: EmailData): string => {
         </div>
       `);
   }
+}
+
+// Export all minimalista templates
+export {
+  // Admin emails
+  newPackageRequestAdminEmail,
+  proposalAcceptedAdminEmail,
+  proposalRejectedAdminEmail,
+  proposalRevisionRequestedAdminEmail,
+  // Traveler emails
+  proposalSentTravelerEmail,
+  packageRequestReceivedTravelerEmail,
+  flightBookingStartedTravelerEmail,
+  flightsConfirmedTravelerEmail,
+  documentsReadyTravelerEmail,
+  // Booking emails
+  bookingConfirmationEmail,
+  bookingCancelledEmail,
+  // User emails
+  welcomeNewUserEmail,
+  // Partner emails
+  partnerNewBookingEmail,
 }; 

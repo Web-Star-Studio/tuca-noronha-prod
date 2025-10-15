@@ -163,7 +163,7 @@ export function PermissionsManager({ employee, open, onOpenChange }: Permissions
       // Reset form
       setSelectedOrganizationId("");
       setOrganizationNote("");
-    } catch {
+    } catch (error) {
       console.error("Error granting organization access:", error);
       toast.error("Erro ao conceder acesso à organização");
     } finally {
@@ -184,7 +184,7 @@ export function PermissionsManager({ employee, open, onOpenChange }: Permissions
         await revokePermission({ permissionId: permission._id });
       }
       toast.success("Permissão removida com sucesso!");
-    } catch {
+    } catch (error) {
       console.error("Error revoking permission:", error);
       toast.error("Erro ao remover permissão");
     }

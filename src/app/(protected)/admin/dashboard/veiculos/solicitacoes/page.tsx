@@ -66,7 +66,8 @@ export default function VehicleBookingRequestsPage() {
       });
       setShowConfirmDialog(false);
       setSelectedBooking(null);
-    } catch {
+    } catch (error) {
+      console.error("Error confirming booking:", error);
       toast.error("Erro ao confirmar reserva");
     } finally {
       setIsSubmitting(false);
@@ -90,7 +91,8 @@ export default function VehicleBookingRequestsPage() {
       });
       setShowRejectDialog(false);
       setSelectedBooking(null);
-    } catch {
+    } catch (error) {
+      console.error("Error rejecting booking:", error);
       toast.error("Erro ao rejeitar reserva");
     } finally {
       setIsSubmitting(false);

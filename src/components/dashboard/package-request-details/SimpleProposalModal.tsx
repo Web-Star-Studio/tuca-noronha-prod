@@ -97,22 +97,23 @@ const formatTripPeriodFromRequest = (requestDetails?: any) => {
   return "Período a definir";
 };
 
-const formatGroupBreakdown = (tripDetails?: any) => {
-  if (!tripDetails) return "";
-  const adults = typeof tripDetails.adults === "number" ? tripDetails.adults : undefined;
-  const children = typeof tripDetails.children === "number" ? tripDetails.children : undefined;
-  const parts: string[] = [];
+// Helper to format group breakdown - currently unused but kept for future reference
+// const formatGroupBreakdown = (tripDetails?: any) => {
+//   if (!tripDetails) return "";
+//   const adults = typeof tripDetails.adults === "number" ? tripDetails.adults : undefined;
+//   const children = typeof tripDetails.children === "number" ? tripDetails.children : undefined;
+//   const parts: string[] = [];
 
-  if (adults !== undefined) {
-    parts.push(`${adults} ${adults === 1 ? "adulto" : "adultos"}`);
-  }
+//   if (adults !== undefined) {
+//     parts.push(`${adults} ${adults === 1 ? "adulto" : "adultos"}`);
+//   }
 
-  if (children !== undefined) {
-    parts.push(`${children} ${children === 1 ? "criança" : "crianças"}`);
-  }
+//   if (children !== undefined) {
+//     parts.push(`${children} ${children === 1 ? "criança" : "crianças"}`);
+//   }
 
-  return parts.join(" e ");
-};
+//   return parts.join(" e ");
+// };
 
 const buildFormDataFromRequest = (requestDetails?: any) => {
   const trip = requestDetails?.tripDetails;
@@ -123,28 +124,6 @@ const buildFormDataFromRequest = (requestDetails?: any) => {
   const accommodationType = preferences?.accommodationType?.[0] || "";
   const accommodationDetails = preferences?.accommodationType?.join(", ") || "";
   const includesAirfare = trip?.includesAirfare;
-  const companions = formatGroupBreakdown(trip);
-
-  const baseDescriptionLines: string[] = [];
-  if (travelPeriod) {
-    baseDescriptionLines.push(`- **Período da Viagem:** ${travelPeriod}`);
-  }
-  if (trip?.originCity) {
-    baseDescriptionLines.push(`- **Origem:** ${trip.originCity}`);
-  }
-  if (companions) {
-    baseDescriptionLines.push(`- **Grupo:** ${companions}`);
-  }
-  if (trip?.includesAirfare !== undefined) {
-    baseDescriptionLines.push(`- **Passagens Aéreas:** ${includesAirfare ? "Incluídas" : "Não incluídas"}`);
-  }
-
-  const descriptionHeader = baseDescriptionLines.length > 0
-    ? `**Resumo da Viagem:**
-${baseDescriptionLines.join("\n")}
-
-`
-    : "";
 
   return {
     ...initialFormData,
@@ -153,7 +132,7 @@ ${baseDescriptionLines.join("\n")}
     departureLocation: trip?.originCity || "",
     accommodationType,
     accommodationDetails,
-    fullPackageDescription: `${descriptionHeader}`.trim(),
+    fullPackageDescription: "",
     pricePerPerson: "",
     totalPrice: "",
     additionalNotes: includesAirfare === false ? "Este pacote não inclui passagens aéreas." : "",
@@ -165,30 +144,25 @@ function mapExistingProposalToFormData(existingProposal: any, requestDetails?: a
     return buildFormDataFromRequest(requestDetails);
   }
 
-  // Extract travel info from the main description
-  const extractFromDescription = (label: string) => {
-    const regex = new RegExp(`\\*\\*${label}:\\*\\*\\s*(.*)`, "i");
-    const match = existingProposal.description?.match(regex);
-    return match?.[1]?.trim() ?? "";
-  };
-
-  const baseFromRequest = buildFormDataFromRequest(requestDetails);
+  const trip = requestDetails?.tripDetails;
+  const travelPeriod = formatTripPeriodFromRequest(requestDetails);
+  const nights = trip?.duration ? String(trip.duration) : "";
 
   return {
-    ...baseFromRequest,
-    travelPeriod: extractFromDescription("Periodo da Viagem") || extractFromDescription("Período da Viagem"),
-    nights: extractFromDescription("Noites"),
-    departureLocation: extractFromDescription("Local de Saida") || extractFromDescription("Local de Saída"),
-    airline: extractFromDescription("Companhia Aerea") || extractFromDescription("Companhia Aérea"),
-    accommodationType: (extractFromDescription("Acomodacao") || extractFromDescription("Acomodação"))?.split(" - ")[0] ?? "",
-    accommodationDetails: (extractFromDescription("Acomodacao") || extractFromDescription("Acomodação"))?.split(" - ").slice(1).join(" - ") || "",
-    fullPackageDescription: existingProposal.description ?? "",
+    ...initialFormData,
+    travelPeriod: travelPeriod || "",
+    nights: nights || "",
+    departureLocation: trip?.originCity || "",
+    airline: "",
+    accommodationType: "",
+    accommodationDetails: "",
+    fullPackageDescription: existingProposal.description || "",
     pricePerPerson: "",
     totalPrice:
       existingProposal.totalPrice !== undefined && existingProposal.totalPrice !== null
         ? String(existingProposal.totalPrice)
         : "",
-    additionalNotes: extractFromDescription("Observacoes") || extractFromDescription("Observações"),
+    additionalNotes: "",
     paymentTerms: existingProposal.paymentTerms || "",
     cancellationPolicy: existingProposal.cancellationPolicy || "",
   };
@@ -241,18 +215,13 @@ export function SimpleProposalModal({
     const {
       travelPeriod,
       nights,
-      departureLocation,
-      airline,
-      accommodationType,
-      accommodationDetails,
       fullPackageDescription,
       totalPrice,
-      additionalNotes,
       paymentTerms,
       cancellationPolicy,
     } = formData;
-    if (!travelPeriod || !nights || !totalPrice || !fullPackageDescription || !accommodationType || !accommodationDetails) {
-      toast.error("Preencha os campos obrigatórios: Período, Noites, Descrição, Preço Total, Tipo de Acomodação e Detalhes da Acomodação.");
+    if (!travelPeriod || !nights || !totalPrice) {
+      toast.error("Preencha os campos obrigatórios: Período, Noites e Preço Total.");
       setIsSubmitting(false);
       return;
     }
@@ -282,23 +251,9 @@ export function SimpleProposalModal({
       ? `Proposta para ${customerName}: ${baseTitle}`
       : existingProposal?.title ?? `Proposta de Pacote: ${baseTitle}`;
 
-    // Resumo com descrição do pacote primeiro
-    const summary = fullPackageDescription || existingProposal?.summary || "Pacote personalizado.";
-
-    // Build the enhanced description with travel info
-    const travelInfoLines = [
-      travelPeriod ? `- **Período da Viagem:** ${travelPeriod}` : null,
-      nights ? `- **Noites:** ${nights}` : null,
-      departureLocation ? `- **Origem:** ${departureLocation}` : null,
-      airline ? `- **Companhia Aérea:** ${airline}` : null,
-      accommodationType || accommodationDetails ? `- **Acomodação:** ${[accommodationType, accommodationDetails].filter(Boolean).join(" - ")}` : null,
-      additionalNotes ? `- **Observações:** ${additionalNotes}` : null,
-    ].filter(Boolean).join('\n');
-    
-    const enhancedDescription = `**Informacoes da Viagem:**
-${travelInfoLines}
-
-${fullPackageDescription}`.trim();
+    // Resumo e descrição - apenas o que o admin digitou
+    const summary = fullPackageDescription || existingProposal?.summary || `Pacote para ${requestDetails?.tripDetails?.destination || "destino selecionado"}`;
+    const description = fullPackageDescription || "";
     const requiresApproval = existingProposal?.requiresApproval ?? false;
     const priority = existingProposal?.priority ?? "normal";
     const tags = existingProposal?.tags ?? ["proposta-simples"];
@@ -327,7 +282,7 @@ ${fullPackageDescription}`.trim();
 
     const proposalPayload = {
       title,
-      description: enhancedDescription,
+      description: description,
       summary,
       subtotal,
       taxes,
@@ -353,7 +308,9 @@ ${fullPackageDescription}`.trim();
 
         if (result.success) {
           toast.success("Proposta atualizada com sucesso!");
-          onSuccess();
+          if (onSuccess && result.proposalId) {
+            onSuccess(result.proposalId);
+          }
           onClose();
         } else {
           toast.error(result.message || "Falha ao atualizar proposta.");
@@ -367,7 +324,9 @@ ${fullPackageDescription}`.trim();
         if (result.success) {
           toast.success("Proposta criada com sucesso!");
           setFormData(initialFormData);
-          onSuccess();
+          if (onSuccess && result.proposalId) {
+            onSuccess(result.proposalId);
+          }
           onClose();
         } else {
           toast.error(result.message || "Falha ao criar proposta.");
@@ -415,18 +374,18 @@ ${fullPackageDescription}`.trim();
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="accommodationType">Tipo de Acomodação *</Label>
-            <Input id="accommodationType" name="accommodationType" value={formData.accommodationType} onChange={handleChange} placeholder="Ex: Pousada, Hotel, Resort" />
+            <Label htmlFor="accommodationType">Tipo de Acomodação (opcional)</Label>
+            <Input id="accommodationType" name="accommodationType" value={formData.accommodationType} onChange={handleChange} placeholder="Ex: Pousada, Hotel, Resort (opcional)" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="accommodationDetails">Detalhes da acomodação *</Label>
-            <Textarea id="accommodationDetails" name="accommodationDetails" value={formData.accommodationDetails} onChange={handleChange} placeholder="Ex: Pousada com piscina, café da manhã incluso." />
+            <Label htmlFor="accommodationDetails">Detalhes da acomodação (opcional)</Label>
+            <Textarea id="accommodationDetails" name="accommodationDetails" value={formData.accommodationDetails} onChange={handleChange} placeholder="Ex: Pousada com piscina, café da manhã incluso (opcional)" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fullPackageDescription">Descrição completa do pacote *</Label>
-            <Textarea id="fullPackageDescription" name="fullPackageDescription" value={formData.fullPackageDescription} onChange={handleChange} rows={5} placeholder="Descreva o que está incluso no pacote, o roteiro, etc." />
+            <Label htmlFor="fullPackageDescription">Descrição completa do pacote (opcional)</Label>
+            <Textarea id="fullPackageDescription" name="fullPackageDescription" value={formData.fullPackageDescription} onChange={handleChange} rows={5} placeholder="Descreva o que está incluso no pacote, o roteiro, etc. (campo opcional)" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

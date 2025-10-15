@@ -588,10 +588,12 @@ export const listPackageRequests = query({
       return await ctx.db
         .query("packageRequests")
         .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .order("desc")
         .paginate(args.paginationOpts);
     } else {
       return await ctx.db
         .query("packageRequests")
+        .order("desc")
         .paginate(args.paginationOpts);
     }
   },

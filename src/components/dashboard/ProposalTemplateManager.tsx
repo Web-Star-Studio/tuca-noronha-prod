@@ -182,7 +182,7 @@ export function ProposalTemplateManager() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao salvar template");
       console.error("Error saving template:", error);
     }
@@ -192,7 +192,7 @@ export function ProposalTemplateManager() {
     try {
       await deleteTemplate({ id: templateId });
       toast.success("Template deletado com sucesso!");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao deletar template");
       console.error("Error deleting template:", error);
     }

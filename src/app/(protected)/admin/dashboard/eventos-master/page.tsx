@@ -148,10 +148,17 @@ export default function EventosMasterPage() {
   // Handlers para operações CRUD
   const handleCreateEvent = async (formData: any) => {
     try {
-      await createEvent(formData);
+      const numericMaxParticipants = Number(formData.maxParticipants);
+      const sanitizedMaxParticipants = Number.isFinite(numericMaxParticipants)
+        ? Math.max(0, Math.trunc(numericMaxParticipants))
+        : 0;
+      await createEvent({
+        ...formData,
+        maxParticipants: BigInt(sanitizedMaxParticipants),
+      });
       toast.success("Evento criado com sucesso!");
       setAddDialogOpen(false);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao criar evento");
       console.error("Erro ao criar evento:", error);
     }
@@ -160,13 +167,21 @@ export default function EventosMasterPage() {
   const handleUpdateEvent = async (formData: any) => {
     try {
       if (!editingEvent) return;
+      const numericMaxParticipants = Number(formData.maxParticipants);
+      const sanitizedMaxParticipants = Number.isFinite(numericMaxParticipants)
+        ? Math.max(0, Math.trunc(numericMaxParticipants))
+        : undefined;
       await updateEvent({
         id: editingEvent._id,
         ...formData,
+        maxParticipants:
+          sanitizedMaxParticipants !== undefined
+            ? BigInt(sanitizedMaxParticipants)
+            : undefined,
       });
       toast.success("Evento atualizado com sucesso!");
       setEditingEvent(null);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao atualizar evento");
       console.error("Erro ao atualizar evento:", error);
     }
@@ -177,7 +192,7 @@ export default function EventosMasterPage() {
       await deleteEvent({ id: id as Id<"events"> });
       toast.success("Evento removido com sucesso!");
       setConfirmDeleteId(null);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao remover evento");
       console.error("Erro ao remover evento:", error);
     }
@@ -187,7 +202,7 @@ export default function EventosMasterPage() {
     try {
       await toggleFeatured({ id: id as Id<"events">, isFeatured: !isFeatured });
       toast.success(`Evento ${!isFeatured ? "destacado" : "removido dos destaques"} com sucesso!`);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao alterar destaque");
       console.error("Erro ao alterar destaque:", error);
     }
@@ -197,7 +212,7 @@ export default function EventosMasterPage() {
     try {
       await toggleActive({ id: id as Id<"events">, isActive: !isActive });
       toast.success(`Evento ${!isActive ? "ativado" : "desativado"} com sucesso!`);
-    } catch {
+    } catch (error) {
       toast.error("Erro ao alterar status");
       console.error("Erro ao alterar status:", error);
     }
@@ -713,7 +728,7 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
         address: event.address || "",
         price: Number(event.price) || 0,
         category: event.category || "",
-        maxParticipants: Number(event.maxParticipants) || 1,
+        maxParticipants: parseInt(String(event.maxParticipants)) || 1,
         imageUrl: event.imageUrl || "",
         galleryImages: event.galleryImages || [],
         highlights: event.highlights || [],
@@ -868,8 +883,9 @@ function EventFormDialog({ open, onOpenChange, event, onSave, title, description
                   id="maxParticipants"
                   type="number"
                   min="1"
+                  step="1"
                   value={formData.maxParticipants}
-                  onChange={(e) => setFormData({ ...formData, maxParticipants: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 1 })}
                 />
               </div>
             </div>

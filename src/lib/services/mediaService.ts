@@ -119,9 +119,9 @@ export function useVerifyMediaUrls() {
             console.log(`Mídia ${media._id} foi excluída, ignorando atualização de URL`);
           }
         }
-      } catch {
+      } catch (error) {
         // Em caso de erro de rede, também atualiza a URL
-        console.log(`Erro ao verificar URL para mídia ${media._id}, atualizando...`);
+        console.log(`Erro ao verificar URL para mídia ${media._id}, atualizando...`, error);
         try {
           const newUrl = await refreshUrl({ id: media._id });
           if (newUrl === null) {

@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, cloneElement, isValidElement } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Sheet,
@@ -49,7 +49,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     // Execute the callback safely
     try {
       callback();
-    } catch {
+    } catch (error) {
       console.error('Focus handler error:', error);
     }
     
@@ -73,6 +73,10 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
   // Get unread count efficiently
   const unreadCount = useQuery(api.domains.notifications.queries.getUnreadNotificationCount);
 
+  const normalizedUnreadCount = typeof unreadCount === "number" ? unreadCount : 0;
+  const hasUnread = normalizedUnreadCount > 0;
+  const formattedUnreadCount = normalizedUnreadCount > 9 ? "9+" : normalizedUnreadCount;
+
   // Mutations
   const markAsRead = useMutation(api.domains.notifications.mutations.markAsRead);
   const markAllAsRead = useMutation(api.domains.notifications.mutations.markAllAsRead);
@@ -82,7 +86,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     safeFocusHandler(`markAsRead:${notificationId}`, async () => {
       try {
         await markAsRead({ notificationId });
-      } catch {
+      } catch (error) {
         toast.error("Erro ao marcar notificação como lida");
         console.error(error);
       }
@@ -102,7 +106,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     try {
       await markAllAsRead({});
       toast.success("Todas as notificações foram marcadas como lidas");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao marcar todas as notificações como lidas");
       console.error(error);
     }
@@ -112,7 +116,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     try {
       await deleteNotification({ notificationId });
       toast.success("Notificação removida");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao remover notificação");
       console.error(error);
     }
@@ -159,25 +163,65 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
     };
   };
 
+  const getNotificationTypeMeta = (type: string) => {
+    const meta: Record<string, { label: string; badgeClass: string }> = {
+      booking_confirmed: { label: "Reserva confirmada", badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+      booking_canceled: { label: "Reserva cancelada", badgeClass: "bg-red-100 text-red-700 border-red-200" },
+      booking_updated: { label: "Reserva atualizada", badgeClass: "bg-blue-100 text-blue-700 border-blue-200" },
+      booking_reminder: { label: "Lembrete", badgeClass: "bg-orange-100 text-orange-700 border-orange-200" },
+      payment_received: { label: "Pagamento recebido", badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+      system_update: { label: "Atualização do sistema", badgeClass: "bg-blue-100 text-blue-700 border-blue-200" },
+      chat_message: { label: "Nova mensagem", badgeClass: "bg-purple-100 text-purple-700 border-purple-200" },
+      chat_room_created: { label: "Novo chat", badgeClass: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+    };
+
+    return meta[type] || { label: "Atualização", badgeClass: "bg-gray-100 text-gray-700 border-gray-200" };
+  };
+
+  const renderUnreadBadge = () => {
+    if (!hasUnread) {
+      return null;
+    }
+
+    return (
+      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400/70" />
+        <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
+          {formattedUnreadCount}
+        </span>
+      </span>
+    );
+  };
+
+  const renderTrigger = () => {
+    if (children && isValidElement(children)) {
+      return cloneElement(children, {
+        className: cn("relative", className, children.props.className),
+        children: (
+          <>
+            {children.props.children}
+            {renderUnreadBadge()}
+          </>
+        ),
+      });
+    }
+
+    return (
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className={cn("relative", className)}
+      >
+        <Bell className="h-5 w-5" />
+        {renderUnreadBadge()}
+      </Button>
+    );
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        {children || (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn("relative", className)}
-          >
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-white">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              </div>
-            )}
-          </Button>
-        )}
+        {renderTrigger()}
       </SheetTrigger>
       
       <SheetContent className="w-[400px] sm:w-[540px] bg-white shadow-xl border-l">
@@ -188,13 +232,13 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
               <SheetTitle className="text-xl font-semibold text-gray-900">
                 Notificações
               </SheetTitle>
-              {unreadCount > 0 && (
+              {hasUnread && (
                 <Badge variant="secondary" className="text-xs font-medium">
-                  {unreadCount} novas
+                  {normalizedUnreadCount} novas
                 </Badge>
               )}
             </div>
-            {unreadCount > 0 && (
+            {hasUnread && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -214,16 +258,40 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
         <Separator className="my-4" />
 
         <ScrollArea className="h-[calc(100vh-140px)]">
-          {notifications && notifications.length > 0 ? (
+          {notifications === undefined ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="animate-pulse rounded-xl border border-gray-200/60 bg-gray-50/80 p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-gray-200" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-24 rounded bg-gray-200" />
+                      <div className="h-4 w-full rounded bg-gray-200" />
+                      <div className="h-4 w-3/4 rounded bg-gray-200" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : notifications.length > 0 ? (
             <div className="space-y-2">
               {notifications.map((notification) => {
                 const variant = getNotificationVariant(notification.type, notification.isRead);
+                const meta = getNotificationTypeMeta(notification.type);
+                const relativeTime = formatDistanceToNow(new Date(notification.createdAt), {
+                  addSuffix: true,
+                  locale: ptBR,
+                });
+                const relativeTimeLabel = relativeTime.charAt(0).toUpperCase() + relativeTime.slice(1);
                 
                 return (
                   <div
                     key={notification._id}
                     className={cn(
-                      "relative p-4 rounded-xl border-l-2 transition-all duration-200 cursor-pointer group",
+                      "relative p-4 rounded-xl border-l-2 transition-all duration-200 cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5",
                       variant.container
                     )}
                     onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
@@ -241,13 +309,16 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-1">
-                        <div className="w-9 h-9 rounded-lg bg-white/80 flex items-center justify-center border border-gray-200/50">
+                        <div className="relative w-10 h-10 rounded-lg bg-white/90 flex items-center justify-center border border-gray-200/60 shadow-inner">
                           {getNotificationIcon(notification.type)}
+                          {!notification.isRead && (
+                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-500 shadow-sm" />
+                          )}
                         </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start justify-between mb-2 gap-2">
                           <h4 className={cn(
                             "font-medium text-sm leading-tight",
                             !notification.isRead ? "text-gray-900" : "text-gray-600"
@@ -269,6 +340,16 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                             </Button>
                           </div>
                         </div>
+
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "mb-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+                            meta.badgeClass
+                          )}
+                        >
+                          {meta.label}
+                        </Badge>
                         
                         <p className={cn(
                           "text-sm leading-relaxed mb-3",
@@ -301,7 +382,7 @@ export function NotificationCenter({ children, className }: NotificationCenterPr
                         <time className="text-xs text-gray-400" dateTime={notification.createdAt}>
                           {format(new Date(notification.createdAt), "dd 'de' MMMM 'às' HH:mm", {
                             locale: ptBR,
-                          })}
+                          })} · {relativeTimeLabel}
                         </time>
                       </div>
                     </div>

@@ -57,6 +57,7 @@ export type EventFromConvex = {
   additionalInfo: string[];
   speaker?: string;
   speakerBio?: string;
+  adminRating?: number; // Classificação definida pelo admin (0-5)
   isFeatured: boolean;
   isActive: boolean;
   isFree?: boolean; // Asset gratuito (sem pagamento)
@@ -110,6 +111,7 @@ export type Event = {
   additionalInfo: string[];
   speaker?: string;
   speakerBio?: string;
+  adminRating?: number; // Classificação definida pelo admin (0-5)
   isFeatured: boolean;
   isActive: boolean;
   isFree?: boolean; // Asset gratuito (sem pagamento)
@@ -156,7 +158,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     price: event.price,
     netRate: typeof event.netRate === "number" ? event.netRate : event.price,
     category: event.category,
-    maxParticipants: Number(event.maxParticipants),
+    maxParticipants: parseInt(String(event.maxParticipants)),
     imageUrl: event.imageUrl,
     galleryImages: event.galleryImages,
     highlights: event.highlights,
@@ -164,6 +166,7 @@ export const mapConvexEvent = (event: EventFromConvex): Event => {
     additionalInfo: event.additionalInfo,
     speaker: event.speaker,
     speakerBio: event.speakerBio,
+    adminRating: event.adminRating,
     isFeatured: event.isFeatured,
     isActive: event.isActive,
     isFree: event.isFree,
@@ -211,6 +214,10 @@ export const mapEventToConvex = (event: Event, convexUserId: Id<"users"> | null)
   if (!convexUserId) {
     throw new Error("User ID is required to create or update an event");
   }
+  const sanitizedMaxParticipants = Number.isFinite(event.maxParticipants)
+    ? Math.max(0, Math.trunc(event.maxParticipants))
+    : 0;
+
   return {
     title: event.title,
     description: event.description,
@@ -222,7 +229,7 @@ export const mapEventToConvex = (event: Event, convexUserId: Id<"users"> | null)
     price: event.price,
     netRate: event.netRate ?? event.price,
     category: event.category,
-    maxParticipants: event.maxParticipants,
+    maxParticipants: BigInt(sanitizedMaxParticipants),
     imageUrl: event.imageUrl,
     galleryImages: event.galleryImages || [],
     highlights: event.highlights || [],
@@ -436,12 +443,16 @@ export const useUpdateEvent = () => {
       // Avoid unused variable warnings
       void _createdAt; void _updatedAt; void _creatorName; void _creatorEmail; void _creatorImage; void _tickets;
       
+      const { maxParticipants, ...otherUpdates } = updateData;
+
       // Update the event in Convex
       const result = await updateEventMutation({
         id: id as Id<"events">,
-        ...updateData,
-        // Convert numbers to bigints as expected by the backend
-        maxParticipants: updateData.maxParticipants,
+        ...otherUpdates,
+        maxParticipants:
+          maxParticipants !== undefined
+            ? BigInt(Math.max(0, Math.trunc(Number(maxParticipants))))
+            : undefined,
       });
       
       return result;

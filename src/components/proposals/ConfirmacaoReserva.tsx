@@ -29,14 +29,14 @@ interface ConfirmacaoReservaProps {
   reservationNumber: string;
   proposalTitle: string;
   proposalDescription: string;
-  components: PackageComponent[];
+  components?: PackageComponent[];
   totalPrice: number;
   taxes?: number;
   guests: Guest[];
   customerName: string;
   customerEmail: string;
-  inclusions: string[];
-  exclusions: string[];
+  inclusions?: string[];
+  exclusions?: string[];
   validUntil: number;
   paymentTerms: string;
   cancellationPolicy: string;
@@ -93,10 +93,13 @@ export function ConfirmacaoReserva({
     return 'INF';
   };
 
-  // Separar componentes por tipo
-  const hotelComponents = components.filter(c => c.type === 'accommodation');
-  const flightComponents = components.filter(c => c.type === 'flight');
-  const serviceComponents = components.filter(c => c.type === 'service' || c.type === 'activity');
+  // Separar componentes por tipo - garantir que components é um array
+  const safeComponents = components || [];
+  const safeInclusions = inclusions || [];
+  const safeExclusions = exclusions || [];
+  const hotelComponents = safeComponents.filter(c => c.type === 'accommodation');
+  const flightComponents = safeComponents.filter(c => c.type === 'flight');
+  const serviceComponents = safeComponents.filter(c => c.type === 'service' || c.type === 'activity');
 
   const hasHotel = hotelComponents.length > 0;
   const hasFlight = flightComponents.length > 0;
@@ -176,7 +179,7 @@ export function ConfirmacaoReserva({
           <p className="font-bold mb-2">DESCRIÇÃO</p>
           <div className="pl-4">
             <p className="font-semibold mb-2">Inclui:</p>
-            {inclusions.map((item, index) => (
+            {safeInclusions.map((item, index) => (
               <p key={index} className="text-sm mb-1">* {item}</p>
             ))}
           </div>
@@ -392,11 +395,11 @@ export function ConfirmacaoReserva({
       )}
 
       {/* NÃO INCLUI */}
-      {exclusions.length > 0 && (
+      {safeExclusions.length > 0 && (
         <div className="mb-8">
           <h3 className="text-lg font-bold mb-3">NÃO INCLUI:</h3>
           <ul className="list-disc pl-6 space-y-1">
-            {exclusions.map((item, index) => (
+            {safeExclusions.map((item, index) => (
               <li key={index} className="text-sm">{item}</li>
             ))}
           </ul>
@@ -437,6 +440,62 @@ export function ConfirmacaoReserva({
         </div>
       </div>
 
+      {/* Aviso sobre Taxas */}
+      <div className="mt-12 pt-6 border-t-2 border-gray-300">
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-bold text-yellow-800 mb-2">
+                Taxas Não Inclusas
+              </h3>
+              <p className="text-sm text-yellow-700 mb-3">
+                O valor desta reserva <strong>NÃO INCLUI</strong> as seguintes taxas obrigatórias para visitação a Fernando de Noronha:
+              </p>
+              <ul className="space-y-2 text-sm text-yellow-700">
+                <li className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <div>
+                    <strong>Taxa de Preservação Ambiental (TPA):</strong> Taxa diária obrigatória cobrada por dia de permanência na ilha.
+                    <br />
+                    <a 
+                      href="https://www.noronha.pe.gov.br/catalogo-de-servicos/taxa-de-preservacao-ambiental-tpa/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                    >
+                      → Mais informações sobre a TPA
+                    </a>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <div>
+                    <strong>Ingresso PARNAMAR:</strong> Taxa de acesso ao Parque Nacional Marinho caso deseje visitar as praias e trilhas do parque.
+                    <br />
+                    <a 
+                      href="https://www.parnanoronha.com.br/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                    >
+                      → Mais informações sobre o PARNAMAR
+                    </a>
+                  </div>
+                </li>
+              </ul>
+              <p className="text-xs text-yellow-600 mt-3 italic">
+                * Estas taxas devem ser pagas diretamente pelos visitantes e os valores podem variar. Consulte os sites oficiais para informações atualizadas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
@@ -452,6 +511,28 @@ export function ConfirmacaoReserva({
           body {
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
+          }
+          
+          /* Garantir que a seção de taxas apareça na impressão */
+          .bg-yellow-50 {
+            background-color: #fefce8 !important;
+          }
+          
+          .border-yellow-400 {
+            border-color: #facc15 !important;
+          }
+          
+          .text-yellow-700 {
+            color: #a16207 !important;
+          }
+          
+          .text-yellow-800 {
+            color: #854d0e !important;
+          }
+          
+          a {
+            color: #2563eb !important;
+            text-decoration: underline !important;
           }
         }
       `}</style>

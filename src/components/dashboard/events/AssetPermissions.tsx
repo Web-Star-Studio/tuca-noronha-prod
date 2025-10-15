@@ -80,7 +80,7 @@ export function AssetPermissions({ assetId, assetType, assetName }: AssetPermiss
       setSelectedEmployeeId(null)
       setSelectedPermissions([])
       setNote("")
-    } catch {
+    } catch (error) {
       console.error("Erro ao conceder permissão:", error)
       toast.error("Erro ao conceder permissão")
     }
@@ -98,7 +98,7 @@ export function AssetPermissions({ assetId, assetType, assetName }: AssetPermiss
       })
       
       toast.success("Permissão removida com sucesso")
-    } catch {
+    } catch (error) {
       console.error("Erro ao remover permissão:", error)
       toast.error("Erro ao remover permissão")
     }

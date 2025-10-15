@@ -93,8 +93,8 @@ export const mapConvexActivity = (activity: ActivityFromConvex): Activity => {
     availableTimes: activity.availableTimes ?? [],
     category: activity.category,
     duration: activity.duration,
-    maxParticipants: Number(activity.maxParticipants),
-    minParticipants: Number(activity.minParticipants),
+    maxParticipants: parseInt(String(activity.maxParticipants)),
+    minParticipants: parseInt(String(activity.minParticipants)),
     difficulty: activity.difficulty,
     rating: activity.rating,
     imageUrl: activity.imageUrl,
@@ -175,7 +175,7 @@ export const useGetConvexUserId = () => {
     try {
       const convexUserId = await getUserByClerkId({ clerkId });
       return convexUserId as Id<"users">;
-    } catch {
+    } catch (error) {
       console.error("Error getting Convex user ID:", error);
       return null;
     }
@@ -206,7 +206,7 @@ export const useActivities = () => {
               // Instead of directly calling the API, use the queryTickets utility
               const activityTickets = await queryTickets(activity.id);
               return activityTickets;
-            } catch {
+            } catch (error) {
               console.error("Error loading tickets for activity:", error);
               return [];
             }
@@ -246,7 +246,7 @@ export const useFeaturedActivities = () => {
               // Use the queryTickets utility
               const activityTickets = await queryTickets(activity.id);
               return activityTickets;
-            } catch {
+            } catch (error) {
               console.error("Error loading tickets for activity:", error);
               return [];
             }
@@ -302,7 +302,7 @@ export const usePublicActivities = () => {
               // Use the queryTickets utility
               const activityTickets = await queryTickets(activity.id);
               return activityTickets;
-            } catch {
+            } catch (error) {
               console.error("Error loading tickets for activity:", error);
               return [];
             }
@@ -348,7 +348,7 @@ export const useCreateActivity = () => {
       // Create the activity in Convex
       const activityId = await createActivityMutation(convexData);
       return activityId;
-    } catch {
+    } catch (error) {
       console.error("Error creating activity:", error);
       throw error;
     }
@@ -398,7 +398,7 @@ export const useUpdateActivity = () => {
       });
       
       return result;
-    } catch {
+    } catch (error) {
       console.error("Error updating activity:", error);
       throw error;
     }
@@ -447,7 +447,7 @@ export const useUserActivities = () => {
           
           // Map activities to frontend format
           setActivities(activities.map(mapConvexActivity));
-        } catch {
+        } catch (error) {
           console.error("Error fetching user activities:", error);
         } finally {
           setIsLoading(false);
@@ -507,7 +507,7 @@ export const useCreateActivityTicket = () => {
     try {
       const ticketId = await createTicketMutation(convexData as any);
       return ticketId;
-    } catch {
+    } catch (error) {
       console.error("Error creating ticket:", error);
       throw error;
     }

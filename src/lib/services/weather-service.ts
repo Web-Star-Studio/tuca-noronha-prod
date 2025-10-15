@@ -65,7 +65,7 @@ class WeatherService {
         lastUpdated: new Date().toISOString()
       };
       
-    } catch {
+    } catch (error) {
       console.error('Error fetching real weather data:', error);
       // Fallback para dados simulados em caso de erro
       return this.getSimulatedWeatherData();

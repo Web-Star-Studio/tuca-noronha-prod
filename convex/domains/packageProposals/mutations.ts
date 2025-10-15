@@ -927,6 +927,9 @@ export const acceptProposal = mutation({
       });
     }
 
+    // Send email to admin (email genérico simplificado)
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.notifyAdminProposalAccepted, {});
+
     // Create audit log
     await createAuditLog(ctx, {
       event: {
@@ -1028,6 +1031,9 @@ export const rejectProposal = mutation({
       });
     }
 
+    // Send email to admin (email genérico simplificado)
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.notifyAdminProposalRejected, {});
+
     return {
       success: true,
       message: "Proposta rejeitada. A equipe será notificada.",
@@ -1110,6 +1116,9 @@ export const requestProposalRevision = mutation({
         relatedType: "package_proposal",
       });
     }
+
+    // Send email to admin (email genérico simplificado)
+    await ctx.scheduler.runAfter(0, internal.domains.email.actions.notifyAdminProposalRevisionRequested, {});
 
     return {
       success: true,

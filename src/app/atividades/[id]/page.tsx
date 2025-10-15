@@ -11,6 +11,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { ActivityBookingForm } from "@/components/bookings";
 import { parseMediaEntry } from "@/lib/media";
 import { SmartMedia } from "@/components/ui/smart-media";
+import { ImageGallery } from "@/components/ui/image-gallery";
 
 // Shadcn components
 import { Card, CardContent } from "@/components/ui/card";
@@ -177,6 +178,14 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                   >
                     Detalhes
                   </TabsTrigger>
+                  {activity.galleryImages && activity.galleryImages.length > 0 && (
+                    <TabsTrigger
+                      value="gallery"
+                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                    >
+                      Galeria
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger
                     value="itinerary"
                     className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
@@ -285,29 +294,22 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
                     </div>
                   </div>
 
-                  {/* Gallery */}
-                  {activity.galleryImages && activity.galleryImages.length > 0 && (
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Galeria</h3>
-                      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                        {galleryEntries.map((mediaEntry, index) => (
-                          <div
-                            key={`${activity._id}-media-${index}`}
-                            className="relative aspect-square overflow-hidden rounded-lg"
-                          >
-                            <SmartMedia
-                              entry={mediaEntry}
-                              alt={`${activity.title} - Mídia ${index + 1}`}
-                              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                              imageProps={{ fill: true }}
-                              videoProps={{ controls: true, preload: "metadata" }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                </TabsContent>
 
+                {/* Gallery tab */}
+                <TabsContent value="gallery" className="mt-2">
+                  {activity.galleryImages && activity.galleryImages.length > 0 && (
+                    <ImageGallery
+                      images={galleryEntries.map((entry, index) => ({
+                        id: `${activity._id}-${index}`,
+                        src: entry.url,
+                        alt: `${activity.title} - Foto ${index + 1}`,
+                        caption: activity.title,
+                        category: activity.category,
+                      }))}
+                      title="Galeria de Fotos"
+                    />
+                  )}
                 </TabsContent>
 
                 {/* Itinerary tab */}

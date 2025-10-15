@@ -131,7 +131,7 @@ export default function PermissionsManager({
       if (onPermissionsChange) {
         onPermissionsChange();
       }
-    } catch {
+    } catch (error) {
       console.error(error);
       toast.error("Erro ao atribuir organização");
     } finally {
@@ -150,7 +150,7 @@ export default function PermissionsManager({
       if (onPermissionsChange) {
         onPermissionsChange();
       }
-    } catch {
+    } catch (error) {
       console.error(error);
       toast.error("Erro ao remover organização");
     } finally {

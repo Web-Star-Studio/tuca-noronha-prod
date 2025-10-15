@@ -48,6 +48,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     transmission: "",
     estimatedPricePerDay: 0,
     netRate: 0,
+    adminRating: undefined,
     description: "",
     features: [] as string[],
     imageUrl: "",
@@ -76,6 +77,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         transmission: vehicle.transmission,
         estimatedPricePerDay: vehicle.estimatedPricePerDay,
         netRate: vehicle.netRate ?? vehicle.estimatedPricePerDay,
+        adminRating: vehicle.adminRating,
         description: vehicle.description || "",
         features: vehicle.features,
         imageUrl: vehicle.imageUrl || "",
@@ -184,7 +186,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       }
       
       onSubmit();
-    } catch {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao salvar veículo";
       console.error(error);
       toast.error(errorMessage);
@@ -366,7 +368,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   value={vehicleData.estimatedPricePerDay}
                   onChange={handleNumberChange}
                   min={0}
-                  step={10}
+                  step={0.01}
+                  placeholder="Ex: 150.50"
                   className="bg-muted/30 border-0 focus:bg-white transition-colors"
                   required
                 />
@@ -380,7 +383,8 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   value={vehicleData.netRate ?? 0}
                   onChange={handleNumberChange}
                   min={0}
-                  step={10}
+                  step={0.01}
+                  placeholder="Ex: 135.75"
                   className="bg-muted/30 border-0 focus:bg-white transition-colors"
                   required
                 />
@@ -438,6 +442,29 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="adminRating" className="text-sm font-medium text-gray-700">Classificação do Veículo</Label>
+              <Select 
+                value={vehicleData.adminRating?.toString() || "0"} 
+                onValueChange={(value) => handleSelectChange("adminRating", value === "0" ? undefined : parseFloat(value))}
+              >
+                <SelectTrigger id="adminRating" className="bg-muted/30 border-0">
+                  <SelectValue placeholder="Selecione a classificação (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Nenhuma classificação</SelectItem>
+                  <SelectItem value="1">⭐ 1 Estrela</SelectItem>
+                  <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Classificação oficial do veículo definida pela administração
+              </p>
             </div>
 
             <div>

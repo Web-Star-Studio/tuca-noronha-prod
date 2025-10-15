@@ -54,6 +54,7 @@ export type Restaurant = {
     noiseLevel: string;
     totalReviews: number;
   };
+  adminRating?: number; // Classificação definida pelo admin (0-5)
   acceptsReservations: boolean;
   tags: string[];
   executiveChef?: string;
@@ -145,7 +146,7 @@ export function useCreateRestaurant() {
       const restaurantId = await createMutation(dataWithPartner as any);
       console.log("Restaurant created successfully with ID:", restaurantId);
       return restaurantId;
-    } catch {
+    } catch (error) {
       console.error("Error in createMutation:", error);
       throw error;
     }

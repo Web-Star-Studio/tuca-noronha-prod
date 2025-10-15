@@ -50,7 +50,7 @@ export async function generateVoucherPDF(element: HTMLElement): Promise<Blob> {
     // Convert to blob
     const pdfBlob = pdf.output("blob");
     return pdfBlob;
-  } catch {
+  } catch (error) {
     console.error("Error generating PDF:", error);
     throw new Error("Failed to generate PDF");
   }
@@ -81,7 +81,7 @@ export async function downloadVoucherPDF(
     // Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  } catch {
+  } catch (error) {
     console.error("Error downloading PDF:", error);
     throw error;
   }

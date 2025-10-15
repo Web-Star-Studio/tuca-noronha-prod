@@ -244,6 +244,48 @@ export const getCurrentUser = query({
 });
 
 /**
+ * Get a user by their email (internal use only)
+ */
+export const getUserByEmail = internalQuery({
+  args: {
+    email: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.string(),
+      email: v.optional(v.string()),
+      name: v.optional(v.string()),
+      role: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const users = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .collect();
+    
+    if (users.length === 0) {
+      return null;
+    }
+    
+    const user = users[0];
+    if (!user.clerkId) {
+      return null;
+    }
+    
+    return {
+      _id: user._id,
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+  },
+});
+
+/**
  * Get a user by their Clerk ID
  */
 export const getUserByClerkId = query({
@@ -668,7 +710,8 @@ export const listAllUsers = query({
         try {
           const user = await ctx.db.get(userId as any);
           return user;
-        } catch {
+        } catch (error) {
+          console.error(`Failed to get user ${userId}`, error);
           return null;
         }
       });
@@ -927,7 +970,8 @@ export const getSystemStatistics = query({
         try {
           const user = await ctx.db.get(userId as Id<"users">);
           return user;
-        } catch {
+        } catch (error) {
+          console.error(`Failed to get user ${userId}`, error);
           return null;
         }
       });

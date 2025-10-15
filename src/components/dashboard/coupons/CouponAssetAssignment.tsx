@@ -116,7 +116,8 @@ export default function CouponAssetAssignment({
         title: "Assets atualizados",
         description: `${selectedAssets.length} asset(s) adicionado(s) ao cupom com sucesso.`,
       });
-    } catch {
+    } catch (error) {
+      console.error("Error updating coupon assets:", error);
       toast({
         title: "Erro",
         description: "Não foi possível atualizar os assets do cupom.",
@@ -142,7 +143,8 @@ export default function CouponAssetAssignment({
         title: "Asset removido",
         description: "Asset removido do cupom com sucesso.",
       });
-    } catch {
+    } catch (error) {
+      console.error("Error removing asset from coupon:", error);
       toast({
         title: "Erro",
         description: "Não foi possível remover o asset do cupom.",

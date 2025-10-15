@@ -153,7 +153,7 @@ export default function CardapioMesasPage() {
       
       setIsTableDialogOpen(false)
       resetTableForm()
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar mesa:", error)
       toast.error("Erro ao criar mesa", {
         description: "Ocorreu um erro ao criar a mesa. Tente novamente.",
@@ -187,7 +187,7 @@ export default function CardapioMesasPage() {
       
       setIsTableDialogOpen(false)
       resetTableForm()
-    } catch {
+    } catch (error) {
       console.error("Erro ao atualizar mesa:", error)
       toast.error("Erro ao atualizar mesa", {
         description: "Ocorreu um erro ao atualizar a mesa. Tente novamente.",
@@ -205,7 +205,7 @@ export default function CardapioMesasPage() {
       toast.success("Mesa excluída", {
         description: `A mesa ${table.name} foi removida.`,
       })
-    } catch {
+    } catch (error) {
       console.error("Erro ao excluir mesa:", error)
       toast.error("Erro ao excluir mesa", {
         description: "Ocorreu um erro ao excluir a mesa. Verifique se não há reservas associadas.",
@@ -251,7 +251,7 @@ export default function CardapioMesasPage() {
       
       setIsAssignDialogOpen(false)
       setSelectedReservation(null)
-    } catch {
+    } catch (error) {
       console.error("Erro ao atribuir mesa:", error)
       toast.error("Erro ao atribuir mesa", {
         description: "Ocorreu um erro ao processar a atribuição. Tente novamente.",

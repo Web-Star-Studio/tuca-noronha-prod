@@ -38,7 +38,7 @@ export const generateProposalDocument = action({
       }
 
       // Get package request data for customer info
-      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.internalGetPackageRequest, {
+      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.getPackageRequest, {
         id: proposal.packageRequestId,
       });
 
@@ -47,9 +47,9 @@ export const generateProposalDocument = action({
       }
 
       // Get admin/partner info
-      const admin = await ctx.runQuery(internal.domains.users.queries.internalGetUser, {
-        id: proposal.adminId,
-      });
+      const admin = proposal.adminId ? await ctx.runQuery(internal.domains.users.queries.getUserById, {
+        userId: proposal.adminId,
+      }) : null;
 
       // Prepare data for PDF generation
       const pdfData = {
@@ -112,57 +112,69 @@ export const sendProposalEmail = internalAction({
   }),
   handler: async (ctx, args) => {
     try {
-      // Get proposal data
+      console.log("🔍 Starting sendProposalEmail with proposalId:", args.proposalId);
+      
+      // Get proposal data directly from database
       const proposal = await ctx.runQuery(internal.domains.packageProposals.queries.internalGetProposal, {
         id: args.proposalId,
+      });
+
+      console.log("📋 Proposal data:", {
+        found: !!proposal,
+        id: proposal?._id,
+        proposalNumber: proposal?.proposalNumber,
+        title: proposal?.title,
+        totalPrice: proposal?.totalPrice,
+        validUntil: proposal?.validUntil,
+        packageRequestId: proposal?.packageRequestId,
       });
 
       if (!proposal) {
         throw new Error("Proposta não encontrada");
       }
 
-      // Get package request and customer info
-      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.internalGetPackageRequest, {
+      // Get package request directly from database
+      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.getPackageRequest, {
         id: proposal.packageRequestId,
+      });
+
+      console.log("📦 PackageRequest data:", {
+        found: !!packageRequest,
+        id: packageRequest?._id,
+        customerInfo: packageRequest?.customerInfo,
       });
 
       if (!packageRequest) {
         throw new Error("Solicitação de pacote não encontrada");
       }
 
-      const customer = await ctx.runQuery(internal.domains.users.queries.internalGetUser, {
-        id: packageRequest.userId,
-      });
+      // Get customer email - can be from user or directly from package request
+      const customerEmail = packageRequest.customerInfo?.email;
+      const customerName = packageRequest.customerInfo?.name || "Cliente";
 
-      if (!customer || !customer.email) {
-        throw new Error("Cliente não encontrado ou sem email");
+      if (!customerEmail) {
+        throw new Error("Email do cliente não encontrado");
       }
 
-      // Get admin info
-      const admin = await ctx.runQuery(internal.domains.users.queries.internalGetUser, {
-        id: proposal.adminId,
+      // Log para debug
+      console.log("📧 Sending proposal email with data:", {
+        customerEmail,
+        customerName,
+        proposalNumber: proposal.proposalNumber,
+        proposalTitle: proposal.title,
+        totalPrice: proposal.totalPrice,
+        validUntil: proposal.validUntil,
       });
 
-      // Prepare email data
-      const emailData = {
-        to: customer.email,
-        customerName: customer.name,
-        proposalTitle: proposal.title,
+      // Send email using the new template
+      await ctx.runAction(internal.domains.email.actions.sendProposalToTraveler, {
+        customerEmail,
+        customerName,
         proposalNumber: proposal.proposalNumber,
+        proposalTitle: proposal.title,
         totalPrice: proposal.totalPrice,
-        currency: proposal.currency,
-        validUntil: new Date(proposal.validUntil).toLocaleDateString("pt-BR"),
-        adminName: admin?.name || "Equipe Tuca Noronha",
-        adminEmail: admin?.email,
-        customMessage: args.customMessage,
-        proposalUrl: `${process.env.SITE_URL}/proposals/${args.proposalId}`,
-        attachments: args.includeAttachments ? proposal.attachments : [],
-      };
-
-      // Send email using the email service
-      await ctx.runAction(internal.domains.email.actions.sendPackageProposalEmail, {
-        ...emailData,
-        templateId: "package_proposal",
+        validUntil: proposal.validUntil,
+        proposalId: args.proposalId.toString(),
       });
 
       return {
@@ -203,7 +215,7 @@ export const analyzePackageRequest = action({
   handler: async (ctx, args) => {
     try {
       // Get package request
-      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.internalGetPackageRequest, {
+      const packageRequest = await ctx.runQuery(internal.domains.packageRequests.queries.getPackageRequest, {
         id: args.packageRequestId,
       });
 

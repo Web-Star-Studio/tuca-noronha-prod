@@ -38,8 +38,8 @@ export async function mpFetch<T = any>(
   let json: any = null;
   try {
     json = text ? JSON.parse(text) : null;
-  } catch {
-    // keep as text
+  } catch (e) {
+    // Ignore JSON parsing errors, the original text will be used.
   }
 
   if (!res.ok) {

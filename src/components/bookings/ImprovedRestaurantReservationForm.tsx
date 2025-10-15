@@ -170,7 +170,7 @@ export function RestaurantReservationForm({
       setPartySize(2);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao fazer reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
       });

@@ -30,7 +30,7 @@ export default function SyncVehiclesPage() {
       if (syncResult.errors.length > 0) {
         toast.warning(`${syncResult.errors.length} erros encontrados durante a sincronização`);
       }
-    } catch {
+    } catch (error) {
       console.error("Erro na sincronização:", error);
       toast.error("Erro ao executar sincronização");
     } finally {

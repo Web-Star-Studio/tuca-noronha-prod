@@ -90,7 +90,7 @@ const formatDateSafely = (dateValue: any, formatString: string = "PPP"): string 
     }
 
     return format(date, formatString, { locale: ptBR });
-  } catch {
+  } catch (error) {
     console.error("Error formatting date:", error, "Date value:", dateValue);
     return "Data inválida";
   }
@@ -529,7 +529,7 @@ export default function AdminBookingsPage() {
       setShowCancelDialog(false);
       setSelectedBooking(null);
       setPartnerNotes("");
-    } catch {
+    } catch (error) {
       toast.error("Erro ao cancelar reserva");
       console.error(error);
     }

@@ -888,7 +888,8 @@ async function getResourceOrganization(ctx: QueryCtx | MutationCtx, resourceType
     }
     // Add logic for other resource types
     return undefined;
-  } catch {
+  } catch (error) {
+    console.error(`Error getting resource organization for ${resourceType}:${resourceId}`, error);
     return undefined;
   }
 }
@@ -904,7 +905,8 @@ async function getResourcePartner(ctx: QueryCtx | MutationCtx, resourceType: str
       }
     }
     return undefined;
-  } catch {
+  } catch (error) {
+    console.error(`Error getting resource partner for ${resourceType}:${resourceId}`, error);
     return undefined;
   }
-} 
+}

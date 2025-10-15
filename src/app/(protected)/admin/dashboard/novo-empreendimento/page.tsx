@@ -123,7 +123,7 @@ export default function NovoEmpreendimentoPage() {
 
       toast.success("Empreendimento criado com sucesso!")
       router.push("/admin/dashboard")
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar empreendimento:", error)
       toast.error("Erro ao criar empreendimento. Tente novamente.")
     } finally {
@@ -178,7 +178,7 @@ export default function NovoEmpreendimentoPage() {
 
       toast.success("Empreendimento e restaurante criados com sucesso!")
       router.push("/admin/dashboard")
-    } catch {
+    } catch (error) {
       console.error("Erro ao criar empreendimento:", error)
       toast.error("Erro ao criar empreendimento. Tente novamente.")
     } finally {

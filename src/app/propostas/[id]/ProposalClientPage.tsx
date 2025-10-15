@@ -11,13 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, MapPinIcon, UsersIcon, CurrencyDollarIcon, ClockIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, ShieldExclamationIcon } from "@heroicons/react/24/solid";
-import { FileText, Download, Plane } from "lucide-react";
+import { FileText, Download, Plane, AlertCircle, Clock as ClockLucide } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { toast } from "sonner";
 import ProposalQuestionModal from "@/components/propostas/ProposalQuestionModal";
 import { ProposalAcceptanceFlow } from "@/components/customer/ProposalAcceptanceFlow";
+import { renderMarkdownText } from "@/lib/renderMarkdown";
 
 interface ProposalClientPageProps {
   proposalId: string;
@@ -28,6 +30,7 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
   const router = useRouter();
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [showAcceptanceFlow, setShowAcceptanceFlow] = useState(false);
+  const [, setRefreshTimer] = useState(0);
   
   // Query to get proposal by ID with error handling
   const proposalResult = useQuery(api.domains.packageProposals.queries.getPackageProposalWithAuth, {
@@ -75,19 +78,27 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
     }
   }, [proposalResult, router]);
 
-  // Loading state
-  if (!isLoaded || !userId) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
+  // Compute derived state
+  const proposal = proposalResult?.data;
+  const isExpired = proposal ? proposal.validUntil < Date.now() : false;
+  const canAccept = proposal ? (proposal.status === "sent" || proposal.status === "viewed") && !isExpired : false;
+  
+  // Update time remaining every minute
+  useEffect(() => {
+    if (!isExpired && canAccept) {
+      const interval = setInterval(() => {
+        setRefreshTimer(prev => prev + 1);
+      }, 60000); // Update every minute
 
-  // Handle query loading
-  if (proposalResult === undefined || packageRequest === undefined || admin === undefined) {
+      return () => clearInterval(interval);
+    }
+  }, [isExpired, canAccept]);
+
+  // Loading state - check after hooks
+  const isLoading = !isLoaded || !userId || proposalResult === undefined || packageRequest === undefined || admin === undefined;
+
+  // Return loading state after all hooks
+  if (isLoading) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -154,16 +165,34 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
     );
   }
 
-  const proposal = proposalResult.data;
+  const needsParticipantsData = proposal ? proposal.status === "awaiting_participants_data" : false;
+  const hasPendingDocuments = proposal ? proposal.status === "documents_uploaded" : false;
+  const isInProgress = proposal ? ["participants_data_completed", "flight_booking_in_progress", "flight_booked"].includes(proposal.status) : false;
+
+  // Calculate time remaining
+  const getTimeRemaining = () => {
+    if (!proposal) return { expired: true, text: "Não encontrada" };
+    
+    const now = Date.now();
+    const diff = proposal.validUntil - now;
+    
+    if (diff <= 0) return { expired: true, text: "Expirada" };
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) {
+      return { expired: false, text: `${hours}h ${minutes}min`, urgent: hours < 6 };
+    }
+    return { expired: false, text: `${minutes} minutos`, urgent: true };
+  };
+
+  const timeRemaining = getTimeRemaining();
+  
+  // Check if proposal not found after all hooks
   if (!proposal) {
     notFound();
   }
-
-  const isExpired = proposal.validUntil < Date.now();
-  const canAccept = (proposal.status === "sent" || proposal.status === "viewed") && !isExpired;
-  const needsParticipantsData = proposal.status === "awaiting_participants_data";
-  const hasPendingDocuments = proposal.status === "documents_uploaded";
-  const isInProgress = ["participants_data_completed", "flight_booking_in_progress", "flight_booked"].includes(proposal.status);
 
   // Handle accepting proposal
   const handleAcceptProposal = () => {
@@ -216,8 +245,39 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
             <p className="text-lg text-gray-700 mb-4">{proposal.summary}</p>
           )}
           
-          <p className="text-gray-600">{proposal.description}</p>
+          <div className="text-gray-600">
+            {renderMarkdownText(proposal.description)}
+          </div>
         </div>
+
+        {/* Validity Alert - Show for proposals that can still be accepted */}
+        {canAccept && !isExpired && (
+          <Alert className={`mb-6 ${timeRemaining.urgent ? 'border-red-500 bg-red-50' : 'border-orange-500 bg-orange-50'}`}>
+            <ClockLucide className={`h-5 w-5 ${timeRemaining.urgent ? 'text-red-600' : 'text-orange-600'}`} />
+            <AlertTitle className={`font-semibold ${timeRemaining.urgent ? 'text-red-900' : 'text-orange-900'}`}>
+              ⏰ Esta proposta tem validade de 24 horas
+            </AlertTitle>
+            <AlertDescription className={timeRemaining.urgent ? 'text-red-800' : 'text-orange-800'}>
+              Tempo restante: <strong>{timeRemaining.text}</strong>
+              {timeRemaining.urgent && " - Atenção: Proposta expira em breve!"}
+              <br />
+              Após esse período, será necessário solicitar uma nova proposta.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Expired Alert */}
+        {isExpired && (
+          <Alert className="mb-6 border-gray-400 bg-gray-50">
+            <AlertCircle className="h-5 w-5 text-gray-600" />
+            <AlertTitle className="font-semibold text-gray-900">
+              Proposta Expirada
+            </AlertTitle>
+            <AlertDescription className="text-gray-700">
+              Esta proposta expirou. Entre em contato conosco para solicitar uma nova proposta atualizada.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -275,7 +335,9 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
                   <CardTitle>Termos de Pagamento</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm whitespace-pre-line">{proposal.paymentTerms}</p>
+                  <div className="text-sm">
+                    {renderMarkdownText(proposal.paymentTerms)}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -284,7 +346,9 @@ export function ProposalClientPage({ proposalId }: ProposalClientPageProps) {
                   <CardTitle>Política de Cancelamento</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm whitespace-pre-line">{proposal.cancellationPolicy}</p>
+                  <div className="text-sm">
+                    {renderMarkdownText(proposal.cancellationPolicy)}
+                  </div>
                 </CardContent>
               </Card>
             </div>

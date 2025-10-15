@@ -91,7 +91,7 @@ export const createPaymentPreferenceWithUpdate = action({
         return url;
       };
       
-      console.log("[MP] SITE_URL:", siteUrl);
+      console.log("[MP] APP_URL:", siteUrl);
       
       const backUrls = args.back_urls || {
         success: replaceLocalhost(`${siteUrl}/pagamento/sucesso`),
@@ -117,6 +117,7 @@ export const createPaymentPreferenceWithUpdate = action({
         auto_return: "approved",
         external_reference: args.external_reference || args.proposalId,
         notification_url: args.notification_url || `${siteUrl}/api/webhooks/mercadopago`,
+        purpose: "wallet_purchase", // Permite pagamento como convidado (sem login obrigatório)
         payment_methods: {
           installments: 12, // Até 12 parcelas no cartão de crédito
           excluded_payment_methods: [], // Não excluir nenhum método específico
@@ -233,7 +234,7 @@ export const createMPPreference = action({
     try {
       // Mercado Pago requires HTTPS URLs, not localhost
       const productionUrl = "https://tucanoronha.com.br";
-      const siteUrl = process.env.SITE_URL || productionUrl;
+      const siteUrl = process.env.NEXT_PUBLIC_APP_URL || productionUrl;
       
       const replaceLocalhost = (url: string): string => {
         if (url.includes('localhost') || url.includes('127.0.0.1')) {
@@ -265,6 +266,7 @@ export const createMPPreference = action({
         auto_return: "approved",
         external_reference: args.external_reference || args.proposalId,
         notification_url: args.notification_url || `${siteUrl}/api/webhooks/mercadopago`,
+        purpose: "wallet_purchase", // Permite pagamento como convidado (sem login obrigatório)
         payment_methods: {
           installments: 12, // Até 12 parcelas no cartão de crédito
           excluded_payment_methods: [], // Não excluir nenhum método específico
