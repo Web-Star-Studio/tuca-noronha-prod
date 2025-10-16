@@ -224,7 +224,7 @@ export const createCheckoutPreferenceForBooking = action({
         failure: failureUrl,
       });
 
-      // Create preference with MANUAL capture mode (authorization only)
+      // Create preference with AUTOMATIC capture mode (immediate approval)
       const result = await ctx.runAction(internal.domains.mercadoPago.actions.createCheckoutPreference, {
         bookingId: args.bookingId,
         assetType: args.assetType,
@@ -238,7 +238,7 @@ export const createCheckoutPreferenceForBooking = action({
           failure: failureUrl,
         },
         notificationUrl,
-        captureMode: "manual", // Always use manual capture - require admin approval
+        captureMode: "automatic", // Automatic capture - instant approval
         metadata: {
           assetId: String(booking.assetId),
           userId: String(booking.userId),
