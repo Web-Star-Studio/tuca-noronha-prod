@@ -54,10 +54,23 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       <div className="border-b-2 border-gray-200 pb-6 mb-6">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-800">{voucherData.asset.name || getAssetTypeLabel()}</h1>
-            <p>{voucherData.partner.name}</p>
-            <p className="text-gray-600 mt-1">Voucher: {voucherData.voucher.voucherNumber || "N/A"}</p>
-            <p className="text-sm text-gray-600 mt-2">
+            {/* Fornecedor - Primeiro */}
+            {voucherData.supplier && (
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-blue-900">{voucherData.supplier.name}</h2>
+                {voucherData.supplier.address && (
+                  <p className="text-gray-700 mt-1">📍 {voucherData.supplier.address}</p>
+                )}
+                {voucherData.supplier.emergencyPhone && (
+                  <p className="text-gray-700 mt-1 font-semibold">📞 Fone de Plantão: {voucherData.supplier.emergencyPhone}</p>
+                )}
+              </div>
+            )}
+            
+            {/* Nome da Atividade - Depois */}
+            <h1 className="text-3xl font-bold text-gray-800 mt-2">{voucherData.asset.name || getAssetTypeLabel()}</h1>
+            <p className="text-gray-600 mt-2">Voucher: {voucherData.voucher.voucherNumber || "N/A"}</p>
+            <p className="text-sm text-gray-600 mt-1">
               Emitido em: {formatSafeDate(voucherData.voucher.generatedAt)}
             </p>
             {voucherData.confirmationInfo && (
@@ -98,37 +111,35 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             </p>
           </div>
 
-          {/* Supplier Info */}
-          {voucherData.supplier && (
-            <>
-              <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Fornecedor</h2>
-              <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg mb-4">
-                <p className="font-semibold text-blue-900 text-lg mb-2">
-                  {voucherData.supplier.name}
-                </p>
-                <div className="space-y-1 text-sm text-blue-800">
-                  {voucherData.supplier.address && (
-                    <p className="flex items-start gap-2">
-                      <span className="font-medium">📍 Endereço:</span>
-                      <span>{voucherData.supplier.address}</span>
-                    </p>
-                  )}
-                  {voucherData.supplier.cnpj && (
-                    <p className="flex items-start gap-2">
-                      <span className="font-medium">🏢 CNPJ:</span>
-                      <span>{voucherData.supplier.cnpj}</span>
-                    </p>
-                  )}
-                  {voucherData.supplier.emergencyPhone && (
-                    <p className="flex items-start gap-2">
-                      <span className="font-medium">📞 Fone de Plantão:</span>
-                      <span className="font-semibold">{voucherData.supplier.emergencyPhone}</span>
-                    </p>
-                  )}
-                </div>
+          {/* Paxs - Primeiro campo após informações do cliente */}
+          <div className="bg-gray-50 p-4 rounded-lg mt-6">
+            <p className="font-medium text-gray-900 mb-3 text-lg">👥 Paxs</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {/* Main customer */}
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                  1
+                </span>
+                <span className="font-semibold">{voucherData.customer.name}</span>
+                <span className="text-xs text-gray-500">(Titular)</span>
               </div>
-            </>
-          )}
+              
+              {/* Additional guests */}
+              {voucherData.booking.guestNames && voucherData.booking.guestNames.length > 0 && (
+                voucherData.booking.guestNames.map((name, index) => (
+                  <div key={`${name}-${index}`} className="flex items-center gap-2 text-sm text-gray-700">
+                    <span className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
+                      {index + 2}
+                    </span>
+                    <span>{name}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Total: {1 + (voucherData.booking.guestNames?.length || 0)} {(1 + (voucherData.booking.guestNames?.length || 0)) === 1 ? 'pax' : 'paxs'}
+            </p>
+          </div>
 
           {/* Asset Info */}
           <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Serviço</h2>
@@ -201,61 +212,6 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
       {/* Booking Details */}
       <div className="border-t-2 border-gray-200 pt-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Detalhes da Reserva</h2>
-        
-        {/* All Participants (Customer + Guests) */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <p className="font-medium text-gray-900 mb-3">👥 Lista de Participantes</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {/* Main customer */}
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
-                1
-              </span>
-              <span className="font-semibold">{voucherData.customer.name}</span>
-              <span className="text-xs text-gray-500">(Titular)</span>
-            </div>
-            
-            {/* Additional guests */}
-            {voucherData.booking.guestNames && voucherData.booking.guestNames.length > 0 && (
-              voucherData.booking.guestNames.map((name, index) => (
-                <div key={`${name}-${index}`} className="flex items-center gap-2 text-sm text-gray-700">
-                  <span className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
-                    {index + 2}
-                  </span>
-                  <span>{name}</span>
-                </div>
-              ))
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Total: {1 + (voucherData.booking.guestNames?.length || 0)} {(1 + (voucherData.booking.guestNames?.length || 0)) === 1 ? 'participante' : 'participantes'}
-          </p>
-        </div>
-
-        {/* Supplier Information */}
-        {voucherData.supplier && (
-          <div className="bg-purple-50 p-4 rounded-lg mb-4 border-l-4 border-purple-400">
-            <p className="font-medium text-purple-900 mb-3">🏢 Informações do Fornecedor</p>
-            <div className="space-y-2 text-sm text-purple-800">
-              <p className="font-semibold text-base">{voucherData.supplier.name}</p>
-              {voucherData.supplier.emergencyPhone && (
-                <p className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  {voucherData.supplier.emergencyPhone}
-                </p>
-              )}
-              {voucherData.supplier.email && (
-                <p className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  {voucherData.supplier.email}
-                </p>
-              )}
-              {voucherData.supplier.notes && (
-                <p className="text-xs mt-2 italic">{voucherData.supplier.notes}</p>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Special Requests */}
         {voucherData.booking.specialRequests && (
