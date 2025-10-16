@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export default function ProcessSubscriptionsPage() {
 
   const manuallyProcessSubscription = useAction(api.domains.subscriptions.actions.manuallyProcessSubscription);
   const manuallyProcessSubscriptionByEmail = useAction(api.domains.subscriptions.actions.manuallyProcessSubscriptionByEmail);
+  const recentWebhooks = useQuery(api.domains.subscriptions.queries.listRecentSubscriptionWebhooks);
 
   const handleProcessByPreapprovalId = async () => {
     if (!preapprovalId.trim()) {
@@ -247,6 +248,61 @@ export default function ProcessSubscriptionsPage() {
                 <AlertDescription>{result.error}</AlertDescription>
               </Alert>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Webhooks Recentes */}
+      {recentWebhooks && recentWebhooks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>🔔 Webhooks de Assinatura Recentes (Últimas 24h)</CardTitle>
+            <CardDescription>
+              Clique no botão ao lado do webhook para processar a assinatura automaticamente
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {recentWebhooks.map((webhook: any) => (
+                <div
+                  key={webhook._id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                >
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {webhook.type || webhook.action || "subscription"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(webhook.createdAt).toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                    {webhook.eventData?.id && (
+                      <p className="text-sm font-mono text-gray-600">
+                        ID: {webhook.eventData.id}
+                      </p>
+                    )}
+                    {webhook.processed && (
+                      <Badge variant="default" className="text-xs">
+                        ✓ Processado
+                      </Badge>
+                    )}
+                  </div>
+                  {webhook.eventData?.id && !webhook.processed && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setPreapprovalId(String(webhook.eventData.id));
+                        handleProcessByPreapprovalId();
+                      }}
+                      disabled={loading}
+                    >
+                      Processar
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

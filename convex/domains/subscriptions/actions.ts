@@ -634,37 +634,78 @@ export const manuallyProcessSubscriptionByEmail = action({
     try {
       console.log(`[MP] Searching subscriptions for email: ${args.email}`);
       
-      // Search for preapprovals with this email
-      // MP API doesn't have a direct search by email, so we'll search by payer_email in the list
-      const preapprovals = await mpFetch<any>('/preapproval/search', {
-        method: 'GET',
-      });
+      // Try multiple approaches to find the subscription
       
-      // Filter by email
-      const userPreapprovals = preapprovals.results?.filter((p: any) => 
-        p.payer_email === args.email && p.status === 'authorized'
+      // Approach 1: Check if user exists in our system first
+      const user = await ctx.runQuery(
+        internal.domains.users.queries.getUserByEmail,
+        { email: args.email }
       );
       
-      if (!userPreapprovals || userPreapprovals.length === 0) {
+      if (!user) {
         return {
           success: false,
-          error: `Nenhuma assinatura ativa encontrada para o email ${args.email}`
+          error: `Usuário não encontrado no sistema com o email ${args.email}. Verifique se o email está correto.`
         };
       }
       
-      // Get the most recent active subscription
-      const mostRecent = userPreapprovals.sort((a: any, b: any) => 
-        new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
-      )[0];
+      console.log(`[MP] User found in system: ${user.clerkId}`);
       
-      console.log(`[MP] Found active subscription for ${args.email}:`, mostRecent.id);
+      // Approach 2: Check if subscription already exists in Convex
+      const existingSubscription = await ctx.runQuery(
+        internal.domains.subscriptions.queries.getUserSubscriptionInternal,
+        { userId: user.clerkId }
+      );
       
-      // Process this subscription using the existing logic
-      const result = await ctx.runAction(api.domains.subscriptions.actions.manuallyProcessSubscription, {
-        preapprovalId: String(mostRecent.id),
-      });
+      if (existingSubscription) {
+        return {
+          success: true,
+          message: `Assinatura já existe no sistema para ${args.email}`,
+          subscription: existingSubscription
+        };
+      }
       
-      return result;
+      // Approach 3: Search MP for subscriptions
+      try {
+        const preapprovals = await mpFetch<any>('/preapproval/search', {
+          method: 'GET',
+        });
+        
+        console.log(`[MP] Total preapprovals found: ${preapprovals.results?.length || 0}`);
+        
+        // Filter by email and any active status (not just 'authorized')
+        const userPreapprovals = preapprovals.results?.filter((p: any) => 
+          p.payer_email?.toLowerCase() === args.email.toLowerCase() && 
+          (p.status === 'authorized' || p.status === 'pending')
+        );
+        
+        console.log(`[MP] Preapprovals for ${args.email}:`, userPreapprovals?.length || 0);
+        
+        if (userPreapprovals && userPreapprovals.length > 0) {
+          // Get the most recent subscription
+          const mostRecent = userPreapprovals.sort((a: any, b: any) => 
+            new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+          )[0];
+          
+          console.log(`[MP] Processing subscription:`, mostRecent.id);
+          
+          // Process this subscription
+          const result = await ctx.runAction(api.domains.subscriptions.actions.manuallyProcessSubscription, {
+            preapprovalId: String(mostRecent.id),
+          });
+          
+          return result;
+        }
+      } catch (mpError) {
+        console.error("[MP] Error searching MP preapprovals:", mpError);
+        // Continue to approach 4
+      }
+      
+      // Approach 4: Guide user to use Preapproval ID
+      return {
+        success: false,
+        error: `Não encontrei assinatura automática para ${args.email}. Por favor:\n\n1. Acesse o painel do Mercado Pago\n2. Vá em Vendas → Assinaturas\n3. Encontre sua assinatura\n4. Copie o Preapproval ID\n5. Use a opção "Processar por Preapproval ID" nesta página`
+      };
       
     } catch (error) {
       console.error("[MP] Failed to process subscription by email:", error);

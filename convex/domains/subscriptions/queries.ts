@@ -218,4 +218,43 @@ export const getUserSubscriptionInternal = internalQuery({
       )
       .first();
   },
+});
+
+/**
+ * List recent subscription webhooks from Mercado Pago
+ * Admin only - shows webhooks from the last 24 hours
+ */
+export const listRecentSubscriptionWebhooks = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    // Check if user is admin
+    const userRole = await getCurrentUserRole(ctx);
+    if (userRole !== "master") {
+      throw new Error("Unauthorized: Admin access required");
+    }
+
+    // Get webhooks from last 24 hours
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    
+    const webhooks = await ctx.db
+      .query("mpWebhookEvents")
+      .filter((q) => q.gte(q.field("createdAt"), oneDayAgo))
+      .order("desc")
+      .take(50);
+
+    // Filter for subscription-related webhooks
+    const subscriptionWebhooks = webhooks.filter((webhook: any) => 
+      webhook.type === "subscription" || 
+      webhook.type === "preapproval" ||
+      webhook.type === "subscription_preapproval" ||
+      webhook.type === "subscription_authorized_payment" ||
+      (webhook.eventData && (
+        webhook.eventData.type === "subscription" ||
+        webhook.eventData.type === "preapproval"
+      ))
+    );
+
+    return subscriptionWebhooks;
+  },
 }); 
