@@ -11,15 +11,19 @@ import { VoucherDownloadButton } from "@/components/vouchers/VoucherDownloadButt
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type BookingStatus = "pending" | "confirmed" | "canceled" | "completed" | "draft" | "payment_pending" | "awaiting_confirmation" | "in_progress" | "no_show" | "expired";
+type BookingStatus = "pending" | "confirmed" | "canceled" | "completed" | "draft" | "payment_pending" | "awaiting_payment" | "pending_approval" | "rejected" | "paid" | "awaiting_confirmation" | "in_progress" | "no_show" | "expired";
 
 const statusConfig = {
   pending: { label: "Pendente", color: "border-amber-500/50 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400", icon: Hourglass },
+  pending_approval: { label: "Aguardando Aprovação", color: "border-amber-500/50 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400", icon: Hourglass },
   confirmed: { label: "Confirmada", color: "border-green-500/50 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400", icon: CheckCircle2 },
+  awaiting_payment: { label: "Aguardando Pagamento", color: "border-orange-500/50 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400", icon: Hourglass },
+  payment_pending: { label: "Aguardando Pagamento", color: "border-orange-500/50 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400", icon: Hourglass },
+  paid: { label: "Pago", color: "border-green-500/50 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400", icon: CheckCircle2 },
+  rejected: { label: "Não Aprovado", color: "border-red-500/50 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400", icon: XCircle },
   canceled: { label: "Cancelada", color: "border-red-500/50 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400", icon: XCircle },
   completed: { label: "Concluída", color: "border-blue-500/50 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400", icon: CheckCircle2 },
   draft: { label: "Rascunho", color: "border-slate-500/50 bg-slate-50 text-slate-700 dark:bg-slate-700/20 dark:text-slate-400", icon: AlertTriangle },
-  payment_pending: { label: "Aguardando Pagamento", color: "border-amber-500/50 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400", icon: Hourglass },
   awaiting_confirmation: { label: "Aguardando Confirmação", color: "border-orange-500/50 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400", icon: Hourglass },
   in_progress: { label: "Em Andamento", color: "border-blue-500/50 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400", icon: CheckCircle2 },
   no_show: { label: "Não Compareceu", color: "border-red-500/50 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400", icon: XCircle },
