@@ -14,8 +14,7 @@ import {
   CreditCard, 
   CheckCircle, 
   XCircle, 
-  AlertCircle,
-  ExternalLink
+  AlertCircle
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
