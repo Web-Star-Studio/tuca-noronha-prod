@@ -6,7 +6,7 @@
 - Convex code sits in `convex/domains/*` with matching `queries.ts`/`mutations.ts`; the global schema is defined in `convex/schema.ts`.
 - Utilities, hooks, and types belong in `src/lib`, `src/hooks`, and `src/types`; static assets use `public/`, reference docs `docs/`.
 
-## Build, Test, and Development Commands
+## Build, and Development Commands
 - `bun run dev` – Next.js dev server; pair with `bunx convex dev` to boot Convex locally.
 - `bun run build` then `bun start` – compile and serve the production bundle.
 - `bun run lint` – Next.js ESLint preset; fix issues before committing.
