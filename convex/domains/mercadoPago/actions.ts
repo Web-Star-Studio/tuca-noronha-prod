@@ -79,6 +79,14 @@ export const createCheckoutPreference = internalAction({
         },
       };
 
+      // Log metadata being sent to MP
+      console.log("[MP] Metadata being sent to Mercado Pago:", {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        additionalMetadata: args.metadata,
+        fullMetadata: body.metadata,
+      });
+
       // Configure capture mode for authorization without automatic capture
       if (args.captureMode === "manual") {
         // For manual capture, use binary_mode false to allow authorization without capture
