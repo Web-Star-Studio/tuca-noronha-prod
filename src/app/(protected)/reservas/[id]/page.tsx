@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,7 +18,10 @@ import {
   MessageCircle,
   AlertTriangle,
   CheckCircle2,
-  Hourglass
+  Hourglass,
+  XCircle,
+  CreditCard,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +42,8 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   const resolvedParams = use(params);
   const router = useRouter();
   const [copiedCode, setCopiedCode] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const createPaymentLink = useAction(api.domains.bookings.paymentActions.createPaymentLink);
 
   const reservationsData = useQuery(api.domains.bookings.queries.getUserReservations);
   const reservation = reservationsData?.find(r => r.id === resolvedParams.id);
@@ -63,17 +68,56 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
     }
   };
 
+  const handlePayment = async () => {
+    if (!reservation) return;
+    
+    setIsPaymentLoading(true);
+    try {
+      const result = await createPaymentLink({
+        bookingId: reservation.id as any,
+        bookingType: reservation.type as any,
+      });
+
+      if (result.success && result.paymentUrl) {
+        toast.success("Redirecionando para pagamento...");
+        window.location.href = result.paymentUrl;
+      } else {
+        toast.error(result.error || "Erro ao gerar link de pagamento");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error("Erro ao processar pagamento. Tente novamente.");
+    } finally {
+      setIsPaymentLoading(false);
+    }
+  };
+
   const getStatusConfig = (status: string) => {
     const configs = {
-      pending: { 
-        label: "Pendente", 
+      pending_approval: { 
+        label: "Aguardando Aprovação", 
         color: "bg-amber-500 text-amber-foreground",
-        icon: <Hourglass className="h-4 w-4" />
+        icon: <Clock className="h-4 w-4" />
       },
       confirmed: { 
-        label: "Confirmado", 
+        label: "Confirmado - Pagar", 
+        color: "bg-blue-500 text-blue-foreground",
+        icon: <CreditCard className="h-4 w-4" />
+      },
+      awaiting_payment: { 
+        label: "Aguardando Pagamento", 
+        color: "bg-orange-500 text-orange-foreground",
+        icon: <CreditCard className="h-4 w-4" />
+      },
+      paid: { 
+        label: "Pago", 
         color: "bg-green-500 text-green-foreground",
         icon: <CheckCircle2 className="h-4 w-4" />
+      },
+      rejected: { 
+        label: "Não Aprovado", 
+        color: "bg-red-500 text-red-foreground",
+        icon: <XCircle className="h-4 w-4" />
       },
       canceled: { 
         label: "Cancelado", 
@@ -84,6 +128,11 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
         label: "Concluído", 
         color: "bg-blue-500 text-blue-foreground",
         icon: <CheckCircle2 className="h-4 w-4" />
+      },
+      pending: { 
+        label: "Pendente", 
+        color: "bg-amber-500 text-amber-foreground",
+        icon: <Hourglass className="h-4 w-4" />
       },
     };
     return configs[status as keyof typeof configs] || configs.pending;
@@ -297,7 +346,29 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                 <CardTitle className="text-xl text-slate-800 dark:text-white">Ações da Reserva</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {(reservation.status === 'confirmed' || reservation.status === 'completed') && reservation.confirmationCode && (
+                {/* Payment Button - Show when confirmed or awaiting_payment */}
+                {(reservation.status === 'confirmed' || reservation.status === 'awaiting_payment') && (
+                  <Button
+                    onClick={handlePayment}
+                    disabled={isPaymentLoading}
+                    className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700"
+                  >
+                    {isPaymentLoading ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        Processando...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Pagar Agora
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Voucher - Only show after payment (paid or completed) */}
+                {(reservation.status === 'paid' || reservation.status === 'completed') && reservation.confirmationCode && (
                   <VoucherDownloadButton
                     bookingId={reservation.id}
                     bookingType={reservation.type as any}
@@ -306,6 +377,39 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                     showIcon={true}
                     showLabel={true}
                   />
+                )}
+
+                {/* Status Messages */}
+                {reservation.status === 'pending_approval' && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-amber-900 dark:text-amber-100 text-sm">
+                          Aguardando Aprovação
+                        </p>
+                        <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
+                          Seu pedido de reserva está sendo analisado pelo parceiro.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {reservation.status === 'rejected' && reservation.adminNotes && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-red-900 dark:text-red-100 text-sm">
+                          Reserva Não Aprovada
+                        </p>
+                        <p className="text-red-700 dark:text-red-300 text-xs mt-1">
+                          {reservation.adminNotes}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {partnerDetails ? (
                   <ChatButton

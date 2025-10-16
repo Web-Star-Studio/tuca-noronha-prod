@@ -66,7 +66,7 @@ export const confirmBooking = mutation({
 
     // Send email notification to customer
     try {
-      const bookingDetailsUrl = `${process.env.SITE_URL || "http://localhost:3000"}/meu-painel/reservas/${bookingId}`;
+      const bookingDetailsUrl = `${process.env.SITE_URL || "http://localhost:3000"}/reservas/${bookingId}`;
       
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingApprovedEmail, {
         customerEmail: bookingWithStatus.customerInfo?.email || bookingWithStatus.email,
@@ -154,7 +154,7 @@ export const rejectBooking = mutation({
 
     // Send email notification to customer
     try {
-      const bookingDetailsUrl = `${process.env.SITE_URL || "http://localhost:3000"}/meu-painel/reservas/${bookingId}`;
+      const bookingDetailsUrl = `${process.env.SITE_URL || "http://localhost:3000"}/reservas/${bookingId}`;
       
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingRejectedEmail, {
         customerEmail: bookingWithStatus.customerInfo?.email || bookingWithStatus.email,
