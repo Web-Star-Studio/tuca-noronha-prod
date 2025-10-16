@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, Mail } from "lucide-react";
+import { Phone } from "lucide-react";
 import type { VoucherTemplateData, VoucherBookingType } from "../../../convex/domains/vouchers/types";
 
 interface VoucherTemplateProps {

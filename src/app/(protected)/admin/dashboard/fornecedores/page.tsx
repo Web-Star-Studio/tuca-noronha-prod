@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import {
@@ -63,6 +63,7 @@ export default function SuppliersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [dialogKey, setDialogKey] = useState(0);
 
   const supplierQueryArgs = useMemo(() => {
     const trimmedSearch = searchTerm.trim();
@@ -105,12 +106,48 @@ export default function SuppliersPage() {
   };
 
   const handleDialogChange = (open: boolean) => {
+    console.log('🔧 handleDialogChange called, open:', open);
     setDialogOpen(open);
+    
     if (!open) {
+      console.log('🧹 Dialog fechando, iniciando limpeza...');
+      
       // Limpar estado após pequeno delay para garantir que o dialog seja desmontado corretamente
       setTimeout(() => {
         setEditingSupplier(null);
-      }, 100);
+        setDialogKey(prev => prev + 1); // Incrementar key para forçar remontagem
+        
+        // Limpeza agressiva de overlays e scroll locks residuais
+        const body = document.body;
+        const html = document.documentElement;
+        
+        // Remover qualquer overlay residual
+        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        console.log('🗑️ Removendo overlays:', overlays.length);
+        overlays.forEach(overlay => overlay.remove());
+        
+        // Remover qualquer backdrop residual
+        const backdrops = document.querySelectorAll('.fixed.inset-0.z-50');
+        console.log('🗑️ Removendo backdrops:', backdrops.length);
+        backdrops.forEach(backdrop => {
+          if (backdrop.getAttribute('data-state') === 'closed' || 
+              backdrop.style.pointerEvents === 'none') {
+            backdrop.remove();
+          }
+        });
+        
+        // Limpar scroll locks
+        body.style.removeProperty('overflow');
+        body.style.removeProperty('padding-right');
+        html.style.removeProperty('overflow');
+        body.removeAttribute('data-scroll-locked');
+        body.removeAttribute('data-radix-scroll-lock-disabled');
+        
+        console.log('✅ Limpeza concluída');
+        
+        // Forçar reflow
+        void body.offsetHeight;
+      }, 350);
     }
   };
 
@@ -127,6 +164,48 @@ export default function SuppliersPage() {
       toast.error("Não foi possível atualizar o status do fornecedor.");
     }
   };
+
+  // Effect para garantir limpeza quando o dialog fecha
+  useEffect(() => {
+    console.log('👀 useEffect disparado, dialogOpen:', dialogOpen);
+    
+    if (!dialogOpen) {
+      console.log('🔍 useEffect detectou dialog fechado, iniciando limpeza...');
+      
+      // Limpeza imediata ao detectar que o dialog fechou
+      const cleanupOverlays = () => {
+        // Remover todos os overlays
+        const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+        console.log('🧹 useEffect: removendo', overlays.length, 'overlays');
+        overlays.forEach(overlay => overlay.remove());
+        
+        // Remover portals órfãos
+        const portals = document.querySelectorAll('[data-radix-portal]');
+        console.log('🧹 useEffect: removendo portals órfãos:', portals.length);
+        portals.forEach(portal => {
+          if (portal.children.length === 0) {
+            portal.remove();
+          }
+        });
+        
+        // Limpar body
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('pointer-events');
+        document.documentElement.style.removeProperty('overflow');
+        
+        console.log('✨ useEffect: limpeza concluída');
+      };
+
+      // Executar limpeza imediatamente
+      cleanupOverlays();
+      
+      // E novamente após animação
+      const timer = setTimeout(cleanupOverlays, 400);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [dialogOpen]);
 
   if (isUserLoading) {
     return (
@@ -350,7 +429,7 @@ export default function SuppliersPage() {
       </Card>
 
       {dialogOpen && (
-        <Dialog open={dialogOpen} onOpenChange={handleDialogChange} modal={true}>
+        <Dialog key={dialogKey} open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogContent className="max-w-3xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>

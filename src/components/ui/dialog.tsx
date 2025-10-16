@@ -74,10 +74,15 @@ const DialogContent = React.forwardRef<
         onCloseAutoFocus={(e) => {
           // Prevenir problemas de foco após fechar
           e.preventDefault();
-        }}
-        onPointerDownOutside={(e) => {
-          // Garantir que cliques fora do modal fechem adequadamente
-          e.preventDefault();
+          // Limpar qualquer overlay residual
+          setTimeout(() => {
+            const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
+            overlays.forEach(overlay => {
+              if (overlay.getAttribute('data-state') === 'closed') {
+                overlay.remove();
+              }
+            });
+          }, 300);
         }}
         {...props}
       >
