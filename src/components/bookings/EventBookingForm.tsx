@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Ticket } from "lucide-react";
-import { useMutation, useQuery, useAction } from "convex/react";
-import { formatCurrency } from "@/lib/utils";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -80,9 +79,6 @@ export function EventBookingForm({
   }, [quantity]);
 
   const createBooking = useMutation(api.domains.bookings.mutations.createEventBooking);
-  const createMpCheckoutPreference = useAction(
-    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
-  );
 
   // Calculate price
   const getPrice = () => {
@@ -148,96 +144,28 @@ export function EventBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Solicitação de ingresso(s) enviada!", {
-        description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
+      // 2. Success - booking created and awaiting approval
+      const isFree = event.isFree || getFinalPrice() === 0;
+      
+      toast.success("Solicitação de ingresso enviada com sucesso!", {
+        description: `Código: ${result.confirmationCode}. ${isFree ? 'Aguardando aprovação do parceiro.' : 'Aguardando aprovação do parceiro. Após aprovação, você receberá o link de pagamento.'}`,
+        duration: 6000,
       });
 
-      // 2. Check if event is free or no payment required
-      if (event.isFree || getFinalPrice() === 0) {
-        console.log("✅ Evento gratuito - pulando fluxo de pagamento");
-        
-        toast.success("Solicitação enviada com sucesso!", {
-          description: "Evento gratuito - aguardando aprovação do parceiro",
-        });
+      console.log(`✅ Reserva criada: ${result.bookingId} - Status: pending_approval`);
 
-        // Reset form
-        setAdults(1);
-        setChildren(0);
-        setAdditionalAttendeeNames([]);
-        setSelectedTicketId(undefined);
-        setCustomerInfo({ name: "", email: "", phone: "" });
-        setSpecialRequests("");
-
-        if (onBookingSuccess) {
-          onBookingSuccess(result);
-        }
-
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 3. If o evento exige pagamento antecipado, gerar link de pagamento pelo Mercado Pago
-      if (event.acceptsOnlinePayment && event.requiresUpfrontPayment && result.totalPrice > 0) {
-        try {
-        const mpPref = await createMpCheckoutPreference({
-          bookingId: result.bookingId,
-          assetType: "event",
-          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
-          cancelUrl: `${window.location.origin}/booking/cancel`,
-          customerEmail: customerInfo.email,
-            couponCode: appliedCoupon?.code,
-            discountAmount: getDiscountAmount(),
-            originalAmount: getPrice(),
-            finalAmount: getFinalPrice(),
-            currency: "BRL",
-          });
-
-          if (mpPref.success && mpPref.preferenceUrl) {
-            toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro do Mercado Pago. O pagamento será confirmado após processamento.",
-            });
-
-            // Reset form before redirecting
-            setAdults(1);
-            setChildren(0);
-            setAdditionalAttendeeNames([]);
-            setSelectedTicketId(undefined);
-            setCustomerInfo({ name: "", email: "", phone: "" });
-            setSpecialRequests("");
-
-            setTimeout(() => {
-              window.location.href = mpPref.preferenceUrl;
-            }, 1200);
-            return;
-          } else {
-            throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
-          }
-        } catch (paymentError) {
-          console.error("💥 Erro ao gerar link de pagamento:", paymentError);
-          toast.error("Solicitação criada, mas não foi possível gerar o link de pagamento", {
-            description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
-          });
-          
-          // For payment errors, still redirect to booking details with booking ID
-          if (onBookingSuccess) {
-            onBookingSuccess(result);
-          }
-          return;
-        }
-      }
-
-      // 3. If no payment required, handle success
-      if (onBookingSuccess) {
-        onBookingSuccess(result);
-      }
-
-      // Reset form if not redirecting
+      // Reset form
       setAdults(1);
       setChildren(0);
       setAdditionalAttendeeNames([]);
       setSelectedTicketId(undefined);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
+      setAppliedCoupon(null);
+
+      if (onBookingSuccess) {
+        onBookingSuccess(result);
+      }
     } catch (error) {
       toast.error("Erro ao reservar ingresso", {
         description: error instanceof Error ? error.message : "Tente novamente",
@@ -416,12 +344,11 @@ export function EventBookingForm({
             </div>
           )}
 
-          {/* Payment Info - show if requires payment */}
-          {event.acceptsOnlinePayment && event.requiresUpfrontPayment && getPrice() > 0 && (
-            <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-              Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo organizador.
-            </div>
-          )}
+          {/* Approval Info */}
+          <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+            ℹ️ <strong>Processo de Reserva:</strong> Sua solicitação será enviada para aprovação do parceiro. 
+            {getPrice() > 0 && " Após a aprovação, você receberá um link de pagamento."}
+          </div>
 
           {/* Submit Button */}
           <Button
@@ -431,13 +358,13 @@ export function EventBookingForm({
             disabled={isSubmitting || isEventPast}
           >
             {isSubmitting ? (
-              "Processando..."
+              "Enviando Solicitação..."
             ) : isEventPast ? (
               "Evento já realizado"
             ) : (
               <>
                 <Ticket className="mr-2 h-4 w-4" />
-                Comprar {quantity === 1 ? "ingresso" : "ingressos"}
+                Solicitar {quantity === 1 ? "ingresso" : "ingressos"}
               </>
             )}
           </Button>

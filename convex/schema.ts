@@ -703,9 +703,18 @@ export default defineSchema({
     phone: v.string(),                                  // Telefone de contato
     specialRequests: v.optional(v.string()),            // Solicitações especiais (opcional)
     partnerNotes: v.optional(v.string()),               // Notes from partner/employee
-    status: v.string(),                                 // Status (ex: "pending", "confirmed", "canceled")
+    adminNotes: v.optional(v.string()),                 // Admin notes when confirming/rejecting
+    status: v.string(),                                 // pending_approval, confirmed, awaiting_payment, paid, canceled, completed, rejected
     confirmationCode: v.string(),                       // Código de confirmação
     tableId: v.optional(v.id("restaurantTables")),      // Mesa atribuída (opcional)
+    // Approval workflow tracking
+    requestedAt: v.optional(v.number()),                // When customer requested
+    approvedAt: v.optional(v.number()),                 // When admin approved
+    approvedBy: v.optional(v.id("users")),              // Admin who approved
+    rejectedAt: v.optional(v.number()),                 // When admin rejected
+    rejectedBy: v.optional(v.id("users")),              // Admin who rejected
+    paidAt: v.optional(v.number()),                     // When customer paid
+    paymentUrl: v.optional(v.string()),                 // Checkout Pro URL for payment
     // Coupon fields
     couponCode: v.optional(v.string()),                 // Applied coupon code
     discountAmount: v.optional(v.number()),             // Discount amount applied
@@ -870,11 +879,12 @@ export default defineSchema({
     children: v.optional(v.number()),              // Number of children (0-5 anos)
     additionalParticipants: v.optional(v.array(v.string())), // Names of additional participants
     totalPrice: v.number(),                        // Total price for booking
-    status: v.string(),                            // pending, confirmed, canceled, completed, refunded
+    status: v.string(),                            // pending_approval, confirmed, awaiting_payment, paid, canceled, completed, rejected
     paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
     paymentMethod: v.optional(v.string()),         // credit_card, pix, bank_transfer
     specialRequests: v.optional(v.string()),       // Special requests from customer
     partnerNotes: v.optional(v.string()),          // Notes from partner/employee
+    adminNotes: v.optional(v.string()),            // Admin notes when confirming/rejecting
     confirmationCode: v.string(),                  // Unique confirmation code
     customerInfo: v.object({                       // Customer contact information
       name: v.string(),
@@ -882,6 +892,14 @@ export default defineSchema({
       phone: v.string(),
       cpf: v.optional(v.string()),
     }),
+    // Approval workflow tracking
+    requestedAt: v.optional(v.number()),           // When customer requested
+    approvedAt: v.optional(v.number()),            // When admin approved
+    approvedBy: v.optional(v.id("users")),         // Admin who approved
+    rejectedAt: v.optional(v.number()),            // When admin rejected
+    rejectedBy: v.optional(v.id("users")),         // Admin who rejected
+    paidAt: v.optional(v.number()),                // When customer paid
+    paymentUrl: v.optional(v.string()),            // Checkout Pro URL for payment
     // Coupon fields
     couponCode: v.optional(v.string()),            // Applied coupon code
     discountAmount: v.optional(v.number()),        // Discount amount applied
@@ -926,11 +944,12 @@ export default defineSchema({
     children: v.optional(v.number()),              // Number of children (0-5 anos)
     participantNames: v.optional(v.array(v.string())), // Names of other attendees
     totalPrice: v.number(),                        // Total price for booking
-    status: v.string(),                            // pending, confirmed, canceled, completed, refunded
+    status: v.string(),                            // pending_approval, confirmed, awaiting_payment, paid, canceled, completed, rejected
     paymentStatus: v.optional(v.string()),         // pending, paid, refunded, failed
     paymentMethod: v.optional(v.string()),         // credit_card, pix, bank_transfer
     specialRequests: v.optional(v.string()),       // Special requests from customer
     partnerNotes: v.optional(v.string()),          // Notes from partner/employee
+    adminNotes: v.optional(v.string()),            // Admin notes when confirming/rejecting
     confirmationCode: v.string(),                  // Unique confirmation code
     customerInfo: v.object({                       // Customer contact information
       name: v.string(),
@@ -938,6 +957,14 @@ export default defineSchema({
       phone: v.string(),
       cpf: v.optional(v.string()),
     }),
+    // Approval workflow tracking
+    requestedAt: v.optional(v.number()),           // When customer requested
+    approvedAt: v.optional(v.number()),            // When admin approved
+    approvedBy: v.optional(v.id("users")),         // Admin who approved
+    rejectedAt: v.optional(v.number()),            // When admin rejected
+    rejectedBy: v.optional(v.id("users")),         // Admin who rejected
+    paidAt: v.optional(v.number()),                // When customer paid
+    paymentUrl: v.optional(v.string()),            // Checkout Pro URL for payment
     // Coupon fields
     couponCode: v.optional(v.string()),            // Applied coupon code
     discountAmount: v.optional(v.number()),        // Discount amount applied

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import {formatCurrency} from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { useMutation, useQuery, useAction } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -87,9 +87,6 @@ export function ActivityBookingForm({
   }, [participants]);
 
   const createBooking = useMutation(api.domains.bookings.mutations.createActivityBooking);
-  const createMpCheckoutPreference = useAction(
-    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
-  );
   
   // WhatsApp link generator removido (não utilizado)
 
@@ -174,90 +171,32 @@ export function ActivityBookingForm({
         finalAmount: getFinalPrice(),
       });
 
-      // 2. Check if activity is free - skip payment if it is
-      if (activity.isFree || getFinalPrice() === 0) {
-        toast.success("Solicitação de reserva enviada!", {
-          description: `Código de acompanhamento: ${result.confirmationCode}. Aguardando aprovação do parceiro.`,
+      // 2. Success - booking created and awaiting approval
+      const isFree = activity.isFree || getFinalPrice() === 0;
+      
+      toast.success("Solicitação de reserva enviada com sucesso!", {
+        description: `Código: ${result.confirmationCode}. ${isFree ? 'Aguardando aprovação do parceiro.' : 'Aguardando aprovação do parceiro. Após aprovação, você receberá o link de pagamento.'}`,
+        duration: 6000,
+      });
+
+      console.log(`✅ Reserva criada: ${result.bookingId} - Status: pending_approval`);
+
+      // Reset form
+      setDate(undefined);
+      setTime("");
+      setAdults(Math.max(1, activity.minParticipants));
+      setChildren(0);
+      setAdditionalParticipantNames([]);
+      setSelectedTicketId(undefined);
+      setCustomerInfo({ name: "", email: "", phone: "" });
+      setSpecialRequests("");
+      setAppliedCoupon(null);
+
+      if (onBookingSuccess) {
+        onBookingSuccess({
+          confirmationCode: result.confirmationCode,
+          totalPrice: result.totalPrice,
         });
-        console.log("✅ Atividade gratuita - pulando fluxo de pagamento");
-        
-        toast.success("Solicitação enviada com sucesso!", {
-          description: "Atividade gratuita - aguardando aprovação do parceiro",
-        });
-
-        // Reset form
-        setDate(undefined);
-        setTime("");
-        setAdults(Math.max(1, activity.minParticipants));
-        setChildren(0);
-        setAdditionalParticipantNames([]);
-        setSelectedTicketId(undefined);
-        setCustomerInfo({ name: "", email: "", phone: "" });
-        setSpecialRequests("");
-
-        if (onBookingSuccess) {
-          onBookingSuccess({
-            confirmationCode: result.confirmationCode,
-            totalPrice: result.totalPrice,
-          });
-        }
-
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 3. For paid activities, redirect to Checkout Pro
-      console.log("💳 Atividade paga - gerando preferência de pagamento Checkout Pro");
-
-      try {
-        const mpPref = await createMpCheckoutPreference({
-          bookingId: result.bookingId,
-          assetType: "activity",
-          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
-          cancelUrl: `${window.location.origin}/booking/cancel`,
-          customerEmail: customerInfo.email,
-          couponCode: appliedCoupon?.code,
-          discountAmount: getDiscountAmount(),
-          originalAmount: getPrice(),
-          finalAmount: getFinalPrice(),
-          currency: "BRL",
-        });
-
-        if (mpPref.success && mpPref.preferenceUrl) {
-          toast.success("Redirecionando para pagamento...", {
-            description: "Você será levado para o checkout seguro do Mercado Pago.",
-          });
-
-          // Reset form before redirecting
-          setDate(undefined);
-          setTime("");
-          setAdults(Math.max(1, activity.minParticipants));
-          setChildren(0);
-          setAdditionalParticipantNames([]);
-          setSelectedTicketId(undefined);
-          setCustomerInfo({ name: "", email: "", phone: "" });
-          setSpecialRequests("");
-
-          setTimeout(() => {
-            window.location.href = mpPref.preferenceUrl;
-          }, 1200);
-          return;
-        } else {
-          throw new Error(mpPref.error || "Erro ao criar preferência de pagamento no Mercado Pago");
-        }
-      } catch (paymentError) {
-        console.error("💥 Erro ao gerar link de pagamento:", paymentError);
-        toast.error("Solicitação criada, mas não foi possível gerar o link de pagamento", {
-          description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
-        });
-
-        if (onBookingSuccess) {
-          onBookingSuccess({
-            confirmationCode: result.confirmationCode,
-            totalPrice: result.totalPrice,
-          });
-        }
-        return;
       }
 
     } catch (error) {
@@ -509,12 +448,11 @@ export function ActivityBookingForm({
             </div>
           )}
 
-          {/* Payment Info */}
-          {getPrice() > 0 && (
-            <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-              Você será redirecionado para o Checkout Seguro do Mercado Pago para efetuar o pagamento.
-            </div>
-          )}
+          {/* Approval Info */}
+          <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+            ℹ️ <strong>Processo de Reserva:</strong> Sua solicitação será enviada para aprovação do parceiro. 
+            {getPrice() > 0 && " Após a aprovação, você receberá um link de pagamento."}
+          </div>
 
             {/* Submit Button */}
             <Button
@@ -522,7 +460,7 @@ export function ActivityBookingForm({
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isSubmitting || !date}
             >
-              {isSubmitting ? "Processando..." : "Solicitar Reserva"}
+              {isSubmitting ? "Enviando Solicitação..." : "Solicitar Reserva"}
             </Button>
           </form>
         </div>

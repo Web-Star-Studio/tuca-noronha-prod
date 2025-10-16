@@ -2,20 +2,30 @@ import { v } from "convex/values";
 
 // Common booking status values - More semantic and descriptive
 export const BOOKING_STATUS = {
-  // Initial states
-  DRAFT: "draft",                       // Reserva criada mas pagamento não iniciado
-  PAYMENT_PENDING: "payment_pending",   // Aguardando conclusão do pagamento
-  AWAITING_CONFIRMATION: "awaiting_confirmation", // Pagamento concluído, aguardando confirmação do partner
+  // Initial states - NEW WORKFLOW
+  PENDING_APPROVAL: "pending_approval",           // Solicitação enviada, aguardando aprovação do admin
+  
+  // After admin approval
+  CONFIRMED: "confirmed",                         // Confirmada pelo admin, aguardando pagamento
+  AWAITING_PAYMENT: "awaiting_payment",          // Confirmada, cliente precisa pagar
+  
+  // Payment states
+  PAYMENT_PENDING: "payment_pending",            // Pagamento em processo
+  PAID: "paid",                                  // Pago com sucesso
   
   // Active states
-  CONFIRMED: "confirmed",               // Confirmada pelo partner
-  IN_PROGRESS: "in_progress",          // Em andamento (para atividades/eventos)
+  IN_PROGRESS: "in_progress",                    // Em andamento (para atividades/eventos)
   
   // Final states
-  COMPLETED: "completed",              // Concluída com sucesso
-  CANCELED: "canceled",                // Cancelada
-  NO_SHOW: "no_show",                 // Cliente não compareceu
-  EXPIRED: "expired",                  // Expirada (pagamento não concluído no prazo)
+  COMPLETED: "completed",                        // Concluída com sucesso
+  CANCELED: "canceled",                          // Cancelada
+  REJECTED: "rejected",                          // Rejeitada pelo admin
+  NO_SHOW: "no_show",                           // Cliente não compareceu
+  EXPIRED: "expired",                           // Expirada (pagamento não concluído no prazo)
+  
+  // Legacy (keep for compatibility)
+  DRAFT: "draft",                               // Old: Reserva criada mas pagamento não iniciado
+  AWAITING_CONFIRMATION: "awaiting_confirmation", // Old: Pagamento concluído, aguardando confirmação
 } as const;
 
 // Payment status values - More detailed
@@ -142,4 +152,53 @@ export const updateVehicleBookingValidator = v.object({
   pickupLocation: v.optional(v.string()),
   returnLocation: v.optional(v.string()),
   notes: v.optional(v.string()),
+});
+
+// Validators for booking approval workflow
+export const confirmBookingValidator = v.object({
+  bookingId: v.union(
+    v.id("activityBookings"),
+    v.id("eventBookings"),
+    v.id("vehicleBookings"),
+    v.id("restaurantReservations")
+  ),
+  bookingType: v.union(
+    v.literal("activity"),
+    v.literal("event"),
+    v.literal("vehicle"),
+    v.literal("restaurant")
+  ),
+  adminNotes: v.optional(v.string()),
+});
+
+export const rejectBookingValidator = v.object({
+  bookingId: v.union(
+    v.id("activityBookings"),
+    v.id("eventBookings"),
+    v.id("vehicleBookings"),
+    v.id("restaurantReservations")
+  ),
+  bookingType: v.union(
+    v.literal("activity"),
+    v.literal("event"),
+    v.literal("vehicle"),
+    v.literal("restaurant")
+  ),
+  adminNotes: v.string(), // Required for rejection
+  rejectionReason: v.optional(v.string()),
+});
+
+export const createPaymentLinkValidator = v.object({
+  bookingId: v.union(
+    v.id("activityBookings"),
+    v.id("eventBookings"),
+    v.id("vehicleBookings"),
+    v.id("restaurantReservations")
+  ),
+  bookingType: v.union(
+    v.literal("activity"),
+    v.literal("event"),
+    v.literal("vehicle"),
+    v.literal("restaurant")
+  ),
 });
