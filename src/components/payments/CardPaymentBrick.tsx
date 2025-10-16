@@ -84,8 +84,14 @@ export function CardPaymentBrick({
 
         // Get public key from environment
         const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
+        console.log("[CardPaymentBrick] Checking public key...");
+        console.log("[CardPaymentBrick] Public key exists:", !!publicKey);
+        console.log("[CardPaymentBrick] Public key prefix:", publicKey?.substring(0, 20));
+        
         if (!publicKey) {
-          throw new Error("Mercado Pago public key not configured");
+          const errorMsg = "Mercado Pago Public Key não configurada. Verifique se NEXT_PUBLIC_MP_PUBLIC_KEY está configurada na Vercel e faça redeploy.";
+          console.error("[CardPaymentBrick]", errorMsg);
+          throw new Error(errorMsg);
         }
 
         // Initialize MercadoPago instance
