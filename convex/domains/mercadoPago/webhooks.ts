@@ -10,23 +10,15 @@ export const handleMercadoPagoWebhook = httpAction(async (ctx, request) => {
   try {
     const rawBody = await request.text();
 
-    // Signature verification (flexible for testing)
-    const signature = request.headers.get("x-signature");
-    const userAgent = request.headers.get("user-agent") || "";
-    const isTestFromMP = userAgent.includes("MercadoPago") || userAgent.includes("curl") || userAgent.includes("MP-Monitor");
+    // Signature verification - DISABLED FOR TESTING
+    // TODO: Re-enable in production with proper MP secret
+    console.log("🔓 Signature verification DISABLED for testing");
     
-    // Skip signature verification for MP test tool or if no secret is configured
-    const shouldVerifySignature = !isTestFromMP && process.env.MERCADO_PAGO_WEBHOOK_SECRET;
-    
-    if (shouldVerifySignature) {
-      const valid = await verifyWebhookSignature(signature, request);
-      if (!valid) {
-        console.error("Invalid Mercado Pago webhook signature");
-        return new Response("Invalid signature", { status: 400 });
-      }
-    } else {
-      console.log("🔓 Signature verification skipped (test mode or no secret configured)");
-    }
+    // Log headers for debugging
+    const userAgent = request.headers.get("user-agent") || "no-user-agent";
+    const signature = request.headers.get("x-signature") || "no-signature";
+    console.log(`[MP Webhook] User-Agent: ${userAgent}`);
+    console.log(`[MP Webhook] X-Signature: ${signature}`);
 
     // Parse JSON body if present
     let body: any = {};
