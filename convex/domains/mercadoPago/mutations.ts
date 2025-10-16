@@ -204,14 +204,24 @@ export const updateBookingPaymentStatus = internalMutation({
       "packageBookings",
     ];
 
+    console.log(`[MP Mutation] Searching for booking ${args.bookingId} in tables...`);
+
     for (const tableName of tables) {
       const booking = await ctx.db
         .query(tableName as any)
         .filter((q: any) => q.eq(q.field("_id"), args.bookingId))
         .unique();
       if (booking) {
+        console.log(`[MP Mutation] Found booking in ${tableName}:`, {
+          _id: booking._id,
+          currentPaymentStatus: booking.paymentStatus,
+          newPaymentStatus: updateData.paymentStatus,
+        });
         await ctx.db.patch(booking._id, updateData);
+        console.log(`[MP Mutation] Successfully updated booking ${booking._id}`);
         break;
+      } else {
+        console.log(`[MP Mutation] Booking not found in ${tableName}`);
       }
     }
     return null;
