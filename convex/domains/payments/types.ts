@@ -54,13 +54,13 @@ export const CreatePaymentPreferenceArgs = v.object({
 });
 
 export const ProcessPaymentWebhookArgs = v.object({
-  id: v.number(),
+  id: v.union(v.number(), v.string()),
   live_mode: v.boolean(),
   type: v.string(),
   date_created: v.string(),
-  application_id: v.number(),
+  application_id: v.optional(v.number()),
   user_id: v.number(),
-  version: v.number(),
+  version: v.optional(v.number()),
   api_version: v.string(),
   action: v.string(),
   data: v.object({
