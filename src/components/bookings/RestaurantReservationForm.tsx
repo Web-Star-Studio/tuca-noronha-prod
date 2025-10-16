@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Users, Clock, MapPin, Calendar as CalendarIcon } from "lucide-react";
-import { useMutation, useAction } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { useCustomerInfo } from "@/lib/hooks/useCustomerInfo";
@@ -71,9 +71,6 @@ export function RestaurantReservationForm({
   const { customerInfo, setCustomerInfo } = useCustomerInfo();
 
   const createReservation = useMutation(api.domains.bookings.mutations.createRestaurantReservation);
-  const createMpCheckoutPreference = useAction(
-    api.domains.mercadoPago.actions.createCheckoutPreferenceForBooking
-  );
   
   // Gerar horários disponíveis entre 18h e 22h com intervalo de 30min
   const availableTimes = [
@@ -172,54 +169,15 @@ export function RestaurantReservationForm({
         finalAmount: getFinalPrice(),
       });
 
-      toast.success("Reserva criada com sucesso!", {
-        description: `Código de confirmação: ${result.confirmationCode}`,
+      // Success - reservation created and awaiting approval
+      const isFree = !restaurant.price || getFinalPrice() === 0;
+      
+      toast.success("Solicitação de reserva enviada com sucesso!", {
+        description: `Código: ${result.confirmationCode}. ${isFree ? 'Aguardando confirmação do parceiro.' : 'Após confirmação, você receberá o link de pagamento.'}`,
+        duration: 6000,
       });
 
-      // 2. If restaurant requires pagamento antecipado, gerar link através do Mercado Pago
-      if (restaurant.acceptsOnlinePayment && restaurant.requiresUpfrontPayment && restaurant.price && restaurant.price > 0) {
-        try {
-          const mpPref = await createMpCheckoutPreference({
-            bookingId: result.reservationId,
-            assetType: "restaurant",
-          successUrl: `${window.location.origin}/reservas/?booking_id=${result.confirmationCode}`,
-            cancelUrl: `${window.location.origin}/booking/cancel`,
-            customerEmail: customerInfo.email,
-            couponCode: appliedCoupon?.code,
-            discountAmount: getDiscountAmount(),
-            originalAmount: getPrice(),
-            finalAmount: getFinalPrice(),
-            currency: "BRL",
-          });
-
-          if (mpPref.success && mpPref.preferenceUrl) {
-            toast.success("Redirecionando para pagamento...", {
-              description: "Você será levado para o checkout seguro. O pagamento será confirmado após processamento.",
-            });
-
-            // Reset form before redirecting
-            setDate(undefined);
-            setTime("");
-            setAdults(2);
-            setChildren(0);
-            setAdditionalGuestNames([]);
-            setCustomerInfo({ name: "", email: "", phone: "" });
-            setSpecialRequests("");
-
-            setTimeout(() => {
-              window.location.href = mpPref.preferenceUrl;
-            }, 1200);
-            return; // Don't call onReservationSuccess here, only redirect
-          }
-          
-          throw new Error(mpPref.error || "Não foi possível gerar o link de pagamento");
-        } catch (paymentError) {
-          console.error("💥 Erro ao gerar link de pagamento:", paymentError);
-          toast.error("Reserva criada, mas não foi possível gerar o link de pagamento", {
-            description: paymentError instanceof Error ? paymentError.message : "Entre em contato conosco para finalizar o pagamento",
-          });
-        }
-      }
+      console.log(`✅ Reserva criada: ${result.reservationId} - Status: pending_approval`);
 
       if (onReservationSuccess) {
         onReservationSuccess(result);
@@ -233,6 +191,7 @@ export function RestaurantReservationForm({
       setAdditionalGuestNames([]);
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSpecialRequests("");
+      setAppliedCoupon(null);
     } catch (error) {
       toast.error("Erro ao fazer reserva", {
         description: error instanceof Error ? error.message : "Tente novamente",
@@ -454,12 +413,11 @@ export function RestaurantReservationForm({
             </div>
           )}
 
-          {/* Payment Info - show if requires payment */}
-          {restaurant.acceptsOnlinePayment && restaurant.requiresUpfrontPayment && restaurant.price && restaurant.price > 0 && (
-            <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-              Seu pagamento será autorizado e cobrado apenas após aprovação da reserva pelo restaurante.
-            </div>
-          )}
+          {/* Approval Info */}
+          <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-700">
+            ℹ️ <strong>Processo de Reserva:</strong> Sua solicitação será enviada para confirmação do parceiro. 
+            {getPrice() > 0 && " Após a confirmação, você receberá um link de pagamento."}
+          </div>
 
           {/* Submit Button */}
           <Button 
@@ -473,10 +431,10 @@ export function RestaurantReservationForm({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Processando...
+                Enviando Solicitação...
               </span>
             ) : (
-              "Confirmar reserva"
+              "Solicitar Reserva"
             )}
           </Button>
 
