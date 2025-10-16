@@ -45,6 +45,7 @@ export const getUserActivityBookings = query({
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
       mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -145,6 +146,7 @@ export const getUserEventBookings = query({
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
       mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -243,6 +245,7 @@ export const getUserRestaurantReservations = query({
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
       mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -348,6 +351,7 @@ export const getUserVehicleBookings = query({
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
       mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -1151,6 +1155,7 @@ export const getActivityBookings = query({
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
       mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
