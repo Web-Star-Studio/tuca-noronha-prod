@@ -10,7 +10,7 @@
 
 import { internalAction, action } from "../../_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 import { mpFetch } from "../mercadoPago/utils";
 
 // Subscription configuration
@@ -611,6 +611,66 @@ export const processSubscriptionWebhook = action({
         success: false, 
         processed: false, 
         error: error instanceof Error ? error.message : "Unknown error" 
+      };
+    }
+  },
+});
+
+/**
+ * Manual action to process a subscription by email
+ * Searches MP for active subscriptions for this email and processes them
+ */
+export const manuallyProcessSubscriptionByEmail = action({
+  args: {
+    email: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.optional(v.string()),
+    subscription: v.optional(v.any()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      console.log(`[MP] Searching subscriptions for email: ${args.email}`);
+      
+      // Search for preapprovals with this email
+      // MP API doesn't have a direct search by email, so we'll search by payer_email in the list
+      const preapprovals = await mpFetch<any>('/preapproval/search', {
+        method: 'GET',
+      });
+      
+      // Filter by email
+      const userPreapprovals = preapprovals.results?.filter((p: any) => 
+        p.payer_email === args.email && p.status === 'authorized'
+      );
+      
+      if (!userPreapprovals || userPreapprovals.length === 0) {
+        return {
+          success: false,
+          error: `Nenhuma assinatura ativa encontrada para o email ${args.email}`
+        };
+      }
+      
+      // Get the most recent active subscription
+      const mostRecent = userPreapprovals.sort((a: any, b: any) => 
+        new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+      )[0];
+      
+      console.log(`[MP] Found active subscription for ${args.email}:`, mostRecent.id);
+      
+      // Process this subscription using the existing logic
+      const result = await ctx.runAction(api.domains.subscriptions.actions.manuallyProcessSubscription, {
+        preapprovalId: String(mostRecent.id),
+      });
+      
+      return result;
+      
+    } catch (error) {
+      console.error("[MP] Failed to process subscription by email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
       };
     }
   },

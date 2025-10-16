@@ -20,6 +20,7 @@ export default function ProcessSubscriptionsPage() {
   const [result, setResult] = useState<any>(null);
 
   const manuallyProcessSubscription = useAction(api.domains.subscriptions.actions.manuallyProcessSubscription);
+  const manuallyProcessSubscriptionByEmail = useAction(api.domains.subscriptions.actions.manuallyProcessSubscriptionByEmail);
 
   const handleProcessByPreapprovalId = async () => {
     if (!preapprovalId.trim()) {
@@ -60,8 +61,31 @@ export default function ProcessSubscriptionsPage() {
       return;
     }
 
-    // TODO: Implementar busca por email
-    toast.info("Funcionalidade em desenvolvimento. Use o Preapproval ID por enquanto.");
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const response = await manuallyProcessSubscriptionByEmail({
+        email: email.trim(),
+      });
+
+      setResult(response);
+
+      if (response.success) {
+        toast.success(response.message || "Assinatura processada com sucesso!");
+      } else {
+        toast.error(response.error || "Erro ao processar assinatura");
+      }
+    } catch (error) {
+      console.error("Erro ao processar assinatura:", error);
+      toast.error("Erro ao processar assinatura");
+      setResult({
+        success: false,
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -150,12 +174,20 @@ export default function ProcessSubscriptionsPage() {
 
             <Button
               onClick={handleProcessByEmail}
-              disabled={true} // Desabilitado temporariamente
-              variant="secondary"
+              disabled={loading || !email.trim()}
               className="w-full"
             >
-              <Mail className="mr-2 h-4 w-4" />
-              Em Desenvolvimento
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Processar por Email
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
