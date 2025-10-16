@@ -860,6 +860,67 @@ export const processWebhookEvent = internalAction({
         eventData: args.data || {},
       });
 
+      // Handle subscription/preapproval webhooks (for guide subscriptions)
+      if ((args.type === "subscription" || args.type === "preapproval" || args.action?.startsWith("subscription.") || args.action?.startsWith("preapproval.")) && args.data && args.data.id) {
+        const preapprovalId = String(args.data.id);
+        
+        console.log(`[MP] Processing subscription/preapproval notification for ID: ${preapprovalId}`);
+        
+        try {
+          // Fetch preapproval details from MP API
+          const preapproval = await mpFetch<any>(`/preapproval/${preapprovalId}`);
+          console.log(`[MP] Preapproval ${preapprovalId} fetched successfully, status: ${preapproval.status}`);
+          
+          // Extract user info from preapproval
+          const userEmail = preapproval.payer_email;
+          const userId = preapproval.external_reference; // Should contain Clerk user ID
+          
+          if (!userId) {
+            console.error(`[MP] Preapproval ${preapprovalId} has no external_reference (user ID)`);
+            return { success: true, processed: true };
+          }
+          
+          console.log(`[MP] Creating/updating guide subscription for user ${userId}`);
+          
+          // Map MP status to our internal status
+          const statusMap: Record<string, "authorized" | "paused" | "cancelled" | "pending"> = {
+            "authorized": "authorized",
+            "paused": "paused",
+            "cancelled": "cancelled",
+            "pending": "pending"
+          };
+          
+          const subscriptionStatus = statusMap[preapproval.status] || "pending";
+          
+          // Create or update subscription
+          await ctx.runMutation(internal.domains.subscriptions.mutations.upsertSubscription, {
+            userId: userId,
+            userEmail: userEmail,
+            mpPreapprovalId: preapprovalId,
+            mpPlanId: preapproval.preapproval_plan_id,
+            status: subscriptionStatus,
+            reason: preapproval.reason || "Guide subscription",
+            externalReference: preapproval.external_reference,
+            frequency: preapproval.auto_recurring?.frequency || 1,
+            frequencyType: preapproval.auto_recurring?.frequency_type || "months",
+            transactionAmount: preapproval.auto_recurring?.transaction_amount || 0,
+            currencyId: preapproval.auto_recurring?.currency_id || "BRL",
+            startDate: new Date(preapproval.date_created).getTime(),
+            endDate: preapproval.end_date ? new Date(preapproval.end_date).getTime() : undefined,
+            metadata: {
+              source: "mercado_pago",
+              referrer: "guide_subscription"
+            }
+          });
+          
+          console.log(`[MP] Guide subscription created/updated for user ${userId}`);
+          
+        } catch (error) {
+          console.error(`[MP] Failed to process subscription webhook:`, error instanceof Error ? error.message : String(error));
+          return { success: true, processed: true };
+        }
+      }
+      
       // If payment notification, fetch full payment details
       // Following MP best practices: first acknowledge receipt, then fetch payment details
       if ((args.type === "payment" || args.action?.startsWith("payment.")) && args.data && args.data.id) {

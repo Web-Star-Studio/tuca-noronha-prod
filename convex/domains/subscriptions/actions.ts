@@ -614,4 +614,114 @@ export const processSubscriptionWebhook = action({
       };
     }
   },
+});
+
+/**
+ * Manual action to process a subscription by preapproval ID
+ * Use this to manually create a subscription if webhook failed
+ */
+export const manuallyProcessSubscription = action({
+  args: {
+    preapprovalId: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.optional(v.string()),
+    subscription: v.optional(v.any()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      console.log(`[MP] Manually processing subscription ${args.preapprovalId}`);
+      
+      // Fetch subscription details from MP
+      const preapproval = await mpFetch<any>(`/preapproval/${args.preapprovalId}`);
+      console.log(`[MP] Fetched preapproval:`, preapproval);
+      
+      // Extract user info
+      const userEmail = preapproval.payer_email;
+      const externalRef = preapproval.external_reference;
+      let userId = externalRef ? externalRef.replace("guide_", "") : null;
+      
+      // Se não tiver external_reference, buscar usuário pelo email
+      if (!userId && userEmail) {
+        const user = await ctx.runQuery(
+          internal.domains.users.queries.getUserByEmail,
+          { email: userEmail }
+        );
+        if (user) {
+          userId = user.clerkId;
+          console.log(`[MP] Found user by email: ${userEmail} -> ${userId}`);
+        } else {
+          return {
+            success: false,
+            error: `Nenhum usuário encontrado com o email: ${userEmail}`
+          };
+        }
+      }
+      
+      if (!userId) {
+        return {
+          success: false,
+          error: "Não foi possível identificar o usuário desta assinatura"
+        };
+      }
+      
+      // Map MP status to our internal status
+      const statusMap: Record<string, "authorized" | "paused" | "cancelled" | "pending"> = {
+        "authorized": "authorized",
+        "paused": "paused",
+        "cancelled": "cancelled",
+        "pending": "pending"
+      };
+      
+      const subscriptionStatus = statusMap[preapproval.status] || "pending";
+      
+      // Calculate dates
+      const startDate = preapproval.date_created ? new Date(preapproval.date_created) : new Date();
+      const endDate = preapproval.end_date ? new Date(preapproval.end_date) : undefined;
+      
+      // Create or update subscription
+      const subscriptionId = await ctx.runMutation(internal.domains.subscriptions.mutations.upsertSubscription, {
+        userId: userId,
+        userEmail: userEmail,
+        mpPreapprovalId: args.preapprovalId,
+        mpPlanId: preapproval.preapproval_plan_id,
+        status: subscriptionStatus,
+        reason: preapproval.reason || "Assinatura Premium - Guia de Viagens",
+        externalReference: externalRef,
+        frequency: preapproval.auto_recurring?.frequency || 12,
+        frequencyType: (preapproval.auto_recurring?.frequency_type || "months") as "days" | "weeks" | "months" | "years",
+        transactionAmount: preapproval.auto_recurring?.transaction_amount || 99.90,
+        currencyId: preapproval.auto_recurring?.currency_id || "BRL",
+        startDate: startDate.getTime(),
+        endDate: endDate ? endDate.getTime() : undefined,
+        metadata: {
+          source: "manual_processing",
+          processedAt: new Date().toISOString()
+        }
+      });
+      
+      // Get the created subscription
+      const subscription = await ctx.runQuery(
+        internal.domains.subscriptions.queries.getUserSubscriptionInternal,
+        { userId }
+      );
+      
+      console.log(`[MP] Subscription processed successfully for user ${userId}`);
+      
+      return {
+        success: true,
+        message: `Assinatura criada/atualizada com sucesso para o usuário ${userId}`,
+        subscription: subscription
+      };
+      
+    } catch (error) {
+      console.error("[MP] Failed to manually process subscription:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  },
 }); 
