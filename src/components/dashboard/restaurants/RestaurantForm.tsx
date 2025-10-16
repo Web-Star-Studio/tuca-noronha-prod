@@ -397,8 +397,13 @@ export function RestaurantForm({
 
   // Handler de submissão
   const processSubmit = (data: Restaurant) => {
-    console.log("RestaurantForm processSubmit called");
+    console.log("=== RestaurantForm processSubmit called ===");
     console.log("Form data:", data);
+    console.log("Cuisine types:", cuisineTypes);
+    console.log("Payment options:", paymentOptions);
+    console.log("Operating days:", operatingDays);
+    console.log("Opening time:", openingTime);
+    console.log("Closing time:", closingTime);
     
     // Reset validation error
     setValidationError(null);
@@ -486,7 +491,16 @@ export function RestaurantForm({
 
 
   return (
-    <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
+    <form 
+      onSubmit={(e) => {
+        console.log("=== Form onSubmit event fired ===");
+        console.log("Event:", e);
+        console.log("Form errors:", errors);
+        console.log("Has errors:", Object.keys(errors).length > 0);
+        handleSubmit(processSubmit)(e);
+      }} 
+      className="space-y-6"
+    >
       {/* Alerta de erro de validação */}
       {validationError && (
         <Alert variant="destructive">
@@ -496,10 +510,51 @@ export function RestaurantForm({
         </Alert>
       )}
       
+      {/* Alerta de erros do react-hook-form */}
+      {Object.keys(errors).length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Campos Obrigatórios Não Preenchidos</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p className="text-sm">Por favor, preencha os seguintes campos obrigatórios:</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              {errors.name && <li><strong>Nome do Restaurante</strong>: {errors.name.message}</li>}
+              {errors.slug && <li><strong>Slug (URL)</strong>: {errors.slug.message}</li>}
+              {errors.description && <li><strong>Descrição</strong>: {errors.description.message}</li>}
+              {errors.phone && <li><strong>Telefone</strong>: {errors.phone.message}</li>}
+              {errors.address?.street && <li><strong>Endereço - Rua</strong>: {errors.address.street.message}</li>}
+              {errors.address?.neighborhood && <li><strong>Endereço - Bairro</strong>: {errors.address.neighborhood.message}</li>}
+              {errors.address?.zipCode && <li><strong>Endereço - CEP</strong>: {errors.address.zipCode.message}</li>}
+            </ul>
+            {(errors.address?.street || errors.address?.neighborhood || errors.address?.zipCode) && currentTab !== "address" && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentTab("address")}
+                className="mt-2"
+              >
+                Ir para Localização →
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
         <TabsList className="grid grid-cols-3 w-full max-w-3xl mb-4">
-          <TabsTrigger value="basic">Informações Básicas</TabsTrigger>
-          <TabsTrigger value="address">Localização</TabsTrigger>
+          <TabsTrigger value="basic" className="relative">
+            Informações Básicas
+            {(errors.name || errors.slug || errors.description || errors.phone) && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="address" className="relative">
+            Localização
+            {(errors.address?.street || errors.address?.neighborhood || errors.address?.zipCode) && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            )}
+          </TabsTrigger>
           <TabsTrigger value="media">Imagens e Mídia</TabsTrigger>
         </TabsList>
 
@@ -1354,6 +1409,11 @@ export function RestaurantForm({
             type="submit" 
             disabled={loading}
             className="bg-green-600 hover:bg-green-700"
+            onClick={() => {
+              console.log("=== Submit button clicked ===");
+              console.log("Button disabled:", loading);
+              console.log("Is editing:", isEditing);
+            }}
           >
             {loading ? "Salvando..." : isEditing ? "✓ Atualizar Restaurante" : "✓ Criar Restaurante"}
           </Button>
