@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import { 
   confirmBookingValidator, 
   rejectBookingValidator,
@@ -61,9 +62,30 @@ export const confirmBooking = mutation({
       updatedAt: now,
     });
 
-    // TODO: Send notification to customer
-    // TODO: Create notification in notifications table
     console.log(`✅ Booking ${bookingId} confirmed by admin ${user.name}`);
+
+    // Send email notification to customer
+    try {
+      const bookingDetailsUrl = `${process.env.SITE_URL || "http://localhost:3000"}/meu-painel/reservas/${bookingId}`;
+      
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingApprovedEmail, {
+        customerEmail: bookingWithStatus.customerInfo?.email || bookingWithStatus.email,
+        customerName: bookingWithStatus.customerInfo?.name || bookingWithStatus.name,
+        confirmationCode: bookingWithStatus.confirmationCode,
+        assetName: "Reserva", // Will be enhanced with actual asset name
+        assetType: bookingType,
+        bookingDate: bookingWithStatus.date,
+        bookingTime: bookingWithStatus.time,
+        totalAmount: bookingWithStatus.totalPrice || bookingWithStatus.finalAmount,
+        adminNotes: adminNotes,
+        bookingDetailsUrl,
+      });
+      
+      console.log(`📧 Email notification scheduled for ${bookingWithStatus.customerInfo?.email}`);
+    } catch (emailError) {
+      console.error("Failed to schedule email:", emailError);
+      // Don't fail the mutation if email fails
+    }
 
     return {
       success: true,
@@ -128,9 +150,29 @@ export const rejectBooking = mutation({
       updatedAt: now,
     });
 
-    // TODO: Send notification to customer
-    // TODO: Create notification in notifications table
     console.log(`❌ Booking ${bookingId} rejected by admin ${user.name}`);
+
+    // Send email notification to customer
+    try {
+      const bookingDetailsUrl = `${process.env.SITE_URL || "http://localhost:3000"}/meu-painel/reservas/${bookingId}`;
+      
+      await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendBookingRejectedEmail, {
+        customerEmail: bookingWithStatus.customerInfo?.email || bookingWithStatus.email,
+        customerName: bookingWithStatus.customerInfo?.name || bookingWithStatus.name,
+        confirmationCode: bookingWithStatus.confirmationCode,
+        assetName: "Reserva", // Will be enhanced with actual asset name
+        assetType: bookingType,
+        bookingDate: bookingWithStatus.date,
+        adminNotes: adminNotes,
+        rejectionReason: rejectionReason,
+        bookingDetailsUrl,
+      });
+      
+      console.log(`📧 Rejection email scheduled for ${bookingWithStatus.customerInfo?.email}`);
+    } catch (emailError) {
+      console.error("Failed to schedule rejection email:", emailError);
+      // Don't fail the mutation if email fails
+    }
 
     return {
       success: true,

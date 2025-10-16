@@ -53,6 +53,7 @@ import type * as domains_email_index from "../domains/email/index.js";
 import type * as domains_email_mutations from "../domains/email/mutations.js";
 import type * as domains_email_queries from "../domains/email/queries.js";
 import type * as domains_email_service from "../domains/email/service.js";
+import type * as domains_email_templates_bookings from "../domains/email/templates/bookings.js";
 import type * as domains_email_templates_packageRequests from "../domains/email/templates/packageRequests.js";
 import type * as domains_email_templates_voucher from "../domains/email/templates/voucher.js";
 import type * as domains_email_templates from "../domains/email/templates.js";
@@ -262,6 +263,7 @@ declare const fullApi: ApiFromModules<{
   "domains/email/mutations": typeof domains_email_mutations;
   "domains/email/queries": typeof domains_email_queries;
   "domains/email/service": typeof domains_email_service;
+  "domains/email/templates/bookings": typeof domains_email_templates_bookings;
   "domains/email/templates/packageRequests": typeof domains_email_templates_packageRequests;
   "domains/email/templates/voucher": typeof domains_email_templates_voucher;
   "domains/email/templates": typeof domains_email_templates;

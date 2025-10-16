@@ -155,4 +155,12 @@ export const EMAIL_SETTINGS = {
     priority: "high" as const,
     replyTo: SYSTEM_EMAILS.SUPPORT,
   },
+  booking_approved: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
+  booking_rejected: {
+    priority: "high" as const,
+    replyTo: SYSTEM_EMAILS.SUPPORT,
+  },
 } as const; 

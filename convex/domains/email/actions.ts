@@ -1415,4 +1415,138 @@ export const sendPackageRequestConfirmationEmail = internalAction({
       };
     }
   },
+});
+
+/**
+ * Send booking approved notification email
+ */
+export const sendBookingApprovedEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    confirmationCode: v.string(),
+    assetName: v.string(),
+    assetType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("vehicle"),
+      v.literal("restaurant")
+    ),
+    bookingDate: v.optional(v.string()),
+    bookingTime: v.optional(v.string()),
+    totalAmount: v.optional(v.number()),
+    adminNotes: v.optional(v.string()),
+    bookingDetailsUrl: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { bookingApprovedEmail } = await import("./templates/bookings");
+      
+      const html = bookingApprovedEmail({
+        customerName: args.customerName,
+        confirmationCode: args.confirmationCode,
+        assetName: args.assetName,
+        assetType: args.assetType,
+        bookingDate: args.bookingDate,
+        bookingTime: args.bookingTime,
+        totalAmount: args.totalAmount,
+        adminNotes: args.adminNotes,
+        bookingDetailsUrl: args.bookingDetailsUrl,
+      });
+
+      await sendQuickEmail({
+        to: args.customerEmail,
+        subject: `Reserva Aprovada - ${args.assetName} - Código: ${args.confirmationCode}`,
+        html,
+        type: "booking_approved",
+      });
+
+      // Log the email
+      await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+        type: "booking_approved",
+        to: args.customerEmail,
+        subject: `Reserva Aprovada - ${args.assetName}`,
+        status: "sent",
+        sentAt: Date.now(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send booking approved email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+/**
+ * Send booking rejected notification email
+ */
+export const sendBookingRejectedEmail = internalAction({
+  args: {
+    customerEmail: v.string(),
+    customerName: v.string(),
+    confirmationCode: v.string(),
+    assetName: v.string(),
+    assetType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("vehicle"),
+      v.literal("restaurant")
+    ),
+    bookingDate: v.optional(v.string()),
+    adminNotes: v.optional(v.string()),
+    rejectionReason: v.optional(v.string()),
+    bookingDetailsUrl: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    try {
+      const { bookingRejectedEmail } = await import("./templates/bookings");
+      
+      const html = bookingRejectedEmail({
+        customerName: args.customerName,
+        confirmationCode: args.confirmationCode,
+        assetName: args.assetName,
+        assetType: args.assetType,
+        bookingDate: args.bookingDate,
+        adminNotes: args.adminNotes,
+        rejectionReason: args.rejectionReason,
+        bookingDetailsUrl: args.bookingDetailsUrl,
+      });
+
+      await sendQuickEmail({
+        to: args.customerEmail,
+        subject: `Atualização da Reserva - Código: ${args.confirmationCode}`,
+        html,
+        type: "booking_rejected",
+      });
+
+      // Log the email
+      await ctx.runMutation(internal.domains.email.mutations.logEmail, {
+        type: "booking_rejected",
+        to: args.customerEmail,
+        subject: `Reserva Não Aprovada - ${args.assetName}`,
+        status: "sent",
+        sentAt: Date.now(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send booking rejected email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
 }); 
