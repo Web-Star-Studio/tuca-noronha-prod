@@ -33,25 +33,25 @@ export const createPaymentLink = action({
     
     try {
       if (bookingType === "activity") {
-        const activity = await ctx.runQuery(internal.domains.activities.queries.getActivityById, {
+        const activity = await ctx.runQuery(internal.domains.activities.queries.getById, {
           id: booking.activityId,
         });
         assetName = activity?.title || "Atividade";
         assetDescription = `Reserva de atividade: ${assetName}`;
       } else if (bookingType === "event") {
-        const event = await ctx.runQuery(internal.domains.events.queries.getEventById, {
+        const event = await ctx.runQuery(internal.domains.events.queries.getById, {
           id: booking.eventId,
         });
         assetName = event?.title || "Evento";
         assetDescription = `Reserva de evento: ${assetName}`;
       } else if (bookingType === "vehicle") {
-        const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getVehicleById, {
+        const vehicle = await ctx.runQuery(internal.domains.vehicles.queries.getVehicle, {
           id: booking.vehicleId,
         });
         assetName = vehicle ? `${vehicle.brand} ${vehicle.model}` : "Veículo";
         assetDescription = `Reserva de veículo: ${assetName}`;
       } else if (bookingType === "restaurant") {
-        const restaurant = await ctx.runQuery(internal.domains.restaurants.queries.getRestaurantById, {
+        const restaurant = await ctx.runQuery(internal.domains.restaurants.queries.getById, {
           id: booking.restaurantId,
         });
         assetName = restaurant?.name || "Restaurante";

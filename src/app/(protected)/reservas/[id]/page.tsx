@@ -351,7 +351,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                   <Button
                     onClick={handlePayment}
                     disabled={isPaymentLoading}
-                    className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700"
+                    className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700 text-white"
                   >
                     {isPaymentLoading ? (
                       <>

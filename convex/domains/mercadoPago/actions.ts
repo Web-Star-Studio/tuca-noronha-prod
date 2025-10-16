@@ -148,6 +148,7 @@ export const createCheckoutPreferenceForBooking = action({
     customerEmail: v.optional(v.string()),
     successUrl: v.optional(v.string()),
     cancelUrl: v.optional(v.string()),
+    pendingUrl: v.optional(v.string()),
     currency: v.optional(v.string()),
   },
   returns: v.object({
@@ -191,11 +192,11 @@ export const createCheckoutPreferenceForBooking = action({
       // Use provided URLs but replace localhost with production URL
       const successUrl = replaceLocalhost(args.successUrl?.trim()) || productionUrl;
       const failureUrl = replaceLocalhost(args.cancelUrl?.trim()) || productionUrl;
-      const pendingUrl = successUrl;
+      const pendingUrl = replaceLocalhost(args.pendingUrl?.trim()) || successUrl;
       
       // Log what we're using
       console.log("[MP] Final URLs:", {
-        original: { success: args.successUrl, cancel: args.cancelUrl },
+        original: { success: args.successUrl, cancel: args.cancelUrl, pending: args.pendingUrl },
         final: { success: successUrl, failure: failureUrl, pending: pendingUrl }
       });
 
