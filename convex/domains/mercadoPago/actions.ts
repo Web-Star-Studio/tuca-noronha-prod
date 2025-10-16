@@ -56,6 +56,14 @@ export const createCheckoutPreference = internalAction({
       }
 
       // Build Mercado Pago preference body
+      // IMPORTANT: Metadata must be at preference level AND as external_reference
+      const metadata = {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+        captureMode: args.captureMode || "manual",
+        ...(args.metadata || {}),
+      };
+
       const body: any = {
         items: [
           {
@@ -68,23 +76,20 @@ export const createCheckoutPreference = internalAction({
         back_urls: args.backUrls,
         auto_return: "approved",
         notification_url: args.notificationUrl,
-        metadata: {
-          bookingId: args.bookingId,
-          assetType: args.assetType,
-          captureMode: args.captureMode || "manual", // Default to manual capture
-          ...(args.metadata || {}),
-        },
+        // Use external_reference to store bookingId (MP recommended way)
+        external_reference: args.bookingId,
+        // Also send as metadata for compatibility
+        metadata: metadata,
         payment_methods: {
           installments: 1,
         },
       };
 
       // Log metadata being sent to MP
-      console.log("[MP] Metadata being sent to Mercado Pago:", {
-        bookingId: args.bookingId,
-        assetType: args.assetType,
-        additionalMetadata: args.metadata,
-        fullMetadata: body.metadata,
+      console.log("[MP] Creating preference with:", {
+        external_reference: body.external_reference,
+        metadata: body.metadata,
+        notification_url: body.notification_url,
       });
 
       // Configure capture mode for authorization without automatic capture
@@ -948,9 +953,17 @@ export const processWebhookEvent = internalAction({
           return { success: true, processed: true };
         }
 
-        const bookingId = payment.metadata?.bookingId;
+        // Get bookingId from metadata OR external_reference (MP recommended field)
+        const bookingId = payment.metadata?.bookingId || payment.external_reference;
         const assetType = payment.metadata?.assetType as any;
         const assetId = payment.metadata?.assetId ? String(payment.metadata.assetId) : undefined;
+
+        console.log(`[MP] Payment data:`, {
+          hasMetadata: !!payment.metadata,
+          metadata: payment.metadata,
+          external_reference: payment.external_reference,
+          resolved_bookingId: bookingId,
+        });
 
         if (bookingId) {
           console.log(`[MP] Updating booking ${bookingId} with payment status: ${payment.status}`);
