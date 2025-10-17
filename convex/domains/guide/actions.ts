@@ -86,9 +86,9 @@ export const createGuidePurchasePreference = action({
           `${process.env.CONVEX_SITE_URL}/mercadopago/guide-webhook` : 
           undefined,
         metadata: {
-          userId: args.userId,
-          userEmail: args.userEmail,
-          productType: "guide",
+          user_id: args.userId,        // MP mantém snake_case
+          user_email: args.userEmail,  // MP mantém snake_case
+          product_type: "guide",       // MP mantém snake_case
         },
         purpose: "wallet_purchase",
       };
@@ -165,12 +165,17 @@ export const processGuidePaymentWebhook = internalAction({
             metadata: payment.metadata,
           });
 
-          // Check if it's a guide payment
-          if (payment.metadata?.productType === "guide" && payment.metadata?.userId) {
-            const userId = payment.metadata.userId;
+          // Check if it's a guide payment (MP envia metadata em snake_case)
+          const productType = payment.metadata?.product_type || payment.metadata?.productType;
+          const userId = payment.metadata?.user_id || payment.metadata?.userId;
+          
+          console.log(`[Guide] Metadata check: productType=${productType}, userId=${userId}`);
+          
+          if (productType === "guide" && userId) {
+            console.log(`[Guide] Processing guide payment for user ${userId}`);
             
             // Extract user info from external reference if needed
-            let userEmail = payment.metadata.userEmail || payment.payer?.email || "";
+            let userEmail = payment.metadata?.user_email || payment.metadata?.userEmail || payment.payer?.email || "";
             let userName = payment.payer?.first_name ? 
               `${payment.payer.first_name} ${payment.payer.last_name || ""}`.trim() : 
               undefined;
@@ -212,12 +217,17 @@ export const processGuidePaymentWebhook = internalAction({
             metadata: payment.metadata,
           });
 
-          // Check if it's a guide payment
-          if (payment.metadata?.productType === "guide" && payment.metadata?.userId) {
-            const userId = payment.metadata.userId;
+          // Check if it's a guide payment (MP envia metadata em snake_case)
+          const productType = payment.metadata?.product_type || payment.metadata?.productType;
+          const userId = payment.metadata?.user_id || payment.metadata?.userId;
+          
+          console.log(`[Guide] Metadata check: productType=${productType}, userId=${userId}`);
+          
+          if (productType === "guide" && userId) {
+            console.log(`[Guide] Processing guide payment for user ${userId}`);
             
             // Extract user info from external reference if needed
-            let userEmail = payment.metadata.userEmail || payment.payer?.email || "";
+            let userEmail = payment.metadata?.user_email || payment.metadata?.userEmail || payment.payer?.email || "";
             let userName = payment.payer?.first_name ? 
               `${payment.payer.first_name} ${payment.payer.last_name || ""}`.trim() : 
               undefined;
