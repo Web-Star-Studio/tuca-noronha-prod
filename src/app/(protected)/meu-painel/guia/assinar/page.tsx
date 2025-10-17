@@ -8,7 +8,7 @@ import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info } from "lucide-react";
+import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export default function GuideSubscriptionPage() {
