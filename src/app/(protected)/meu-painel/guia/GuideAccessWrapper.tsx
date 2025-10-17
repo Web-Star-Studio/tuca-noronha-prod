@@ -17,14 +17,6 @@ export default function GuideAccessWrapper() {
     api.domains.guide.queries.hasGuideAccess,
     authLoaded && userId ? {} : "skip"
   );
-  const purchase = useQuery(
-    api.domains.guide.queries.getCurrentPurchase,
-    authLoaded && userId ? {} : "skip"
-  );
-  const userRole = useQuery(
-    api.domains.rbac.queries.getUserRole,
-    authLoaded && userId ? {} : "skip"
-  );
 
   useEffect(() => {
     // Only redirect after we have a definitive answer

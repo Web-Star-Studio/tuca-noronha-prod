@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { MediaSelector } from "@/components/dashboard/media";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,7 +72,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
 
   const mainImageEntry = parseMediaEntry(vehicleData.imageUrl ?? "");
   const hasMainImage = Boolean(mainImageEntry.url && mainImageEntry.url.trim() !== "");
-  const isEditing = Boolean(editMode);
 
   useEffect(() => {
     if (vehicle && editMode) {

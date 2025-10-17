@@ -120,7 +120,7 @@ export default function ActivateSubscriptionPage() {
                   <li>Encontre sua assinatura de <strong>R$ 99,90 anual</strong></li>
                   <li>Clique na assinatura para ver os detalhes</li>
                   <li>Copie o <strong>Preapproval ID</strong> (geralmente aparece na URL ou nos detalhes)</li>
-                  <li>Cole abaixo e clique em "Ativar Assinatura"</li>
+                  <li>Cole abaixo e clique em &quot;Ativar Assinatura&quot;</li>
                 </ol>
                 
                 <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
