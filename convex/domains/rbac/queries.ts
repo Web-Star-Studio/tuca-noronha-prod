@@ -911,7 +911,18 @@ export const getCurrentUser = query({
   },
 });
 
-
+/**
+ * Obtém o role do usuário atual
+ * Query simples que retorna apenas o role
+ */
+export const getUserRole = query({
+  args: {},
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx) => {
+    const role = await getCurrentUserRole(ctx);
+    return role;
+  },
+});
 
 /**
  * Lista organizações baseado no role do usuário:

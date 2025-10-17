@@ -43,7 +43,8 @@ export {
   listAllOrganizationPermissions,
   listEmployeeOrganizations,
   getEmployeeOrganizationPermission,
-  getCurrentUser
+  getCurrentUser,
+  getUserRole
 } from "./queries";
 
 // Export test functions
