@@ -357,14 +357,14 @@ export default function AdminBookingsPage() {
           assetType = "package";
         }
         
-        // Use new manual capture flow
+        // Use new approval flow
         await approveBooking({
           bookingId: booking._id,
           assetType: assetType,
           partnerNotes: partnerNotes || undefined,
         });
         
-        toast.success("Reserva aprovada e pagamento capturado com sucesso!");
+        toast.success("Reserva aprovada! Cliente pode realizar o pagamento agora.");
       } else {
         // Use legacy flow for bookings without payment capture
         // Determine asset type from booking for masters

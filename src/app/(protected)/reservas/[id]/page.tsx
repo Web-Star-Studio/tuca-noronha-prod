@@ -430,15 +430,6 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                     Carregando contato...
                   </Button>
                 )}
-
-                {/* AI RAG Assistant Button */}
-                <RagChatButton
-                  variant="outline"
-                  className="w-full h-12 text-base"
-                  showLabel
-                  customLabel="Tirar dúvidas com IA"
-                />
-                
                 {reservation.status === 'completed' && (
                   <Button variant="outline" className="w-full h-12 text-base">
                     <Star className="h-4 w-4 mr-2" />
