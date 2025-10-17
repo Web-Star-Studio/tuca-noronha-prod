@@ -279,6 +279,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             <div>
               <Label htmlFor="category" className="text-sm font-medium">Categoria*</Label>
               <Select 
+                key={`category-${vehicleData.category || 'empty'}`}
                 value={vehicleData.category} 
                 onValueChange={(value) => handleSelectChange("category", value)}
               >
@@ -359,6 +360,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             <div>
               <Label htmlFor="status" className="text-sm font-medium">Status*</Label>
               <Select 
+                key={`status-${vehicleData.status || 'empty'}`}
                 value={vehicleData.status} 
                 onValueChange={(value) => handleSelectChange("status", value)}
               >
@@ -381,6 +383,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             <div>
               <Label htmlFor="fuelType" className="text-sm font-medium">Combustível*</Label>
               <Select
+                key={`fuelType-${vehicleData.fuelType || 'empty'}`}
                 value={vehicleData.fuelType}
                 onValueChange={(value) => handleSelectChange("fuelType", value)}
               >
@@ -401,6 +404,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             <div>
               <Label htmlFor="transmission" className="text-sm font-medium">Transmissão*</Label>
               <Select
+                key={`transmission-${vehicleData.transmission || 'empty'}`}
                 value={vehicleData.transmission}
                 onValueChange={(value) => handleSelectChange("transmission", value)}
               >
@@ -459,6 +463,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             <div className="md:col-span-2">
               <Label htmlFor="adminRating" className="text-sm font-medium">Classificação interna</Label>
               <Select
+                key={`adminRating-${vehicleData.adminRating !== undefined ? vehicleData.adminRating.toString() : '0'}`}
                 value={vehicleData.adminRating !== undefined ? vehicleData.adminRating.toString() : "0"}
                 onValueChange={handleAdminRatingChange}
               >
