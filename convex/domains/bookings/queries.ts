@@ -1681,7 +1681,9 @@ export const getEventBookings = query({
         receiptUrl: v.optional(v.string()),
       })),
       // Mercado Pago integration fields
+      mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
       userId: v.id("users"),
@@ -3034,6 +3036,8 @@ export const getEventBookingById = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago integration fields
+      mpPaymentId: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
