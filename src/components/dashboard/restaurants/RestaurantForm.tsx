@@ -542,20 +542,22 @@ export function RestaurantForm({
       )}
       
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-3xl mb-4">
-          <TabsTrigger value="basic" className="relative">
-            Informações Básicas
+        <TabsList className="mb-6 bg-white/80 backdrop-blur-sm border-none shadow-sm w-full grid grid-cols-3 sticky top-0 z-10">
+          <TabsTrigger value="basic" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all relative">
+            1. Básicas
             {(errors.name || errors.slug || errors.description || errors.phone) && (
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="address" className="relative">
-            Localização
+          <TabsTrigger value="address" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all relative">
+            2. Localização
             {(errors.address?.street || errors.address?.neighborhood || errors.address?.zipCode) && (
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="media">Imagens e Mídia</TabsTrigger>
+          <TabsTrigger value="media" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            3. Mídia
+          </TabsTrigger>
         </TabsList>
 
         {/* Mensagem informativa quando estiver no modo embedded */}
@@ -577,7 +579,7 @@ export function RestaurantForm({
         )}
 
         {/* Tab de informações básicas */}
-        <TabsContent value="basic" className="space-y-4">
+        <TabsContent value="basic" className="space-y-4 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="space-y-2">
             <Label>Tipo de Restaurante *</Label>
             <Select
@@ -698,6 +700,7 @@ export function RestaurantForm({
             <div className="space-y-2">
               <Label htmlFor="priceRange">Faixa de Preço *</Label>
               <Select
+                key={`priceRange-${preparedRestaurant?.priceRange || 'default'}`}
                 defaultValue={preparedRestaurant?.priceRange || "$$"}
                 onValueChange={(value) => setValue("priceRange", value)}
               >
@@ -716,6 +719,7 @@ export function RestaurantForm({
             <div className="space-y-2">
               <Label htmlFor="diningStyle">Estilo de Serviço *</Label>
               <Select
+                key={`diningStyle-${preparedRestaurant?.diningStyle || 'default'}`}
                 defaultValue={preparedRestaurant?.diningStyle || "Casual"}
                 onValueChange={(value) => setValue("diningStyle", value)}
               >
@@ -737,6 +741,7 @@ export function RestaurantForm({
           <div className="space-y-2">
             <Label htmlFor="adminRating">Classificação do Restaurante</Label>
             <Select
+              key={`adminRating-${preparedRestaurant?.adminRating?.toString() || '0'}`}
               defaultValue={preparedRestaurant?.adminRating?.toString() || "0"}
               onValueChange={(value) => setValue("adminRating", value === "0" ? undefined : parseFloat(value))}
             >
@@ -1189,7 +1194,7 @@ export function RestaurantForm({
         </TabsContent>
 
         {/* Tab de endereço */}
-        <TabsContent value="address" className="space-y-4">
+        <TabsContent value="address" className="space-y-4 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="space-y-2">
             <Label htmlFor="address.street">Rua/Avenida *</Label>
             <Input
@@ -1253,7 +1258,7 @@ export function RestaurantForm({
 
 
         {/* Tab de mídia */}
-          <TabsContent value="media" className="space-y-4">
+          <TabsContent value="media" className="space-y-4 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="space-y-2">
             <Label>Galeria</Label>
             <div className="flex gap-2">
