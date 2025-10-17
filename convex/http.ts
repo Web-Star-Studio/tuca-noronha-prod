@@ -200,4 +200,39 @@ http.route({
   }),
 });
 
+// Mercado Pago guide payment webhook route
+http.route({
+  path: "/mercadopago/guide-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const payload = await request.json();
+      console.log("[MP] Guide payment webhook received:", payload);
+      
+      // Process guide payment webhook event
+      const result = await ctx.runAction(internal.domains.guide.actions.processGuidePaymentWebhook, payload);
+      
+      return new Response(
+        JSON.stringify({ success: result.success }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      console.error("[MP] Guide webhook error:", error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
 export default http;

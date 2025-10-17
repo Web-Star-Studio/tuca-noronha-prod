@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { cachedRecommendationsTable } from "./domains/recommendations/schema";
 import { guideSubscriptions, subscriptionPayments } from "./domains/subscriptions/schema";
+import { guidePurchases } from "./domains/guide/schema";
 
 // Partner schemas
 const partners = defineTable({
@@ -2854,4 +2855,7 @@ export default defineSchema({
   partners,
   partnerFees,
   partnerTransactions,
+  
+  // Guide purchases (one-time payment for guide access)
+  guidePurchases,
 });

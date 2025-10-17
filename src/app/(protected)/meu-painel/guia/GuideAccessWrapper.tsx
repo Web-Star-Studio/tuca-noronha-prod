@@ -14,21 +14,17 @@ export default function GuideAccessWrapper() {
   
   // Wait for auth to be ready before querying
   const hasAccess = useQuery(
-    api.domains.subscriptions.queries.hasGuideAccess,
+    api.domains.guide.queries.hasGuideAccess,
     authLoaded && userId ? {} : "skip"
   );
-  
-  const debugInfo = useQuery(
-    api.domains.subscriptions.queries.debugGuideAccess,
+  const purchase = useQuery(
+    api.domains.guide.queries.getCurrentPurchase,
     authLoaded && userId ? {} : "skip"
   );
-
-  // Log debug info when available
-  useEffect(() => {
-    if (debugInfo) {
-      console.log("[GuideAccessWrapper] Debug info:", debugInfo);
-    }
-  }, [debugInfo]);
+  const userRole = useQuery(
+    api.domains.rbac.getUserRole,
+    authLoaded && userId ? {} : "skip"
+  );
 
   useEffect(() => {
     // Only redirect after we have a definitive answer
@@ -70,12 +66,6 @@ export default function GuideAccessWrapper() {
         <div className="flex flex-col items-center gap-3 text-gray-600">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           <span>Verificando acesso...</span>
-          {debugInfo && (
-            <div className="mt-4 text-xs text-gray-500">
-              <p>Role: {debugInfo.userRole || "carregando..."}</p>
-              <p>Clerk ID: {debugInfo.clerkId || "carregando..."}</p>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -88,12 +78,6 @@ export default function GuideAccessWrapper() {
         <div className="flex flex-col items-center gap-3 text-gray-600">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           <span>Sem acesso - redirecionando...</span>
-          {debugInfo && (
-            <div className="mt-4 text-xs text-red-500">
-              <p>Role: {debugInfo.userRole}</p>
-              <p>Tem assinatura: {debugInfo.hasSubscription ? "Sim" : "Não"}</p>
-            </div>
-          )}
         </div>
       </div>
     );

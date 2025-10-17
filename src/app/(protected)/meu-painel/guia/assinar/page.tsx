@@ -8,7 +8,7 @@ import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info, Mail } from "lucide-react";
+import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info } from "lucide-react";
 import { toast } from "sonner";
 
 export default function GuideSubscriptionPage() {
@@ -16,13 +16,14 @@ export default function GuideSubscriptionPage() {
   const { user } = useUser();
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const currentSubscription = useQuery(api.domains.subscriptions.queries.getCurrentSubscription);
+  // Check if user already purchased guide
+  const hasPurchased = useQuery(api.domains.guide.queries.hasPurchasedGuide);
   
-  // Usar API de Preapproval diretamente (funciona melhor com cartões de teste)
-  const createCheckout = useAction(api.domains.subscriptions.actions.createSubscriptionCheckout);
+  // Create payment preference (one-time payment)
+  const createPayment = useAction(api.domains.guide.actions.createGuidePurchasePreference);
 
-  // If user already has an active subscription, redirect to guide panel
-  if (currentSubscription?.status === "authorized") {
+  // If user already purchased, redirect to guide panel
+  if (hasPurchased) {
     router.push("/meu-painel/guia");
     return null;
   }
@@ -36,56 +37,36 @@ export default function GuideSubscriptionPage() {
     setIsProcessing(true);
     
     try {
-      // ✅ SIMPLIFICADO: Se tem link do plano do MP, usar direto!
-      const subscriptionPlanUrl = process.env.NEXT_PUBLIC_MP_SUBSCRIPTION_PLAN_URL;
-      
-      if (subscriptionPlanUrl) {
-        console.log("[Subscription] ✅ Using direct subscription plan link");
-        console.log("[Subscription] Redirecting to MP plan:", subscriptionPlanUrl);
-        
-        // Toast informativo reforçando o aviso sobre email
-        toast.info("Redirecionando para o Mercado Pago", {
-          description: `⚠️ LEMBRE-SE: Use o email ${user.primaryEmailAddress?.emailAddress} no checkout!`,
-          duration: 4000,
-        });
-        
-        // Redirecionar diretamente para o plano do MP
-        setTimeout(() => {
-          window.location.href = subscriptionPlanUrl;
-        }, 1000);
-        
-        return;
-      }
-      
-      // ⚠️ FALLBACK: Se não tem link, criar via API (antigo método)
-      console.log("[Subscription] No plan URL found, creating via API");
-      console.log("[Subscription] Creating checkout for user:", {
+      console.log("[Guide] Creating payment for user:", {
         userId: user.id,
         email: user.primaryEmailAddress?.emailAddress,
         name: user.fullName,
       });
 
-      const result = await createCheckout({
+      const result = await createPayment({
         userId: user.id,
         userEmail: user.primaryEmailAddress?.emailAddress || "",
         userName: user.fullName || undefined,
       });
 
-      console.log("[Subscription] API Response:", result);
+      console.log("[Guide] API Response:", result);
 
       if (result.success && result.checkoutUrl) {
-        console.log("[Subscription] ✅ Checkout created successfully!");
-        console.log("[Subscription] Redirecting to:", result.checkoutUrl);
+        console.log("[Guide] ✅ Payment created successfully!");
+        console.log("[Guide] Redirecting to:", result.checkoutUrl);
         
+        toast.success("Redirecionando para o pagamento...");
+        
+        // Redirect to Mercado Pago checkout
         window.location.href = result.checkoutUrl;
       } else {
-        throw new Error(result.error || "Erro ao criar checkout");
+        throw new Error(result.error || "Erro ao criar pagamento");
       }
     } catch (error) {
-      console.error("[Subscription] ❌ Exception:", error);
-      toast.error("Erro ao processar assinatura", {
-        description: error instanceof Error ? error.message : "Configure NEXT_PUBLIC_MP_SUBSCRIPTION_PLAN_URL no .env.local",
-        duration: 10000,
+      console.error("[Guide] ❌ Exception:", error);
+      toast.error("Erro ao processar pagamento", {
+        description: error instanceof Error ? error.message : "Tente novamente mais tarde",
+        duration: 5000,
       });
       setIsProcessing(false);
     }
@@ -98,8 +79,8 @@ export default function GuideSubscriptionPage() {
   ];
 
   const purchaseBenefits = [
-    "Assinatura anual e segura via Mercado Pago",
-    "Atualizações gratuitas durante 6 meses"
+    "Pagamento único e seguro via Mercado Pago",
+    "Acesso vitalício ao guia completo"
   ];
 
   return (
@@ -150,13 +131,13 @@ export default function GuideSubscriptionPage() {
                   ) : (
                     <>
                       <CreditCard className="h-5 w-5" />
-                      Assinar Agora
+                      Comprar Agora
                       <Sparkles className="h-5 w-5" />
                     </>
                   )}
                 </Button>
                 <div className="flex items-center gap-2 text-sm text-blue-900">
-                  <ShieldCheck className="h-5 w-5" /> Atualizações gratuitas por 6 meses
+                  <ShieldCheck className="h-5 w-5" /> Acesso vitalício ao guia
                 </div>
               </div>
 
@@ -231,7 +212,7 @@ export default function GuideSubscriptionPage() {
                   ) : (
                     <>
                       <CreditCard className="mr-2 h-5 w-5" />
-                      Assinar agora
+                      Comprar agora
                     </>
                   )}
                 </Button>
@@ -268,12 +249,12 @@ export default function GuideSubscriptionPage() {
                 ) : (
                   <>
                     <CreditCard className="mr-2 h-5 w-5" />
-                    Assinar Agora
+                    Comprar Agora
                   </>
                 )}
               </Button>
               <p className="text-center text-xs text-white/80">
-                Assinatura anual de R$ 99,90 via Mercado Pago • Acesso imediato
+                Pagamento único de R$ 99,90 via Mercado Pago • Acesso vitalício
               </p>
             </div>
           </div>
