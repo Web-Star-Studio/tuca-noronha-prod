@@ -133,3 +133,33 @@ export const getPurchaseByMpPaymentId = internalQuery({
       .first();
   },
 });
+
+/**
+ * Debug query to check user's purchases
+ */
+export const debugUserPurchases = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getCurrentUserClerkId(ctx);
+    if (!userId) {
+      return { error: "No userId found", userId: null, purchases: [] };
+    }
+
+    const allPurchases = await ctx.db
+      .query("guidePurchases")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    return {
+      userId,
+      purchasesCount: allPurchases.length,
+      purchases: allPurchases.map(p => ({
+        _id: p._id,
+        status: p.status,
+        mpPaymentId: p.mpPaymentId,
+        purchasedAt: p.purchasedAt,
+        approvedAt: p.approvedAt,
+      }))
+    };
+  },
+});
