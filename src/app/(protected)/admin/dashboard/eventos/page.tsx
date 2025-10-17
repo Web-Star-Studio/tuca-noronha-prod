@@ -148,6 +148,7 @@ export default function EventsPage() {
         netRate: eventData.netRate,
         category: eventData.category,
         maxParticipants: BigInt(Math.floor(Number(eventData.maxParticipants))),
+        adminRating: eventData.adminRating,
         imageUrl: eventData.imageUrl,
         galleryImages: eventData.galleryImages || [],
         highlights: eventData.highlights || [],
