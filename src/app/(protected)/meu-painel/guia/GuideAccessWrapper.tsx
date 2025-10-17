@@ -22,7 +22,7 @@ export default function GuideAccessWrapper() {
     authLoaded && userId ? {} : "skip"
   );
   const userRole = useQuery(
-    api.domains.rbac.getUserRole,
+    api.domains.rbac.queries.getUserRole,
     authLoaded && userId ? {} : "skip"
   );
 
