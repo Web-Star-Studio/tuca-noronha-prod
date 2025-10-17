@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Car, ImageIcon, FileText, Sparkles, Gauge } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from "@/lib/services/vehicleService";
@@ -23,7 +23,6 @@ type VehicleFormProps = {
   editMode: Id<"vehicles"> | null;
 };
 
-// Get current year safely
 const getCurrentYear = () => {
   const now = new Date();
   return now.getFullYear();
@@ -44,12 +43,11 @@ const FEATURE_OPTIONS = [
 ];
 
 export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFormProps) {
-  // Get vehicle data if in edit mode
   const { vehicle, isLoading: isLoadingVehicle } = useVehicle(editMode);
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle();
   
-  // Form state
+  const [activeTab, setActiveTab] = useState("basic");
   const [vehicleData, setVehicleData] = useState({
     name: "",
     brand: "",
@@ -77,27 +75,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
   const hasMainImage = Boolean(mainImageEntry.url && mainImageEntry.url.trim() !== "");
   const isEditing = Boolean(editMode);
 
-  const statusStyles: Record<string, { label: string; badgeClass: string }> = {
-    available: {
-      label: "Disponível",
-      badgeClass: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    },
-    rented: {
-      label: "Alugado",
-      badgeClass: "bg-amber-100 text-amber-700 border-amber-200",
-    },
-    maintenance: {
-      label: "Em manutenção",
-      badgeClass: "bg-rose-100 text-rose-700 border-rose-200",
-    },
-  };
-
-  const currentStatus = statusStyles[vehicleData.status] ?? {
-    label: "Status indefinido",
-    badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
-  };
-
-  // Load vehicle data when in edit mode
   useEffect(() => {
     if (vehicle && editMode) {
       setVehicleData({
@@ -120,7 +97,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         status: vehicle.status
       });
     } else if (!editMode) {
-      // Reset form when adding new vehicle
       setVehicleData({
         name: "",
         brand: "",
@@ -142,7 +118,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     }
   }, [vehicle, editMode]);
 
-  // Form input handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setVehicleData((prev) => ({ ...prev, [name]: value }));
@@ -152,7 +127,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     setVehicleData((prev) => {
       const updated = { ...prev, [name]: value };
       
-      // Se a categoria mudou e o preço está em 0, sugerir o preço base
       if (name === "category" && prev.estimatedPricePerDay === 0) {
         const basePrice = getCategoryBasePrice(value);
         if (basePrice > 0) {
@@ -183,16 +157,13 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       const features = prev.features.includes(feature)
         ? prev.features.filter((item) => item !== feature)
         : [...prev.features, feature];
-
       return { ...prev, features };
     });
   };
 
-  // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Debug: Check which fields are missing
     const missingFields: string[] = [];
     if (!vehicleData.name) missingFields.push("name");
     if (!vehicleData.brand) missingFields.push("brand");
@@ -205,10 +176,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     if (vehicleData.estimatedPricePerDay <= 0) missingFields.push("estimatedPricePerDay");
     if (vehicleData.netRate === undefined || vehicleData.netRate < 0) missingFields.push("netRate");
     
-    // Validation
     if (missingFields.length > 0) {
-      console.log("Missing fields:", missingFields);
-      console.log("Vehicle data:", vehicleData);
       toast.error(`Preencha todos os campos obrigatórios. Campos faltando: ${missingFields.join(", ")}`);
       return;
     }
@@ -239,7 +207,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     }
   };
 
-  // Show loading state while fetching vehicle data in edit mode
   if (editMode && isLoadingVehicle) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -251,329 +218,278 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-4 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4 text-sm text-blue-900 shadow-sm md:flex md:items-start md:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow-inner">
-            <Sparkles className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="font-semibold text-blue-900">
-              {isEditing ? "Revise as informações antes de salvar" : "Complete os campos para adicionar o veículo"}
-            </p>
-            <p className="mt-1 text-xs text-blue-700/80">
-              Campos marcados com * são obrigatórios. Adicione dados precisos para acelerar aprovações e reservas.
-            </p>
-          </div>
-        </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6 bg-white/80 backdrop-blur-sm border-none shadow-sm w-full grid grid-cols-4 sticky top-0 z-10">
+          <TabsTrigger value="basic" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            1. Básico
+          </TabsTrigger>
+          <TabsTrigger value="details" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            2. Detalhes
+          </TabsTrigger>
+          <TabsTrigger value="media" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            3. Mídia
+          </TabsTrigger>
+          <TabsTrigger value="additional" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+            4. Adicionais
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <Badge
-            variant="outline"
-            className={`uppercase tracking-wide ${currentStatus.badgeClass}`}
-          >
-            {currentStatus.label}
-          </Badge>
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
-            <Gauge className="h-4 w-4" />
-            {vehicleData.category ? vehicleData.category.replace(/-/g, " ") : "Sem categoria"}
-          </div>
-          {isEditing && vehicle && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
-              Placa
-              <span className="rounded bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">
-                {vehicle.licensePlate.toUpperCase()}
-              </span>
+        {/* Tab 1: Informações Básicas */}
+        <TabsContent value="basic" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <Label htmlFor="name" className="text-sm font-medium">Nome do Veículo*</Label>
+              <Input
+                id="name"
+                name="name"
+                value={vehicleData.name}
+                onChange={handleChange}
+                placeholder="Ex: Toyota Corolla XEi"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Informações Básicas */}
-        <Card className="rounded-2xl border border-slate-200/70 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Car className="h-5 w-5" />
-              Informações Básicas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
-              <div className="md:col-span-2 xl:col-span-12">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Nome do Veículo*</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={vehicleData.name}
-                  onChange={handleChange}
-                  placeholder="Ex: Toyota Corolla XEi"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Marca*</Label>
-                <Input
-                  id="brand"
-                  name="brand"
-                  value={vehicleData.brand}
-                  onChange={handleChange}
-                  placeholder="Ex: Toyota"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="model" className="text-sm font-medium text-gray-700">Modelo*</Label>
-                <Input
-                  id="model"
-                  name="model"
-                  value={vehicleData.model}
-                  onChange={handleChange}
-                  placeholder="Ex: Corolla"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2 xl:col-span-4">
-                <Label htmlFor="category" className="text-sm font-medium text-gray-700">Categoria*</Label>
-                <Select 
-                  value={vehicleData.category} 
-                  onValueChange={(value) => handleSelectChange("category", value)}
-                >
-                  <SelectTrigger id="category" className="bg-muted/30 border-0">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bike-eletrica">Bike Elétrica</SelectItem>
-                    <SelectItem value="moto-xre-190">Moto XRE 190</SelectItem>
-                    <SelectItem value="buggy">Buggy</SelectItem>
-                    <SelectItem value="uno-gol">Uno/Gol</SelectItem>
-                    <SelectItem value="jimny-4x4">Jimny 4X4</SelectItem>
-                    <SelectItem value="oroch">Oroch</SelectItem>
-                    <SelectItem value="duster">Duster</SelectItem>
-                    <SelectItem value="jeep-renegade-diesel-4x4">Jeep Renegade Diesel 4X4</SelectItem>
-                    <SelectItem value="l200-triton-diesel-4x4">L200 Triton Diesel 4X4</SelectItem>
-                    <SelectItem value="sprinter-17-1">Sprinter 17 +1</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-1 xl:col-span-3">
-                <Label htmlFor="year" className="text-sm font-medium text-gray-700">Ano*</Label>
-                <Input
-                  id="year"
-                  name="year"
-                  type="number"
-                  value={vehicleData.year}
-                  onChange={handleNumberChange}
-                  min={2000}
-                  max={getCurrentYear() + 1}
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 xl:col-span-3">
-                <Label htmlFor="licensePlate" className="text-sm font-medium text-gray-700">Placa*</Label>
-                <Input
-                  id="licensePlate"
-                  name="licensePlate"
-                  value={vehicleData.licensePlate}
-                  onChange={handleChange}
-                  placeholder="Ex: ABC1234"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 xl:col-span-3">
-                <Label htmlFor="color" className="text-sm font-medium text-gray-700">Cor*</Label>
-                <Input
-                  id="color"
-                  name="color"
-                  value={vehicleData.color}
-                  onChange={handleChange}
-                  placeholder="Ex: Prata"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 xl:col-span-3">
-                <Label htmlFor="seats" className="text-sm font-medium text-gray-700">Lugares*</Label>
-                <Input
-                  id="seats"
-                  name="seats"
-                  type="number"
-                  value={vehicleData.seats}
-                  onChange={handleNumberChange}
-                  min={2}
-                  max={9}
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="estimatedPricePerDay" className="text-sm font-medium text-gray-700">
-                  Valor Base Estimado (por dia) (R$)*
-                  <span className="block text-xs font-normal text-gray-500 mt-1">
-                    💡 Este é um valor de referência. O valor real será definido ao confirmar cada reserva.
-                  </span>
-                </Label>
-                <Input
-                  id="estimatedPricePerDay"
-                  name="estimatedPricePerDay"
-                  type="number"
-                  value={vehicleData.estimatedPricePerDay}
-                  onChange={handleNumberChange}
-                  min={0}
-                  step={0.01}
-                  placeholder="Ex: 150.50"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-              </div>
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="netRate" className="text-sm font-medium text-gray-700">Tarifa net (R$)*</Label>
-                <Input
-                  id="netRate"
-                  name="netRate"
-                  type="number"
-                  value={vehicleData.netRate ?? 0}
-                  onChange={handleNumberChange}
-                  min={0}
-                  step={0.01}
-                  placeholder="Ex: 135.75"
-                  className="bg-muted/30 border-0 focus:bg-white transition-colors"
-                  required
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  Valor líquido combinado para repasse ao fornecedor.
-                </p>
-              </div>
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="status" className="text-sm font-medium text-gray-700">Status*</Label>
-                <Select 
-                  value={vehicleData.status} 
-                  onValueChange={(value) => handleSelectChange("status", value)}
-                >
-                  <SelectTrigger id="status" className="bg-muted/30 border-0">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Disponível</SelectItem>
-                    <SelectItem value="rented">Alugado</SelectItem>
-                    <SelectItem value="maintenance">Manutenção</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="fuelType" className="text-sm font-medium text-gray-700">Combustível*</Label>
-                <Select
-                  value={vehicleData.fuelType}
-                  onValueChange={(value) => handleSelectChange("fuelType", value)}
-                >
-                  <SelectTrigger id="fuelType" className="bg-muted/30 border-0">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Gasolina">Gasolina</SelectItem>
-                    <SelectItem value="Diesel">Diesel</SelectItem>
-                    <SelectItem value="Álcool">Álcool</SelectItem>
-                    <SelectItem value="Flex">Flex</SelectItem>
-                    <SelectItem value="Elétrico">Elétrico</SelectItem>
-                    <SelectItem value="Híbrido">Híbrido</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="md:col-span-1 xl:col-span-4">
-                <Label htmlFor="transmission" className="text-sm font-medium text-gray-700">Transmissão*</Label>
-                <Select
-                  value={vehicleData.transmission}
-                  onValueChange={(value) => handleSelectChange("transmission", value)}
-                >
-                  <SelectTrigger id="transmission" className="bg-muted/30 border-0">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Manual">Manual</SelectItem>
-                    <SelectItem value="Automático">Automático</SelectItem>
-                    <SelectItem value="CVT">CVT</SelectItem>
-                    <SelectItem value="Semi-automático">Semi-automático</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="md:col-span-2 xl:col-span-4">
-                <Label htmlFor="adminRating" className="text-sm font-medium text-gray-700">Classificação interna</Label>
-                <Select
-                  value={vehicleData.adminRating !== undefined ? vehicleData.adminRating.toString() : "0"}
-                  onValueChange={handleAdminRatingChange}
-                >
-                  <SelectTrigger id="adminRating" className="bg-muted/30 border-0">
-                    <SelectValue placeholder="Selecione a classificação (opcional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Nenhuma classificação</SelectItem>
-                    <SelectItem value="1">⭐ 1 Estrela</SelectItem>
-                    <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
-                    <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
-                    <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
-                    <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="mt-1 text-xs text-gray-500">
-                  Utilize para priorizar veículos na vitrine e apoiar a curadoria interna.
-                </p>
-              </div>
-
-              <div className="md:col-span-2 xl:col-span-12">
-                <Label className="text-sm font-medium text-gray-700">Características e acessórios</Label>
-                <p className="mt-1 text-xs text-slate-500">
-                  Destaque diferenciais que ajudam o viajante a comparar opções semelhantes.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {FEATURE_OPTIONS.map((feature) => {
-                    const isActive = vehicleData.features.includes(feature);
-                    return (
-                      <button
-                        key={feature}
-                        type="button"
-                        onClick={() => handleFeatureToggle(feature)}
-                        className={cn(
-                          "rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150",
-                          isActive
-                            ? "border-blue-500 bg-blue-600 text-white shadow-sm shadow-blue-500/30"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-600"
-                        )}
-                      >
-                        {feature}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            <div>
+              <Label htmlFor="brand" className="text-sm font-medium">Marca*</Label>
+              <Input
+                id="brand"
+                name="brand"
+                value={vehicleData.brand}
+                onChange={handleChange}
+                placeholder="Ex: Toyota"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Imagem e Descrição */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-2xl border border-slate-200/70 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ImageIcon className="h-5 w-5" />
-              Imagem do Veículo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="model" className="text-sm font-medium">Modelo*</Label>
+              <Input
+                id="model"
+                name="model"
+                value={vehicleData.model}
+                onChange={handleChange}
+                placeholder="Ex: Corolla"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="category" className="text-sm font-medium">Categoria*</Label>
+              <Select 
+                value={vehicleData.category} 
+                onValueChange={(value) => handleSelectChange("category", value)}
+              >
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bike-eletrica">Bike Elétrica</SelectItem>
+                  <SelectItem value="moto-xre-190">Moto XRE 190</SelectItem>
+                  <SelectItem value="buggy">Buggy</SelectItem>
+                  <SelectItem value="uno-gol">Uno/Gol</SelectItem>
+                  <SelectItem value="jimny-4x4">Jimny 4X4</SelectItem>
+                  <SelectItem value="oroch">Oroch</SelectItem>
+                  <SelectItem value="duster">Duster</SelectItem>
+                  <SelectItem value="jeep-renegade-diesel-4x4">Jeep Renegade Diesel 4X4</SelectItem>
+                  <SelectItem value="l200-triton-diesel-4x4">L200 Triton Diesel 4X4</SelectItem>
+                  <SelectItem value="sprinter-17-1">Sprinter 17 +1</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="year" className="text-sm font-medium">Ano*</Label>
+              <Input
+                id="year"
+                name="year"
+                type="number"
+                value={vehicleData.year}
+                onChange={handleNumberChange}
+                min={2000}
+                max={getCurrentYear() + 1}
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="licensePlate" className="text-sm font-medium">Placa*</Label>
+              <Input
+                id="licensePlate"
+                name="licensePlate"
+                value={vehicleData.licensePlate}
+                onChange={handleChange}
+                placeholder="Ex: ABC1234"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="color" className="text-sm font-medium">Cor*</Label>
+              <Input
+                id="color"
+                name="color"
+                value={vehicleData.color}
+                onChange={handleChange}
+                placeholder="Ex: Prata"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="seats" className="text-sm font-medium">Lugares*</Label>
+              <Input
+                id="seats"
+                name="seats"
+                type="number"
+                value={vehicleData.seats}
+                onChange={handleNumberChange}
+                min={2}
+                max={9}
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="status" className="text-sm font-medium">Status*</Label>
+              <Select 
+                value={vehicleData.status} 
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">Disponível</SelectItem>
+                  <SelectItem value="rented">Alugado</SelectItem>
+                  <SelectItem value="maintenance">Manutenção</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Tab 2: Detalhes Técnicos e Preços */}
+        <TabsContent value="details" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <Label htmlFor="fuelType" className="text-sm font-medium">Combustível*</Label>
+              <Select
+                value={vehicleData.fuelType}
+                onValueChange={(value) => handleSelectChange("fuelType", value)}
+              >
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Gasolina">Gasolina</SelectItem>
+                  <SelectItem value="Diesel">Diesel</SelectItem>
+                  <SelectItem value="Álcool">Álcool</SelectItem>
+                  <SelectItem value="Flex">Flex</SelectItem>
+                  <SelectItem value="Elétrico">Elétrico</SelectItem>
+                  <SelectItem value="Híbrido">Híbrido</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="transmission" className="text-sm font-medium">Transmissão*</Label>
+              <Select
+                value={vehicleData.transmission}
+                onValueChange={(value) => handleSelectChange("transmission", value)}
+              >
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Manual">Manual</SelectItem>
+                  <SelectItem value="Automático">Automático</SelectItem>
+                  <SelectItem value="CVT">CVT</SelectItem>
+                  <SelectItem value="Semi-automático">Semi-automático</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="estimatedPricePerDay" className="text-sm font-medium">
+                Valor Base Estimado (por dia) (R$)*
+              </Label>
+              <Input
+                id="estimatedPricePerDay"
+                name="estimatedPricePerDay"
+                type="number"
+                value={vehicleData.estimatedPricePerDay}
+                onChange={handleNumberChange}
+                min={0}
+                step={0.01}
+                placeholder="Ex: 150.50"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Este é um valor de referência. O valor real será definido ao confirmar cada reserva.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="netRate" className="text-sm font-medium">Tarifa net (R$)*</Label>
+              <Input
+                id="netRate"
+                name="netRate"
+                type="number"
+                value={vehicleData.netRate ?? 0}
+                onChange={handleNumberChange}
+                min={0}
+                step={0.01}
+                placeholder="Ex: 135.75"
+                className="mt-1.5 bg-white shadow-sm"
+                required
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Valor líquido combinado para repasse ao fornecedor.
+              </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <Label htmlFor="adminRating" className="text-sm font-medium">Classificação interna</Label>
+              <Select
+                value={vehicleData.adminRating !== undefined ? vehicleData.adminRating.toString() : "0"}
+                onValueChange={handleAdminRatingChange}
+              >
+                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
+                  <SelectValue placeholder="Selecione a classificação (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Nenhuma classificação</SelectItem>
+                  <SelectItem value="1">⭐ 1 Estrela</SelectItem>
+                  <SelectItem value="2">⭐⭐ 2 Estrelas</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ 3 Estrelas</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ 4 Estrelas</SelectItem>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ 5 Estrelas</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-gray-500">
+                Utilize para priorizar veículos na vitrine e apoiar a curadoria interna.
+              </p>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Tab 3: Mídia e Imagens */}
+        <TabsContent value="media" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Input
                 readOnly
                 value={vehicleData.imageUrl ? "Imagem selecionada" : ""}
                 placeholder="Nenhuma imagem selecionada"
-                className="flex-1 bg-muted/30 border-0"
+                className="flex-1 bg-white shadow-sm"
               />
               <Button 
                 type="button" 
@@ -581,13 +497,13 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
                 variant="outline"
                 className="shrink-0"
               >
-                Selecionar
+                Selecionar Imagem
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">Selecione uma imagem da biblioteca de mídias (ideal: 800x600px)</p>
             
             {hasMainImage && (
-              <div className="relative h-48 w-full overflow-hidden rounded-lg bg-muted">
+              <div className="relative h-64 w-full overflow-hidden rounded-lg bg-muted">
                 <SmartMedia
                   entry={mainImageEntry}
                   alt={vehicleData.name || "Veículo"}
@@ -604,33 +520,55 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
               initialSelected={vehicleData.imageUrl ? [vehicleData.imageUrl] : []}
               onSelect={([url]) => setVehicleData(prev => ({ ...prev, imageUrl: url }))}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </TabsContent>
 
-        <Card className="rounded-2xl border border-slate-200/70 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5" />
-              Descrição
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Tab 4: Adicionais (Descrição e Características) */}
+        <TabsContent value="additional" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="description" className="text-sm font-medium text-gray-700">Descrição do veículo</Label>
+              <Label htmlFor="description" className="text-sm font-medium">Descrição do veículo</Label>
               <Textarea
                 id="description"
                 name="description"
                 value={vehicleData.description}
                 onChange={handleChange}
                 placeholder="Descreva as características principais do veículo, condições especiais, ou informações importantes para os clientes..."
-                rows={8}
-                className="bg-muted/30 border-0 focus:bg-white transition-colors resize-none"
+                rows={6}
+                className="mt-1.5 bg-white shadow-sm resize-none"
               />
               <p className="text-xs text-muted-foreground mt-2">Esta descrição será exibida na página do veículo para os clientes.</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div>
+              <Label className="text-sm font-medium">Características e acessórios</Label>
+              <p className="mt-1 text-xs text-slate-500">
+                Destaque diferenciais que ajudam o viajante a comparar opções semelhantes.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {FEATURE_OPTIONS.map((feature) => {
+                  const isActive = vehicleData.features.includes(feature);
+                  return (
+                    <button
+                      key={feature}
+                      type="button"
+                      onClick={() => handleFeatureToggle(feature)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150",
+                        isActive
+                          ? "border-blue-500 bg-blue-600 text-white shadow-sm shadow-blue-500/30"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-600"
+                      )}
+                    >
+                      {feature}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <DialogFooter className="gap-3 rounded-2xl border border-slate-200/70 bg-white/95 px-4 py-4 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:justify-end">
         <Button variant="outline" type="button" onClick={onCancel} disabled={isSubmitting}>
@@ -643,4 +581,4 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
       </DialogFooter>
     </form>
   );
-} 
+}
