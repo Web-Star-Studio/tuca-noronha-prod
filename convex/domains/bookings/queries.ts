@@ -142,6 +142,7 @@ export const getUserEventBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      supplierId: v.optional(v.id("suppliers")),
       // Mercado Pago fields
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
@@ -1670,6 +1671,7 @@ export const getEventBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      supplierId: v.optional(v.id("suppliers")),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
@@ -3026,6 +3028,7 @@ export const getEventBookingById = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      supplierId: v.optional(v.id("suppliers")),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
