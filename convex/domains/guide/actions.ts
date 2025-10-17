@@ -131,10 +131,18 @@ export const createGuidePurchasePreference = action({
  */
 export const processGuidePaymentWebhook = internalAction({
   args: {
+    // Formato novo do webhook MP
     id: v.optional(v.union(v.string(), v.number())),
     type: v.optional(v.string()),
     action: v.optional(v.string()),
     data: v.optional(v.any()),
+    api_version: v.optional(v.string()),
+    date_created: v.optional(v.string()),
+    live_mode: v.optional(v.boolean()),
+    user_id: v.optional(v.string()),
+    // Formato antigo do webhook MP (topic/resource)
+    topic: v.optional(v.string()),
+    resource: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -143,11 +151,58 @@ export const processGuidePaymentWebhook = internalAction({
   }),
   handler: async (ctx, args) => {
     try {
-      console.log(`[Guide] Processing webhook: ${args.type} - ${args.action}`);
+      console.log(`[Guide] Processing webhook:`, args.type || args.topic);
 
-      // Handle payment notifications
+      // Handle payment notifications (formato novo)
       if (args.type === "payment" && args.data?.id) {
         const paymentId = args.data.id;
+        
+        try {
+          // Fetch payment details from MP
+          const payment = await mpFetch<any>(`/v1/payments/${paymentId}`);
+          console.log(`[Guide] Fetched payment ${paymentId}:`, {
+            status: payment.status,
+            metadata: payment.metadata,
+          });
+
+          // Check if it's a guide payment
+          if (payment.metadata?.productType === "guide" && payment.metadata?.userId) {
+            const userId = payment.metadata.userId;
+            
+            // Extract user info from external reference if needed
+            let userEmail = payment.metadata.userEmail || payment.payer?.email || "";
+            let userName = payment.payer?.first_name ? 
+              `${payment.payer.first_name} ${payment.payer.last_name || ""}`.trim() : 
+              undefined;
+
+            // Record/update purchase
+            await ctx.runMutation(internal.domains.guide.mutations.recordPurchase, {
+              userId,
+              userEmail,
+              userName,
+              mpPaymentId: String(payment.id),
+              mpPreferenceId: payment.preference_id,
+              amount: payment.transaction_amount || 99.90,
+              currency: payment.currency_id || "BRL",
+              status: payment.status,
+              statusDetail: payment.status_detail,
+              paymentMethod: payment.payment_method_id,
+              paymentTypeId: payment.payment_type_id,
+              approvedAt: payment.date_approved ? new Date(payment.date_approved).getTime() : undefined,
+              externalReference: payment.external_reference,
+              metadata: payment.metadata,
+            });
+
+            console.log(`[Guide] Purchase recorded for user ${userId}, status: ${payment.status}`);
+          }
+        } catch (error) {
+          console.error(`[Guide] Failed to process payment ${paymentId}:`, error);
+        }
+      }
+      
+      // Handle payment notifications (formato antigo topic/resource)
+      if (args.topic === "payment" && args.resource) {
+        const paymentId = args.resource;
         
         try {
           // Fetch payment details from MP
