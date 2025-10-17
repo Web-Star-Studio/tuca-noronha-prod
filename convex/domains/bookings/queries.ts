@@ -855,7 +855,7 @@ export const getPartnerBookings = query({
           query = query.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await query.collect();
+        const bookings = await query.order("desc").collect();
         
         result.activities.push(...bookings.map(booking => ({
           _id: booking._id,
@@ -911,7 +911,7 @@ export const getPartnerBookings = query({
           query = query.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await query.collect();
+        const bookings = await query.order("desc").collect();
         
         result.events.push(...bookings.map(booking => ({
           _id: booking._id,
@@ -967,7 +967,7 @@ export const getPartnerBookings = query({
           query = query.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const reservations = await query.collect();
+        const reservations = await query.order("desc").collect();
         
         result.restaurants.push(...reservations.map(reservation => ({
           _id: reservation._id,
@@ -1074,7 +1074,7 @@ export const getPartnerBookings = query({
           query = query.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await query.collect();
+        const bookings = await query.order("desc").collect();
         
         for (const booking of bookings) {
           // Get user information for customerInfo
@@ -1194,7 +1194,7 @@ export const getActivityBookings = query({
           activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await activityQuery.collect();
+        const bookings = await activityQuery.order("desc").collect();
         const activity = await ctx.db.get(args.activityId);
         
         const bookingsWithDetails = await Promise.all(
@@ -1251,7 +1251,7 @@ export const getActivityBookings = query({
               activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
             }
 
-            const bookings = await activityQuery.collect();
+            const bookings = await activityQuery.order("desc").collect();
             
             const bookingsWithDetails = await Promise.all(
               bookings.map(async (booking) => {
@@ -1365,7 +1365,7 @@ export const getActivityBookings = query({
           activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await activityQuery.collect();
+        const bookings = await activityQuery.order("desc").collect();
         const bookingsWithDetails = await Promise.all(
           bookings.map(async (booking) => {
             return {
@@ -1459,7 +1459,7 @@ export const getActivityBookings = query({
           activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await activityQuery.collect();
+        const bookings = await activityQuery.order("desc").collect();
         filteredBookings.push(...bookings);
       }
 
@@ -1536,7 +1536,7 @@ export const getActivityBookings = query({
           activityQuery = activityQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await activityQuery.collect();
+        const bookings = await activityQuery.order("desc").collect();
         filteredBookings.push(...bookings);
       }
       
@@ -1718,7 +1718,7 @@ export const getEventBookings = query({
           eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await eventQuery.collect();
+        const bookings = await eventQuery.order("desc").collect();
         const event = await ctx.db.get(args.eventId);
         
         const bookingsWithDetails = await Promise.all(
@@ -1754,7 +1754,7 @@ export const getEventBookings = query({
               eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
             }
 
-            const bookings = await eventQuery.collect();
+            const bookings = await eventQuery.order("desc").collect();
             
             const bookingsWithDetails = await Promise.all(
               bookings.map(async (booking) => {
@@ -1826,7 +1826,7 @@ export const getEventBookings = query({
           eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await eventQuery.collect();
+        const bookings = await eventQuery.order("desc").collect();
         const bookingsWithDetails = await Promise.all(
           bookings.map(async (booking) => {
             return {
@@ -1899,7 +1899,7 @@ export const getEventBookings = query({
           eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await eventQuery.collect();
+        const bookings = await eventQuery.order("desc").collect();
         filteredBookings.push(...bookings);
       }
 
@@ -1955,7 +1955,7 @@ export const getEventBookings = query({
           eventQuery = eventQuery.filter((q) => q.eq(q.field("status"), args.status));
         }
 
-        const bookings = await eventQuery.collect();
+        const bookings = await eventQuery.order("desc").collect();
         filteredBookings.push(...bookings);
       }
       
