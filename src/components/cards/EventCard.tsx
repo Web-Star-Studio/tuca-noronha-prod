@@ -140,13 +140,26 @@ export default function EventCard({ event }: { event: Event }) {
               {event.title}
             </h3>
             
-            {/* Review Stats - com fallback para dados estáticos */}
-            <QuickStats
-              averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : 0}
-              totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : undefined}
-              recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
-              className="text-sm flex-shrink-0"
-            />
+            {/* Review Stats - prioriza adminRating, depois reviews */}
+            {(() => {
+              // Priority: adminRating > reviewStats
+              const hasAdminRating = event.adminRating !== undefined && event.adminRating > 0;
+              const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
+              
+              const finalRating = hasAdminRating 
+                ? event.adminRating 
+                : (hasReviewData ? reviewStats.averageRating : 0);
+              const finalReviews = hasReviewData ? reviewStats.totalReviews : undefined;
+              
+              return (
+                <QuickStats
+                  averageRating={finalRating}
+                  totalReviews={finalReviews}
+                  recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
+                  className="text-sm flex-shrink-0"
+                />
+              );
+            })()}
           </div>
 
           {/* Description */}

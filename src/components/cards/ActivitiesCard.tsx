@@ -70,11 +70,15 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                     <div className="mb-2 flex justify-between items-start">
                         <h3 className="text-lg font-medium line-clamp-1">{activity.title || 'Título da Atividade'}</h3>
                         
-                        {/* Review Stats - com fallback para dados estáticos */}
+                        {/* Review Stats - prioriza adminRating, depois reviews, depois rating estático */}
                         {(() => {
-                            // Get rating from reviews system or fallback to activity static data
+                            // Priority: adminRating > reviewStats > static rating
+                            const hasAdminRating = activity.adminRating !== undefined && activity.adminRating > 0;
                             const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
-                            const finalRating = hasReviewData ? reviewStats.averageRating : (activity.rating || 0);
+                            
+                            const finalRating = hasAdminRating 
+                                ? activity.adminRating 
+                                : (hasReviewData ? reviewStats.averageRating : (activity.rating || 0));
                             const finalReviews = hasReviewData ? reviewStats.totalReviews : undefined;
                             
                             // Ensure rating is valid
@@ -90,15 +94,6 @@ export default function ActivitiesCard({activity}: {activity: Activity}) {
                                 />
                             );
                         })()}
-                        {/* Debug logging */}
-                        {console.log("🎯 ActivitiesCard Debug:", {
-                            activityId: activity.id,
-                            activityRating: activity.rating,
-                            isLoadingReviewStats,
-                            reviewStats,
-                            finalRating: !isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : (activity.rating || 0),
-                            finalTotalReviews: !isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : undefined
-                        })}
                     </div>
                     
                     {/* Descrição curta */}

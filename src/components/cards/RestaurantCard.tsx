@@ -136,11 +136,15 @@ const RestaurantCard = forwardRef<HTMLDivElement, RestaurantCardProps>(
             <div className="mb-2 flex justify-between items-start">
               <h3 className="text-lg font-medium line-clamp-1">{restaurant.name}</h3>
               
-              {/* Review Stats */}
+              {/* Review Stats - prioriza adminRating, depois reviews, depois rating estático */}
               {(() => {
-                // Get rating from reviews system or fallback to restaurant static data
+                // Priority: adminRating > reviewStats > static rating
+                const hasAdminRating = restaurant.adminRating !== undefined && restaurant.adminRating > 0;
                 const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
-                const finalRating = hasReviewData ? reviewStats.averageRating : (restaurant.rating?.overall || 0);
+                
+                const finalRating = hasAdminRating 
+                  ? restaurant.adminRating 
+                  : (hasReviewData ? reviewStats.averageRating : (restaurant.rating?.overall || 0));
                 
                 // Ensure rating is valid
                 const validRating = typeof finalRating === 'number' && !isNaN(finalRating) && isFinite(finalRating) ? finalRating : 0;

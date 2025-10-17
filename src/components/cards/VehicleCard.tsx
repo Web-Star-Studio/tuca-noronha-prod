@@ -22,6 +22,7 @@ interface VehicleCardProps {
     transmission: string;
     estimatedPricePerDay: number;
     imageUrl?: string;
+    adminRating?: number;
   };
 }
 
@@ -96,13 +97,26 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
               {vehicle.brand} {vehicle.model}
             </h3>
             
-            {/* Review Stats - usando dados reais */}
-            <QuickStats
-              averageRating={!isLoadingReviewStats && reviewStats?.averageRating ? reviewStats.averageRating : 0}
-              totalReviews={!isLoadingReviewStats && reviewStats?.totalReviews ? reviewStats.totalReviews : undefined}
-              recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
-              className="text-sm"
-            />
+            {/* Review Stats - prioriza adminRating, depois reviews */}
+            {(() => {
+              // Priority: adminRating > reviewStats
+              const hasAdminRating = vehicle.adminRating !== undefined && vehicle.adminRating > 0;
+              const hasReviewData = !isLoadingReviewStats && reviewStats?.averageRating && reviewStats.averageRating > 0;
+              
+              const finalRating = hasAdminRating 
+                ? vehicle.adminRating 
+                : (hasReviewData ? reviewStats.averageRating : 0);
+              const finalReviews = hasReviewData ? reviewStats.totalReviews : undefined;
+              
+              return (
+                <QuickStats
+                  averageRating={finalRating}
+                  totalReviews={finalReviews}
+                  recommendationPercentage={!isLoadingReviewStats && reviewStats?.recommendationPercentage ? reviewStats.recommendationPercentage : undefined}
+                  className="text-sm"
+                />
+              );
+            })()}
           </div>
           
           {/* Ano e cor */}
