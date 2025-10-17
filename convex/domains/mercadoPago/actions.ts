@@ -241,6 +241,7 @@ export const createCheckoutPreferenceForBooking = action({
         captureMode: "automatic", // Automatic capture - instant approval
         metadata: {
           assetId: String(booking.assetId),
+          assetType: args.assetType, // Asset type for voucher generation
           userId: String(booking.userId),
           bookingId: String(args.bookingId),
           confirmationCode: booking.confirmationCode,
@@ -947,15 +948,19 @@ export const processWebhookEvent = internalAction({
         }
 
         // Get bookingId from metadata OR external_reference (MP recommended field)
-        const bookingId = payment.metadata?.bookingId || payment.external_reference;
-        const assetType = payment.metadata?.assetType as any;
-        const assetId = payment.metadata?.assetId ? String(payment.metadata.assetId) : undefined;
+        const bookingId = payment.metadata?.bookingId || payment.metadata?.booking_id || payment.external_reference;
+        // MP converts camelCase to snake_case, so check both formats
+        const assetType = (payment.metadata?.assetType || payment.metadata?.asset_type) as any;
+        const assetId = payment.metadata?.assetId || payment.metadata?.asset_id 
+          ? String(payment.metadata.assetId || payment.metadata.asset_id) 
+          : undefined;
 
         console.log(`[MP] Payment data:`, {
           hasMetadata: !!payment.metadata,
           metadata: payment.metadata,
           external_reference: payment.external_reference,
           resolved_bookingId: bookingId,
+          resolved_assetType: assetType,
         });
 
         if (bookingId) {

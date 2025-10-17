@@ -191,6 +191,12 @@ export const updateBookingPaymentStatus = internalMutation({
       paymentStatus: statusMap[args.paymentStatus] || args.paymentStatus,
       updatedAt: Date.now(),
     };
+    
+    // Also update booking status to 'paid' when payment is approved
+    if (args.paymentStatus === "approved") {
+      updateData.status = "paid";
+    }
+    
     if (args.paymentId) updateData.mpPaymentId = args.paymentId;
     if (args.receiptUrl) {
       updateData.paymentDetails = { receiptUrl: args.receiptUrl };
@@ -214,11 +220,13 @@ export const updateBookingPaymentStatus = internalMutation({
       if (booking) {
         console.log(`[MP Mutation] Found booking in ${tableName}:`, {
           _id: booking._id,
+          currentStatus: booking.status,
           currentPaymentStatus: booking.paymentStatus,
+          newStatus: updateData.status,
           newPaymentStatus: updateData.paymentStatus,
         });
         await ctx.db.patch(booking._id, updateData);
-        console.log(`[MP Mutation] Successfully updated booking ${booking._id}`);
+        console.log(`[MP Mutation] Successfully updated booking ${booking._id} - status: ${updateData.status || booking.status}, paymentStatus: ${updateData.paymentStatus}`);
         break;
       } else {
         console.log(`[MP Mutation] Booking not found in ${tableName}`);

@@ -96,42 +96,42 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
     const configs = {
       pending_approval: { 
         label: "Aguardando Aprovação", 
-        color: "bg-amber-500 text-amber-foreground",
+        color: "bg-amber-500",
         icon: <Clock className="h-4 w-4" />
       },
       confirmed: { 
         label: "Realizar Pagamento", 
-        color: "bg-blue-500 text-blue-foreground",
+        color: "bg-blue-500 ",
         icon: <CreditCard className="h-4 w-4" />
       },
       awaiting_payment: { 
         label: "Aguardando confirmação de pagamento", 
-        color: "bg-orange-500 text-orange-foreground",
+        color: "bg-orange-500 ",
         icon: <CreditCard className="h-4 w-4" />
       },
       paid: { 
         label: "Pago", 
-        color: "bg-green-500 text-green-foreground",
+        color: "bg-green-500 ",
         icon: <CheckCircle2 className="h-4 w-4" />
       },
       rejected: { 
         label: "Não Aprovado", 
-        color: "bg-red-500 text-red-foreground",
+        color: "bg-red-500 ",
         icon: <XCircle className="h-4 w-4" />
       },
       canceled: { 
         label: "Cancelado", 
-        color: "bg-red-500 text-red-foreground",
+        color: "bg-red-500 ",
         icon: <AlertTriangle className="h-4 w-4" />
       },
       completed: { 
         label: "Concluído", 
-        color: "bg-blue-500 text-blue-foreground",
+        color: "bg-blue-500 ",
         icon: <CheckCircle2 className="h-4 w-4" />
       },
       pending: { 
         label: "Pendente", 
-        color: "bg-amber-500 text-amber-foreground",
+        color: "bg-amber-500 ",
         icon: <Hourglass className="h-4 w-4" />
       },
     };
@@ -205,7 +205,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
             </div>
             <Badge className={cn("text-sm px-4 py-2 text-white rounded-full flex items-center gap-2", statusConfig.color)}>
               {statusConfig.icon}
-              <span className="font-semibold">{statusConfig.label}</span>
+              <span className="font-semibold text-white">{statusConfig.label}</span>
             </Badge>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                 )}
                 
                 {(reservation.status === 'pending' || reservation.status === 'confirmed') && (
-                  <Button variant="destructive" className="w-full h-12 text-base">
+                  <Button variant="destructive" className="w-full h-12 text-base bg-red-500 text-white font-bold">
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Cancelar Reserva
                   </Button>
