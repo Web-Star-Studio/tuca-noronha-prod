@@ -648,6 +648,7 @@ export const approveBookingAndCapturePayment = action({
     bookingId: v.string(),
     assetType: assetTypeValidator,
     partnerNotes: v.optional(v.string()),
+    supplierId: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -711,6 +712,7 @@ export const approveBookingAndCapturePayment = action({
         status: "confirmed",
         paymentStatus: finalPaymentStatus,
         partnerNotes: args.partnerNotes,
+        supplierId: args.supplierId,
       });
 
       // NOTE: Voucher is now generated automatically by webhook when payment is approved

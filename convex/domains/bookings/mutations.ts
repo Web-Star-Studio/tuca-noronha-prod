@@ -2125,6 +2125,7 @@ export const updateBookingStatusInternal = internalMutation({
     status: v.string(),
     paymentStatus: v.optional(v.string()),
     partnerNotes: v.optional(v.string()),
+    supplierId: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     let tableName: string;
@@ -2164,6 +2165,10 @@ export const updateBookingStatusInternal = internalMutation({
 
     if (args.partnerNotes) {
       updates.partnerNotes = args.partnerNotes;
+    }
+
+    if (args.supplierId) {
+      updates.supplierId = args.supplierId as any;
     }
 
     await ctx.db.patch(booking._id, updates);

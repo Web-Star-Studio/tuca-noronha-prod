@@ -362,6 +362,7 @@ export default function AdminBookingsPage() {
           bookingId: booking._id,
           assetType: assetType,
           partnerNotes: partnerNotes || undefined,
+          supplierId: selectedSupplierId || undefined,
         });
         
         toast.success("Reserva aprovada! Cliente pode realizar o pagamento agora.");
