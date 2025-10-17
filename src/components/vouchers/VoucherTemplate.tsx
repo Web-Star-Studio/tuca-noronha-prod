@@ -97,16 +97,15 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
         <div>
           <h2 className="text-xl font-semibold mb-4">Informações do Cliente</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="font-medium text-lg mb-2">{voucherData.customer.name || "Atendimento Tuca Noronha"}</p>
             {voucherData.customer.phone && (
-              <div className="space-y-1 text-gray-600">
+              <div className="space-y-1 text-gray-600 mb-2">
                 <p className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
                   {voucherData.customer.phone}
                 </p>
               </div>
             )}
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-sm text-gray-600">
               Código da Reserva: <span className="font-mono font-semibold">{voucherData.booking.confirmationCode || voucherData.voucher.voucherNumber}</span>
             </p>
           </div>

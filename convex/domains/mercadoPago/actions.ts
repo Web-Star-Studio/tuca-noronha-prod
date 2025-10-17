@@ -712,15 +712,8 @@ export const approveBookingAndCapturePayment = action({
         partnerNotes: args.partnerNotes,
       });
 
-      // Generate voucher for confirmed booking
-      try {
-        await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucherInternal, {
-          bookingId: args.bookingId,
-          bookingType: args.assetType,
-        });
-      } catch (voucherError) {
-        console.error("Failed to generate voucher:", voucherError);
-      }
+      // NOTE: Voucher is now generated automatically by webhook when payment is approved
+      // No need to generate here anymore
 
       // Send confirmation email ONLY after admin approval and successful payment capture
       try {
@@ -990,6 +983,21 @@ export const processWebhookEvent = internalAction({
             relatedAssetType: assetType ? String(assetType) : undefined,
             relatedAssetId: assetId,
           });
+
+          // Generate voucher ONLY when payment is approved
+          if (payment.status === "approved") {
+            console.log(`[MP] Payment approved, generating voucher for booking ${bookingId}`);
+            try {
+              await ctx.runMutation(internal.domains.vouchers.mutations.generateVoucherInternal, {
+                bookingId: String(bookingId),
+                bookingType: assetType,
+              });
+              console.log(`[MP] Voucher generated successfully for booking ${bookingId}`);
+            } catch (voucherError) {
+              console.error(`[MP] Failed to generate voucher:`, voucherError);
+              // Don't fail webhook if voucher generation fails
+            }
+          }
           
           console.log(`[MP] Booking ${bookingId} updated successfully`);
         } else {

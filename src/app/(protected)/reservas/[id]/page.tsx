@@ -100,12 +100,12 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
         icon: <Clock className="h-4 w-4" />
       },
       confirmed: { 
-        label: "Confirmado - Pagar", 
+        label: "Realizar Pagamento", 
         color: "bg-blue-500 text-blue-foreground",
         icon: <CreditCard className="h-4 w-4" />
       },
       awaiting_payment: { 
-        label: "Aguardando Pagamento", 
+        label: "Aguardando confirmação de pagamento", 
         color: "bg-orange-500 text-orange-foreground",
         icon: <CreditCard className="h-4 w-4" />
       },
@@ -203,7 +203,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
               <p className="text-base font-semibold text-blue-600 dark:text-blue-400">{getTypeLabel(reservation.type)}</p>
               <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white">{reservation.name}</h1>
             </div>
-            <Badge className={cn("text-sm px-4 py-2 rounded-full flex items-center gap-2", statusConfig.color)}>
+            <Badge className={cn("text-sm px-4 py-2 text-white rounded-full flex items-center gap-2", statusConfig.color)}>
               {statusConfig.icon}
               <span className="font-semibold">{statusConfig.label}</span>
             </Badge>
