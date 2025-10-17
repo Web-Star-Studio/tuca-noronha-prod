@@ -68,6 +68,12 @@ export const createSubscriptionCheckout = action({
           transaction_amount: GUIDE_SUBSCRIPTION_CONFIG.amount,
           currency_id: GUIDE_SUBSCRIPTION_CONFIG.currencyId,
         },
+        // IMPORTANTE: metadata garante que o userId seja preservado mesmo se external_reference falhar
+        metadata: {
+          userId: args.userId,
+          userEmail: args.userEmail,
+          subscriptionType: "guide",
+        },
         status: "pending", // Will be authorized after payment
       };
 
@@ -501,11 +507,22 @@ export const processSubscriptionWebhook = action({
           const subscription = await mpFetch<any>(`/preapproval/${preapprovalId}`);
           console.log(`[MP] Fetched subscription ${preapprovalId}:`, subscription);
 
-          // Extract user ID from external reference or email
+          // Extract user ID - Hierarquia de busca:
+          // 1º external_reference
+          // 2º metadata.userId
+          // 3º buscar por email (fallback)
           const externalRef = subscription.external_reference;
           let userId = externalRef ? externalRef.replace("guide_", "") : null;
           
-          // Se não tiver external_reference, buscar usuário pelo email
+          console.log(`[MP] Trying to identify user - external_reference: ${externalRef}, userId extracted: ${userId}`);
+          
+          // Se não tiver external_reference, tentar metadata
+          if (!userId && subscription.metadata?.userId) {
+            userId = subscription.metadata.userId;
+            console.log(`[MP] Found user in metadata: ${userId}`);
+          }
+          
+          // Se ainda não tiver, buscar usuário pelo email (fallback)
           if (!userId && subscription.payer_email) {
             const user = await ctx.runQuery(
               internal.domains.users.queries.getUserByEmail,
@@ -739,12 +756,23 @@ export const manuallyProcessSubscription = action({
       const preapproval = await mpFetch<any>(`/preapproval/${args.preapprovalId}`);
       console.log(`[MP] Fetched preapproval:`, preapproval);
       
-      // Extract user info
+      // Extract user info - Hierarquia de busca:
+      // 1º external_reference
+      // 2º metadata.userId
+      // 3º buscar por email (fallback)
       const userEmail = preapproval.payer_email;
       const externalRef = preapproval.external_reference;
       let userId = externalRef ? externalRef.replace("guide_", "") : null;
       
-      // Se não tiver external_reference, buscar usuário pelo email
+      console.log(`[MP] Manual process - external_reference: ${externalRef}, userId extracted: ${userId}`);
+      
+      // Se não tiver external_reference, tentar metadata
+      if (!userId && preapproval.metadata?.userId) {
+        userId = preapproval.metadata.userId;
+        console.log(`[MP] Found user in metadata: ${userId}`);
+      }
+      
+      // Se ainda não tiver, buscar usuário pelo email (fallback)
       if (!userId && userEmail) {
         const user = await ctx.runQuery(
           internal.domains.users.queries.getUserByEmail,
