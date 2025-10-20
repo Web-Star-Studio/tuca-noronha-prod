@@ -93,10 +93,19 @@ export const createCheckoutPreference = internalAction({
         external_reference: args.bookingId,
         // Also send as metadata for compatibility
         metadata: metadata,
-        // REMOVIDO: binary_mode e installments que podem causar exigência de login
-        // payment_methods: {
-        //   installments: 1,
-        // },
+        // Configure payment methods: allow credit card, debit card, and PIX
+        // Do NOT use binary_mode (forces only ticket/pix)
+        // Do NOT restrict installments to 1 (allows multiple installments)
+        payment_methods: {
+          excluded_payment_types: [
+            // Exclude only boleto if you want (optional)
+            // { id: "ticket" } // Boleto bancário
+          ],
+          excluded_payment_methods: [
+            // Specific payment methods to exclude (optional)
+          ],
+          installments: 12, // Allow up to 12 installments (MP default for Brazil)
+        },
         statement_descriptor: "TUCA NORONHA",
       };
 

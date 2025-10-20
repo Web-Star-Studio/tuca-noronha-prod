@@ -17,7 +17,7 @@ import { mpFetch } from "../mercadoPago/utils";
 const GUIDE_SUBSCRIPTION_CONFIG = {
   title: "Assinatura Premium - Guia de Viagens",
   reason: "Acesso completo ao painel de guia de viagens",
-  amount: 99.90, // Valor anual em reais
+  amount: 0.1, // Valor anual em reais
   frequency: 12, // 12 months = 1 year (MP doesn't accept "years")
   frequencyType: "months",
   currencyId: "BRL"

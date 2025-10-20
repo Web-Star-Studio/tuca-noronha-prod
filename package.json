@@ -13,7 +13,9 @@
     "browser-tools-server": "npx @agentdeskai/browser-tools-server@latest",
     "setup:subscription": "tsx scripts/setupGuideSubscription.ts",
     "test:webhook": "tsx scripts/testSubscriptionWebhook.ts",
-    "test:webhook-endpoint": "bun run scripts/testWebhookEndpoint.ts"
+    "test:webhook-endpoint": "bun run scripts/testWebhookEndpoint.ts",
+    "test:mp-webhook": "bun run scripts/testMercadoPagoWebhook.ts",
+    "debug:booking": "bun run scripts/debugBookingPayment.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.23",

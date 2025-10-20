@@ -159,6 +159,19 @@ http.route({
   handler: handleMercadoPagoWebhook,
 });
 
+// Allow GET for Mercado Pago webhook validation
+http.route({
+  path: "/mercadopago/webhook",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    console.log("[MP Webhook] GET request received (validation test)");
+    return new Response("Webhook endpoint is ready", { 
+      status: 200,
+      headers: { "Content-Type": "text/plain" }
+    });
+  }),
+});
+
 http.route({
   path: "/mercadopago/test-webhook",
   method: "POST",
