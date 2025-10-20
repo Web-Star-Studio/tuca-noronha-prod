@@ -78,7 +78,7 @@ export const requestVehicleBooking = mutation({
     // Criar reserva com status pending_request
     const bookingId = await ctx.db.insert("vehicleBookings", {
       vehicleId: args.vehicleId,
-      userId,
+      userId: userId, // Garante que é Id<"users">
       startDate: args.startDate,
       endDate: args.endDate,
       estimatedPrice,
