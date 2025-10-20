@@ -16,7 +16,7 @@
 
 import { internalAction, action } from "../../_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 import { mpFetch } from "./utils";
 
 const assetTypeValidator = v.union(
@@ -666,7 +666,7 @@ export const approveBookingAndCapturePayment = action({
 
     let booking: any;
     for (const tableName of tables) {
-      booking = await ctx.runQuery(internal.domains.bookings.queries.getBookingByIdInternal, {
+      booking = await ctx.runQuery(api.domains.bookings.queries.getBookingByIdInternal, {
         bookingId: args.bookingId,
         tableName: tableName,
       });
@@ -764,7 +764,7 @@ export const rejectBookingAndCancelPayment = action({
 
     let booking: any;
     for (const tableName of tables) {
-      booking = await ctx.runQuery(internal.domains.bookings.queries.getBookingByIdInternal, {
+      booking = await ctx.runQuery(api.domains.bookings.queries.getBookingByIdInternal, {
         bookingId: args.bookingId,
         tableName: tableName,
       });

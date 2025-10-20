@@ -14,7 +14,7 @@ import {
   Star,
   ExternalLink,
 } from "lucide-react";
-import { formatDate, cn } from "@/lib/utils";
+import { formatCalendarDate, cn } from "@/lib/utils";
 import type { Event } from "@/lib/services/eventService";
 import { EventBookingForm } from "@/components/bookings";
 import { useConvexAuth } from "convex/react";
@@ -64,9 +64,8 @@ export default function EventDetails({ event, reviewStats }: EventDetailsProps) 
     setIsImageLoaded(false);
   }, [heroEntry.url]);
 
-  // Format date for display
-  const eventDate = new Date(event.date);
-  const formattedDate = formatDate(eventDate);
+  // Format date for display - use formatCalendarDate to avoid timezone issues
+  const formattedDate = formatCalendarDate(event.date, "long");
 
   return (
     <main className="pb-20">

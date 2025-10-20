@@ -2,7 +2,7 @@
 
 import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { internal, api } from "../../_generated/api";
 import { sendQuickEmail } from "./service";
 import type { 
   BookingConfirmationEmailData, 
@@ -944,7 +944,7 @@ export const sendBookingConfirmationEmailById = internalAction({
       let booking: any = null;
       for (const tableName of tables) {
         try {
-          booking = await ctx.runQuery(internal.domains.bookings.queries.getBookingByIdInternal, {
+          booking = await ctx.runQuery(api.domains.bookings.queries.getBookingByIdInternal, {
             bookingId: args.bookingId,
             tableName: tableName,
           });

@@ -4256,8 +4256,9 @@ export const getBookingStatusStatistics = query({
 
 /**
  * Internal query to get booking by ID from any table
+ * Changed from internalQuery to query so it can be called by actions
  */
-export const getBookingByIdInternal = internalQuery({
+export const getBookingByIdInternal = query({
   args: {
     bookingId: v.string(),
     tableName: v.string(),
