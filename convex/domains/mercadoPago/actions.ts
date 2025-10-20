@@ -80,9 +80,10 @@ export const createCheckoutPreference = internalAction({
         external_reference: args.bookingId,
         // Also send as metadata for compatibility
         metadata: metadata,
-        payment_methods: {
-          installments: 1,
-        },
+        // REMOVIDO: binary_mode e installments que podem causar exigência de login
+        // payment_methods: {
+        //   installments: 1,
+        // },
       };
 
       // Log metadata being sent to MP
@@ -94,16 +95,14 @@ export const createCheckoutPreference = internalAction({
 
       // Configure capture mode for authorization without automatic capture
       if (args.captureMode === "manual") {
-        // For manual capture, use binary_mode false to allow authorization without capture
-        body.binary_mode = false;
+        // For manual capture, use additional_info without binary_mode
         body.additional_info = {
           capture: false // Don't capture automatically
         };
         // Log that we're using manual capture mode
         console.log("[MP] Using MANUAL capture mode - payment will be AUTHORIZED only, requiring admin approval to capture");
       } else {
-        // For automatic capture (default MP behavior)
-        body.binary_mode = true;
+        // For automatic capture - don't set binary_mode (default MP behavior)
         console.log("[MP] Using AUTOMATIC capture mode - payment will be captured immediately");
       }
 
@@ -112,12 +111,17 @@ export const createCheckoutPreference = internalAction({
         auto_return: body.auto_return,
       });
 
+      // Log COMPLETE body being sent to MP to verify no payer or purpose fields
+      console.log("[MP] ⚠️ COMPLETE BODY SENT TO MERCADO PAGO:", JSON.stringify(body, null, 2));
+
       // Create preference via Mercado Pago API
       // X-Idempotency-Key prevents duplicate preference creation on retries
+      // ADDING RANDOM SUFFIX TO FORCE NEW PREFERENCE CREATION (TESTING)
+      const randomSuffix = Math.random().toString(36).substring(7);
       const preference = await mpFetch<any>("/checkout/preferences", {
         method: "POST",
         headers: {
-          "X-Idempotency-Key": `booking-pref-${args.bookingId}-${Date.now()}`,
+          "X-Idempotency-Key": `booking-pref-v2-${args.bookingId}-${Date.now()}-${randomSuffix}`,
         },
         body: JSON.stringify(body),
       });

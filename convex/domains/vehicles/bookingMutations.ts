@@ -54,13 +54,24 @@ export const requestVehicleBooking = mutation({
     estimatedPrice: v.number(),
   }),
   handler: async (ctx, args) => {
+    console.log("[VEHICLE BOOKING] Iniciando requestVehicleBooking:", {
+      vehicleId: args.vehicleId,
+      startDate: args.startDate,
+      endDate: args.endDate,
+      customerInfo: args.customerInfo,
+    });
+
     const userId = await getCurrentUserConvexId(ctx);
+    console.log("[VEHICLE BOOKING] UserId obtido:", userId);
+    
     if (!userId) {
       throw new Error("Usuário não autenticado");
     }
 
     // Buscar veículo para pegar o preço estimado
     const vehicle = await ctx.db.get(args.vehicleId);
+    console.log("[VEHICLE BOOKING] Veículo encontrado:", vehicle ? "SIM" : "NÃO");
+    
     if (!vehicle) {
       throw new Error("Veículo não encontrado");
     }
@@ -68,12 +79,20 @@ export const requestVehicleBooking = mutation({
     // Calcular número de dias
     const days = Math.ceil((args.endDate - args.startDate) / (1000 * 60 * 60 * 24));
     const estimatedPrice = vehicle.estimatedPricePerDay * days;
+    
+    console.log("[VEHICLE BOOKING] Cálculos:", { days, estimatedPrice });
 
     // Generate confirmation code
     const startDateString = new Date(args.startDate).toISOString().split('T')[0];
     const customerName = args.customerInfo?.name || 'Guest';
     const confirmationCode = generateConfirmationCode(startDateString, customerName);
     const now = Date.now();
+
+    console.log("[VEHICLE BOOKING] Preparando insert:", {
+      confirmationCode,
+      customerName,
+      startDateString,
+    });
 
     // Criar reserva com status pending_request
     const bookingId = await ctx.db.insert("vehicleBookings", {
@@ -95,6 +114,8 @@ export const requestVehicleBooking = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    console.log("[VEHICLE BOOKING] Reserva criada com sucesso:", bookingId);
 
     // TODO: Enviar notificação para admin
     // await ctx.scheduler.runAfter(0, internal.notifications.notifyAdminNewBookingRequest, {
