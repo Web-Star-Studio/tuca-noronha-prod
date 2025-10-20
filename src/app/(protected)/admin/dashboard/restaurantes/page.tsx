@@ -368,7 +368,7 @@ export default function RestaurantsPage() {
 
       {/* Create/Edit Restaurant Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] w-full max-w-[900px] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Store className="h-5 w-5 text-orange-600" />

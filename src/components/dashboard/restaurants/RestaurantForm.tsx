@@ -542,20 +542,20 @@ export function RestaurantForm({
       )}
       
       <Tabs defaultValue="basic" value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="mb-6 bg-white/80 backdrop-blur-sm border-none shadow-sm w-full grid grid-cols-3 sticky top-0 z-10">
-          <TabsTrigger value="basic" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all relative">
+        <TabsList className="sticky top-0 z-10 mb-6 flex w-full flex-col gap-2 bg-white/80 backdrop-blur-sm border-none shadow-sm sm:grid sm:grid-cols-3 sm:gap-0">
+          <TabsTrigger value="basic" className="relative w-full transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             1. Básicas
             {(errors.name || errors.slug || errors.description || errors.phone) && (
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="address" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all relative">
+          <TabsTrigger value="address" className="relative w-full transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             2. Localização
             {(errors.address?.street || errors.address?.neighborhood || errors.address?.zipCode) && (
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="media" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
+          <TabsTrigger value="media" className="relative w-full transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             3. Mídia
           </TabsTrigger>
         </TabsList>
@@ -764,14 +764,19 @@ export function RestaurantForm({
 
           <div className="space-y-2">
             <Label>Tipos de Cozinha *</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 placeholder="Ex: Italiana"
                 value={tempCuisine}
                 onChange={(e) => setTempCuisine(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={addCuisineType} variant="outline">
+              <Button
+                type="button"
+                onClick={addCuisineType}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Adicionar
               </Button>
             </div>
@@ -830,7 +835,7 @@ export function RestaurantForm({
             <h3 className="text-lg font-semibold">Preços e Cobrança</h3>
             
             <div className="col-span-2">
-              <div className="flex items-center space-x-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex flex-col gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4 sm:flex-row sm:items-center sm:gap-2">
                 <Checkbox
                   id="isFree"
                   checked={watch("isFree") || false}
@@ -928,14 +933,18 @@ export function RestaurantForm({
           
           <div className="space-y-2">
             <Label className="text-sm font-medium">Imagem Principal (opcional)</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 readOnly
                 value={watch("mainImage") || ""}
                 placeholder="Nenhuma imagem selecionada"
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={() => setMainMediaPickerOpen(true)}>
+              <Button
+                type="button"
+                onClick={() => setMainMediaPickerOpen(true)}
+                className="w-full sm:w-auto"
+              >
                 Selecionar da Biblioteca
               </Button>
             </div>
@@ -1047,14 +1056,19 @@ export function RestaurantForm({
         <TabsContent value="details" className="space-y-4">
           <div className="space-y-2">
             <Label>Características</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 placeholder="Ex: Pet Friendly"
                 value={tempFeature}
                 onChange={(e) => setTempFeature(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={addFeature} variant="outline">
+              <Button
+                type="button"
+                onClick={addFeature}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Adicionar
               </Button>
             </div>
@@ -1078,14 +1092,19 @@ export function RestaurantForm({
 
           <div className="space-y-2">
             <Label>Tags</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 placeholder="Ex: Romântico"
                 value={tempTag}
                 onChange={(e) => setTempTag(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={addTag} variant="outline">
+              <Button
+                type="button"
+                onClick={addTag}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Adicionar
               </Button>
             </div>
@@ -1109,14 +1128,19 @@ export function RestaurantForm({
 
           <div className="space-y-2">
             <Label>Formas de Pagamento</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 placeholder="Ex: Visa"
                 value={tempPayment}
                 onChange={(e) => setTempPayment(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={addPaymentOption} variant="outline">
+              <Button
+                type="button"
+                onClick={addPaymentOption}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Adicionar
               </Button>
             </div>
@@ -1261,17 +1285,27 @@ export function RestaurantForm({
           <TabsContent value="media" className="space-y-4 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="space-y-2">
             <Label>Galeria</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 placeholder="URL da mídia da galeria"
                 value={tempGalleryImage}
                 onChange={(e) => setTempGalleryImage(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={addGalleryImage} variant="outline">
+              <Button
+                type="button"
+                onClick={addGalleryImage}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Adicionar
               </Button>
-              <Button type="button" onClick={() => setGalleryPickerOpen(true)} variant="outline">
+              <Button
+                type="button"
+                onClick={() => setGalleryPickerOpen(true)}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Selecionar da Biblioteca
               </Button>
             </div>
@@ -1311,17 +1345,27 @@ export function RestaurantForm({
 
           <div className="space-y-2">
             <Label>Imagens do Menu</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 placeholder="URL da imagem do menu"
                 value={tempMenuImage}
                 onChange={(e) => setTempMenuImage(e.target.value)}
-                className="flex-1"
+                className="flex-1 w-full"
               />
-              <Button type="button" onClick={addMenuImage} variant="outline">
+              <Button
+                type="button"
+                onClick={addMenuImage}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Adicionar
               </Button>
-              <Button type="button" onClick={() => setMenuPickerOpen(true)} variant="outline">
+              <Button
+                type="button"
+                onClick={() => setMenuPickerOpen(true)}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Selecionar da Biblioteca
               </Button>
             </div>
@@ -1385,17 +1429,18 @@ export function RestaurantForm({
 
       <Separator />
 
-      <div className="flex justify-between items-center pt-4">
+      <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <Button 
           type="button" 
           variant="outline" 
           onClick={onCancel}
           disabled={loading}
+          className="w-full sm:w-auto"
         >
           Cancelar
         </Button>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <Button 
             type="button" 
             variant="secondary"
@@ -1407,6 +1452,7 @@ export function RestaurantForm({
                 setCurrentTab(tabs[currentIndex + 1]);
               }
             }}
+            className="w-full sm:w-auto"
           >
             Próxima Etapa →
           </Button>

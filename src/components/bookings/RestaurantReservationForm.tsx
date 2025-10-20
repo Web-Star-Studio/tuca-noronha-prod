@@ -87,7 +87,7 @@ export function RestaurantReservationForm({
       }
       return next;
     });
-  }, [partySize]);
+  }, [adults, children]);
 
   // Calculate price
   const getPrice = () => {
