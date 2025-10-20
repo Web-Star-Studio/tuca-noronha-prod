@@ -64,6 +64,18 @@ export const createCheckoutPreference = internalAction({
         ...(args.metadata || {}),
       };
 
+      // Extract payer information when available to improve guest checkout experience
+      const booking = await ctx.runQuery(internal.domains.bookings.checkout.getBookingForCheckout, {
+        bookingId: args.bookingId,
+        assetType: args.assetType,
+      });
+
+      const payerEmail = booking.customerInfo?.email;
+      const payerName = booking.customerInfo?.name || "";
+      const nameParts = payerName.trim().split(" ");
+      const firstName = nameParts.length > 0 ? nameParts[0] : undefined;
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
+
       const body: any = {
         items: [
           {
@@ -71,6 +83,7 @@ export const createCheckoutPreference = internalAction({
             quantity: args.quantity,
             currency_id: args.currency || "BRL",
             unit_price: args.unitPrice,
+            category_id: "travel", // Ajuda na categorização similar ao guia
           },
         ],
         back_urls: args.backUrls,
@@ -84,7 +97,17 @@ export const createCheckoutPreference = internalAction({
         // payment_methods: {
         //   installments: 1,
         // },
+        statement_descriptor: "TUCA NORONHA",
       };
+
+      if (payerEmail) {
+        body.payer = {
+          email: payerEmail,
+          name: payerName || undefined,
+          first_name: firstName,
+          last_name: lastName,
+        };
+      }
 
       // Log metadata being sent to MP
       console.log("[MP] Creating preference with:", {
