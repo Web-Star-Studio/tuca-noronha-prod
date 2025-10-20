@@ -90,7 +90,7 @@ export const createGuidePurchasePreference = action({
           user_email: args.userEmail,  // MP mantém snake_case
           product_type: "guide",       // MP mantém snake_case
         },
-        purpose: "wallet_purchase",
+        // purpose: "wallet_purchase", // Removido para permitir guest checkout (sem login)
       };
 
       console.log("[Guide] Creating preference with MP");

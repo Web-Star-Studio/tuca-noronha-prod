@@ -285,8 +285,7 @@ export const createSubscriptionPreference = action({
           userEmail: args.userEmail,
           subscriptionType: "guide",
         },
-        // Indicar que é uma assinatura recorrente
-        purpose: "wallet_purchase",
+        // purpose: "wallet_purchase", // Removido para permitir guest checkout (sem login)
       };
 
       console.log("[MP] Creating subscription preference with URLs:", {

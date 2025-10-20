@@ -117,7 +117,7 @@ export const createPaymentPreferenceWithUpdate = action({
         auto_return: "approved",
         external_reference: args.external_reference || args.proposalId,
         notification_url: args.notification_url || `${siteUrl}/api/webhooks/mercadopago`,
-        purpose: "wallet_purchase", // Permite pagamento como convidado (sem login obrigatório)
+        // purpose: "wallet_purchase", // Removido - EXIGE login (comentário anterior estava incorreto)
         payment_methods: {
           installments: 12, // Até 12 parcelas no cartão de crédito
           excluded_payment_methods: [], // Não excluir nenhum método específico
@@ -266,7 +266,7 @@ export const createMPPreference = action({
         auto_return: "approved",
         external_reference: args.external_reference || args.proposalId,
         notification_url: args.notification_url || `${siteUrl}/api/webhooks/mercadopago`,
-        purpose: "wallet_purchase", // Permite pagamento como convidado (sem login obrigatório)
+        // purpose: "wallet_purchase", // Removido - EXIGE login (comentário anterior estava incorreto)
         payment_methods: {
           installments: 12, // Até 12 parcelas no cartão de crédito
           excluded_payment_methods: [], // Não excluir nenhum método específico
