@@ -125,6 +125,7 @@ export default function AdminBookingsPage() {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [finalPrice, setFinalPrice] = useState<string>("");
 
   // Get convex client for imperative calls
   const convex = useConvex();
@@ -150,6 +151,8 @@ export default function AdminBookingsPage() {
   const confirmEventBooking = useMutation(api.domains.bookings.mutations.confirmEventBooking);
   const confirmRestaurantReservation = useMutation(api.domains.bookings.mutations.confirmRestaurantReservation);
   const confirmVehicleBooking = useMutation(api.domains.bookings.mutations.confirmVehicleBooking);
+  const confirmVehicleBookingWithPrice = useMutation(api.domains.vehicles.bookingMutations.confirmBookingWithPrice);
+  const rejectVehicleBookingRequest = useMutation(api.domains.vehicles.bookingMutations.rejectBookingRequest);
   const cancelActivityBooking = useMutation(api.domains.bookings.mutations.cancelActivityBooking);
   const cancelEventBooking = useMutation(api.domains.bookings.mutations.cancelEventBooking);
   const cancelRestaurantReservation = useMutation(api.domains.bookings.mutations.cancelRestaurantReservation);
@@ -325,19 +328,39 @@ export default function AdminBookingsPage() {
     return new Promise(resolve => setTimeout(resolve, 200));
   };
 
-
   // Handle booking confirmation
   const handleConfirmBooking = async (booking: any) => {
     // Masters can confirm any booking, others need selectedAsset
     if (!isMaster && !selectedAsset) return;
 
-    // Validate supplier selection
-    if (!selectedSupplierId) {
-      toast.error("Por favor, selecione um fornecedor antes de confirmar a reserva.");
-      return;
-    }
-
     try {
+      // Special handling for vehicle bookings with pending_request status
+      if (booking.vehicleId && booking.status === "pending_request") {
+        if (!finalPrice || parseFloat(finalPrice) <= 0) {
+          toast.error("Por favor, insira o valor final da reserva.");
+          return;
+        }
+
+        await confirmVehicleBookingWithPrice({
+          bookingId: booking._id,
+          finalPrice: parseFloat(finalPrice),
+          adminNotes: partnerNotes || undefined,
+        });
+        
+        toast.success("Solicitação confirmada! Cliente foi notificado e tem 24h para efetuar o pagamento.");
+        setShowConfirmDialog(false);
+        setSelectedBooking(null);
+        setPartnerNotes("");
+        setFinalPrice("");
+        return;
+      }
+
+      // Validate supplier selection for other booking types
+      if (!selectedSupplierId) {
+        toast.error("Por favor, selecione um fornecedor antes de confirmar a reserva.");
+        return;
+      }
+
       // Check if booking has payment that requires capture
       const hasPaymentToCapture = booking.paymentStatus === "requires_capture" || 
                                  booking.status === "awaiting_confirmation";
@@ -1015,7 +1038,7 @@ export default function AdminBookingsPage() {
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           />
                           
-                          {(booking.status === "pending" || booking.status === "awaiting_confirmation" || booking.paymentStatus === "requires_capture") && (
+                          {(booking.status === "pending" || booking.status === "pending_request" || booking.status === "awaiting_confirmation" || booking.paymentStatus === "requires_capture") && (
                             <>
                               <Button
                                 size="sm"
@@ -1067,22 +1090,43 @@ export default function AdminBookingsPage() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="supplier">Fornecedor *</Label>
-              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecione o fornecedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers?.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">Selecione o fornecedor responsável pela reserva</p>
-            </div>
+            {selectedBooking?.vehicleId && selectedBooking?.status === "pending_request" && (
+              <div>
+                <Label htmlFor="finalPrice">Valor Final da Reserva (R$) *</Label>
+                <Input
+                  id="finalPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ex: 150.00"
+                  value={finalPrice}
+                  onChange={(e) => setFinalPrice(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Valor estimado: R$ {selectedBooking?.estimatedPrice?.toFixed(2) || "0.00"}
+                </p>
+              </div>
+            )}
+
+            {!(selectedBooking?.vehicleId && selectedBooking?.status === "pending_request") && (
+              <div>
+                <Label htmlFor="supplier">Fornecedor *</Label>
+                <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione o fornecedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers?.map((supplier) => (
+                      <SelectItem key={supplier._id} value={supplier._id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">Selecione o fornecedor responsável pela reserva</p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="notes">Observações (opcional)</Label>
