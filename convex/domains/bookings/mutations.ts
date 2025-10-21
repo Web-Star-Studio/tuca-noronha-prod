@@ -162,6 +162,7 @@ export const createActivityBooking = mutation({
     const bookingId = await ctx.db.insert("activityBookings", {
       activityId: args.activityId,
       userId: user._id,
+      supplierId: activity.supplierId, // Copy supplier from activity to booking
       ticketId: args.ticketId,
       date: args.date,
       time: args.time,
@@ -359,6 +360,7 @@ export const createEventBooking = mutation({
     const bookingId = await ctx.db.insert("eventBookings", {
       eventId: args.eventId,
       userId: user._id,
+      supplierId: event.supplierId, // Copy supplier from event to booking
       ticketId: args.ticketId,
       quantity,
       adults: adultsCount,
@@ -519,6 +521,7 @@ export const createRestaurantReservation = mutation({
     const reservationId = await ctx.db.insert("restaurantReservations", {
       restaurantId: args.restaurantId,
       userId: user._id,
+      supplierId: restaurant.supplierId, // Copy supplier from restaurant to booking
       date: args.date,
       time: args.time,
       partySize: args.partySize,

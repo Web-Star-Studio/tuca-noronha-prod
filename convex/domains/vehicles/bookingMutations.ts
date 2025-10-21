@@ -98,6 +98,7 @@ export const requestVehicleBooking = mutation({
     const bookingId = await ctx.db.insert("vehicleBookings", {
       vehicleId: args.vehicleId,
       userId: userId, // Garante que é Id<"users">
+      supplierId: vehicle.supplierId, // Copy supplier from vehicle to booking
       startDate: args.startDate,
       endDate: args.endDate,
       estimatedPrice,
