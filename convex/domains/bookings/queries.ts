@@ -41,6 +41,7 @@ export const getUserActivityBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
+      supplierId: v.optional(v.id("suppliers")), // Supplier reference
       // Mercado Pago fields
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
@@ -2033,6 +2034,7 @@ export const getRestaurantReservations = query({
       date: v.string(),
       time: v.string(),
       partySize: v.number(),
+      guestNames: v.optional(v.array(v.string())),
       name: v.string(),
       email: v.string(),
       phone: v.string(),

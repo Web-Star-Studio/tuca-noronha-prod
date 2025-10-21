@@ -132,9 +132,11 @@ export const requestVehicleBooking = mutation({
 });
 
 /**
- * 2. ADMIN CONFIRMA RESERVA COM VALOR REAL
- * - Define o preço final
+ * 2. ADMIN CONFIRMA SOLICITAÇÃO COM PREÇO REAL
+ * - Define o preço final (pode diferir do base price)
+ * - Cria preferência de pagamento no Mercado Pago com o VALOR FINAL
  * - Define prazo de 24h para pagamento
+ * - Envia email com link de pagamento para o cliente
  */
 export const confirmBookingWithPrice = mutation({
   args: {
@@ -174,10 +176,49 @@ export const confirmBookingWithPrice = mutation({
       updatedAt: now,
     });
 
-    // Buscar dados do veículo para o email
+    // Buscar dados do veículo para criar preferência MP
     const vehicle = await ctx.db.get(booking.vehicleId);
+    if (!vehicle) {
+      throw new Error("Veículo não encontrado");
+    }
+
+    // Criar preferência de pagamento no Mercado Pago com o VALOR FINAL
+    try {
+      const { internal } = await import("../../_generated/api");
+      
+      // Create MP preference with FINAL price (not base price)
+      const siteUrl = process.env.SITE_URL || "http://localhost:3000";
+      
+      await ctx.scheduler.runAfter(0, internal.domains.mercadoPago.actions.createCheckoutPreference, {
+        bookingId: String(args.bookingId),
+        assetType: "vehicle" as any,
+        title: `Aluguel de Veículo: ${vehicle.brand} ${vehicle.model}`,
+        quantity: 1,
+        unitPrice: args.finalPrice, // 🔥 USAR PREÇO FINAL DO ADMIN, não o base price
+        currency: "BRL",
+        backUrls: {
+          success: `${siteUrl}/booking/success?type=vehicle&bookingId=${args.bookingId}`,
+          pending: `${siteUrl}/pagamento/pendente?type=vehicle&bookingId=${args.bookingId}`,
+          failure: `${siteUrl}/pagamento/erro?type=vehicle&bookingId=${args.bookingId}`,
+        },
+        notificationUrl: `${siteUrl}/api/webhooks/mercadopago`,
+        metadata: {
+          bookingId: String(args.bookingId),
+          assetType: "vehicle",
+          vehicleId: String(booking.vehicleId),
+          finalPrice: args.finalPrice,
+        },
+        captureMode: "automatic", // Captura automática para veículos
+      });
+
+      console.log(`[Vehicle Booking] MP preference created for booking ${args.bookingId} with final price ${args.finalPrice}`);
+    } catch (error) {
+      console.error("Erro ao criar preferência MP:", error);
+      throw new Error("Falha ao criar link de pagamento. Por favor, tente novamente.");
+    }
     
-    // Enviar email de confirmação com valor final para o viajante
+    // Enviar email de confirmação com valor final e link de pagamento para o viajante
+    // O email deve incluir: valor final confirmado, prazo de 24h, e link para pagamento
     if (vehicle && booking.customerInfo) {
       try {
         const { internal } = await import("../../_generated/api");

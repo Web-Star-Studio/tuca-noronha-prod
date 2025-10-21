@@ -83,7 +83,7 @@ export function VehicleBookingForm({ vehicleId, estimatedPricePerDay, className 
   };
 
   // NOVO: Usar mutation de solicitação de reserva
-  const requestBooking = useMutation(api.domains.vehicles.requestVehicleBooking);
+  const requestBooking = useMutation(api.domains.vehicles.bookingMutations.requestVehicleBooking);
 
   const handleBooking = async () => {
     if (!startDate || !endDate) {

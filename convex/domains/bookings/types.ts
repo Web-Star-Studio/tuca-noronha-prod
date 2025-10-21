@@ -112,6 +112,8 @@ export const createRestaurantReservationValidator = v.object({
   date: v.string(),
   time: v.string(),
   partySize: v.number(),
+  adults: v.optional(v.number()),
+  children: v.optional(v.number()),
   guestNames: v.optional(v.array(v.string())),
   customerInfo: v.optional(customerInfoValidator),
   specialRequests: v.optional(v.string()),

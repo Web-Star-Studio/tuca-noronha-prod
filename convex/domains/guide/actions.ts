@@ -67,7 +67,7 @@ export const createGuidePurchasePreference = action({
       const lastName = nameParts.slice(1).join(" ") || "";
       
       // Create payment preference body
-      const body = {
+      const body: any = {
         items: [{
           title: GUIDE_CONFIG.title,
           description: GUIDE_CONFIG.description,
@@ -76,12 +76,6 @@ export const createGuidePurchasePreference = action({
           unit_price: GUIDE_CONFIG.amount,
           category_id: "travel", // Category for better approval
         }],
-        payer: {
-          email: args.userEmail,
-          name: args.userName,
-          first_name: firstName,
-          last_name: lastName,
-        },
         back_urls: {
           success: successUrl,
           pending: pendingUrl,
@@ -98,7 +92,19 @@ export const createGuidePurchasePreference = action({
           user_email: args.userEmail,  // MP mantém snake_case
           product_type: "guide",       // MP mantém snake_case
         },
-        // purpose: "wallet_purchase", // Removido para permitir guest checkout (sem login)
+        // Configure payment methods: allow credit card, debit card, and PIX
+        payment_methods: {
+          excluded_payment_types: [
+            // Don't exclude any payment types - allow all
+          ],
+          excluded_payment_methods: [
+            // Don't exclude specific methods - allow all
+          ],
+          installments: 12, // Allow up to 12 installments for credit cards
+        },
+        // ⚠️ DO NOT set 'purpose' field - it forces login
+        // ⚠️ DO NOT set 'payer' upfront - MP may require login if email exists
+        // Instead, let MP collect payer info during checkout for true guest checkout
       };
 
       console.log("[Guide] Creating preference with MP");
