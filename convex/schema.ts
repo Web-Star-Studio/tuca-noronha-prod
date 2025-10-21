@@ -1093,6 +1093,7 @@ export default defineSchema({
     mpPaymentId: v.optional(v.string()),
     mpPreferenceId: v.optional(v.string()),
     mpPaymentLinkId: v.optional(v.string()),
+    paymentUrl: v.optional(v.string()), // URL for payment link (MP or Stripe)
     paymentDetails: v.optional(v.object({
       receiptUrl: v.optional(v.string()),
     })),
