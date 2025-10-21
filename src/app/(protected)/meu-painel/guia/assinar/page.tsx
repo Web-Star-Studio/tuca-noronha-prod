@@ -7,9 +7,8 @@ import { useQuery, useAction } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info, Mail, Tag, X } from "lucide-react";
+import { CheckCircle2, Sparkles, Map, CreditCard, Loader2, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function GuideSubscriptionPage() {
@@ -56,6 +55,7 @@ export default function GuideSubscriptionPage() {
     } catch (error) {
       toast.error("Erro ao validar cupom");
       setAppliedCoupon(null);
+      console.error("Error validating coupon:", error);
     } finally {
       setIsValidatingCoupon(false);
     }
