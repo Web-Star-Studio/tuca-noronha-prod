@@ -1342,3 +1342,84 @@ export const bulkUpdateCoupons = mutation({
     return results;
   },
 });
+
+// Record coupon usage for guide purchases (internal)
+export const recordGuideCouponUsage = mutation({
+  args: {
+    couponCode: v.string(),
+    clerkUserId: v.string(), // Clerk user ID (not Convex ID)
+    orderValue: v.number(),
+    discountAmount: v.number(),
+    finalAmount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Find coupon by code
+    const coupon = await ctx.db
+      .query("coupons")
+      .withIndex("by_code", (q) => q.eq("code", args.couponCode.toUpperCase()))
+      .unique();
+
+    if (!coupon) {
+      console.error(`[Coupon] Coupon not found: ${args.couponCode}`);
+      return { success: false, error: "Cupom não encontrado" };
+    }
+
+    // Find user by Clerk ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", args.clerkUserId))
+      .unique();
+
+    if (!user) {
+      console.error(`[Coupon] User not found: ${args.clerkUserId}`);
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    const now = Date.now();
+
+    // Create usage record with "guide" as bookingType
+    const usageId = await ctx.db.insert("couponUsages", {
+      couponId: coupon._id,
+      userId: user._id,
+      bookingId: `guide_${args.clerkUserId}_${now}`, // Unique ID for guide purchase
+      bookingType: "package", // Use "package" as closest match for guide
+      originalAmount: args.orderValue,
+      discountAmount: args.discountAmount,
+      finalAmount: args.finalAmount,
+      appliedAt: now,
+      appliedBy: user._id,
+      status: "applied",
+      metadata: {
+        systemNotes: "Guide purchase with coupon",
+      } as any,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Increment coupon usage count
+    await ctx.db.patch(coupon._id, {
+      usageCount: coupon.usageCount + 1,
+      updatedAt: now,
+    });
+
+    // Create audit log
+    await ctx.db.insert("couponAuditLogs", {
+      couponId: coupon._id,
+      actionType: "applied",
+      performedBy: user._id,
+      performedAt: now,
+      actionData: {
+        affectedUserId: user._id,
+        metadata: {
+          productType: "guide",
+          originalAmount: args.orderValue,
+          discountAmount: args.discountAmount,
+          finalAmount: args.finalAmount,
+        },
+      },
+      createdAt: now,
+    });
+
+    return { success: true, usageId };
+  },
+});

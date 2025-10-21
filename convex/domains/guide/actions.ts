@@ -18,7 +18,7 @@
 
 import { action, internalAction } from "../../_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { mpFetch } from "../mercadoPago/utils";
 
 // Guide purchase configuration (ONE-TIME PAYMENT)
@@ -37,6 +37,7 @@ export const createGuidePurchasePreference = action({
     userId: v.string(), // Clerk user ID
     userEmail: v.string(),
     userName: v.optional(v.string()),
+    couponCode: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -46,6 +47,33 @@ export const createGuidePurchasePreference = action({
   }),
   handler: async (ctx, args) => {
     try {
+      // Validate and calculate coupon discount if provided
+      let finalPrice = GUIDE_CONFIG.amount;
+      let discountAmount = 0;
+      let couponData = null;
+
+      if (args.couponCode) {
+        try {
+          const couponValidation = await ctx.runAction(api.domains.coupons.actions.validateCouponRealTime, {
+            couponCode: args.couponCode,
+            orderValue: GUIDE_CONFIG.amount,
+          });
+
+          if (couponValidation.isValid && couponValidation.coupon) {
+            discountAmount = couponValidation.coupon.discountAmount;
+            finalPrice = couponValidation.coupon.finalAmount;
+            couponData = couponValidation.coupon;
+            console.log("[Guide] Coupon applied:", {
+              code: args.couponCode,
+              discount: discountAmount,
+              finalPrice,
+            });
+          }
+        } catch (error) {
+          console.error("[Guide] Error validating coupon:", error);
+          // Continue without coupon if validation fails
+        }
+      }
       // Build return URLs - Replace localhost with production URL
       const productionUrl = "https://tucanoronha.com.br";
       const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -70,10 +98,12 @@ export const createGuidePurchasePreference = action({
       const body: any = {
         items: [{
           title: GUIDE_CONFIG.title,
-          description: GUIDE_CONFIG.description,
+          description: couponData 
+            ? `${GUIDE_CONFIG.description} (Cupom: ${args.couponCode} - Desconto: R$ ${discountAmount.toFixed(2)})`
+            : GUIDE_CONFIG.description,
           quantity: 1,
           currency_id: GUIDE_CONFIG.currencyId,
-          unit_price: GUIDE_CONFIG.amount,
+          unit_price: finalPrice, // Use discounted price
           category_id: "travel", // Category for better approval
         }],
         back_urls: {
@@ -91,6 +121,9 @@ export const createGuidePurchasePreference = action({
           user_id: args.userId,        // MP mantém snake_case
           user_email: args.userEmail,  // MP mantém snake_case
           product_type: "guide",       // MP mantém snake_case
+          coupon_code: args.couponCode || null,
+          discount_amount: discountAmount,
+          original_price: GUIDE_CONFIG.amount,
         },
         // Configure payment methods: allow credit card, debit card, and PIX
         payment_methods: {
@@ -213,6 +246,25 @@ export const processGuidePaymentWebhook = internalAction({
             });
 
             console.log(`[Guide] Purchase recorded for user ${userId}, status: ${payment.status}`);
+            
+            // If payment is approved and coupon was used, record usage
+            if (payment.status === "approved") {
+              const couponCode = payment.metadata?.coupon_code || payment.metadata?.couponCode;
+              if (couponCode) {
+                try {
+                  await ctx.runMutation(internal.domains.coupons.mutations.recordGuideCouponUsage, {
+                    couponCode,
+                    clerkUserId: userId,
+                    orderValue: payment.metadata?.original_price || 99.90,
+                    discountAmount: payment.metadata?.discount_amount || 0,
+                    finalAmount: payment.transaction_amount,
+                  });
+                  console.log(`[Guide] Coupon usage recorded: ${couponCode}`);
+                } catch (error) {
+                  console.error(`[Guide] Error recording coupon usage:`, error);
+                }
+              }
+            }
           }
         } catch (error) {
           console.error(`[Guide] Failed to process payment ${paymentId}:`, error);
@@ -265,6 +317,25 @@ export const processGuidePaymentWebhook = internalAction({
             });
 
             console.log(`[Guide] Purchase recorded for user ${userId}, status: ${payment.status}`);
+            
+            // If payment is approved and coupon was used, record usage
+            if (payment.status === "approved") {
+              const couponCode = payment.metadata?.coupon_code || payment.metadata?.couponCode;
+              if (couponCode) {
+                try {
+                  await ctx.runMutation(internal.domains.coupons.mutations.recordGuideCouponUsage, {
+                    couponCode,
+                    clerkUserId: userId,
+                    orderValue: payment.metadata?.original_price || 99.90,
+                    discountAmount: payment.metadata?.discount_amount || 0,
+                    finalAmount: payment.transaction_amount,
+                  });
+                  console.log(`[Guide] Coupon usage recorded: ${couponCode}`);
+                } catch (error) {
+                  console.error(`[Guide] Error recording coupon usage:`, error);
+                }
+              }
+            }
           }
         } catch (error) {
           console.error(`[Guide] Failed to process payment ${paymentId}:`, error);

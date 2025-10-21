@@ -8,25 +8,64 @@ import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { CheckCircle2, Sparkles, ShieldCheck, Map, Camera, CreditCard, Loader2, Info, Mail, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function GuideSubscriptionPage() {
   const router = useRouter();
   const { user } = useUser();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   
   // Check if user already purchased guide
   const hasPurchased = useQuery(api.domains.guide.queries.hasPurchasedGuide);
   
   // Create payment preference (one-time payment)
   const createPayment = useAction(api.domains.guide.actions.createGuidePurchasePreference);
+  const validateCoupon = useAction(api.domains.coupons.actions.validateCouponRealTime);
 
   // If user already purchased, redirect to guide panel
   if (hasPurchased) {
     router.push("/meu-painel/guia");
     return null;
   }
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error("Digite um código de cupom");
+      return;
+    }
+
+    setIsValidatingCoupon(true);
+    try {
+      const result = await validateCoupon({
+        couponCode: couponCode.trim().toUpperCase(),
+        orderValue: 99.90, // Preço do guia
+      });
+
+      if (result.isValid && result.coupon) {
+        setAppliedCoupon(result.coupon);
+        toast.success(`Cupom aplicado! Desconto de R$ ${result.coupon.discountAmount.toFixed(2)}`);
+      } else {
+        toast.error(result.message || "Cupom inválido");
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      toast.error("Erro ao validar cupom");
+      setAppliedCoupon(null);
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setAppliedCoupon(null);
+    toast.info("Cupom removido");
+  };
 
   const handleBuyGuide = async () => {
     if (!user) {
@@ -41,12 +80,14 @@ export default function GuideSubscriptionPage() {
         userId: user.id,
         email: user.primaryEmailAddress?.emailAddress,
         name: user.fullName,
+        coupon: appliedCoupon?.code,
       });
 
       const result = await createPayment({
         userId: user.id,
         userEmail: user.primaryEmailAddress?.emailAddress || "",
         userName: user.fullName || undefined,
+        couponCode: appliedCoupon?.code,
       });
 
       console.log("[Guide] API Response:", result);
@@ -151,7 +192,15 @@ export default function GuideSubscriptionPage() {
                   Oferta especial
                 </div>
                 <div className="mt-2 flex items-end justify-start gap-2">
-                  <span className="text-5xl font-bold text-blue-600">R$ 99,90</span>
+                  {appliedCoupon ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-2xl font-semibold text-gray-400 line-through">R$ 99,90</span>
+                      <span className="text-5xl font-bold text-green-600">R$ {appliedCoupon.finalAmount.toFixed(2)}</span>
+                      <span className="text-sm text-green-600 font-medium">Desconto de R$ {appliedCoupon.discountAmount.toFixed(2)}</span>
+                    </div>
+                  ) : (
+                    <span className="text-5xl font-bold text-blue-600">R$ 99,90</span>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="relative space-y-3 text-sm text-gray-600">
@@ -164,6 +213,56 @@ export default function GuideSubscriptionPage() {
               </CardContent>
               <CardFooter className="relative flex flex-col gap-4 pt-4 text-center text-sm text-gray-600">
                 
+                {/* Coupon input */}
+                <div className="w-full space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Tag className="h-4 w-4" />
+                    <span>Tem um cupom de desconto?</span>
+                  </div>
+                  
+                  {appliedCoupon ? (
+                    <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+                      <Tag className="h-4 w-4 text-green-600" />
+                      <span className="flex-1 font-semibold text-green-700 uppercase">{appliedCoupon.code}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveCoupon}
+                        className="h-auto p-1 text-green-700 hover:text-green-800 hover:bg-green-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Digite seu cupom"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleValidateCoupon();
+                          }
+                        }}
+                        className="rounded-lg uppercase"
+                        disabled={isValidatingCoupon}
+                      />
+                      <Button
+                        onClick={handleValidateCoupon}
+                        disabled={isValidatingCoupon || !couponCode.trim()}
+                        variant="outline"
+                        className="rounded-lg"
+                      >
+                        {isValidatingCoupon ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Aplicar"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <Button
                   onClick={handleBuyGuide}
                   disabled={isProcessing}
