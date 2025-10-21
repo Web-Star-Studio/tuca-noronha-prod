@@ -1072,6 +1072,7 @@ export default defineSchema({
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      cpf: v.optional(v.string()),
     })),
     // NOVO: Tracking do fluxo
     requestedAt: v.number(), // Quando viajante solicitou
