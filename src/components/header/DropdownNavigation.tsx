@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { User, Home, Compass, Package, Calendar, UtensilsCrossed, Car, Heart, ChevronDown, Settings, HelpCircle, Info } from "lucide-react";
+import { User, Home, Compass, Package, Calendar, UtensilsCrossed, Car, Heart, ChevronDown, HelpCircle, Info } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +46,6 @@ const navigationItems: NavigationItem[] = [
   { path: '/reservas', label: 'Minhas Reservas', icon: Calendar, category: 'user', badge: '3' },
   { path: '/wishlist', label: 'Lista de Desejos', icon: Heart, category: 'user' },
   { path: '/meu-painel?tab=pacotes', label: 'Solicitações', icon: Package, category: 'user' },
-  { path: '/personalizacao', label: 'Preferências', icon: Settings, category: 'user' },
   
   // Suporte
   { path: '/ajuda', label: 'Ajuda e Suporte', icon: HelpCircle, category: 'support' },

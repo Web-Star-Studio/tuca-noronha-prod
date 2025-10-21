@@ -108,6 +108,7 @@ export const getBookingForCheckout = internalQuery({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
+        cpf: v.optional(v.string()),
       }),
       asset: v.optional(v.object({
         partnerId: v.optional(v.id("users")),
@@ -353,6 +354,7 @@ export const getBookingByConfirmationCode = query({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
+        cpf: v.optional(v.string()),
       }),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCheckoutSessionId: v.optional(v.string()),
@@ -580,6 +582,7 @@ export const getBookingBySessionId = query({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
+        cpf: v.optional(v.string()),
       }),
       // Booking specific fields
       date: v.optional(v.string()),

@@ -46,6 +46,7 @@ export const requestVehicleBooking = mutation({
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      cpf: v.optional(v.string()),
     }),
   },
   returns: v.object({

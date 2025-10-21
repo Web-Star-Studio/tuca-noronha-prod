@@ -50,8 +50,8 @@ export const getUserActivityBookings = query({
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
-      createdAt: v.number(),
-      updatedAt: v.number(),
+      createdAt: v.optional(v.number()),
+      updatedAt: v.optional(v.number()),
       userId: v.id("users"),
     })),
     isDone: v.boolean(),
@@ -143,12 +143,12 @@ export const getUserEventBookings = query({
       }),
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
-      supplierId: v.optional(v.id("suppliers")),
-      // Mercado Pago fields
-      mpPaymentId: v.optional(v.string()),
-      mpPreferenceId: v.optional(v.string()),
-      mpPaymentLinkId: v.optional(v.string()),
-      paymentUrl: v.optional(v.string()),
+      partnerId: v.id("users"),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -199,6 +199,7 @@ export const getUserEventBookings = query({
           eventDate: event?.date || "",
           eventTime: event?.time || "",
           eventLocation: event?.location || "",
+          partnerId: event?.partnerId || booking.userId,
         };
       })
     );
@@ -230,6 +231,9 @@ export const getUserRestaurantReservations = query({
       date: v.string(),
       time: v.string(),
       partySize: v.number(),
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
+      guestNames: v.optional(v.array(v.string())),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
@@ -254,6 +258,7 @@ export const getUserRestaurantReservations = query({
       createdAt: v.optional(v.number()),
       updatedAt: v.optional(v.number()),
       userId: v.id("users"),
+      supplierId: v.optional(v.id("suppliers")),
     })),
     isDone: v.boolean(),
     continueCursor: v.string(),
@@ -335,25 +340,24 @@ export const getUserVehicleBookings = query({
       pickupLocation: v.optional(v.string()),
       returnLocation: v.optional(v.string()),
       notes: v.optional(v.string()),
-      confirmationCode: v.string(),
+      partnerNotes: v.optional(v.string()),
       customerInfo: v.optional(v.object({
         name: v.string(),
         email: v.string(),
         phone: v.string(),
+        cpf: v.optional(v.string()),
       })),
       additionalDrivers: v.optional(v.number()),
       additionalOptions: v.optional(v.array(v.string())),
-      partnerNotes: v.optional(v.string()),
-      paymentMethod: v.optional(v.string()),
       // Coupon fields
       couponCode: v.optional(v.string()),
       discountAmount: v.optional(v.number()),
       finalAmount: v.optional(v.number()),
-      // Mercado Pago fields
-      mpPaymentId: v.optional(v.string()),
-      mpPreferenceId: v.optional(v.string()),
-      mpPaymentLinkId: v.optional(v.string()),
-      paymentUrl: v.optional(v.string()),
+      // Stripe integration fields
+      stripeCheckoutSessionId: v.optional(v.string()),
+      stripePaymentIntentId: v.optional(v.string()),
+      stripeCustomerId: v.optional(v.string()),
+      stripePaymentLinkId: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -450,6 +454,7 @@ export const getBookingByConfirmationCode = query({
           name: v.string(),
           email: v.string(),
           phone: v.string(),
+          cpf: v.optional(v.string()),
         }),
       }),
     }),
@@ -472,6 +477,7 @@ export const getBookingByConfirmationCode = query({
           name: v.string(),
           email: v.string(),
           phone: v.string(),
+          cpf: v.optional(v.string()),
         }),
       }),
     }),
@@ -484,6 +490,9 @@ export const getBookingByConfirmationCode = query({
         date: v.string(),
         time: v.string(),
         partySize: v.number(),
+        adults: v.optional(v.number()),
+        children: v.optional(v.number()),
+        guestNames: v.optional(v.array(v.string())),
         status: v.string(),
         confirmationCode: v.string(),
         name: v.string(),
@@ -571,6 +580,9 @@ export const getBookingByConfirmationCode = query({
           date: reservation.date,
           time: reservation.time,
           partySize: reservation.partySize,
+          adults: reservation.adults,
+          children: reservation.children,
+          guestNames: reservation.guestNames,
           status: reservation.status,
           confirmationCode: reservation.confirmationCode,
           name: reservation.name,
@@ -663,6 +675,9 @@ export const getPartnerBookings = query({
       date: v.string(),
       time: v.string(),
       partySize: v.number(),
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
+      guestNames: v.optional(v.array(v.string())),
       status: v.string(),
       paymentStatus: v.optional(v.string()),
       confirmationCode: v.string(),
@@ -672,11 +687,22 @@ export const getPartnerBookings = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       partnerId: v.id("users"),
+      supplierId: v.optional(v.id("suppliers")),
+      // Coupon fields
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -780,6 +806,9 @@ export const getPartnerBookings = query({
         date: string;
         time: string;
         partySize: number;
+        adults?: number;
+        children?: number;
+        guestNames?: string[];
         status: string;
         paymentStatus?: string;
         confirmationCode: string;
@@ -789,6 +818,7 @@ export const getPartnerBookings = query({
         specialRequests?: string;
         partnerNotes?: string;
         partnerId: any;
+        supplierId?: any;
         couponCode?: string;
         discountAmount?: number;
         finalAmount?: number;
@@ -977,6 +1007,9 @@ export const getPartnerBookings = query({
           date: reservation.date,
           time: reservation.time,
           partySize: reservation.partySize,
+          adults: reservation.adults,
+          children: reservation.children,
+          guestNames: reservation.guestNames,
           status: reservation.status,
           paymentStatus: reservation.paymentStatus,
           confirmationCode: reservation.confirmationCode,
@@ -986,6 +1019,7 @@ export const getPartnerBookings = query({
           specialRequests: reservation.specialRequests,
           partnerNotes: reservation.partnerNotes,
           partnerId: restaurant.partnerId,
+          supplierId: reservation.supplierId,
           couponCode: reservation.couponCode,
           discountAmount: reservation.discountAmount,
           finalAmount: reservation.finalAmount,
@@ -1031,26 +1065,26 @@ export const getPartnerBookings = query({
           .withIndex("by_employee", (q) => q.eq("employeeId", user._id))
           .collect();
         
-                 for (const orgPermission of organizationPermissions) {
-           // Check if employee has any meaningful permission for the organization
-           const hasAnyPermission = orgPermission.permissions && orgPermission.permissions.length > 0;
-           const hasSpecificPermission = orgPermission.permissions.some(p => 
-             ["view", "edit", "manage", "full_access"].includes(p)
-           );
-           
-           if (hasAnyPermission && hasSpecificPermission) {
-             // Get all vehicles from this organization
-             const organizationVehicles = await ctx.db
-               .query("partnerAssets")
-               .withIndex("by_organization_type", (q) => 
-                 q.eq("organizationId", orgPermission.organizationId).eq("assetType", "vehicles")
-               )
-               .collect();
-             
-             const orgVehicleIds = organizationVehicles.map(asset => asset.assetId);
-             accessibleVehicleIds.push(...orgVehicleIds);
-           }
-         }
+        for (const orgPermission of organizationPermissions) {
+          // Check if employee has any meaningful permission for the organization
+          const hasAnyPermission = orgPermission.permissions && orgPermission.permissions.length > 0;
+          const hasSpecificPermission = orgPermission.permissions.some(p => 
+            ["view", "edit", "manage", "full_access"].includes(p)
+          );
+          
+          if (hasAnyPermission && hasSpecificPermission) {
+            // Get all vehicles from this organization
+            const organizationVehicles = await ctx.db
+              .query("partnerAssets")
+              .withIndex("by_organization_type", (q) => 
+                q.eq("organizationId", orgPermission.organizationId).eq("assetType", "vehicles")
+              )
+              .collect();
+            
+            const orgVehicleIds = organizationVehicles.map(asset => asset.assetId);
+            accessibleVehicleIds.push(...orgVehicleIds);
+          }
+        }
         
         // Remove duplicates
         accessibleVehicleIds = [...new Set(accessibleVehicleIds)];
@@ -2034,6 +2068,8 @@ export const getRestaurantReservations = query({
       date: v.string(),
       time: v.string(),
       partySize: v.number(),
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
       guestNames: v.optional(v.array(v.string())),
       name: v.string(),
       email: v.string(),
@@ -2043,6 +2079,7 @@ export const getRestaurantReservations = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       tableId: v.optional(v.id("restaurantTables")),
+      supplierId: v.optional(v.id("suppliers")),
       // Coupon fields
       couponCode: v.optional(v.string()),
       discountAmount: v.optional(v.number()),
@@ -2054,6 +2091,11 @@ export const getRestaurantReservations = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -2241,8 +2283,20 @@ export const getRestaurantReservations = query({
         partnerRestaurants = allPartnerRestaurants.filter(restaurant => 
           assetIds.includes(restaurant._id)
         );
+        
+        // Se não encontrar restaurantes na organização, mas a organização existe,
+        // mostra todos os restaurantes do partner (fallback)
+        if (partnerRestaurants.length === 0) {
+          const organization = await ctx.db.get(args.organizationId);
+          if (organization && organization.partnerId.toString() === user._id.toString()) {
+            partnerRestaurants = await ctx.db
+              .query("restaurants")
+              .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
+              .collect();
+          }
+        }
       } else {
-        // Get all partner restaurants if no organizationId is provided
+        // Sem filtro de organização, busca todos os restaurantes do partner
         partnerRestaurants = await ctx.db
           .query("restaurants")
           .withIndex("by_partner", (q) => q.eq("partnerId", user._id))
@@ -2576,7 +2630,7 @@ export const getVehicleBookings = query({
             vehicleModel: vehicle?.model || "",
             customerInfo: {
               name: booking.customerInfo?.name || user?.name || "Nome não disponível",
-              email: booking.customerInfo?.email || user?.email || "Email não disponível",
+              email: booking.customerInfo?.email || user?.email || "Email não disponível", 
               phone: booking.customerInfo?.phone || user?.phone || "Telefone não disponível",
             },
           };
@@ -3074,6 +3128,9 @@ export const getRestaurantReservationById = query({
       date: v.string(),
       time: v.string(),
       partySize: v.number(),
+      adults: v.optional(v.number()),
+      children: v.optional(v.number()),
+      guestNames: v.optional(v.array(v.string())),
       name: v.string(),
       email: v.string(),
       phone: v.string(),
@@ -3082,6 +3139,7 @@ export const getRestaurantReservationById = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       tableId: v.optional(v.id("restaurantTables")),
+      supplierId: v.optional(v.id("suppliers")),
       // Coupon fields
       couponCode: v.optional(v.string()),
       discountAmount: v.optional(v.number()),
@@ -3093,6 +3151,11 @@ export const getRestaurantReservationById = query({
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -3460,7 +3523,7 @@ export const getBookingsWithRBAC = query({
               assetName: restaurant.name,
               customerName: reservation.name,
               customerEmail: reservation.email,
-              totalPrice: 0, // Restaurant reservations don't have totalPrice
+              totalPrice: reservation.finalAmount ?? reservation.totalPrice ?? 0,
               status: reservation.status,
               confirmationCode: reservation.confirmationCode,
               date: reservation.date,
@@ -3494,7 +3557,7 @@ export const getBookingsWithRBAC = query({
               assetName: restaurant.name,
               customerName: reservation.name,
               customerEmail: reservation.email,
-              totalPrice: 0, // Restaurant reservations don't have totalPrice
+              totalPrice: reservation.finalAmount ?? reservation.totalPrice ?? 0,
               status: reservation.status,
               confirmationCode: reservation.confirmationCode,
               date: reservation.date,
@@ -3519,7 +3582,7 @@ export const getBookingsWithRBAC = query({
               assetName: restaurant.name,
               customerName: reservation.name,
               customerEmail: reservation.email,
-              totalPrice: 0, // Restaurant reservations don't have totalPrice
+              totalPrice: reservation.finalAmount ?? reservation.totalPrice ?? 0,
               status: reservation.status,
               confirmationCode: reservation.confirmationCode,
               date: reservation.date,

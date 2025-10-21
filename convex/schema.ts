@@ -1331,6 +1331,7 @@ export default defineSchema({
       name: v.string(),
       email: v.string(),
       phone: v.string(),
+      cpf: v.optional(v.string()),
       age: v.optional(v.number()),
       occupation: v.optional(v.string()),
     }),
