@@ -12,6 +12,7 @@
 
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
+import { internal } from "../../_generated/api";
 import { getCurrentUserRole, getCurrentUserConvexId } from "../rbac/utils";
 import { generateConfirmationCode } from "../bookings/utils";
 
@@ -186,8 +187,6 @@ export const confirmBookingWithPrice = mutation({
 
     // Criar preferência de pagamento no Mercado Pago com o VALOR FINAL
     try {
-      const { internal } = await import("../../_generated/api");
-      
       // Create MP preference with FINAL price (not base price)
       const siteUrl = process.env.SITE_URL || "http://localhost:3000";
       
@@ -219,11 +218,12 @@ export const confirmBookingWithPrice = mutation({
       throw new Error("Falha ao criar link de pagamento. Por favor, tente novamente.");
     }
     
-    // Enviar email de confirmação com valor final e link de pagamento para o viajante
+    // TODO: Enviar email de confirmação com valor final e link de pagamento para o viajante
     // O email deve incluir: valor final confirmado, prazo de 24h, e link para pagamento
+    // Temporariamente comentado até criar a action sendVehicleBookingConfirmedEmail
+    /*
     if (vehicle && booking.customerInfo) {
       try {
-        const { internal } = await import("../../_generated/api");
         await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVehicleBookingConfirmedEmail, {
           customerEmail: booking.customerInfo.email,
           customerName: booking.customerInfo.name,
@@ -240,6 +240,7 @@ export const confirmBookingWithPrice = mutation({
         // Não falhar a mutation se o email falhar
       }
     }
+    */
 
     // TODO: Agendar verificação de prazo de pagamento
     // await ctx.scheduler.runAt(paymentDeadline, internal.vehicles.checkPaymentDeadline, {
