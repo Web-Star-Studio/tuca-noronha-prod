@@ -79,7 +79,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     const messageContent = messageInput.trim();
     setMessageInput("");
-    setIsTyping(false);
 
     try {
       await sendMessage({
@@ -256,7 +255,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             value={messageInput}
             onChange={(e) => {
               setMessageInput(e.target.value);
-              setIsTyping(e.target.value.length > 0);
             }}
             onKeyPress={handleKeyPress}
             placeholder="Digite sua mensagem..."
