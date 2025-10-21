@@ -3,8 +3,10 @@
 import { useState, useMemo } from "react";
 
 // Função para verificar se as informações do cliente devem ser exibidas
-function shouldShowCustomerInfo(status: string): boolean {
-  // Apenas exibe informações do cliente após confirmação
+function shouldShowCustomerInfo(status: string, isMaster: boolean = false): boolean {
+  // Masters sempre podem ver as informações
+  if (isMaster) return true;
+  // Outros usuários só veem após confirmação
   return status === "confirmed" || status === "completed" || status === "in_progress";
 }
 import { useQuery, useMutation, useConvex, useAction } from "convex/react";
@@ -948,13 +950,18 @@ export default function AdminBookingsPage() {
                             <div className="flex items-center gap-2">
                               {!selectedAsset && booking.assetType && getAssetIcon(booking.assetType)}
                               <h3 className="font-semibold text-foreground">
-                                {booking.assetType === "restaurants" || selectedAsset?.assetType === "restaurants"
-                                  ? `Mesa para ${booking.partySize || booking.participants} pessoas`
-                                  : booking.activityTitle || booking.eventTitle || booking.vehicleName || "Reserva"
-                                }
+                                {booking.confirmationCode || "Sem código"}
                               </h3>
                             </div>
                             {getStatusBadge(booking.status)}
+                          </div>
+                          
+                          {/* Asset name as subtitle */}
+                          <div className="text-sm text-muted-foreground">
+                            {booking.assetType === "restaurants" || selectedAsset?.assetType === "restaurants"
+                              ? `Mesa para ${booking.partySize || booking.participants} pessoas`
+                              : booking.activityTitle || booking.eventTitle || booking.vehicleName || "Reserva"
+                            }
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -963,7 +970,7 @@ export default function AdminBookingsPage() {
                               {formatBookingDate(booking, booking.assetType || selectedAsset?.assetType || "activity")}
                             </div>
                             
-                            {shouldShowCustomerInfo(booking.status) ? (
+                            {shouldShowCustomerInfo(booking.status, isMaster) ? (
                               <>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <Users className="w-4 h-4" />
