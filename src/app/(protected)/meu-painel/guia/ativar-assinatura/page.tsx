@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
+/**
+ * ⚠️ DEPRECATED PAGE
+ * This page is for the old subscription model that is NO LONGER IN USE.
+ * Guide now uses one-time purchase instead of recurring subscriptions.
+ * 
+ * Kept only for users who may have old bookmarks or links.
+ * Redirects to the purchase page or shows deprecation notice.
+ */
+
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Loader2, AlertCircle, Key, Info } from "lucide-react";
+import { CheckCircle2, Loader2, AlertCircle, Key, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -19,8 +28,20 @@ export default function ActivateSubscriptionPage() {
   const [processing, setProcessing] = useState(false);
   const [preapprovalId, setPreapprovalId] = useState("");
   const [result, setResult] = useState<any>(null);
+  const [showLegacyForm, setShowLegacyForm] = useState(false);
   
+  // Check if user already has access
+  const hasAccess = useQuery(api.domains.guide.queries.hasGuideAccess);
+  
+  // ⚠️ DEPRECATED: Only used for legacy subscription migration
   const processSubscription = useAction(api.domains.subscriptions.actions.manuallyProcessSubscription);
+
+  // Redirect if user already has access
+  useEffect(() => {
+    if (hasAccess === true) {
+      router.push("/meu-painel/guia");
+    }
+  }, [hasAccess, router]);
 
   const handleActivate = async () => {
     if (!preapprovalId.trim()) {
@@ -71,16 +92,61 @@ export default function ActivateSubscriptionPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-white py-16 px-4">
       <div className="mx-auto max-w-2xl space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-            Ativar Minha Assinatura
-          </h1>
-          <p className="text-lg text-gray-600">
-            Você já pagou mas o sistema não ativou automaticamente? <br/>
-            Ative manualmente usando o código da sua assinatura.
-          </p>
-        </div>
+        {/* Deprecation Notice */}
+        <Alert className="bg-amber-50 border-amber-300 border-2">
+          <AlertTriangle className="h-6 w-6 text-amber-600" />
+          <AlertTitle className="text-amber-900 font-bold text-lg">
+            ⚠️ Sistema Atualizado
+          </AlertTitle>
+          <AlertDescription className="text-amber-800 space-y-3">
+            <p className="font-semibold">
+              O sistema de assinaturas foi substituído por <strong>compra única</strong>.
+            </p>
+            <p>
+              Se você ainda não comprou o guia, clique no botão abaixo para fazer a compra (pagamento único de R$ 99,90).
+            </p>
+            <Button 
+              onClick={() => router.push("/meu-painel/guia/assinar")}
+              className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
+            >
+              Ir para Página de Compra
+            </Button>
+            <hr className="border-amber-300" />
+            <p className="text-sm">
+              Se você tinha uma <strong>assinatura antiga</strong> e precisa migrar, clique abaixo:
+            </p>
+            <Button 
+              onClick={() => setShowLegacyForm(true)}
+              variant="outline"
+              className="w-full border-amber-400 text-amber-900 hover:bg-amber-100"
+            >
+              Tenho uma assinatura antiga (Preapproval ID)
+            </Button>
+          </AlertDescription>
+        </Alert>
+
+        {!showLegacyForm && (
+          <div className="text-center space-y-4 opacity-60">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+              Sistema de Assinaturas (Descontinuado)
+            </h1>
+            <p className="text-lg text-gray-600">
+              Esta página não é mais necessária. Use a compra única acima.
+            </p>
+          </div>
+        )}
+
+        {showLegacyForm && (
+          <>
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+                Migrar Assinatura Antiga
+              </h1>
+              <p className="text-lg text-gray-600">
+                Use esta opção apenas se você tinha uma assinatura do modelo antigo.
+              </p>
+            </div>
 
         {/* User Info */}
         <Alert className="bg-blue-50 border-blue-200">
@@ -218,6 +284,8 @@ export default function ActivateSubscriptionPage() {
             </ul>
           </CardContent>
         </Card>
+          </>
+        )}
       </div>
     </div>
   );

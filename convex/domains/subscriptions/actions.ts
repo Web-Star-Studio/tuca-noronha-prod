@@ -1,11 +1,16 @@
 "use node";
 
 /**
- * Mercado Pago Subscription Actions
+ * ⚠️ DEPRECATED - Mercado Pago Subscription Actions
  * 
- * Core functions for MP subscription integration:
- * - createSubscription: Create MP subscription (preapproval)
- * - processSubscriptionWebhook: Handle MP webhook notifications for subscriptions
+ * This file contains DEPRECATED subscription code that is NO LONGER USED for the guide feature.
+ * The guide now uses a ONE-TIME PURCHASE model instead of recurring subscriptions.
+ * 
+ * ✅ Current implementation: /convex/domains/guide/actions.ts (one-time payment)
+ * ❌ This file: DEPRECATED - kept only for reference/migration
+ * 
+ * These actions may still be used for other subscription features in the future,
+ * but NOT for the guide purchase.
  */
 
 import { internalAction, action } from "../../_generated/server";
@@ -13,11 +18,12 @@ import { v } from "convex/values";
 import { internal, api } from "../../_generated/api";
 import { mpFetch } from "../mercadoPago/utils";
 
-// Subscription configuration
+// ⚠️ DEPRECATED: This config is NOT used for guide purchases anymore
+// Guide now uses: /convex/domains/guide/actions.ts > GUIDE_CONFIG
 const GUIDE_SUBSCRIPTION_CONFIG = {
   title: "Assinatura Premium - Guia de Viagens",
   reason: "Acesso completo ao painel de guia de viagens",
-  amount: 0.1, // Valor anual em reais
+  amount: 0.1,  // Valor anual em reais
   frequency: 12, // 12 months = 1 year (MP doesn't accept "years")
   frequencyType: "months",
   currencyId: "BRL"

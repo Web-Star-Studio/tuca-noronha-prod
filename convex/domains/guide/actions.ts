@@ -1,11 +1,19 @@
 "use node";
 
 /**
- * Guide Purchase Actions
+ * ✅ ACTIVE - Guide Purchase Actions
+ * 
+ * This is the CURRENT implementation for guide purchases using ONE-TIME PAYMENT model.
+ * 
+ * 🔄 Migration from subscriptions to one-time purchase:
+ * - Old model: Recurring subscriptions (R$ 99.90/year) via /preapproval endpoint
+ * - New model: Single payment (R$ 99.90 once) via /checkout/preferences endpoint
  * 
  * Core functions for guide purchase integration:
- * - createGuidePurchasePreference: Create MP payment preference
- * - processGuidePaymentWebhook: Handle MP webhook notifications
+ * - createGuidePurchasePreference: Create MP payment preference (one-time purchase)
+ * - processGuidePaymentWebhook: Handle MP webhook notifications for guide payments
+ * 
+ * ⚠️ Note: Old subscription code is in /convex/domains/subscriptions/actions.ts (DEPRECATED for guide)
  */
 
 import { action, internalAction } from "../../_generated/server";
@@ -13,11 +21,11 @@ import { v } from "convex/values";
 import { internal } from "../../_generated/api";
 import { mpFetch } from "../mercadoPago/utils";
 
-// Guide configuration
+// Guide purchase configuration (ONE-TIME PAYMENT)
 const GUIDE_CONFIG = {
   title: "Guia Exclusivo de Fernando de Noronha",
   description: "Acesso vitalício ao guia completo com roteiros, dicas e contatos",
-  amount: 99.90, // One-time payment
+  amount: 0.1, // One-time payment (not recurring)
   currencyId: "BRL"
 };
 

@@ -31,8 +31,10 @@ export async function POST(request: NextRequest) {
       eventType === "subscription_authorized_payment" ||
       eventType === "subscription_preapproval_plan"
     ) {
-      // Process subscription/guide webhooks
-      console.log("[MP Webhook] → Routing to subscription processor");
+      // ⚠️ DEPRECATED: This handles old subscription model (no longer used for guide)
+      // Guide now uses one-time payments (processed as "payment" events below)
+      // This branch is kept only for legacy subscription migration
+      console.log("[MP Webhook] → Routing to LEGACY subscription processor (DEPRECATED)");
       console.log("[MP Webhook] Calling action with args:", {
         id: body.id,
         type: eventType,
@@ -66,7 +68,10 @@ export async function POST(request: NextRequest) {
         throw actionError;
       }
     } else if (eventType === "payment") {
-      // Process payment webhooks (package proposals)
+      // Process payment webhooks:
+      // - Guide purchases (one-time payment - product_type: "guide")
+      // - Package proposals (product_type: "package")
+      // - Activity/Event/Restaurant bookings
       console.log("[MP Webhook] → Routing to payment processor");
       
       // Validação extra para pagamentos
