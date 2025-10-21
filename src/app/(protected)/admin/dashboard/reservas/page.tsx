@@ -152,13 +152,11 @@ export default function AdminBookingsPage() {
   const confirmRestaurantReservation = useMutation(api.domains.bookings.mutations.confirmRestaurantReservation);
   const confirmVehicleBooking = useMutation(api.domains.bookings.mutations.confirmVehicleBooking);
   const confirmVehicleBookingWithPrice = useMutation(api.domains.vehicles.bookingMutations.confirmBookingWithPrice);
-  const rejectVehicleBookingRequest = useMutation(api.domains.vehicles.bookingMutations.rejectBookingRequest);
   const cancelActivityBooking = useMutation(api.domains.bookings.mutations.cancelActivityBooking);
   const cancelEventBooking = useMutation(api.domains.bookings.mutations.cancelEventBooking);
   const cancelRestaurantReservation = useMutation(api.domains.bookings.mutations.cancelRestaurantReservation);
   const cancelVehicleBooking = useMutation(api.domains.bookings.mutations.cancelVehicleBooking);
 
-  // Para usuários master, sempre buscar todas as reservas independente do asset selecionado
   // Para outros usuários, buscar todas apenas quando não há asset selecionado
   const shouldFetchAllActivities = (typeFilter === "all" || typeFilter === "activities") && (isMaster || !selectedAsset);
   const allActivityBookings = useQuery(
