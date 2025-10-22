@@ -93,25 +93,18 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
 
       {/* Main Content */}
       <div className="mb-6">
-        {/* Customer Info */}
+        {/* Asset Info - Primeiro */}
         <div>
-          <h2 className="text-xl font-semibold mb-4">Informações do Cliente</h2>
+          <h2 className="text-xl font-semibold mb-4">Informações do Serviço</h2>
           <div className="bg-gray-50 p-4 rounded-lg">
-            {voucherData.customer.phone && (
-              <div className="space-y-1 text-gray-600 mb-2">
-                <p className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  {voucherData.customer.phone}
-                </p>
-              </div>
-            )}
-            <p className="text-sm text-gray-600">
-              Código da Reserva: <span className="font-mono font-semibold">{voucherData.booking.confirmationCode || voucherData.voucher.voucherNumber}</span>
-            </p>
+            {renderBookingDetails(assetType, voucherData.booking)}
           </div>
 
-          {/* Paxs - Primeiro campo após informações do cliente */}
-          <div className="bg-gray-50 p-4 rounded-lg mt-6">
+          {/* Customer Info - Depois */}
+          <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Cliente</h2>
+          
+          {/* Paxs - Primeiro dentro de Informações do Cliente */}
+          <div className="bg-gray-50 p-4 rounded-lg">
             <p className="font-medium text-gray-900 mb-3 text-lg">👥 Paxs</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {/* Main customer */}
@@ -140,10 +133,19 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
             </p>
           </div>
 
-          {/* Asset Info */}
-          <h2 className="text-xl font-semibold mt-6 mb-4">Informações do Serviço</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            {renderBookingDetails(assetType, voucherData.booking)}
+          {/* Telefone e Código da Reserva - Depois dos Paxs */}
+          <div className="bg-gray-50 p-4 rounded-lg mt-4">
+            {voucherData.customer.phone && (
+              <div className="space-y-1 text-gray-600 mb-2">
+                <p className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  {voucherData.customer.phone}
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-gray-600">
+              Código da Reserva: <span className="font-mono font-semibold">{voucherData.booking.confirmationCode || voucherData.voucher.voucherNumber}</span>
+            </p>
           </div>
         </div>
       </div>
