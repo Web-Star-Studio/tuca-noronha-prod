@@ -25,7 +25,7 @@ import { mpFetch } from "../mercadoPago/utils";
 const GUIDE_CONFIG = {
   title: "Guia Exclusivo de Fernando de Noronha",
   description: "Acesso vitalício ao guia completo com roteiros, dicas e contatos",
-  amount: 0.1, // One-time payment (not recurring)
+  amount: 99.90, // One-time payment (not recurring)
   currencyId: "BRL"
 };
 

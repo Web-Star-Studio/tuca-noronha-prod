@@ -26,6 +26,7 @@ interface TourFiltersProps {
   setIsFilterOpen: Dispatch<SetStateAction<boolean>>;
   totalResults?: number;
   isLoading?: boolean;
+  absoluteMaxPrice: number;
 }
 
 const durations = ["1-2 horas", "2-4 horas", "4+ horas"];
@@ -46,13 +47,14 @@ export default function ActivitiesFilter({
   setIsFilterOpen,
   totalResults = 0,
   isLoading = false,
+  absoluteMaxPrice,
 }: TourFiltersProps) {
   // Calcular se há filtros ativos
   const hasActiveFilters = 
     selectedCategories.length > 0 || 
     durationFilter.length > 0 || 
     (minPrice !== null && minPrice > 0) || 
-    (maxPrice !== null && maxPrice < 700);
+    (maxPrice !== null && maxPrice < absoluteMaxPrice);
 
   const handleSliderChange = (value: number[]) => {
     setMinPrice(value[0]);
@@ -132,9 +134,9 @@ export default function ActivitiesFilter({
                 <h3 className="text-base font-semibold mb-4 text-gray-800">Faixa de Preço</h3>
                 <div className="mb-4">
                   <Slider
-                    defaultValue={[0, 700]}
-                    value={[minPrice ?? 0, maxPrice ?? 700]}
-                    max={700}
+                    defaultValue={[0, absoluteMaxPrice]}
+                    value={[minPrice ?? 0, maxPrice ?? absoluteMaxPrice]}
+                    max={absoluteMaxPrice}
                     step={50}
                     onValueChange={handleSliderChange}
                     className="my-6 w-full"
@@ -150,7 +152,7 @@ export default function ActivitiesFilter({
                     <div className="flex flex-col text-right">
                       <span className="text-xs text-gray-500">Máximo</span>
                       <span className="text-sm font-semibold text-gray-900">
-                        R$ {maxPrice !== null ? maxPrice.toLocaleString("pt-BR") : '700'}
+                        R$ {maxPrice !== null ? maxPrice.toLocaleString("pt-BR") : absoluteMaxPrice.toLocaleString("pt-BR")}
                       </span>
                     </div>
                   </div>
@@ -255,9 +257,9 @@ export default function ActivitiesFilter({
           <div className="mb-8">
             <h3 className="text-base font-semibold mb-4 text-gray-800">Faixa de Preço</h3>
             <Slider
-              defaultValue={[0, 700]}
-              value={[minPrice ?? 0, maxPrice ?? 700]}
-              max={700}
+              defaultValue={[0, absoluteMaxPrice]}
+              value={[minPrice ?? 0, maxPrice ?? absoluteMaxPrice]}
+              max={absoluteMaxPrice}
               step={50}
               onValueChange={handleSliderChange}
               className="my-6"
@@ -273,7 +275,7 @@ export default function ActivitiesFilter({
               <div className="flex flex-col text-right">
                 <span className="text-xs text-gray-500">Máximo</span>
                 <span className="text-sm font-semibold text-gray-900">
-                  R$ {maxPrice !== null ? maxPrice.toLocaleString("pt-BR") : '700'}
+                  R$ {maxPrice !== null ? maxPrice.toLocaleString("pt-BR") : absoluteMaxPrice.toLocaleString("pt-BR")}
                 </span>
               </div>
             </div>

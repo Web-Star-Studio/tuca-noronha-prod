@@ -144,11 +144,17 @@ export const getUserEventBookings = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       partnerId: v.id("users"),
+      supplierId: v.optional(v.id("suppliers")),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -674,11 +680,17 @@ export const getPartnerBookings = query({
       specialRequests: v.optional(v.string()),
       partnerNotes: v.optional(v.string()),
       partnerId: v.id("users"),
+      supplierId: v.optional(v.id("suppliers")),
       // Stripe integration fields
       stripeCheckoutSessionId: v.optional(v.string()),
       stripePaymentIntentId: v.optional(v.string()),
       stripeCustomerId: v.optional(v.string()),
       stripePaymentLinkId: v.optional(v.string()),
+      // Mercado Pago fields
+      mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
       paymentDetails: v.optional(v.object({
         receiptUrl: v.optional(v.string()),
       })),
@@ -1747,6 +1759,7 @@ export const getEventBookings = query({
       // Mercado Pago integration fields
       mpPaymentId: v.optional(v.string()),
       mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
       paymentUrl: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
@@ -3137,6 +3150,21 @@ export const getEventBookingById = query({
       stripePaymentLinkId: v.optional(v.string()),
       // Mercado Pago integration fields
       mpPaymentId: v.optional(v.string()),
+      mpPreferenceId: v.optional(v.string()),
+      mpPaymentLinkId: v.optional(v.string()),
+      paymentUrl: v.optional(v.string()),
+      paymentDetails: v.optional(v.object({
+        receiptUrl: v.optional(v.string()),
+      })),
+      couponCode: v.optional(v.string()),
+      discountAmount: v.optional(v.number()),
+      finalAmount: v.optional(v.number()),
+      partnerId: v.id("users"),
+      eventDate: v.string(),
+      eventTime: v.string(),
+      eventLocation: v.string(),
+      eventTitle: v.string(),
+      eventImageUrl: v.string(),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -3147,8 +3175,44 @@ export const getEventBookingById = query({
     if (!booking) {
       return null;
     }
+    
+    const event = await ctx.db.get(booking.eventId);
+    
     return {
-      ...booking,
+      _id: booking._id,
+      _creationTime: booking._creationTime,
+      eventId: booking.eventId,
+      userId: booking.userId,
+      quantity: booking.quantity,
+      adults: booking.adults,
+      children: booking.children,
+      participantNames: booking.participantNames,
+      totalPrice: booking.totalPrice,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      confirmationCode: booking.confirmationCode,
+      customerInfo: booking.customerInfo,
+      specialRequests: booking.specialRequests,
+      partnerNotes: booking.partnerNotes,
+      supplierId: booking.supplierId,
+      stripeCheckoutSessionId: booking.stripeCheckoutSessionId,
+      stripePaymentIntentId: booking.stripePaymentIntentId,
+      stripeCustomerId: booking.stripeCustomerId,
+      stripePaymentLinkId: booking.stripePaymentLinkId,
+      mpPaymentId: booking.mpPaymentId,
+      mpPreferenceId: booking.mpPreferenceId,
+      mpPaymentLinkId: booking.mpPaymentLinkId,
+      paymentUrl: booking.paymentUrl,
+      paymentDetails: booking.paymentDetails,
+      couponCode: booking.couponCode,
+      discountAmount: booking.discountAmount,
+      finalAmount: booking.finalAmount,
+      partnerId: event?.partnerId || booking.userId,
+      eventTitle: event?.title || "Evento não encontrado",
+      eventImageUrl: event?.imageUrl || "",
+      eventDate: event?.date || "",
+      eventTime: event?.time || "",
+      eventLocation: event?.location || "",
       createdAt: booking.createdAt ?? booking._creationTime,
       updatedAt: booking.updatedAt ?? booking._creationTime,
     };

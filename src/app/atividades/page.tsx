@@ -8,7 +8,7 @@ import { usePublicActivitiesQuery } from "@/lib/hooks/useActivityQueries";
 
 export default function AtividadesPage() {
   const [minPrice, setMinPrice] = useState<number | null>(0);
-  const [maxPrice, setMaxPrice] = useState<number | null>(700);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [durationFilter, setDurationFilter] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -20,6 +20,14 @@ export default function AtividadesPage() {
   const categories = useMemo(() => {
     if (activities.length === 0) return [];
     return [...new Set(activities.map(activity => activity.category))];
+  }, [activities]);
+
+  // Calculate the maximum price from all activities
+  const absoluteMaxPrice = useMemo(() => {
+    if (activities.length === 0) return 1000;
+    const maxActivityPrice = Math.max(...activities.map(activity => activity.price));
+    // Round up to nearest 100 for better UX
+    return Math.ceil(maxActivityPrice / 100) * 100;
   }, [activities]);
 
   const toggleCategoryFilter = (category: string) => {
@@ -112,7 +120,7 @@ export default function AtividadesPage() {
 
   const resetFilters = () => {
     setMinPrice(0);
-    setMaxPrice(700);
+    setMaxPrice(null);
     setDurationFilter([]);
     setSelectedCategories([]);
     setIsFilterOpen(false); // Fechar o filtro após resetar
@@ -170,6 +178,7 @@ export default function AtividadesPage() {
           setIsFilterOpen={setIsFilterOpen}
           totalResults={filteredActivities.length}
           isLoading={isLoading}
+          absoluteMaxPrice={absoluteMaxPrice}
         />
         <div className="flex-1 md:w-2/3">
           {isLoading ? (
