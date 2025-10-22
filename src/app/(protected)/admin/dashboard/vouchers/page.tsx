@@ -29,7 +29,6 @@ import {
   Search, 
   Filter, 
   Download, 
-  Eye, 
   Users,
   CheckCircle,
   AlertCircle,
@@ -355,22 +354,13 @@ export default function AdminVouchersPage() {
                         <TableCell>{getStatusBadge(voucherData.voucher?.status || '')}</TableCell>
                         <TableCell>{formatDate(voucherData.voucher?.generatedAt || Date.now())}</TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleVoucherClick(voucherData)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(`/voucher/${voucherData.voucher?.voucherNumber}`, "_blank")}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(`/voucher/${voucherData.voucher?.voucherNumber}`, "_blank")}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
