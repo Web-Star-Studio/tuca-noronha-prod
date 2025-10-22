@@ -129,9 +129,6 @@ export default function AdminVouchersPage() {
     return labels[type] || type;
   };
 
-  const handleVoucherClick = (voucher: any) => {
-    setSelectedVoucher(voucher);
-  };
 
   const handleScanSuccess = (voucher: any) => {
     setSelectedVoucher(voucher);
