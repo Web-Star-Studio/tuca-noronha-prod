@@ -100,6 +100,19 @@ export const listSupplierOptions = queryWithRole(["master", "partner"])({
   },
 });
 
+// Get all active suppliers (for admin selection)
+export const getAllSuppliers = queryWithRole(["master", "partner", "employee"])({
+  args: {},
+  handler: async (ctx) => {
+    const suppliers = (await ctx.db
+      .query("suppliers")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .collect()) as Supplier[];
+
+    return suppliers.sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
 /**
  * Get public supplier information for voucher display
  * This query is public (no role check) as it only returns public fields

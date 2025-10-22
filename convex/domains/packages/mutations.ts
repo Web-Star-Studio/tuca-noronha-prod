@@ -1257,4 +1257,192 @@ export const sendPackageRequestReply = mutation({
 
     return messageId;
   },
+});
+
+// Update internal costs for a package request
+export const updatePackageRequestInternalCosts = mutation({
+  args: {
+    packageRequestId: v.id("packageRequests"),
+    internalCosts: v.array(v.object({
+      supplierId: v.id("suppliers"),
+      supplierName: v.string(),
+      assetType: v.string(),
+      assetId: v.string(),
+      assetName: v.string(),
+      sellingPrice: v.number(),
+      netRate: v.number(),
+      quantity: v.optional(v.number()),
+      notes: v.optional(v.string()),
+    })),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Get current user identity
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user is admin/master
+    const isAdmin = user.role === "master" || user.role === "employee";
+    if (!isAdmin) {
+      throw new Error("Only admins can manage internal costs");
+    }
+
+    // Verify package request exists
+    const packageRequest = await ctx.db.get(args.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Package request not found");
+    }
+
+    // Add timestamps to each cost item
+    const now = Date.now();
+    const costsWithTimestamps = args.internalCosts.map(cost => ({
+      ...cost,
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    // Update package request with internal costs
+    await ctx.db.patch(args.packageRequestId, {
+      internalCosts: costsWithTimestamps,
+      updatedAt: now,
+    });
+
+    return null;
+  },
+});
+
+// Add a single internal cost item to a package request
+export const addPackageRequestInternalCost = mutation({
+  args: {
+    packageRequestId: v.id("packageRequests"),
+    supplierId: v.id("suppliers"),
+    supplierName: v.string(),
+    assetType: v.string(),
+    assetId: v.string(),
+    assetName: v.string(),
+    sellingPrice: v.number(),
+    netRate: v.number(),
+    quantity: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Get current user identity
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user is admin/master
+    const isAdmin = user.role === "master" || user.role === "employee";
+    if (!isAdmin) {
+      throw new Error("Only admins can manage internal costs");
+    }
+
+    // Verify package request exists
+    const packageRequest = await ctx.db.get(args.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Package request not found");
+    }
+
+    const now = Date.now();
+    const newCost = {
+      supplierId: args.supplierId,
+      supplierName: args.supplierName,
+      assetType: args.assetType,
+      assetId: args.assetId,
+      assetName: args.assetName,
+      sellingPrice: args.sellingPrice,
+      netRate: args.netRate,
+      quantity: args.quantity || 1,
+      notes: args.notes,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Get existing costs or initialize empty array
+    const existingCosts = packageRequest.internalCosts || [];
+
+    // Update package request with new cost
+    await ctx.db.patch(args.packageRequestId, {
+      internalCosts: [...existingCosts, newCost],
+      updatedAt: now,
+    });
+
+    return null;
+  },
+});
+
+// Remove an internal cost item from a package request
+export const removePackageRequestInternalCost = mutation({
+  args: {
+    packageRequestId: v.id("packageRequests"),
+    costIndex: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Get current user identity
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user is admin/master
+    const isAdmin = user.role === "master" || user.role === "employee";
+    if (!isAdmin) {
+      throw new Error("Only admins can manage internal costs");
+    }
+
+    // Verify package request exists
+    const packageRequest = await ctx.db.get(args.packageRequestId);
+    if (!packageRequest) {
+      throw new Error("Package request not found");
+    }
+
+    // Get existing costs
+    const existingCosts = packageRequest.internalCosts || [];
+
+    // Remove cost at index
+    const updatedCosts = existingCosts.filter((_, index) => index !== args.costIndex);
+
+    // Update package request
+    await ctx.db.patch(args.packageRequestId, {
+      internalCosts: updatedCosts,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
 }); 

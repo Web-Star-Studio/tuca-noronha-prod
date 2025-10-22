@@ -24,6 +24,7 @@ import { RequestDetailsContent } from "./RequestDetailsContent";
 import { ProposalsTab } from "./ProposalsTab";
 import { ChatTab } from "./ChatTab";
 import { SimpleProposalModal } from "./SimpleProposalModal";
+import { InternalCostsManager } from "./InternalCostsManager";
 
 interface PackageRequestDetailsPageClientProps {
   requestId: string;
@@ -161,6 +162,12 @@ export function PackageRequestDetailsPageClient({ requestId }: PackageRequestDet
           </Card>
         </div>
       </div>
+
+      {/* Internal Costs Section */}
+      <InternalCostsManager 
+        packageRequestId={convexRequestId}
+        internalCosts={requestDetails?.internalCosts}
+      />
 
       <SimpleProposalModal 
         isOpen={isProposalModalOpen}

@@ -1397,6 +1397,21 @@ export default defineSchema({
     conversionStatus: v.optional(v.string()), // e.g., "converted", "abandoned"
     estimatedValue: v.optional(v.number()),
     
+    // Internal Cost Management (Admin only - not visible to customers)
+    internalCosts: v.optional(v.array(v.object({
+      supplierId: v.id("suppliers"),          // Supplier reference
+      supplierName: v.string(),               // Cached supplier name for display
+      assetType: v.string(),                  // Type of asset (activity, restaurant, vehicle, etc.)
+      assetId: v.string(),                    // Reference to the asset
+      assetName: v.string(),                  // Cached asset name for display
+      sellingPrice: v.number(),               // Preço de venda ao cliente
+      netRate: v.number(),                    // Tarifa net a pagar ao fornecedor
+      quantity: v.optional(v.number()),       // Quantidade (padrão 1)
+      notes: v.optional(v.string()),          // Notas internas sobre este item
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }))),
+    
     // Metadata
     requestNumber: v.string(), // Unique request number for tracking
     createdAt: v.number(),
