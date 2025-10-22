@@ -123,6 +123,7 @@ export const createPackageProposal = mutation({
       convertedToBooking: false,
       priority: args.priority,
       tags: args.tags,
+      metadata: args.metadata,
       partnerId: user?.partnerId,
       organizationId: user?.organizationId,
       createdAt: now,

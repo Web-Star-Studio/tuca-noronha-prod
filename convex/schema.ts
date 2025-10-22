@@ -2575,6 +2575,7 @@ export default defineSchema({
       v.literal("high"),
       v.literal("urgent")
     ),
+    metadata: v.optional(v.any()),                // Additional metadata for form fields
     
     // Timestamps
     createdAt: v.number(),

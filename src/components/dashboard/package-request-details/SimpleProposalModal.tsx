@@ -148,21 +148,24 @@ function mapExistingProposalToFormData(existingProposal: any, requestDetails?: a
   const travelPeriod = formatTripPeriodFromRequest(requestDetails);
   const nights = trip?.duration ? String(trip.duration) : "";
 
+  // Map fields from existingProposal.metadata if available, otherwise from proposal itself
+  const metadata = existingProposal.metadata || {};
+
   return {
     ...initialFormData,
-    travelPeriod: travelPeriod || "",
-    nights: nights || "",
-    departureLocation: trip?.originCity || "",
-    airline: "",
-    accommodationType: "",
-    accommodationDetails: "",
-    fullPackageDescription: existingProposal.description || "",
-    pricePerPerson: "",
+    travelPeriod: metadata.travelPeriod || travelPeriod || "",
+    nights: metadata.nights || nights || "",
+    departureLocation: metadata.departureLocation || trip?.originCity || "",
+    airline: metadata.airline || "",
+    accommodationType: metadata.accommodationType || "",
+    accommodationDetails: metadata.accommodationDetails || "",
+    fullPackageDescription: existingProposal.description || metadata.fullPackageDescription || "",
+    pricePerPerson: metadata.pricePerPerson || "",
     totalPrice:
       existingProposal.totalPrice !== undefined && existingProposal.totalPrice !== null
         ? String(existingProposal.totalPrice)
         : "",
-    additionalNotes: "",
+    additionalNotes: metadata.additionalNotes || "",
     paymentTerms: existingProposal.paymentTerms || "",
     cancellationPolicy: existingProposal.cancellationPolicy || "",
   };
@@ -297,6 +300,17 @@ export function SimpleProposalModal({
       priority,
       tags,
       status: "draft", // Proposta começa como rascunho
+      metadata: {
+        travelPeriod: formData.travelPeriod,
+        nights: formData.nights,
+        departureLocation: formData.departureLocation,
+        airline: formData.airline,
+        accommodationType: formData.accommodationType,
+        accommodationDetails: formData.accommodationDetails,
+        fullPackageDescription: formData.fullPackageDescription,
+        pricePerPerson: formData.pricePerPerson,
+        additionalNotes: formData.additionalNotes,
+      },
     };
 
     try {

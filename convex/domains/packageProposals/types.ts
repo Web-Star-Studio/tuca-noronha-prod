@@ -69,6 +69,7 @@ export const CreatePackageProposalArgs = v.object({
   priority: PackageProposalPriority,
   status: v.optional(PackageProposalStatus),
   tags: v.optional(v.array(v.string())),
+  metadata: v.optional(v.any()), // Additional form metadata
 });
 
 export const UpdatePackageProposalArgs = v.object({
@@ -92,6 +93,7 @@ export const UpdatePackageProposalArgs = v.object({
   tags: v.optional(v.array(v.string())),
   customerFeedback: v.optional(v.string()),
   adminResponse: v.optional(v.string()),
+  metadata: v.optional(v.any()), // Additional form metadata
 });
 
 export const ListPackageProposalsArgs = v.object({
