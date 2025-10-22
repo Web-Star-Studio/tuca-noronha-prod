@@ -35,12 +35,15 @@ export function CreateManualVoucherForm({
   const events = useQuery(api.domains.events.queries.getAll);
   const restaurants = useQuery(api.domains.restaurants.queries.getAll);
   const vehicles = useQuery(api.domains.vehicles.queries.getAll);
+  
+  // Query para buscar fornecedores
+  const suppliers = useQuery(api.domains.suppliers.queries.getAllSuppliers);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerId: "",
     partnerId: "none",
-    bookingType: "activity" as "activity" | "event" | "restaurant" | "vehicle",
+    bookingType: "activity" as "activity" | "event" | "restaurant" | "vehicle" | "accommodation",
     assetName: "",
     assetDescription: "",
     customerName: "",
@@ -61,6 +64,7 @@ export function CreateManualVoucherForm({
   const [guestNames, setGuestNames] = useState<string[]>([""]);
   const [cancellationPolicy, setCancellationPolicy] = useState<string[]>([""]);
   const [selectedAssetId, setSelectedAssetId] = useState<string>("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
 
   // Função para obter os assets baseado no tipo de reserva
   const getAssetsForBookingType = () => {
@@ -73,6 +77,8 @@ export function CreateManualVoucherForm({
         return restaurants || [];
       case "vehicle":
         return vehicles || [];
+      case "accommodation":
+        return []; // Hospedagem não tem assets pré-cadastrados
       default:
         return [];
     }
@@ -128,6 +134,27 @@ export function CreateManualVoucherForm({
       } else {
         setCancellationPolicy([""]);
       }
+    }
+  };
+
+  // Função para preencher os dados do fornecedor quando selecionado
+  const handleSupplierSelection = (supplierId: string) => {
+    setSelectedSupplierId(supplierId);
+    
+    if (!supplierId || supplierId === "manual") {
+      // Se "manual" ou vazio, limpar os campos
+      handleInputChange("supplierName", "");
+      handleInputChange("supplierAddress", "");
+      handleInputChange("supplierEmergencyPhone", "");
+      return;
+    }
+    
+    const selectedSupplier = suppliers?.find((supplier: any) => supplier._id === supplierId);
+    
+    if (selectedSupplier) {
+      handleInputChange("supplierName", selectedSupplier.name || "");
+      handleInputChange("supplierAddress", selectedSupplier.address || "");
+      handleInputChange("supplierEmergencyPhone", selectedSupplier.emergencyPhone || "");
     }
   };
 
@@ -307,36 +334,48 @@ export function CreateManualVoucherForm({
               <SelectItem value="event">Evento</SelectItem>
               <SelectItem value="restaurant">Restaurante</SelectItem>
               <SelectItem value="vehicle">Veículo</SelectItem>
+              <SelectItem value="accommodation">Hospedagem</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="assetName">Nome do Serviço *</Label>
-          <Select
-            value={selectedAssetId}
-            onValueChange={handleAssetSelection}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um serviço ou digite manualmente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="manual">Entrada Manual</SelectItem>
-              {getAssetsForBookingType().map((asset: any) => (
-                <SelectItem key={asset._id} value={asset._id}>
-                  {asset.title || asset.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedAssetId === "manual" && (
+          {formData.bookingType === "accommodation" ? (
             <Input
               id="assetName"
               value={formData.assetName}
               onChange={(e) => handleInputChange("assetName", e.target.value)}
-              placeholder="Ex: Passeio de Barco"
-              className="mt-2"
+              placeholder="Ex: Hotel Noronha Paradise"
             />
+          ) : (
+            <>
+              <Select
+                value={selectedAssetId}
+                onValueChange={handleAssetSelection}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um serviço ou digite manualmente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">Entrada Manual</SelectItem>
+                  {getAssetsForBookingType().map((asset: any) => (
+                    <SelectItem key={asset._id} value={asset._id}>
+                      {asset.title || asset.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedAssetId === "manual" && (
+                <Input
+                  id="assetName"
+                  value={formData.assetName}
+                  onChange={(e) => handleInputChange("assetName", e.target.value)}
+                  placeholder="Ex: Passeio de Barco"
+                  className="mt-2"
+                />
+              )}
+            </>
           )}
         </div>
       </div>
@@ -607,6 +646,28 @@ export function CreateManualVoucherForm({
       {/* Dados do Fornecedor */}
       <div className="border-t pt-6">
         <h3 className="text-lg font-semibold mb-4">Informações do Fornecedor (Opcional)</h3>
+        
+        {/* Select para escolher fornecedor */}
+        <div className="space-y-2 mb-4">
+          <Label htmlFor="supplierSelect">Selecionar Fornecedor</Label>
+          <Select
+            value={selectedSupplierId}
+            onValueChange={handleSupplierSelection}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Escolha um fornecedor ou preencha manualmente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">Entrada Manual</SelectItem>
+              {suppliers?.map((supplier: any) => (
+                <SelectItem key={supplier._id} value={supplier._id}>
+                  {supplier.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="supplierName">Nome do Fornecedor</Label>
@@ -615,6 +676,7 @@ export function CreateManualVoucherForm({
               value={formData.supplierName}
               onChange={(e) => handleInputChange("supplierName", e.target.value)}
               placeholder="Nome da empresa fornecedora"
+              disabled={selectedSupplierId !== "" && selectedSupplierId !== "manual"}
             />
           </div>
 
@@ -625,6 +687,7 @@ export function CreateManualVoucherForm({
               value={formData.supplierEmergencyPhone}
               onChange={(e) => handleInputChange("supplierEmergencyPhone", e.target.value)}
               placeholder="(11) 99999-9999"
+              disabled={selectedSupplierId !== "" && selectedSupplierId !== "manual"}
             />
           </div>
 
@@ -635,6 +698,7 @@ export function CreateManualVoucherForm({
               value={formData.supplierAddress}
               onChange={(e) => handleInputChange("supplierAddress", e.target.value)}
               placeholder="Endereço completo"
+              disabled={selectedSupplierId !== "" && selectedSupplierId !== "manual"}
             />
           </div>
         </div>
