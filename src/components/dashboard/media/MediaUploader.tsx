@@ -128,6 +128,7 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
   // Form handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation() // Prevent event from bubbling to parent forms
     
     if (!user) {
       toast.error("Você precisa estar logado para fazer upload de mídia")
@@ -295,6 +296,9 @@ export function MediaUploader({ onSuccess }: { onSuccess?: () => void }) {
         className="w-full bg-blue-500 text-white hover:bg-blue-600 transition-colors hover:cursor-pointer" 
         variant="default"
         disabled={!selectedFile || uploading}
+        onClick={(e) => {
+          e.stopPropagation() // Extra safety to prevent event bubbling
+        }}
       >
         {uploading ? "Enviando..." : "Fazer Upload"}
       </Button>

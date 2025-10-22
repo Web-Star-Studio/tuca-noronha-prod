@@ -38,12 +38,16 @@ export function ParticipantSelector({
   showSummary = true,
   showLimits = true,
 }: ParticipantSelectorProps) {
-  const totalParticipants = adults + childrenCount
+  // Ensure adults and childrenCount are valid numbers
+  const safeAdults = Number.isNaN(adults) || adults === undefined ? minAdults : adults;
+  const safeChildren = Number.isNaN(childrenCount) || childrenCount === undefined ? 0 : childrenCount;
+  
+  const totalParticipants = safeAdults + safeChildren
 
-  const canDecreaseAdults = adults > minAdults && (!minTotal || totalParticipants > minTotal)
-  const canIncreaseAdults = adults < maxAdults && (!maxTotal || totalParticipants < maxTotal)
-  const canDecreaseChildren = childrenCount > 0
-  const canIncreaseChildren = childrenCount < maxChildren && (!maxTotal || totalParticipants < maxTotal)
+  const canDecreaseAdults = safeAdults > minAdults && (!minTotal || totalParticipants > minTotal)
+  const canIncreaseAdults = safeAdults < maxAdults && (!maxTotal || totalParticipants < maxTotal)
+  const canDecreaseChildren = safeChildren > 0
+  const canIncreaseChildren = safeChildren < maxChildren && (!maxTotal || totalParticipants < maxTotal)
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -72,20 +76,20 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onAdultsChange(adults - 1)}
+            onClick={() => onAdultsChange(safeAdults - 1)}
             disabled={!canDecreaseAdults}
           >
             -
           </Button>
           <div className="flex items-center justify-center w-8 h-8 border rounded-md bg-white">
-            <span className="text-sm font-medium">{adults}</span>
+            <span className="text-sm font-medium">{safeAdults}</span>
           </div>
           <Button
             type="button"
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onAdultsChange(adults + 1)}
+            onClick={() => onAdultsChange(safeAdults + 1)}
             disabled={!canIncreaseAdults}
           >
             +
@@ -107,20 +111,20 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onChildrenChange(childrenCount - 1)}
+            onClick={() => onChildrenChange(safeChildren - 1)}
             disabled={!canDecreaseChildren}
           >
             -
           </Button>
           <div className="flex items-center justify-center w-8 h-8 border rounded-md bg-white">
-            <span className="text-sm font-medium">{childrenCount}</span>
+            <span className="text-sm font-medium">{safeChildren}</span>
           </div>
           <Button
             type="button"
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onChildrenChange(childrenCount + 1)}
+            onClick={() => onChildrenChange(safeChildren + 1)}
             disabled={!canIncreaseChildren}
           >
             +
