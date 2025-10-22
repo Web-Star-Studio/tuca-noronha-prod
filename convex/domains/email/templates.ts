@@ -773,11 +773,11 @@ export const getEmailTemplate = (data: EmailData): string => {
     case 'package_flights_confirmed':
       return flightsConfirmedTravelerEmail();
     case 'package_documents_ready':
-      return documentsReadyTravelerEmail({ panelLink: (data as any).panelLink || process.env.NEXT_PUBLIC_URL + '/meu-painel' });
+      return documentsReadyTravelerEmail();
     case 'partner_new_booking':
       return partnerNewBookingEmail({ bookingLink: (data as any).bookingUrl || process.env.NEXT_PUBLIC_URL + '/meu-painel/reservas' });
     case 'welcome_new_user':
-      return welcomeNewUserEmail({ loginLink: (data as any).loginUrl || process.env.NEXT_PUBLIC_URL + '/entrar' });
+      return welcomeNewUserEmail();
     case 'voucher_ready':
       if (data.type === 'voucher_ready') {
         return voucherEmailTemplate(data as any);

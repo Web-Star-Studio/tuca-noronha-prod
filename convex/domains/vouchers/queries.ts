@@ -99,55 +99,98 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
     };
   }
 
-  // Get booking information based on type
+  // Check if this is a manual voucher (admin created)
+  const isManualVoucher = voucher.bookingType === "admin_reservation" || 
+                          (typeof voucher.bookingId === 'string' && voucher.bookingId.startsWith("ADMIN-"));
+
   let booking: any = null;
   let asset: any = null;
+  let supplier: any = null;
 
-  switch (voucher.bookingType) {
-    case "activity":
-      booking = await ctx.db
-        .query("activityBookings")
-        .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
-        .first();
-      if (booking) {
-        asset = await ctx.db.get(booking.activityId);
-      }
-      break;
-    case "event":
-      booking = await ctx.db
-        .query("eventBookings")
-        .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
-        .first();
-      if (booking) {
-        asset = await ctx.db.get(booking.eventId);
-      }
-      break;
-    case "restaurant":
-      booking = await ctx.db
-        .query("restaurantReservations")
-        .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
-        .first();
-      if (booking) {
-        asset = await ctx.db.get(booking.restaurantId);
-      }
-      break;
-    case "vehicle":
-      booking = await ctx.db
+  if (isManualVoucher && voucher.details) {
+    // For manual vouchers, use the details stored in the voucher
+    booking = {
+      _id: voucher.bookingId,
+      confirmationCode: voucher.voucherNumber,
+      status: "confirmed",
+      date: voucher.details.booking?.date,
+      time: voucher.details.booking?.time,
+      participants: voucher.details.booking?.participants || 1,
+      totalAmount: 0,
+      specialRequests: voucher.details.booking?.specialRequests,
+    };
+
+    asset = {
+      name: voucher.details.asset?.name,
+      description: voucher.details.asset?.description,
+      highlights: voucher.details.asset?.highlights || [],
+      includes: voucher.details.asset?.includes || [],
+      additionalInfo: voucher.details.asset?.additionalInfo || [],
+      cancellationPolicy: voucher.details.asset?.cancellationPolicy,
+    };
+
+    // Use supplier from details if provided
+    if (voucher.details.supplier) {
+      supplier = voucher.details.supplier;
+    }
+
+    // Override customer info if provided in details
+    if (voucher.details.customer) {
+      const detailsCustomer = voucher.details.customer;
+      if (detailsCustomer.name) customer.name = detailsCustomer.name;
+      if (detailsCustomer.email) customer.email = detailsCustomer.email;
+      if (detailsCustomer.phone) customer.phone = detailsCustomer.phone;
+    }
+  } else {
+    // Regular booking-based voucher
+    switch (voucher.bookingType) {
+      case "activity":
+        booking = await ctx.db
+          .query("activityBookings")
+          .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
+          .first();
+        if (booking) {
+          asset = await ctx.db.get(booking.activityId);
+        }
+        break;
+      case "event":
+        booking = await ctx.db
+          .query("eventBookings")
+          .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
+          .first();
+        if (booking) {
+          asset = await ctx.db.get(booking.eventId);
+        }
+        break;
+      case "restaurant":
+        booking = await ctx.db
+          .query("restaurantReservations")
+          .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
+          .first();
+        if (booking) {
+          asset = await ctx.db.get(booking.restaurantId);
+        }
+        break;
+      case "vehicle":
+        booking = await ctx.db
         .query("vehicleBookings")
-        .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
-        .first();
-      if (booking) {
-        asset = await ctx.db.get(booking.vehicleId);
-      }
-      break;
+          .filter((q) => q.eq(q.field("_id"), voucher.bookingId))
+          .first();
+        if (booking) {
+          asset = await ctx.db.get(booking.vehicleId);
+        }
+        break;
+    }
 
-  }
-
-  if (!booking || !asset) {
-    throw new Error("Reserva ou ativo não encontrado");
+    if (!booking || !asset) {
+      throw new Error("Reserva ou ativo não encontrado");
+    }
   }
 
   const guestNames = (() => {
+    if (isManualVoucher && voucher.details?.booking?.guestNames) {
+      return voucher.details.booking.guestNames;
+    }
     switch (voucher.bookingType) {
       case "activity":
         return booking.additionalParticipants || [];
@@ -168,27 +211,23 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
   const includes = asset.includes || asset.services || [];
   const additionalInfo = asset.additionalInfo || asset.notes || [];
 
-  // Get supplier information (public fields only) - prioritize booking supplier over asset supplier
-  let supplier: {
-    name: string;
-    address?: string;
-    cnpj?: string;
-    emergencyPhone?: string;
-  } | null = null;
-
-  // First try to get supplier from booking (set during confirmation)
-  const supplierId = booking.supplierId || asset.supplierId;
-  
-  if (supplierId) {
-    const supplierDoc = await ctx.db.get(supplierId);
-    if (supplierDoc && supplierDoc.isActive) {
-      // Return only public fields (those that appear on voucher)
-      supplier = {
-        name: supplierDoc.name,
-        address: supplierDoc.address,
-        cnpj: supplierDoc.cnpj,
-        emergencyPhone: supplierDoc.emergencyPhone,
-      };
+  // Get supplier information (public fields only)
+  // For manual vouchers, supplier was already set above
+  if (!isManualVoucher) {
+    // First try to get supplier from booking (set during confirmation)
+    const supplierId = booking.supplierId || asset.supplierId;
+    
+    if (supplierId) {
+      const supplierDoc = await ctx.db.get(supplierId);
+      if (supplierDoc && supplierDoc.isActive) {
+        // Return only public fields (those that appear on voucher)
+        supplier = {
+          name: supplierDoc.name,
+          address: supplierDoc.address,
+          cnpj: supplierDoc.cnpj,
+          emergencyPhone: supplierDoc.emergencyPhone,
+        };
+      }
     }
   }
 

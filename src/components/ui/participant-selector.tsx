@@ -76,10 +76,10 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onAdultsChange(safeAdults - 1)}
-            disabled={!canDecreaseAdults}
+            onClick={() => onAdultsChange(safeAdults + 1)}
+            disabled={!canIncreaseAdults}
           >
-            -
+            +
           </Button>
           <div className="flex items-center justify-center w-8 h-8 border rounded-md bg-white">
             <span className="text-sm font-medium">{safeAdults}</span>
@@ -89,10 +89,10 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onAdultsChange(safeAdults + 1)}
-            disabled={!canIncreaseAdults}
+            onClick={() => onAdultsChange(safeAdults - 1)}
+            disabled={!canDecreaseAdults}
           >
-            +
+            -
           </Button>
         </div>
       </div>
@@ -111,10 +111,10 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onChildrenChange(safeChildren - 1)}
-            disabled={!canDecreaseChildren}
+            onClick={() => onChildrenChange(safeChildren + 1)}
+            disabled={!canIncreaseChildren}
           >
-            -
+            +
           </Button>
           <div className="flex items-center justify-center w-8 h-8 border rounded-md bg-white">
             <span className="text-sm font-medium">{safeChildren}</span>
@@ -124,10 +124,10 @@ export function ParticipantSelector({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={() => onChildrenChange(safeChildren + 1)}
-            disabled={!canIncreaseChildren}
+            onClick={() => onChildrenChange(safeChildren - 1)}
+            disabled={!canDecreaseChildren}
           >
-            +
+            -
           </Button>
         </div>
       </div>

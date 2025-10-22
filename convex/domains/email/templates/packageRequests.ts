@@ -239,10 +239,14 @@ export const proposalSentTravelerEmail = (data: {
       </p>
     </div>
     
+    <p style="margin: 24px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      Acesse seu painel para visualizar os detalhes completos da proposta e tomar sua decisão.
+    </p>
+    
     <div style="text-align: center; margin-top: 32px;">
-      <a href="${data.proposalLink}" 
+      <a href="https://tucanoronha.com.br/meu-painel" 
          style="${getButtonStyle()}">
-        Ver Proposta Completa
+        Acessar Meu Painel
       </a>
     </div>
     
@@ -333,7 +337,7 @@ export const flightsConfirmedTravelerEmail = (): string => {
 };
 
 // 9. Documentos Prontos (Viajante)
-export const documentsReadyTravelerEmail = (data: { panelLink: string }): string => {
+export const documentsReadyTravelerEmail = (): string => {
   const content = `
     <h1 style="margin: 0 0 8px 0; color: #111827; font-size: 24px; font-weight: 700;">
       Documentos Prontos!
@@ -351,7 +355,7 @@ export const documentsReadyTravelerEmail = (data: { panelLink: string }): string
     </p>
     
     <div style="text-align: center; margin-top: 32px;">
-      <a href="${data.panelLink}" 
+      <a href="https://tucanoronha.com.br/meu-painel" 
          style="${getButtonStyle()}">
         Acessar Meu Painel
       </a>
@@ -429,7 +433,7 @@ export const bookingCancelledEmail = (): string => {
 };
 
 // 12. Bem-vindo ao Sistema
-export const welcomeNewUserEmail = (data: { loginLink: string }): string => {
+export const welcomeNewUserEmail = (): string => {
   const content = `
     <h1 style="margin: 0 0 8px 0; color: #111827; font-size: 24px; font-weight: 700;">
       Bem-vindo ao Tuca Noronha!
@@ -447,7 +451,7 @@ export const welcomeNewUserEmail = (data: { loginLink: string }): string => {
     </p>
     
     <div style="text-align: center; margin-top: 32px;">
-      <a href="${data.loginLink}" 
+      <a href="https://tucanoronha.com.br/meu-painel" 
          style="${getButtonStyle()}">
         Acessar Meu Painel
       </a>

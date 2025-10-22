@@ -1147,3 +1147,159 @@ export const useVoucherByQR = internalMutation({
     };
   },
 });
+
+/**
+ * Create a manual voucher (admin only) without a booking
+ */
+export const createManualVoucher = mutation({
+  args: {
+    customerId: v.id("users"),
+    partnerId: v.optional(v.id("users")),
+    bookingType: v.union(
+      v.literal("activity"),
+      v.literal("event"),
+      v.literal("restaurant"),
+      v.literal("vehicle"),
+      v.literal("package"),
+      v.literal("admin_reservation")
+    ),
+    assetName: v.string(),
+    assetDescription: v.optional(v.string()),
+    assetHighlights: v.optional(v.array(v.string())),
+    assetIncludes: v.optional(v.array(v.string())),
+    assetAdditionalInfo: v.optional(v.array(v.string())),
+    cancellationPolicy: v.optional(v.union(v.string(), v.array(v.string()))),
+    customerName: v.string(),
+    customerEmail: v.string(),
+    customerPhone: v.optional(v.string()),
+    bookingDate: v.string(),
+    bookingTime: v.optional(v.string()),
+    participants: v.optional(v.number()),
+    guestNames: v.optional(v.array(v.string())),
+    specialRequests: v.optional(v.string()),
+    supplierName: v.optional(v.string()),
+    supplierAddress: v.optional(v.string()),
+    supplierEmergencyPhone: v.optional(v.string()),
+    expiresAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    // Get current user
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Não autenticado");
+    }
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("clerkId", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!currentUser || (currentUser.role !== "master" && currentUser.role !== "admin")) {
+      throw new Error("Apenas administradores podem criar vouchers manualmente");
+    }
+
+    // Generate unique voucher number
+    let voucherNumber: string;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      voucherNumber = generateVoucherNumber();
+      const exists = await ctx.db
+        .query("vouchers")
+        .withIndex("by_voucher_number", (q) => q.eq("voucherNumber", voucherNumber))
+        .first();
+
+      if (!exists) break;
+      attempts++;
+    } while (attempts < maxAttempts);
+
+    if (attempts >= maxAttempts) {
+      throw new Error("Erro ao gerar número único do voucher");
+    }
+
+    // Calculate expiration if not provided
+    const calculatedExpiration = args.expiresAt || calculateVoucherExpiration(args.bookingType);
+
+    // Generate verification token and QR code
+    const verificationToken = generateVerificationToken(voucherNumber, calculatedExpiration);
+    const qrCodeData = generateQRCodeData(voucherNumber, verificationToken, calculatedExpiration);
+    const qrCodeString = qrCodeDataToString(qrCodeData);
+
+    // Create a fake booking ID for admin reservations
+    const fakeBookingId = `ADMIN-${voucherNumber}`;
+
+    // Create voucher record
+    const now = Date.now();
+    const voucherId = await ctx.db.insert("vouchers", {
+      voucherNumber,
+      code: voucherNumber,
+      qrCode: qrCodeString,
+      bookingId: fakeBookingId,
+      bookingType: args.bookingType,
+      status: VOUCHER_STATUS.ACTIVE,
+      generatedAt: now,
+      expiresAt: calculatedExpiration,
+      emailSent: false,
+      downloadCount: 0,
+      verificationToken,
+      scanCount: 0,
+      partnerId: args.partnerId || currentUser._id,
+      customerId: args.customerId,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      // Store additional details in the details field
+      details: {
+        manualCreation: true,
+        createdBy: currentUser._id,
+        asset: {
+          name: args.assetName,
+          description: args.assetDescription,
+          highlights: args.assetHighlights,
+          includes: args.assetIncludes,
+          additionalInfo: args.assetAdditionalInfo,
+          cancellationPolicy: args.cancellationPolicy,
+        },
+        customer: {
+          name: args.customerName,
+          email: args.customerEmail,
+          phone: args.customerPhone,
+        },
+        booking: {
+          date: args.bookingDate,
+          time: args.bookingTime,
+          participants: args.participants,
+          guestNames: args.guestNames,
+          specialRequests: args.specialRequests,
+        },
+        supplier: args.supplierName ? {
+          name: args.supplierName,
+          address: args.supplierAddress,
+          emergencyPhone: args.supplierEmergencyPhone,
+        } : undefined,
+      },
+    });
+
+    // Log voucher generation
+    await ctx.db.insert("voucherUsageLogs", {
+      voucherId,
+      action: VOUCHER_ACTIONS.GENERATED,
+      timestamp: now,
+      createdAt: now,
+      userType: USER_TYPES.ADMIN,
+      userId: currentUser._id,
+      metadata: JSON.stringify({
+        source: "manual_admin_creation",
+        assetName: args.assetName,
+        customerName: args.customerName,
+      }),
+    });
+
+    return { 
+      voucherId,
+      voucherNumber,
+      message: "Voucher criado com sucesso"
+    };
+  },
+});

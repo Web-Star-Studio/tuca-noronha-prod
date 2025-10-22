@@ -34,9 +34,19 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  Loader2
+  Loader2,
+  Plus
 } from "lucide-react";
 import { VoucherScanner } from "@/components/vouchers/VoucherScanner";
+import { CreateManualVoucherForm } from "@/components/vouchers/CreateManualVoucherForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export default function AdminVouchersPage() {
@@ -44,6 +54,7 @@ export default function AdminVouchersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Get current user data
   const currentUser = useQuery(api.domains.users.queries.getCurrentUser);
@@ -141,13 +152,41 @@ export default function AdminVouchersPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3 items-start sm:items-center justify-between">
         <h1 className="text-2xl font-bold">Gerenciamento de Vouchers</h1>
-        <Button 
-          onClick={() => window.open(`/admin/dashboard/vouchers/scanner`, "_blank")}
-          className="flex items-center gap-2"
-        >
-          <QrCode className="h-4 w-4" />
-          Scanner QR
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Criar Voucher Manual
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Criar Voucher Manual</DialogTitle>
+                <DialogDescription>
+                  Preencha as informações abaixo para criar um voucher manualmente sem necessidade de reserva prévia.
+                </DialogDescription>
+              </DialogHeader>
+              <CreateManualVoucherForm
+                onSuccess={(voucherNumber) => {
+                  setIsCreateDialogOpen(false);
+                  toast.success(`Voucher ${voucherNumber} criado com sucesso!`);
+                  // Open voucher in new tab
+                  window.open(`/voucher/${voucherNumber}`, "_blank");
+                }}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+          <Button 
+            onClick={() => window.open(`/admin/dashboard/vouchers/scanner`, "_blank")}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <QrCode className="h-4 w-4" />
+            Scanner QR
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

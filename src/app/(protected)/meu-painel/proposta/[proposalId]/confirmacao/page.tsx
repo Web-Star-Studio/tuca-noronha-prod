@@ -6,8 +6,7 @@ import { api } from '@/../convex/_generated/api';
 import { Id } from '@/../convex/_generated/dataModel';
 import { ConfirmacaoReserva } from '@/components/proposals/ConfirmacaoReserva';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Printer, Loader2 } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{
@@ -17,7 +16,6 @@ interface PageProps {
 
 export default function ConfirmacaoClientePage(props: PageProps) {
   const params = use(props.params);
-  const router = useRouter();
   const proposalId = params.proposalId as Id<"packageProposals">;
   
   const confirmacaoData = useQuery(api.packageProposals.getConfirmacaoDataCustomer, {
@@ -48,20 +46,39 @@ export default function ConfirmacaoClientePage(props: PageProps) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p className="text-red-600 text-lg mb-4">Documento não encontrado</p>
-          <Button onClick={() => router.back()} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
+          <p className="text-red-600 text-lg">Documento não encontrado</p>
         </div>
       </div>
     );
   }
 
-  const { proposal, reservationNumber, customerInfo } = confirmacaoData;
+  const { proposal, packageRequest, reservationNumber, customerInfo, tripDetails } = confirmacaoData;
 
   // Extract participants data from proposal
   const guests = proposal.participantsData || [];
+
+  // Build request description from packageRequest details
+  const buildRequestDescription = () => {
+    if (!packageRequest) return undefined;
+    
+    const parts: string[] = [];
+    
+    if (packageRequest.specialRequirements) {
+      parts.push(`Requisitos Especiais: ${packageRequest.specialRequirements}`);
+    }
+    
+    if (packageRequest.expectedHighlights) {
+      parts.push(`Destaques Esperados: ${packageRequest.expectedHighlights}`);
+    }
+    
+    if (packageRequest.previousExperience) {
+      parts.push(`Experiência Anterior: ${packageRequest.previousExperience}`);
+    }
+    
+    return parts.length > 0 ? parts.join('\n\n') : undefined;
+  };
+
+  const requestDescription = buildRequestDescription();
 
   const handlePrint = () => {
     window.print();
@@ -72,16 +89,7 @@ export default function ConfirmacaoClientePage(props: PageProps) {
       {/* Action Bar - Hidden when printing */}
       <div className="print:hidden sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              onClick={() => router.back()}
-              variant="outline"
-              size="sm"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para Minha Solicitação
-            </Button>
-            
+          <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
               <p className="text-sm text-gray-600 mr-4">
                 {customerInfo.name} • Reserva {reservationNumber}
@@ -118,6 +126,8 @@ export default function ConfirmacaoClientePage(props: PageProps) {
           paymentTerms={proposal.paymentTerms}
           cancellationPolicy={proposal.cancellationPolicy}
           createdAt={proposal.createdAt}
+          tripDetails={tripDetails}
+          requestDescription={requestDescription}
         />
       </div>
     </div>

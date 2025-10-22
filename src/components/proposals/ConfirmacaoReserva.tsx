@@ -25,6 +25,20 @@ interface PackageComponent {
   details?: any;
 }
 
+interface TripDetails {
+  destination: string;
+  startDate?: string;
+  endDate?: string;
+  startMonth?: string;
+  endMonth?: string;
+  flexibleDates?: boolean;
+  duration: number;
+  originCity?: string;
+  adults?: number;
+  children?: number;
+  groupSize: number;
+}
+
 interface ConfirmacaoReservaProps {
   reservationNumber: string;
   proposalTitle: string;
@@ -41,12 +55,14 @@ interface ConfirmacaoReservaProps {
   paymentTerms: string;
   cancellationPolicy: string;
   createdAt: number;
+  tripDetails?: TripDetails;
+  requestDescription?: string;
 }
 
 export function ConfirmacaoReserva({
   reservationNumber,
   proposalTitle,
-  // proposalDescription, // Not used in this component
+  proposalDescription,
   components,
   totalPrice,
   taxes = 0,
@@ -58,7 +74,8 @@ export function ConfirmacaoReserva({
   validUntil,
   paymentTerms,
   cancellationPolicy,
-  // createdAt, // Not used in this component
+  tripDetails,
+  requestDescription,
 }: ConfirmacaoReservaProps) {
   
   const formatCurrency = (value: number) => {
@@ -74,6 +91,28 @@ export function ConfirmacaoReserva({
 
   const formatDateOnly = (dateString: string) => {
     return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+  };
+
+  const formatTripPeriod = () => {
+    if (!tripDetails) return null;
+
+    if (tripDetails.flexibleDates && tripDetails.startMonth && tripDetails.endMonth) {
+      const startDate = new Date(tripDetails.startMonth + '-01');
+      const endDate = new Date(tripDetails.endMonth + '-01');
+      const startLabel = format(startDate, "MMMM 'de' yyyy", { locale: ptBR });
+      const endLabel = format(endDate, "MMMM 'de' yyyy", { locale: ptBR });
+      return startLabel === endLabel 
+        ? `${startLabel} (datas flexíveis)`
+        : `${startLabel} - ${endLabel} (datas flexíveis)`;
+    }
+
+    if (tripDetails.startDate && tripDetails.endDate) {
+      const start = new Date(tripDetails.startDate);
+      const end = new Date(tripDetails.endDate);
+      return `${format(start, "dd/MM/yyyy")} a ${format(end, "dd/MM/yyyy")}`;
+    }
+
+    return null;
   };
 
   const calculateAge = (birthDate: string) => {
@@ -175,10 +214,42 @@ export function ConfirmacaoReserva({
       <div className="mb-8">
         <h3 className="text-base font-bold mb-3 uppercase">{proposalTitle}</h3>
         
+        {/* Período da Viagem */}
+        {formatTripPeriod() && (
+          <div className="mb-4">
+            <p className="font-bold mb-1">PERÍODO DA VIAGEM:</p>
+            <p className="text-sm pl-4">{formatTripPeriod()}</p>
+            {tripDetails && (
+              <p className="text-sm text-gray-600 pl-4">
+                Duração: {tripDetails.duration} {tripDetails.duration === 1 ? 'dia' : 'dias'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Descrição da Solicitação do Cliente */}
+        {requestDescription && (
+          <div className="mb-4">
+            <p className="font-bold mb-2">SOLICITAÇÃO DO CLIENTE:</p>
+            <div className="pl-4 text-sm whitespace-pre-wrap bg-gray-50 p-3 rounded border border-gray-200">
+              {requestDescription}
+            </div>
+          </div>
+        )}
+
+        {/* Descrição do Pacote (Proposta do Admin) */}
+        {proposalDescription && (
+          <div className="mb-4">
+            <p className="font-bold mb-2">DESCRIÇÃO DO PACOTE:</p>
+            <div className="pl-4 text-sm whitespace-pre-wrap">
+              {proposalDescription}
+            </div>
+          </div>
+        )}
+        
         <div className="mb-4">
-          <p className="font-bold mb-2">DESCRIÇÃO</p>
+          <p className="font-bold mb-2">INCLUI:</p>
           <div className="pl-4">
-            <p className="font-semibold mb-2">Inclui:</p>
             {safeInclusions.map((item, index) => (
               <p key={index} className="text-sm mb-1">* {item}</p>
             ))}
@@ -436,7 +507,7 @@ export function ConfirmacaoReserva({
         <div className="mt-8 pt-6 border-t">
           <h4 className="text-lg font-bold mb-3">Atenciosamente</h4>
           <p className="font-semibold">Equipe Tuca Noronha</p>
-          <p className="text-sm text-gray-600">✉️ contato@noronhabrasil.com.br</p>
+          <p className="text-sm text-gray-600">✉️ atendimentotucanoronha@gmail.com</p>
         </div>
       </div>
 
