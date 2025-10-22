@@ -29,12 +29,18 @@ export function CreateManualVoucherForm({
 }: CreateManualVoucherFormProps) {
   const createManualVoucher = useMutation(api.domains.vouchers.mutations.createManualVoucher);
   const users = useQuery(api.domains.users.queries.getAllUsers);
+  
+  // Queries para buscar assets baseado no tipo de reserva
+  const activities = useQuery(api.domains.activities.queries.getAll);
+  const events = useQuery(api.domains.events.queries.getAll);
+  const restaurants = useQuery(api.domains.restaurants.queries.getAll);
+  const vehicles = useQuery(api.domains.vehicles.queries.getAll);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerId: "",
     partnerId: "none",
-    bookingType: "activity" as "activity" | "event" | "restaurant" | "vehicle" | "package" | "admin_reservation",
+    bookingType: "activity" as "activity" | "event" | "restaurant" | "vehicle",
     assetName: "",
     assetDescription: "",
     customerName: "",
@@ -54,6 +60,76 @@ export function CreateManualVoucherForm({
   const [assetAdditionalInfo, setAssetAdditionalInfo] = useState<string[]>([""]);
   const [guestNames, setGuestNames] = useState<string[]>([""]);
   const [cancellationPolicy, setCancellationPolicy] = useState<string[]>([""]);
+  const [selectedAssetId, setSelectedAssetId] = useState<string>("");
+
+  // Função para obter os assets baseado no tipo de reserva
+  const getAssetsForBookingType = () => {
+    switch (formData.bookingType) {
+      case "activity":
+        return activities || [];
+      case "event":
+        return events || [];
+      case "restaurant":
+        return restaurants || [];
+      case "vehicle":
+        return vehicles || [];
+      default:
+        return [];
+    }
+  };
+
+  // Função para preencher os detalhes do serviço quando um asset é selecionado
+  const handleAssetSelection = (assetId: string) => {
+    setSelectedAssetId(assetId);
+    
+    if (!assetId || assetId === "manual") {
+      // Se "manual" ou vazio, limpar os campos
+      handleInputChange("assetName", "");
+      handleInputChange("assetDescription", "");
+      setAssetHighlights([""]);
+      setAssetIncludes([""]);
+      setAssetAdditionalInfo([""]);
+      setCancellationPolicy([""]);
+      return;
+    }
+    
+    const assets = getAssetsForBookingType();
+    const selectedAsset = assets.find((asset: any) => asset._id === assetId);
+    
+    if (selectedAsset) {
+      // Preencher nome e descrição
+      handleInputChange("assetName", selectedAsset.title || selectedAsset.name || "");
+      handleInputChange("assetDescription", selectedAsset.description || "");
+      
+      // Preencher highlights
+      if (selectedAsset.highlights && selectedAsset.highlights.length > 0) {
+        setAssetHighlights(selectedAsset.highlights);
+      } else {
+        setAssetHighlights([""]);
+      }
+      
+      // Preencher includes
+      if (selectedAsset.includes && selectedAsset.includes.length > 0) {
+        setAssetIncludes(selectedAsset.includes);
+      } else {
+        setAssetIncludes([""]);
+      }
+      
+      // Preencher additional info
+      if (selectedAsset.additionalInfo && selectedAsset.additionalInfo.length > 0) {
+        setAssetAdditionalInfo(selectedAsset.additionalInfo);
+      } else {
+        setAssetAdditionalInfo([""]);
+      }
+      
+      // Preencher cancellation policy
+      if (selectedAsset.cancellationPolicy && selectedAsset.cancellationPolicy.length > 0) {
+        setCancellationPolicy(selectedAsset.cancellationPolicy);
+      } else {
+        setCancellationPolicy([""]);
+      }
+    }
+  };
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -218,7 +294,10 @@ export function CreateManualVoucherForm({
           <Label htmlFor="bookingType">Tipo de Reserva *</Label>
           <Select
             value={formData.bookingType}
-            onValueChange={(value: any) => handleInputChange("bookingType", value)}
+            onValueChange={(value: any) => {
+              handleInputChange("bookingType", value);
+              setSelectedAssetId(""); // Resetar asset selecionado ao mudar o tipo
+            }}
           >
             <SelectTrigger>
               <SelectValue />
@@ -228,20 +307,37 @@ export function CreateManualVoucherForm({
               <SelectItem value="event">Evento</SelectItem>
               <SelectItem value="restaurant">Restaurante</SelectItem>
               <SelectItem value="vehicle">Veículo</SelectItem>
-              <SelectItem value="package">Pacote</SelectItem>
-              <SelectItem value="admin_reservation">Reserva Admin</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="assetName">Nome do Serviço *</Label>
-          <Input
-            id="assetName"
-            value={formData.assetName}
-            onChange={(e) => handleInputChange("assetName", e.target.value)}
-            placeholder="Ex: Passeio de Barco"
-          />
+          <Select
+            value={selectedAssetId}
+            onValueChange={handleAssetSelection}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um serviço ou digite manualmente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">Entrada Manual</SelectItem>
+              {getAssetsForBookingType().map((asset: any) => (
+                <SelectItem key={asset._id} value={asset._id}>
+                  {asset.title || asset.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedAssetId === "manual" && (
+            <Input
+              id="assetName"
+              value={formData.assetName}
+              onChange={(e) => handleInputChange("assetName", e.target.value)}
+              placeholder="Ex: Passeio de Barco"
+              className="mt-2"
+            />
+          )}
         </div>
       </div>
 
@@ -464,7 +560,7 @@ export function CreateManualVoucherForm({
 
         {/* Convidados */}
         <div className="space-y-2 mt-4">
-          <Label>Convidados Adicionais</Label>
+          <Label>PAXS</Label>
           {guestNames.map((guest, index) => (
             <div key={index} className="flex gap-2">
               <Input
