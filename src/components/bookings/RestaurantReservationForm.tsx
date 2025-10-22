@@ -283,17 +283,12 @@ export function RestaurantReservationForm({
               onAdultsChange={(value) => {
                 // Ensure value is a valid number
                 const validValue = Number.isNaN(value) || value === undefined ? 1 : value;
-                const nextAdults = Math.min(validValue, restaurant.maximumPartySize);
-                const remaining = restaurant.maximumPartySize - nextAdults;
-                const nextChildren = Math.min(children, remaining);
-                setAdults(Math.max(nextAdults, 1));
-                setChildren(nextChildren);
+                setAdults(Math.max(1, Math.min(validValue, restaurant.maximumPartySize)));
               }}
               onChildrenChange={(value) => {
                 // Ensure value is a valid number
                 const validValue = Number.isNaN(value) || value === undefined ? 0 : value;
-                const nextChildren = Math.min(validValue, restaurant.maximumPartySize - adults);
-                setChildren(Math.max(nextChildren, 0));
+                setChildren(Math.max(0, Math.min(validValue, restaurant.maximumPartySize - adults)));
               }}
               minAdults={1}
               maxAdults={restaurant.maximumPartySize}
