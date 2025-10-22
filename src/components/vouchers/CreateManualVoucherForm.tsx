@@ -156,7 +156,7 @@ export function CreateManualVoucherForm({
     }
   };
 
-  const customerUsers = users?.filter((u) => u.role === "customer" || u.role === "user") || [];
+  const customerUsers = users?.filter((u) => u.role === "customer" || u.role === "user" || u.role === "traveler") || [];
   const partnerUsers = users?.filter((u) => u.role === "partner" || u.role === "master") || [];
 
   return (
