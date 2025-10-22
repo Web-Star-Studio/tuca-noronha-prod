@@ -149,6 +149,11 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       name: voucher.partner?.name || "Parceiro",
       contactInfo: voucher.partner?.contactInfo || "",
     },
+    supplier: voucher.supplier ? {
+      name: voucher.supplier.name,
+      address: voucher.supplier.address,
+      emergencyPhone: voucher.supplier.emergencyPhone,
+    } : undefined,
     brandInfo: {
       logoUrl: voucher.partner?.image,
       companyName: "Tuca Noronha",

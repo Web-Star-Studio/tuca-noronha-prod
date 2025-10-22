@@ -167,7 +167,16 @@ export function CreateManualVoucherForm({
           <Label htmlFor="customerId">Cliente *</Label>
           <Select
             value={formData.customerId}
-            onValueChange={(value) => handleInputChange("customerId", value)}
+            onValueChange={(value) => {
+              handleInputChange("customerId", value);
+              // Auto-fill customer name and email
+              const selectedUser = customerUsers.find(u => u._id === value);
+              if (selectedUser) {
+                handleInputChange("customerName", selectedUser.name || "");
+                handleInputChange("customerEmail", selectedUser.email || "");
+                handleInputChange("customerPhone", selectedUser.phone || "");
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione o cliente" />
