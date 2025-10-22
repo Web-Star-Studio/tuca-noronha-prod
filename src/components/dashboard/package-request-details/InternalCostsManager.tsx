@@ -92,6 +92,45 @@ export function InternalCostsManager({ packageRequestId, internalCosts = [] }: I
   // Query suppliers
   const suppliers = useQuery(api.domains.suppliers.queries.getAllSuppliers);
 
+  // Query assets based on selected type
+  const activities = useQuery(
+    api.domains.activities.queries.getAll,
+    newCost.assetType === "activities" ? {} : "skip"
+  );
+  const restaurants = useQuery(
+    api.domains.restaurants.queries.getAll,
+    newCost.assetType === "restaurants" ? {} : "skip"
+  );
+  const events = useQuery(
+    api.domains.events.queries.getAll,
+    newCost.assetType === "events" ? {} : "skip"
+  );
+  const vehicles = useQuery(
+    api.domains.vehicles.queries.getAll,
+    newCost.assetType === "vehicles" ? {} : "skip"
+  );
+
+  // Get available assets based on selected type
+  const getAvailableAssets = () => {
+    switch (newCost.assetType) {
+      case "activities":
+        return activities?.map(a => ({ id: a._id, name: a.title })) || [];
+      case "restaurants":
+        return restaurants?.map(r => ({ id: r._id, name: r.name })) || [];
+      case "events":
+        return events?.map(e => ({ id: e._id, name: e.title })) || [];
+      case "vehicles":
+        return vehicles?.map(v => ({ id: v._id, name: v.name })) || [];
+      default:
+        return [];
+    }
+  };
+
+  // Check if current asset type supports auto-selection
+  const supportsAssetSelection = ["activities", "restaurants", "events", "vehicles"].includes(
+    newCost.assetType
+  );
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -108,9 +147,24 @@ export function InternalCostsManager({ packageRequestId, internalCosts = [] }: I
     });
   };
 
+  const handleAssetChange = (assetId: string) => {
+    const assets = getAvailableAssets();
+    const asset = assets.find(a => a.id === assetId);
+    setNewCost({
+      ...newCost,
+      assetId,
+      assetName: asset?.name || "",
+    });
+  };
+
   const handleAddCost = async () => {
-    if (!newCost.supplierId || !newCost.assetType || !newCost.assetId) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!newCost.supplierId || !newCost.assetType) {
+      toast.error("Preencha o fornecedor e tipo de asset");
+      return;
+    }
+
+    if (!newCost.assetName) {
+      toast.error("Preencha o nome do item");
       return;
     }
 
@@ -119,6 +173,9 @@ export function InternalCostsManager({ packageRequestId, internalCosts = [] }: I
       return;
     }
 
+    // For custom types without asset selection, use assetName as assetId if empty
+    const finalAssetId = newCost.assetId || newCost.assetName;
+
     setIsSubmitting(true);
     try {
       await addInternalCost({
@@ -126,7 +183,7 @@ export function InternalCostsManager({ packageRequestId, internalCosts = [] }: I
         supplierId: newCost.supplierId as Id<"suppliers">,
         supplierName: newCost.supplierName,
         assetType: newCost.assetType,
-        assetId: newCost.assetId,
+        assetId: finalAssetId,
         assetName: newCost.assetName,
         sellingPrice: parseFloat(newCost.sellingPrice),
         netRate: parseFloat(newCost.netRate),
@@ -236,7 +293,14 @@ export function InternalCostsManager({ packageRequestId, internalCosts = [] }: I
                     <Label htmlFor="assetType">Tipo de Asset *</Label>
                     <Select
                       value={newCost.assetType}
-                      onValueChange={(value) => setNewCost({ ...newCost, assetType: value })}
+                      onValueChange={(value) => 
+                        setNewCost({ 
+                          ...newCost, 
+                          assetType: value, 
+                          assetId: "", 
+                          assetName: "" 
+                        })
+                      }
                     >
                       <SelectTrigger id="assetType">
                         <SelectValue placeholder="Selecione o tipo" />
@@ -252,30 +316,56 @@ export function InternalCostsManager({ packageRequestId, internalCosts = [] }: I
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {/* Conditional rendering: Select for standard assets, Input for custom */}
+                {supportsAssetSelection ? (
                   <div className="space-y-2">
-                    <Label htmlFor="assetId">ID do Asset *</Label>
-                    <Input
-                      id="assetId"
-                      value={newCost.assetId}
-                      onChange={(e) => setNewCost({ ...newCost, assetId: e.target.value })}
-                      placeholder="Ex: k17abc123def..."
-                    />
-                    <p className="text-xs text-gray-500">
-                      Cole o ID do Convex do asset relacionado (se aplicável)
-                    </p>
+                    <Label htmlFor="asset">Selecione o Asset *</Label>
+                    <Select value={newCost.assetId} onValueChange={handleAssetChange}>
+                      <SelectTrigger id="asset">
+                        <SelectValue placeholder="Selecione o asset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableAssets().map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            {asset.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {getAvailableAssets().length === 0 && (
+                      <p className="text-xs text-amber-600">
+                        Nenhum asset deste tipo encontrado. Crie primeiro um asset no sistema.
+                      </p>
+                    )}
                   </div>
+                ) : (
+                  newCost.assetType && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="assetId">ID do Asset</Label>
+                        <Input
+                          id="assetId"
+                          value={newCost.assetId}
+                          onChange={(e) => setNewCost({ ...newCost, assetId: e.target.value })}
+                          placeholder="Ex: k17abc123def... (opcional)"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Cole o ID do Convex se houver um asset relacionado
+                        </p>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="assetName">Nome do Item *</Label>
-                    <Input
-                      id="assetName"
-                      value={newCost.assetName}
-                      onChange={(e) => setNewCost({ ...newCost, assetName: e.target.value })}
-                      placeholder="Ex: Passeio de Jangada"
-                    />
-                  </div>
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="assetName">Nome do Item *</Label>
+                        <Input
+                          id="assetName"
+                          value={newCost.assetName}
+                          onChange={(e) => setNewCost({ ...newCost, assetName: e.target.value })}
+                          placeholder="Ex: Hospedagem Hotel XYZ"
+                        />
+                      </div>
+                    </div>
+                  )
+                )}
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
