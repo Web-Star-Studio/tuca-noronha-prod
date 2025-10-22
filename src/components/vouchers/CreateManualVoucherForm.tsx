@@ -56,6 +56,9 @@ export function CreateManualVoucherForm({
     supplierName: "",
     supplierAddress: "",
     supplierEmergencyPhone: "",
+    handledBy: "",
+    companyPhone: "",
+    confirmedBy: "",
   });
 
   const [assetHighlights, setAssetHighlights] = useState<string[]>([""]);
@@ -245,6 +248,9 @@ export function CreateManualVoucherForm({
         supplierName: formData.supplierName || undefined,
         supplierAddress: formData.supplierAddress || undefined,
         supplierEmergencyPhone: formData.supplierEmergencyPhone || undefined,
+        handledBy: formData.handledBy || undefined,
+        companyPhone: formData.companyPhone || undefined,
+        confirmedBy: formData.confirmedBy || undefined,
       });
 
       toast.success(`Voucher criado: ${result.voucherNumber}`);
@@ -312,6 +318,42 @@ export function CreateManualVoucherForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      {/* Informações de Atendimento */}
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-semibold mb-4">Informações de Atendimento (Opcional)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="handledBy">Atendido por</Label>
+            <Input
+              id="handledBy"
+              value={formData.handledBy}
+              onChange={(e) => handleInputChange("handledBy", e.target.value)}
+              placeholder="Nome do atendente"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="companyPhone">Telefone da Empresa</Label>
+            <Input
+              id="companyPhone"
+              value={formData.companyPhone}
+              onChange={(e) => handleInputChange("companyPhone", e.target.value)}
+              placeholder="(81) 99999-9999"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmedBy">Reserva Confirmada por</Label>
+            <Input
+              id="confirmedBy"
+              value={formData.confirmedBy}
+              onChange={(e) => handleInputChange("confirmedBy", e.target.value)}
+              placeholder="Nome do responsável"
+            />
+          </div>
         </div>
       </div>
 

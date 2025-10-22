@@ -160,6 +160,8 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       website: "https://tucanoronha.com",
       supportEmail: "atendimentotucanoronha@gmail.com",
       supportPhone: "",
+      handledBy: voucher.brand?.handledBy,
+      companyPhone: voucher.brand?.companyPhone,
     },
     instructions: {
       checkIn: ["Chegue 15 minutos antes do horário", "Apresente este voucher"],
@@ -171,7 +173,11 @@ export function VoucherViewer({ voucherId, confirmationCode, voucherNumber }: Vo
       "Apresente este voucher no estabelecimento", 
       cancellationPolicyText,
     ].join(". "),
-    confirmationInfo: voucher.confirmationInfo || undefined,
+    confirmationInfo: voucher.confirmation?.confirmedBy ? {
+      confirmedBy: voucher.confirmation.confirmedBy,
+      confirmedAt: voucher.voucher?.generatedAt || Date.now(),
+      role: "admin"
+    } : voucher.confirmationInfo || undefined,
   };
 
   // Log processed data for debugging

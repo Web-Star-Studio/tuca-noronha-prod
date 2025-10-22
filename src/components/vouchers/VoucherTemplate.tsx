@@ -79,7 +79,7 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
               </p>
             )}
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex flex-col items-end">
             <Image 
               src={voucherData.brandInfo.logoUrl || "/images/tuca-logo.jpeg"} 
               alt="Tuca Noronha Logo" 
@@ -87,6 +87,18 @@ export function VoucherTemplate({ voucherData, assetType }: VoucherTemplateProps
               height={120} 
               className="h-24 w-auto object-contain" 
             />
+            {/* Informações abaixo da logo */}
+            <div className="mt-3 text-right text-sm text-gray-700">
+              {voucherData.brandInfo.handledBy && (
+                <p className="font-medium">Atendido por: {voucherData.brandInfo.handledBy}</p>
+              )}
+              {voucherData.brandInfo.companyPhone && (
+                <p className="flex items-center justify-end gap-1 mt-1">
+                  <Phone className="w-3 h-3" />
+                  {voucherData.brandInfo.companyPhone}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -228,6 +228,8 @@ export interface VoucherTemplateData extends VoucherDisplayData {
     website?: string;
     supportEmail: string;
     supportPhone: string;
+    handledBy?: string;
+    companyPhone?: string;
   };
   instructions: {
     checkIn: string[];

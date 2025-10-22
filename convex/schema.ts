@@ -2224,7 +2224,7 @@ export default defineSchema({
     
     // Booking Reference
     bookingId: v.string(),            // Unified booking ID as string (support for different types)
-    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("package"), v.literal("admin_reservation")),
+    bookingType: v.union(v.literal("activity"), v.literal("event"), v.literal("restaurant"), v.literal("vehicle"), v.literal("package"), v.literal("admin_reservation"), v.literal("accommodation")),
     
     // Voucher Details
     type: v.optional(v.string()),     // Type of voucher

@@ -1160,8 +1160,7 @@ export const createManualVoucher = mutation({
       v.literal("event"),
       v.literal("restaurant"),
       v.literal("vehicle"),
-      v.literal("package"),
-      v.literal("admin_reservation")
+      v.literal("accommodation")
     ),
     assetName: v.string(),
     assetDescription: v.optional(v.string()),
@@ -1180,6 +1179,9 @@ export const createManualVoucher = mutation({
     supplierName: v.optional(v.string()),
     supplierAddress: v.optional(v.string()),
     supplierEmergencyPhone: v.optional(v.string()),
+    handledBy: v.optional(v.string()),
+    companyPhone: v.optional(v.string()),
+    confirmedBy: v.optional(v.string()),
     expiresAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -1278,6 +1280,13 @@ export const createManualVoucher = mutation({
           address: args.supplierAddress,
           emergencyPhone: args.supplierEmergencyPhone,
         } : undefined,
+        brand: {
+          handledBy: args.handledBy,
+          companyPhone: args.companyPhone,
+        },
+        confirmation: {
+          confirmedBy: args.confirmedBy,
+        },
       },
     });
 
