@@ -155,7 +155,7 @@ export function bookingApprovedEmail(data: BookingEmailData): string {
     </div>
     ` : `
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.bookingDetailsUrl}" style="display: inline-block; background-color: #667eea; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+      <a href="https://tucanoronha.com.br/reservas" style="display: inline-block; background-color: #667eea; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">
         Ver Detalhes da Reserva
       </a>
     </div>

@@ -118,6 +118,7 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       participants: voucher.details.booking?.participants || 1,
       totalAmount: 0,
       specialRequests: voucher.details.booking?.specialRequests,
+      guestNames: voucher.details.booking?.guestNames || [],
     };
 
     asset = {
@@ -277,6 +278,8 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
     },
     supplier,
     confirmationInfo,
+    brand: voucher.details?.brand,
+    confirmation: voucher.details?.confirmation,
   };
 }
 
