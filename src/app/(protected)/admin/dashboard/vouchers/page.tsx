@@ -68,13 +68,15 @@ export default function AdminVouchersPage() {
       ? {} // Masters can see all vouchers
       : currentUser?._id 
       ? { partnerId: currentUser._id }
-      : undefined
+      : "skip"
   );
 
-  // Get voucher statistics
+  // Get voucher statistics (only for partners, not masters)
   const stats = useQuery(
     api.domains.vouchers.queries.getVoucherStats,
-    currentUser?._id ? { partnerId: currentUser._id } : undefined
+    currentUser?._id && currentUser?.role !== "master" 
+      ? { partnerId: currentUser._id } 
+      : "skip"
   );
 
   // Filter vouchers based on search and filters
@@ -89,6 +91,17 @@ export default function AdminVouchersPage() {
     
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  // Calculate stats manually for master users
+  const calculatedStats = currentUser?.role === "master" ? {
+    active: voucherList.filter(v => v.voucher?.status === "active").length,
+    used: voucherList.filter(v => v.voucher?.status === "used").length,
+    expired: voucherList.filter(v => v.voucher?.status === "expired").length,
+    cancelled: voucherList.filter(v => v.voucher?.status === "cancelled").length,
+  } : null;
+
+  // Use calculated stats for masters, or query stats for partners
+  const displayStats = stats || calculatedStats;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -190,7 +203,7 @@ export default function AdminVouchersPage() {
       </div>
 
       {/* Statistics Cards */}
-      {stats && (
+      {displayStats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -198,7 +211,7 @@ export default function AdminVouchersPage() {
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 <div>
                   <p className="text-sm text-gray-600">Vouchers Ativos</p>
-                  <p className="text-2xl font-bold">{stats.active || 0}</p>
+                  <p className="text-2xl font-bold">{displayStats.active || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -210,7 +223,7 @@ export default function AdminVouchersPage() {
                 <Users className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="text-sm text-gray-600">Utilizados</p>
-                  <p className="text-2xl font-bold">{stats.used || 0}</p>
+                  <p className="text-2xl font-bold">{displayStats.used || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -222,7 +235,7 @@ export default function AdminVouchersPage() {
                 <AlertCircle className="h-5 w-5 text-orange-500" />
                 <div>
                   <p className="text-sm text-gray-600">Expirados</p>
-                  <p className="text-2xl font-bold">{stats.expired || 0}</p>
+                  <p className="text-2xl font-bold">{displayStats.expired || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -234,7 +247,7 @@ export default function AdminVouchersPage() {
                 <XCircle className="h-5 w-5 text-red-500" />
                 <div>
                   <p className="text-sm text-gray-600">Cancelados</p>
-                  <p className="text-2xl font-bold">{stats.cancelled || 0}</p>
+                  <p className="text-2xl font-bold">{displayStats.cancelled || 0}</p>
                 </div>
               </div>
             </CardContent>

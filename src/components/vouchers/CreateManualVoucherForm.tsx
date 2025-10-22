@@ -33,7 +33,7 @@ export function CreateManualVoucherForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerId: "",
-    partnerId: "",
+    partnerId: "none",
     bookingType: "activity" as "activity" | "event" | "restaurant" | "vehicle" | "package" | "admin_reservation",
     assetName: "",
     assetDescription: "",
@@ -123,7 +123,7 @@ export function CreateManualVoucherForm({
 
       const result = await createManualVoucher({
         customerId: formData.customerId as Id<"users">,
-        partnerId: formData.partnerId ? (formData.partnerId as Id<"users">) : undefined,
+        partnerId: formData.partnerId && formData.partnerId !== "none" ? (formData.partnerId as Id<"users">) : undefined,
         bookingType: formData.bookingType,
         assetName: formData.assetName,
         assetDescription: formData.assetDescription || undefined,
@@ -192,7 +192,7 @@ export function CreateManualVoucherForm({
               <SelectValue placeholder="Selecione o parceiro" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum</SelectItem>
+              <SelectItem value="none">Nenhum</SelectItem>
               {partnerUsers.map((user) => (
                 <SelectItem key={user._id} value={user._id}>
                   {user.name}
