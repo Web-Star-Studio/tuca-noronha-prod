@@ -379,6 +379,7 @@ function RestaurantDetails({ restaurant }: { restaurant: RestaurantServiceType }
                       restaurant={{
                         name: restaurant.name,
                         address: restaurant.address,
+                        maximumPartySize: restaurant.maximumPartySize,
                         acceptsReservations: restaurant.acceptsReservations,
                         price: restaurant.price,
                         acceptsOnlinePayment: restaurant.acceptsOnlinePayment,
