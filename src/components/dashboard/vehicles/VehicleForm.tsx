@@ -22,11 +22,6 @@ type VehicleFormProps = {
   editMode: Id<"vehicles"> | null;
 };
 
-const getCurrentYear = () => {
-  const now = new Date();
-  return now.getFullYear();
-};
-
 const FEATURE_OPTIONS = [
   "Ar-condicionado",
   "Direção hidráulica",
@@ -52,12 +47,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     brand: "",
     model: "",
     category: "",
-    year: getCurrentYear(),
-    licensePlate: "",
-    color: "",
     seats: 5,
-    fuelType: "",
-    transmission: "",
     estimatedPricePerDay: 0,
     netRate: 0,
     adminRating: undefined,
@@ -80,17 +70,12 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         brand: vehicle.brand,
         model: vehicle.model,
         category: vehicle.category,
-        year: vehicle.year,
-        licensePlate: vehicle.licensePlate,
-        color: vehicle.color,
         seats: vehicle.seats,
-        fuelType: vehicle.fuelType,
-        transmission: vehicle.transmission,
         estimatedPricePerDay: vehicle.estimatedPricePerDay,
         netRate: vehicle.netRate ?? vehicle.estimatedPricePerDay,
         adminRating: vehicle.adminRating,
         description: vehicle.description || "",
-        features: vehicle.features,
+        features: vehicle.features || [],
         imageUrl: vehicle.imageUrl || "",
         status: vehicle.status
       });
@@ -100,12 +85,7 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         brand: "",
         model: "",
         category: "",
-        year: getCurrentYear(),
-        licensePlate: "",
-        color: "",
         seats: 5,
-        fuelType: "",
-        transmission: "",
         estimatedPricePerDay: 0,
         netRate: 0,
         description: "",
@@ -167,10 +147,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
     if (!vehicleData.brand) missingFields.push("brand");
     if (!vehicleData.model) missingFields.push("model");
     if (!vehicleData.category) missingFields.push("category");
-    if (!vehicleData.licensePlate) missingFields.push("licensePlate");
-    if (!vehicleData.color) missingFields.push("color");
-    if (!vehicleData.fuelType) missingFields.push("fuelType");
-    if (!vehicleData.transmission) missingFields.push("transmission");
     if (vehicleData.estimatedPricePerDay <= 0) missingFields.push("estimatedPricePerDay");
     if (vehicleData.netRate === undefined || vehicleData.netRate < 0) missingFields.push("netRate");
     
@@ -300,47 +276,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
             </div>
 
             <div>
-              <Label htmlFor="year" className="text-sm font-medium">Ano*</Label>
-              <Input
-                id="year"
-                name="year"
-                type="number"
-                value={vehicleData.year}
-                onChange={handleNumberChange}
-                min={2000}
-                max={getCurrentYear() + 1}
-                className="mt-1.5 bg-white shadow-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="licensePlate" className="text-sm font-medium">Placa*</Label>
-              <Input
-                id="licensePlate"
-                name="licensePlate"
-                value={vehicleData.licensePlate}
-                onChange={handleChange}
-                placeholder="Ex: ABC1234"
-                className="mt-1.5 bg-white shadow-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="color" className="text-sm font-medium">Cor*</Label>
-              <Input
-                id="color"
-                name="color"
-                value={vehicleData.color}
-                onChange={handleChange}
-                placeholder="Ex: Prata"
-                className="mt-1.5 bg-white shadow-sm"
-                required
-              />
-            </div>
-
-            <div>
               <Label htmlFor="seats" className="text-sm font-medium">Lugares*</Label>
               <Input
                 id="seats"
@@ -378,46 +313,6 @@ export default function VehicleForm({ onSubmit, onCancel, editMode }: VehicleFor
         {/* Tab 2: Detalhes Técnicos e Preços */}
         <TabsContent value="details" className="space-y-6 p-4 bg-white/60 rounded-lg shadow-sm">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <Label htmlFor="fuelType" className="text-sm font-medium">Combustível*</Label>
-              <Select
-                key={`fuelType-${vehicleData.fuelType || 'empty'}`}
-                value={vehicleData.fuelType}
-                onValueChange={(value) => handleSelectChange("fuelType", value)}
-              >
-                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Gasolina">Gasolina</SelectItem>
-                  <SelectItem value="Diesel">Diesel</SelectItem>
-                  <SelectItem value="Álcool">Álcool</SelectItem>
-                  <SelectItem value="Flex">Flex</SelectItem>
-                  <SelectItem value="Elétrico">Elétrico</SelectItem>
-                  <SelectItem value="Híbrido">Híbrido</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="transmission" className="text-sm font-medium">Transmissão*</Label>
-              <Select
-                key={`transmission-${vehicleData.transmission || 'empty'}`}
-                value={vehicleData.transmission}
-                onValueChange={(value) => handleSelectChange("transmission", value)}
-              >
-                <SelectTrigger className="mt-1.5 bg-white shadow-sm">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Manual">Manual</SelectItem>
-                  <SelectItem value="Automático">Automático</SelectItem>
-                  <SelectItem value="CVT">CVT</SelectItem>
-                  <SelectItem value="Semi-automático">Semi-automático</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div>
               <Label htmlFor="estimatedPricePerDay" className="text-sm font-medium">
                 Valor Base Estimado (por dia) (R$)*

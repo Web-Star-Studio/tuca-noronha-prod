@@ -171,31 +171,31 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="mb-6 w-full justify-start bg-transparent rounded-none p-3 h-auto">
+                <TabsList className="mb-6 w-full justify-start bg-transparent rounded-none p-0 md:p-3 h-auto flex-wrap gap-2">
                   <TabsTrigger
                     value="info"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 py-2 px-3 md:py-3 md:px-4 font-medium text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                   >
                     Detalhes
                   </TabsTrigger>
                   {activity.galleryImages && activity.galleryImages.length > 0 && (
                     <TabsTrigger
                       value="gallery"
-                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 py-2 px-3 md:py-3 md:px-4 font-medium text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                     >
                       Galeria
                     </TabsTrigger>
                   )}
                   <TabsTrigger
                     value="itinerary"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 py-2 px-3 md:py-3 md:px-4 font-medium text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                   >
                     Itinerário
                   </TabsTrigger>
                   {activity.hasMultipleTickets && (
                     <TabsTrigger
                       value="tickets"
-                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                      className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 py-2 px-3 md:py-3 md:px-4 font-medium text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                     >
                       Ingressos
                     </TabsTrigger>
@@ -203,13 +203,13 @@ export default function ActivityPage(props: { params: Promise<{ id: string }> })
 
                   <TabsTrigger
                     value="reviews"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 py-2 px-3 md:py-3 md:px-4 font-medium text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                   >
                     Avaliações ({reviewStats?.totalReviews || 0})
                   </TabsTrigger>
                   <TabsTrigger
                     value="policies"
-                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 pb-3 pt-3 px-4 font-medium flex items-center justify-center"
+                    className="hover:cursor-pointer rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white text-gray-600 py-2 px-3 md:py-3 md:px-4 font-medium text-sm md:text-base flex items-center justify-center whitespace-nowrap"
                   >
                     Políticas
                   </TabsTrigger>

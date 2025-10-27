@@ -11,13 +11,13 @@ export const createVehicle = mutation({
     brand: v.string(),
     model: v.string(),
     category: v.string(),
-    year: v.number(),
-    color: v.string(),
     seats: v.number(),
     estimatedPricePerDay: v.number(),
     netRate: v.number(),
     status: v.string(),
     // Optional fields for backwards compatibility
+    year: v.optional(v.number()),
+    color: v.optional(v.string()),
     licensePlate: v.optional(v.string()),
     fuelType: v.optional(v.string()),
     transmission: v.optional(v.string()),
@@ -60,8 +60,6 @@ export const createVehicle = mutation({
       brand: args.brand,
       model: args.model,
       category: args.category,
-      year: args.year,
-      color: args.color,
       seats: args.seats,
       estimatedPricePerDay: args.estimatedPricePerDay,
       netRate: args.netRate,
@@ -73,6 +71,8 @@ export const createVehicle = mutation({
     };
     
     // Add optional fields only if provided
+    if (args.year !== undefined) vehicleData.year = args.year;
+    if (args.color !== undefined) vehicleData.color = args.color;
     if (args.licensePlate !== undefined) vehicleData.licensePlate = args.licensePlate;
     if (args.fuelType !== undefined) vehicleData.fuelType = args.fuelType;
     if (args.transmission !== undefined) vehicleData.transmission = args.transmission;

@@ -7,7 +7,7 @@ import { notFound, useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
-import { ArrowLeft, Star, Calendar, Fuel, Users } from "lucide-react";
+import { ArrowLeft, Star, Users } from "lucide-react";
 
 // Shadcn components
 import { Button } from "@/components/ui/button";
@@ -127,12 +127,6 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                 >
                   {getCategoryLabel(vehicle.category)}
                 </Badge>
-                <Badge
-                  variant="secondary"
-                  className="bg-white/20 backdrop-blur-sm"
-                >
-                  {vehicle.transmission}
-                </Badge>
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 text-shadow-sm">
                 {vehicle.brand} {vehicle.model}
@@ -148,16 +142,8 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
               </div>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/90">
                 <div className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" />
-                  <span>Ano {vehicle.year}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
                   <Users className="h-4 w-4" />
                   <span>{vehicle.seats} lugares</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Fuel className="h-4 w-4" />
-                  <span>{vehicle.fuelType}</span>
                 </div>
                 <div className="ml-auto">
                   <WishlistButton
@@ -213,7 +199,7 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                       Sobre este veículo
                     </h2>
                     <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                      {vehicle.description || `O ${vehicle.brand} ${vehicle.model} é um veículo ${vehicle.category.toLowerCase()} ideal para explorar a ilha de Fernando de Noronha. Com seu motor ${vehicle.fuelType.toLowerCase()} e transmissão ${vehicle.transmission.toLowerCase()}, oferece excelente desempenho e economia de combustível.`}
+                      {vehicle.description || `O ${vehicle.brand} ${vehicle.model} é um veículo ${vehicle.category.toLowerCase()} ideal para explorar a ilha de Fernando de Noronha. Oferece excelente desempenho e conforto para sua viagem.`}
                     </p>
                   </div>
 
@@ -229,28 +215,12 @@ export default function VehiclePage(props: { params: Promise<{ id: string }> }) 
                         <span>{vehicle.model}</span>
                       </div>
                       <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-700">Ano</span>
-                        <span>{vehicle.year}</span>
-                      </div>
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
                         <span className="font-medium text-gray-700">Categoria</span>
                         <span>{getCategoryLabel(vehicle.category)}</span>
                       </div>
                       <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-700">Cor</span>
-                        <span>{vehicle.color}</span>
-                      </div>
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
                         <span className="font-medium text-gray-700">Lugares</span>
                         <span>{vehicle.seats}</span>
-                      </div>
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-700">Combustível</span>
-                        <span>{vehicle.fuelType}</span>
-                      </div>
-                      <div className="flex justify-between p-3 bg-gray-50 rounded">
-                        <span className="font-medium text-gray-700">Transmissão</span>
-                        <span>{vehicle.transmission}</span>
                       </div>
                     </div>
                   </div>

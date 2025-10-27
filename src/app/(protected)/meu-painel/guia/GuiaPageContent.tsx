@@ -1144,7 +1144,7 @@ function SectionContent({
               type: "Buggy",
               icon: Car,
               color: "green",
-              price: "R$ 150-250/dia",
+              price: "R$ 500-600/dia",
               description: "A opção mais popular e divertida",
               features: [
                 "Liberdade total de horários",
@@ -1396,7 +1396,7 @@ function SectionContent({
                 title: "Balanceado",
                 combination: "Buggy + Táxi",
                 description: "Flexibilidade quando precisar",
-                daily: "R$ 180-300/dia",
+                daily: "R$ 440-500/dia",
                 bestFor: "Casais e pequenos grupos"
               },
               {
@@ -1410,7 +1410,7 @@ function SectionContent({
                 title: "Aventura",
                 combination: "Buggy + Bicicleta",
                 description: "Liberdade total",
-                daily: "R$ 180-280/dia",
+                daily: "R$ 50-450/dia",
                 bestFor: "Aventureiros e esportistas"
               }
             ].map((combo) => (
@@ -1659,7 +1659,7 @@ function SectionContent({
                 features: ["Repetidamente eleita uma das praias mais bonitas do mundo", "Acesso por escada em fenda rochosa", "Ideal para visitar cedo"],
                 access: "Escada íngreme entre rochas",
                 bestTime: "Manhã cedo",
-                image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
+                image: "/images/baia-do-sancho.jpg",
                 color: "cyan",
                 crowdLevel: "Alta",
                 waterTemp: "26°C",
@@ -1672,7 +1672,7 @@ function SectionContent({
                 features: ["Famosa pelas piscinas naturais de águas esverdeadas", "Vista clássica do Morro Dois Irmãos", "Paraíso para snorkeling"],
                 access: "Trilha curta e rochosa",
                 bestTime: "Maré baixa",
-                image: "https://images.unsplash.com/photo-1527004760000-e4c3bf54b1b3?w=400&h=300&fit=crop",
+                image: "/images/baia-dos-porcos.jpg",
                 color: "blue",
                 crowdLevel: "Média",
                 waterTemp: "27°C",
@@ -1685,7 +1685,7 @@ function SectionContent({
                 features: ["Principal santuário para a desova de tartarugas marinhas", "Acesso controlado e fecha mais cedo", "Mar forte, exige cautela"],
                 access: "Acesso controlado",
                 bestTime: "Final da tarde",
-                image: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&h=300&fit=crop",
+                image: "/images/praia-do-leao.jpg",
                 color: "green",
                 crowdLevel: "Baixa",
                 waterTemp: "25°C",
@@ -2109,14 +2109,14 @@ function SectionContent({
                 name: "Experiência-Evento",
                 cuisine: "Festival Gastronômico do Zé Maria",
                 highlight: "Reserve online com, no mínimo, dois meses de antecedência. É uma das experiências mais concorridas da ilha.",
-                rating: 4,
+                rating: 5,
                 color: "blue"
               },
               {
                 name: "Almoço com Vista",
                 cuisine: "Cacimba Bistrô / O Pico",
                 highlight: "Peça a sugestão do chef ou o peixe fresco do dia. A vista durante o dia é tão espetacular quanto à noite.",
-                rating: 4,
+                rating: 5,
                 color: "orange"
               }
             ].map((restaurant) => {
@@ -2973,7 +2973,7 @@ function SectionContent({
                   <div className="bg-purple-50 rounded-lg p-3">
                     <p className="text-purple-800 text-sm">
                       <strong>💡 Dica do Tuca:</strong> Para mim, o ambiente mais bacana que integra os visitantes com os ilhéus. 
-                      Veja o dia do forrozinho que é sempre mais animado.
+                     Aproveite o dia do forrozinho que é sempre mais animado, todas as sextas e sábados
                     </p>
                   </div>
                 </div>
@@ -3339,8 +3339,8 @@ function getHeroImage(sectionId: string): string {
     "boas-vindas": "https://images.unsplash.com/photo-1614723268053-f32f936f13f9?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Fernando de Noronha aerial view
     "accommodation": "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Hotel room with a view
     "transportation": "/images/transfer-hero-guide.png", // Car on a scenic road
-    "beaches": "/images/praias-hero.png", // Tropical beach
-    "dining": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Restaurant with ocean view
+    "beaches": "/images/praias-hero.jpg", // Tropical beach
+    "dining": "/images/interior ze-maria.jpg", // Restaurant with ocean view
     "monthly-guide": "/images/when-to-go.png", // Calendar or seasonal image
     "activities": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Diving and water activities
     "culture-history": "https://imgmd.net/images/v1/guia/2663135/vila-dos-remedios.jpg", // Historical fort or colonial architecture

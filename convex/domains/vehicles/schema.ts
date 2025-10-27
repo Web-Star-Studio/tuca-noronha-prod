@@ -9,11 +9,11 @@ export default defineSchema({
     brand: v.string(),
     model: v.string(),
     category: v.string(), // economy, compact, sedan, suv, luxury, etc.
-    year: v.number(),
-    color: v.string(),
     seats: v.number(),
     
     // Optional fields (for backwards compatibility with existing vehicles)
+    year: v.optional(v.number()),
+    color: v.optional(v.string()),
     licensePlate: v.optional(v.string()),
     fuelType: v.optional(v.string()), // Gasolina, Etanol, Flex, Diesel, Elétrico, Híbrido
     transmission: v.optional(v.string()), // Manual, Automático, CVT, Semi-automático
