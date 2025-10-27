@@ -213,7 +213,7 @@ function MasterSidebar() {
     { href: "/admin/dashboard", icon: LayoutPanelLeft, label: "Dashboard Principal" },
     { href: "/admin/dashboard/usuarios", icon: Users, label: "Gestão de Usuários" },
     { href: "/admin/dashboard/chats", icon: MessageCircle, label: "Chats de Parceiros" },
-    { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte", badge: 3 },
+    { href: "/admin/dashboard/suporte", icon: MessageSquare, label: "Central de Suporte" },
     { href: "/admin/dashboard/logs", icon: FileText, label: "Logs de Auditoria" },
   ]
 
