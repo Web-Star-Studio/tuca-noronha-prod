@@ -3275,10 +3275,10 @@ function SectionContent({
               </h4>
               
               <div className="bg-white/70 rounded-xl p-4">
-                <h5 className="font-semibold text-gray-900 mb-3">💊 Farmácia Mix</h5>
+                <h5 className="font-semibold text-gray-900 mb-3">🚖 Nortax</h5>
                 <div className="space-y-2 text-sm text-gray-700">
                   <p><strong>📍 Endereço:</strong> Rua São Miguel, S/N, Fernando de Noronha - PE, 53990-000</p>
-                  <p><strong>📞 Telefone:</strong> +55 81 9 9323-1118</p>
+                  <p><strong>📞 Telefone:</strong> +55 81 9323-1118</p>
                 </div>
               </div>
             </div>
