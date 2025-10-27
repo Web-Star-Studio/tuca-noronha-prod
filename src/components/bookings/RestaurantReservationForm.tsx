@@ -280,23 +280,8 @@ export function RestaurantReservationForm({
             <ParticipantSelector
               adults={adults}
               childrenCount={children}
-              onAdultsChange={(value) => {
-                // Ensure value is a valid number
-                const validValue = Number.isNaN(value) || value === undefined ? 1 : value;
-                const newAdults = Math.max(1, Math.min(validValue, restaurant.maximumPartySize));
-                // Adjust children if total exceeds maximum
-                const maxChildrenAllowed = Math.max(restaurant.maximumPartySize - newAdults, 0);
-                if (children > maxChildrenAllowed) {
-                  setChildren(maxChildrenAllowed);
-                }
-                setAdults(newAdults);
-              }}
-              onChildrenChange={(value) => {
-                // Ensure value is a valid number
-                const validValue = Number.isNaN(value) || value === undefined ? 0 : value;
-                const maxChildrenAllowed = Math.max(restaurant.maximumPartySize - adults, 0);
-                setChildren(Math.max(0, Math.min(validValue, maxChildrenAllowed)));
-              }}
+              onAdultsChange={setAdults}
+              onChildrenChange={setChildren}
               minAdults={1}
               maxAdults={restaurant.maximumPartySize}
               maxChildren={Math.max(restaurant.maximumPartySize - adults, 0)}
