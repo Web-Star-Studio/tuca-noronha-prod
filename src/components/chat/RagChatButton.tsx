@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -48,12 +48,27 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
     threadId ? { threadId, paginationOpts: { numItems: 50 } } : "skip"
   );
 
+  const initializeThread = useCallback(async () => {
+    if (!userId) return;
+    
+    try {
+      const result = await createThread({
+        userId,
+        title: "Chat com Tuca Noronha"
+      });
+      setThreadId(result.threadId);
+    } catch (error) {
+      console.error("Erro ao criar thread:", error);
+      toast.error("Erro ao inicializar conversa");
+    }
+  }, [userId, createThread]);
+
   // Initialize thread when dialog opens
   useEffect(() => {
     if (open && !threadId && userId) {
       initializeThread();
     }
-  }, [open, threadId, userId]);
+  }, [open, threadId, userId, initializeThread]);
 
   // Update messages when thread messages load
   useEffect(() => {
@@ -69,21 +84,6 @@ export const RagChatButton: React.FC<RagChatButtonProps> = ({
       setMessages(formattedMessages);
     }
   }, [threadMessages]);
-
-  const initializeThread = async () => {
-    if (!userId) return;
-    
-    try {
-      const result = await createThread({
-        userId,
-        title: "Chat com Tuca Noronha"
-      });
-      setThreadId(result.threadId);
-    } catch (error) {
-      console.error("Erro ao criar thread:", error);
-      toast.error("Erro ao inicializar conversa");
-    }
-  };
 
   const getButtonSize = () => {
     switch (size) {

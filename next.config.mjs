@@ -11,6 +11,12 @@ const nextConfig = {
   trailingSlash: true,
   // Timeout de geração de páginas estáticas (em segundos)
   staticPageGenerationTimeout: 1000,
+  // Remove console.log in production for better performance
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
   images: {
     remotePatterns: [
       {

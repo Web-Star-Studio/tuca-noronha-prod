@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "convex/react"
+import dynamic from "next/dynamic"
 import { api } from "../../../../../../convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,8 +29,16 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser"
-import { RestaurantForm } from "@/components/dashboard/restaurants"
 import type { Restaurant } from "@/lib/services/restaurantService"
+
+// Dynamic import for large component to improve initial load time
+const RestaurantForm = dynamic(
+  () => import("@/components/dashboard/restaurants").then(mod => ({ default: mod.RestaurantForm })),
+  { 
+    loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>,
+    ssr: false 
+  }
+)
 
 const organizationTypes = [
   {

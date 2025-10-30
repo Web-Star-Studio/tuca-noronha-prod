@@ -85,18 +85,26 @@ export const getUserActivityBookings = query({
 
     const result = await query.paginate(args.paginationOpts);
 
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const activity = await ctx.db.get(booking.activityId);
-        return {
-          ...booking,
-          createdAt: booking.createdAt ?? booking._creationTime,
-          updatedAt: booking.updatedAt ?? booking._creationTime,
-          activityTitle: activity?.title || "Atividade não encontrada",
-          activityImageUrl: activity?.imageUrl || "",
-        };
-      })
+    // Batch fetch all activities to avoid N+1 queries
+    const activityIds = result.page.map(booking => booking.activityId);
+    const activities = await Promise.all(
+      activityIds.map(id => ctx.db.get(id))
     );
+    const activitiesMap = new Map(
+      activities.map((activity, index) => [activityIds[index], activity])
+    );
+
+    // Map bookings with pre-fetched activity data
+    const bookingsWithDetails = result.page.map((booking) => {
+      const activity = activitiesMap.get(booking.activityId);
+      return {
+        ...booking,
+        createdAt: booking.createdAt ?? booking._creationTime,
+        updatedAt: booking.updatedAt ?? booking._creationTime,
+        activityTitle: activity?.title || "Atividade não encontrada",
+        activityImageUrl: activity?.imageUrl || "",
+      };
+    });
 
     return {
       page: bookingsWithDetails,
@@ -193,22 +201,30 @@ export const getUserEventBookings = query({
 
     const result = await query.paginate(args.paginationOpts);
 
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const event = await ctx.db.get(booking.eventId);
-        return {
-          ...booking,
-          createdAt: booking.createdAt ?? booking._creationTime,
-          updatedAt: booking.updatedAt ?? booking._creationTime,
-          eventTitle: event?.title || "Evento não encontrado",
-          eventImageUrl: event?.imageUrl || "",
-          eventDate: event?.date || "",
-          eventTime: event?.time || "",
-          eventLocation: event?.location || "",
-          partnerId: event?.partnerId || booking.userId,
-        };
-      })
+    // Batch fetch all events to avoid N+1 queries
+    const eventIds = result.page.map(booking => booking.eventId);
+    const events = await Promise.all(
+      eventIds.map(id => ctx.db.get(id))
     );
+    const eventsMap = new Map(
+      events.map((event, index) => [eventIds[index], event])
+    );
+
+    // Map bookings with pre-fetched event data
+    const bookingsWithDetails = result.page.map((booking) => {
+      const event = eventsMap.get(booking.eventId);
+      return {
+        ...booking,
+        createdAt: booking.createdAt ?? booking._creationTime,
+        updatedAt: booking.updatedAt ?? booking._creationTime,
+        eventTitle: event?.title || "Evento não encontrado",
+        eventImageUrl: event?.imageUrl || "",
+        eventDate: event?.date || "",
+        eventTime: event?.time || "",
+        eventLocation: event?.location || "",
+        partnerId: event?.partnerId || booking.userId,
+      };
+    });
 
     return {
       page: bookingsWithDetails,
@@ -297,20 +313,28 @@ export const getUserRestaurantReservations = query({
 
     const result = await query.paginate(args.paginationOpts);
 
-    const reservationsWithDetails = await Promise.all(
-      result.page.map(async (reservation) => {
-        const restaurant = await ctx.db.get(reservation.restaurantId);
-        return {
-          ...reservation,
-          createdAt: reservation.createdAt ?? reservation._creationTime,
-          updatedAt: reservation.updatedAt ?? reservation._creationTime,
-          restaurantName: restaurant?.name || "Restaurante não encontrado",
-          restaurantImageUrl: restaurant?.mainImage || "",
-          restaurantAddress: restaurant?.address ? 
-            `${restaurant.address.street}, ${restaurant.address.neighborhood}` : "",
-        };
-      })
+    // Batch fetch all restaurants to avoid N+1 queries
+    const restaurantIds = result.page.map(reservation => reservation.restaurantId);
+    const restaurants = await Promise.all(
+      restaurantIds.map(id => ctx.db.get(id))
     );
+    const restaurantsMap = new Map(
+      restaurants.map((restaurant, index) => [restaurantIds[index], restaurant])
+    );
+
+    // Map reservations with pre-fetched restaurant data
+    const reservationsWithDetails = result.page.map((reservation) => {
+      const restaurant = restaurantsMap.get(reservation.restaurantId);
+      return {
+        ...reservation,
+        createdAt: reservation.createdAt ?? reservation._creationTime,
+        updatedAt: reservation.updatedAt ?? reservation._creationTime,
+        restaurantName: restaurant?.name || "Restaurante não encontrado",
+        restaurantImageUrl: restaurant?.mainImage || "",
+        restaurantAddress: restaurant?.address ? 
+          `${restaurant.address.street}, ${restaurant.address.neighborhood}` : "",
+      };
+    });
 
     return {
       page: reservationsWithDetails,
@@ -424,20 +448,28 @@ export const getUserVehicleBookings = query({
 
     const result = await query.paginate(args.paginationOpts);
 
-    const bookingsWithDetails = await Promise.all(
-      result.page.map(async (booking) => {
-        const vehicle = await ctx.db.get(booking.vehicleId);
-        return {
-          ...booking,
-          createdAt: booking.createdAt ?? booking._creationTime,
-          updatedAt: booking.updatedAt ?? booking._creationTime,
-          vehicleName: vehicle?.name || "Veículo não encontrado",
-          vehicleBrand: vehicle?.brand || "",
-          vehicleModel: vehicle?.model || "",
-          vehicleImageUrl: vehicle?.imageUrl || undefined,
-        };
-      })
+    // Batch fetch all vehicles to avoid N+1 queries
+    const vehicleIds = result.page.map(booking => booking.vehicleId);
+    const vehicles = await Promise.all(
+      vehicleIds.map(id => ctx.db.get(id))
     );
+    const vehiclesMap = new Map(
+      vehicles.map((vehicle, index) => [vehicleIds[index], vehicle])
+    );
+
+    // Map bookings with pre-fetched vehicle data
+    const bookingsWithDetails = result.page.map((booking) => {
+      const vehicle = vehiclesMap.get(booking.vehicleId);
+      return {
+        ...booking,
+        createdAt: booking.createdAt ?? booking._creationTime,
+        updatedAt: booking.updatedAt ?? booking._creationTime,
+        vehicleName: vehicle?.name || "Veículo não encontrado",
+        vehicleBrand: vehicle?.brand || "",
+        vehicleModel: vehicle?.model || "",
+        vehicleImageUrl: vehicle?.imageUrl || undefined,
+      };
+    });
 
     return {
       page: bookingsWithDetails,
@@ -1384,38 +1416,46 @@ export const getActivityBookings = query({
 
       const result = await query.paginate(args.paginationOpts);
 
-      const bookingsWithDetails = await Promise.all(
-        result.page.map(async (booking) => {
-          const activity = await ctx.db.get(booking.activityId) as any;
-          return {
-            _id: booking._id,
-            _creationTime: booking._creationTime,
-            activityId: booking.activityId,
-            activityTitle: activity?.title || "Atividade não encontrada",
-            date: booking.date,
-            time: booking.time,
-            participants: booking.participants,
-            totalPrice: booking.totalPrice,
-            couponCode: booking.couponCode,
-            discountAmount: booking.discountAmount,
-            finalAmount: booking.finalAmount,
-            status: booking.status,
-            paymentStatus: booking.paymentStatus,
-            confirmationCode: booking.confirmationCode,
-            customerInfo: booking.customerInfo,
-            specialRequests: booking.specialRequests,
-            partnerNotes: booking.partnerNotes,
-            // Mercado Pago fields
-            mpPaymentId: booking.mpPaymentId,
-            mpPreferenceId: booking.mpPreferenceId,
-            mpPaymentLinkId: booking.mpPaymentLinkId,
-            paymentDetails: booking.paymentDetails,
-            createdAt: booking.createdAt ?? booking._creationTime,
-            updatedAt: booking.updatedAt ?? booking._creationTime,
-            userId: booking.userId,
-          };
-        })
+      // Batch fetch all activities to avoid N+1 queries
+      const activityIds = result.page.map(booking => booking.activityId);
+      const activities = await Promise.all(
+        activityIds.map(id => ctx.db.get(id))
       );
+      const activitiesMap = new Map(
+        activities.map((activity, index) => [activityIds[index], activity])
+      );
+
+      // Map bookings with pre-fetched activity data
+      const bookingsWithDetails = result.page.map((booking) => {
+        const activity = activitiesMap.get(booking.activityId) as any;
+        return {
+          _id: booking._id,
+          _creationTime: booking._creationTime,
+          activityId: booking.activityId,
+          activityTitle: activity?.title || "Atividade não encontrada",
+          date: booking.date,
+          time: booking.time,
+          participants: booking.participants,
+          totalPrice: booking.totalPrice,
+          couponCode: booking.couponCode,
+          discountAmount: booking.discountAmount,
+          finalAmount: booking.finalAmount,
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          confirmationCode: booking.confirmationCode,
+          customerInfo: booking.customerInfo,
+          specialRequests: booking.specialRequests,
+          partnerNotes: booking.partnerNotes,
+          // Mercado Pago fields
+          mpPaymentId: booking.mpPaymentId,
+          mpPreferenceId: booking.mpPreferenceId,
+          mpPaymentLinkId: booking.mpPaymentLinkId,
+          paymentDetails: booking.paymentDetails,
+          createdAt: booking.createdAt ?? booking._creationTime,
+          updatedAt: booking.updatedAt ?? booking._creationTime,
+          userId: booking.userId,
+        };
+      });
       
       return {
         page: bookingsWithDetails,

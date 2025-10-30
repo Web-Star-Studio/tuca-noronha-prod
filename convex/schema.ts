@@ -751,7 +751,10 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_date", ["date"])
     .index("by_status", ["status"])
-    .index("by_table", ["tableId"]),
+    .index("by_table", ["tableId"])
+    // Composite indexes for better query performance
+    .index("by_status_and_date", ["status", "date"])
+    .index("by_user_and_status", ["userId", "status"]),
 
   // Tabelas do restaurante
   restaurantTables: defineTable({
@@ -933,7 +936,10 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
     .index("by_date", ["date"])
-    .index("by_confirmation_code", ["confirmationCode"]),
+    .index("by_confirmation_code", ["confirmationCode"])
+    // Composite indexes for better query performance
+    .index("by_status_and_date", ["status", "date"])
+    .index("by_user_and_status", ["userId", "status"]),
 
   // Event Bookings  
   eventBookings: defineTable({
@@ -997,7 +1003,9 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
-    .index("by_confirmation_code", ["confirmationCode"]),
+    .index("by_confirmation_code", ["confirmationCode"])
+    // Composite indexes for better query performance
+    .index("by_user_and_status", ["userId", "status"]),
   
   // Vehicle tables
   vehicles: defineTable({
@@ -1113,7 +1121,9 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_status", ["status"])
     .index("by_vehicleId_status", ["vehicleId", "status"])
-    .index("by_dates", ["startDate", "endDate"]),
+    .index("by_dates", ["startDate", "endDate"])
+    // Composite index for better query performance
+    .index("by_userId_and_status", ["userId", "status"]),
 
   // Notifications System
   notifications: defineTable({
