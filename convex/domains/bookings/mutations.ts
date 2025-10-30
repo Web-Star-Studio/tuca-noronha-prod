@@ -2332,30 +2332,37 @@ export const updateBookingPaymentSuccess = mutation({
 
     // Generate voucher for confirmed booking
     try {
-      // Get partner ID from booking's associated asset
+      // Get partner ID and asset details from booking's associated asset in a single fetch
       let partnerId: string;
       let customerId: string = booking.userId;
+      let assetName = "Serviço";
+      let asset: any;
       
       switch (bookingType) {
         case "activity":
-          const activity = await ctx.db.get(booking.activityId);
-          partnerId = (activity as any)?.partnerId;
+          asset = await ctx.db.get(booking.activityId);
+          partnerId = asset?.partnerId;
+          assetName = asset?.name || "Atividade";
           break;
         case "event":
-          const event = await ctx.db.get(booking.eventId);
-          partnerId = (event as any)?.partnerId;
+          asset = await ctx.db.get(booking.eventId);
+          partnerId = asset?.partnerId;
+          assetName = asset?.title || "Evento";
           break;
         case "accommodation":
-          const accommodation = await ctx.db.get(booking.accommodationId);
-          partnerId = (accommodation as any)?.partnerId;
+          asset = await ctx.db.get(booking.accommodationId);
+          partnerId = asset?.partnerId;
+          assetName = asset?.name || "Hospedagem";
           break;
         case "vehicle":
-          const vehicle = await ctx.db.get(booking.vehicleId);
-          partnerId = (vehicle as any)?.partnerId;
+          asset = await ctx.db.get(booking.vehicleId);
+          partnerId = asset?.partnerId;
+          assetName = asset?.name || "Veículo";
           break;
         case "restaurant":
-          const restaurant = await ctx.db.get(booking.restaurantId);
-          partnerId = (restaurant as any)?.partnerId;
+          asset = await ctx.db.get(booking.restaurantId);
+          partnerId = asset?.partnerId;
+          assetName = asset?.name || "Restaurante";
           break;
         default:
           throw new Error("Tipo de reserva não suportado: " + bookingType);
@@ -2377,31 +2384,6 @@ export const updateBookingPaymentSuccess = mutation({
       // Send voucher email based on booking type
       const customerEmail = booking.customerInfo?.email || booking.email || booking.customerEmail;
       const customerName = booking.customerInfo?.name || booking.name || booking.customerName;
-      
-      // Get asset name for email
-      let assetName = "Serviço";
-      switch (bookingType) {
-        case "activity":
-          const activity = await ctx.db.get(booking.activityId);
-          assetName = (activity as any)?.name || "Atividade";
-          break;
-        case "event":
-          const event = await ctx.db.get(booking.eventId);
-          assetName = (event as any)?.title || "Evento";
-          break;
-        case "accommodation":
-          const accommodation = await ctx.db.get(booking.accommodationId);
-          assetName = (accommodation as any)?.name || "Hospedagem";
-          break;
-        case "vehicle":
-          const vehicle = await ctx.db.get(booking.vehicleId);
-          assetName = (vehicle as any)?.name || "Veículo";
-          break;
-        case "restaurant":
-          const restaurant = await ctx.db.get(booking.restaurantId);
-          assetName = (restaurant as any)?.name || "Restaurante";
-          break;
-      }
       
       await ctx.scheduler.runAfter(0, internal.domains.email.actions.sendVoucherEmail, {
         voucherNumber: voucher.voucherNumber,
