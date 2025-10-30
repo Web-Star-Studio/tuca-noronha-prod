@@ -119,18 +119,23 @@ export const getEventsForAdmin = query({
 });
 
 /**
- * Get featured events
+ * Get featured events (ordenados por data)
  */
 export const getFeatured = query({
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
-    return await ctx.db
+    const events = await ctx.db
       .query("events")
       .withIndex("featured_events", (q) => 
         q.eq("isFeatured", true).eq("isActive", true)
       )
       .collect();
+    
+    // Ordenar por data manualmente já que o índice featured_events não inclui date
+    return events.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   },
 });
 
@@ -322,10 +327,11 @@ export const getPublicEventsWithCreators = query({
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
-    // Busca apenas eventos ativos
+    // Busca apenas eventos ativos, ordenados por data (mais próximos primeiro)
     const events = await ctx.db
       .query("events")
-      .withIndex("active_events", (q) => q.eq("isActive", true))
+      .withIndex("active_events_by_date", (q) => q.eq("isActive", true))
+      .order("asc")
       .collect();
 
     // Carrega dados do criador

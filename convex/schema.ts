@@ -592,7 +592,8 @@ export default defineSchema({
     .index("by_partner", ["partnerId"])
     .index("by_date", ["date"])
     .index("featured_events", ["isFeatured", "isActive"])
-    .index("active_events", ["isActive"]),
+    .index("active_events", ["isActive"])
+    .index("active_events_by_date", ["isActive", "date"]),
     
   eventTickets: defineTable({
     eventId: v.id("events"),              // Referência ao evento
