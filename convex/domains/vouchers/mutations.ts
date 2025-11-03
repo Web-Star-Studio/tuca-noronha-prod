@@ -103,8 +103,8 @@ export const generateVoucherInternal = internalMutation({
     }
 
     // Get customer and partner information
-    const customer = customerId ? await ctx.db.get(customerId) : null;
-    const partner = partnerId ? await ctx.db.get(partnerId) : null;
+    const customer = customerId ? (await ctx.db.get(customerId) as any) : null;
+    const partner = partnerId ? (await ctx.db.get(partnerId) as any) : null;
 
     // Get supplier information if available
     const supplierId = booking.supplierId || asset?.supplierId;
@@ -313,8 +313,8 @@ export const generateVoucher = mutation({
     }
 
     // Get customer and partner information
-    const customer = customerId ? await ctx.db.get(customerId as any) : null;
-    const partner = partnerId ? await ctx.db.get(partnerId as any) : null;
+    const customer = customerId ? (await ctx.db.get(customerId as any) as any) : null;
+    const partner = partnerId ? (await ctx.db.get(partnerId as any) as any) : null;
 
     // Get supplier information if available
     const supplierId = booking.supplierId || asset?.supplierId;
