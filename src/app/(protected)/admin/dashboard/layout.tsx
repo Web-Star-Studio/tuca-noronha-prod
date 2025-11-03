@@ -28,7 +28,8 @@ import {
   Home,
   ChevronLeft,
   Search,
-  Factory
+  Factory,
+  BookOpen
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { LucideIcon } from "lucide-react"
@@ -462,6 +463,7 @@ function AdminSidebar() {
     { href: "/admin/dashboard/cupons", icon: Tag, label: "Cupons" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Mídias" },
     { href: "/admin/dashboard/pagamentos", icon: CreditCard, label: "Pagamentos" },
+    { href: "/admin/dashboard/compras-guia", icon: BookOpen, label: "Compras do Guia" },
   ]
 
   const businessLinks = getBusinessLinks()

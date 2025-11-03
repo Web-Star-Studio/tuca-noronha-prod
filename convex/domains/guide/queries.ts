@@ -163,3 +163,68 @@ export const debugUserPurchases = query({
     };
   },
 });
+
+/**
+ * Get all guide purchases for admin dashboard
+ * Only accessible by master users
+ */
+export const getAllPurchases = query({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => {
+    // Verify user is master
+    const role = await getCurrentUserRole(ctx);
+    if (role !== "master") {
+      throw new Error("Unauthorized: Only masters can access all purchases");
+    }
+
+    // Get all purchases ordered by date (most recent first)
+    const purchases = await ctx.db
+      .query("guidePurchases")
+      .order("desc")
+      .collect();
+
+    return purchases;
+  },
+});
+
+/**
+ * Get guide purchases statistics for admin dashboard
+ * Only accessible by master users
+ */
+export const getPurchaseStats = query({
+  args: {},
+  handler: async (ctx) => {
+    // Verify user is master
+    const role = await getCurrentUserRole(ctx);
+    if (role !== "master") {
+      throw new Error("Unauthorized: Only masters can access purchase stats");
+    }
+
+    // Get all purchases
+    const allPurchases = await ctx.db
+      .query("guidePurchases")
+      .collect();
+
+    // Calculate statistics
+    const approved = allPurchases.filter(p => p.status === "approved");
+    const pending = allPurchases.filter(p => p.status === "pending" || p.status === "in_process");
+    const rejected = allPurchases.filter(p => p.status === "rejected" || p.status === "cancelled");
+    
+    const totalRevenue = approved.reduce((sum, p) => sum + p.amount, 0);
+    const averageAmount = approved.length > 0 ? totalRevenue / approved.length : 0;
+
+    // Get unique users who purchased
+    const uniqueUsers = new Set(approved.map(p => p.userId));
+
+    return {
+      total: allPurchases.length,
+      approved: approved.length,
+      pending: pending.length,
+      rejected: rejected.length,
+      totalRevenue,
+      averageAmount,
+      uniqueUsers: uniqueUsers.size,
+    };
+  },
+});
