@@ -107,8 +107,9 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
   let asset: any = null;
   let supplier: any = null;
 
-  if (isManualVoucher && voucher.details) {
-    // For manual vouchers, use the details stored in the voucher
+  // If voucher has details field (both manual and automatic vouchers now have it), use it for complete data
+  if (voucher.details) {
+    // Use details stored in the voucher (consistent for all vouchers)
     booking = {
       _id: voucher.bookingId,
       confirmationCode: voucher.voucherNumber,
@@ -142,6 +143,9 @@ async function getVoucherData(ctx: any, voucherNumber: string) {
       if (detailsCustomer.email) customer.email = detailsCustomer.email;
       if (detailsCustomer.phone) customer.phone = detailsCustomer.phone;
     }
+  } else if (isManualVoucher) {
+    // Legacy manual vouchers without details field (shouldn't happen for new vouchers)
+    throw new Error("Voucher manual sem campo details - formato inválido");
   } else {
     // Regular booking-based voucher
     switch (voucher.bookingType) {

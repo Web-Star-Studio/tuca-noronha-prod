@@ -49,41 +49,43 @@ export const generateVoucherInternal = internalMutation({
       return { voucherId: existingVoucher._id };
     }
 
-    // Get booking details to find partner and customer IDs
+    // Get booking details to find partner, customer IDs, and asset info
     let booking: any;
     let partnerId: any;
     let customerId: any;
+    let asset: any;
+    let supplier: any = undefined;
     
     switch (bookingType) {
       case "activity":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.activityId) {
-          const activity = await ctx.db.get(booking.activityId) as any;
-          partnerId = activity?.partnerId;
+          asset = await ctx.db.get(booking.activityId) as any;
+          partnerId = asset?.partnerId;
           customerId = booking.userId;
         }
         break;
       case "event":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.eventId) {
-          const event = await ctx.db.get(booking.eventId) as any;
-          partnerId = event?.partnerId;
+          asset = await ctx.db.get(booking.eventId) as any;
+          partnerId = asset?.partnerId;
           customerId = booking.userId;
         }
         break;
       case "restaurant":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.restaurantId) {
-          const restaurant = await ctx.db.get(booking.restaurantId) as any;
-          partnerId = restaurant?.partnerId;
+          asset = await ctx.db.get(booking.restaurantId) as any;
+          partnerId = asset?.partnerId;
           customerId = booking.userId;
         }
         break;
       case "vehicle":
         booking = await ctx.db.get(bookingId as any);
         if (booking && booking.vehicleId) {
-          const vehicle = await ctx.db.get(booking.vehicleId) as any;
-          partnerId = vehicle?.ownerId;
+          asset = await ctx.db.get(booking.vehicleId) as any;
+          partnerId = asset?.ownerId;
           customerId = booking.userId;
         }
         break;
@@ -98,6 +100,23 @@ export const generateVoucherInternal = internalMutation({
 
     if (!booking) {
       throw new Error("Booking not found");
+    }
+
+    // Get customer and partner information
+    const customer = customerId ? await ctx.db.get(customerId) : null;
+    const partner = partnerId ? await ctx.db.get(partnerId) : null;
+
+    // Get supplier information if available
+    const supplierId = booking.supplierId || asset?.supplierId;
+    if (supplierId) {
+      const supplierDoc = await ctx.db.get(supplierId);
+      if (supplierDoc && (supplierDoc as any).isActive) {
+        supplier = {
+          name: (supplierDoc as any).name,
+          address: (supplierDoc as any).address,
+          emergencyPhone: (supplierDoc as any).emergencyPhone,
+        };
+      }
     }
 
     // Generate unique voucher number
@@ -121,14 +140,30 @@ export const generateVoucherInternal = internalMutation({
     }
 
     // Calculate expiration 
-    const calculatedExpiration = calculateVoucherExpiration(bookingType);
+    const calculatedExpiration = calculateVoucherExpiration(bookingType, booking.date || booking.startDate);
 
     // Generate verification token and QR code
     const verificationToken = generateVerificationToken(voucherNumber, calculatedExpiration);
     const qrCodeData = generateQRCodeData(voucherNumber, verificationToken, calculatedExpiration);
     const qrCodeString = qrCodeDataToString(qrCodeData);
 
-    // Create voucher record
+    // Extract guest names based on booking type
+    let guestNames: string[] = [];
+    switch (bookingType) {
+      case "activity":
+        guestNames = booking.additionalParticipants || [];
+        break;
+      case "event":
+        guestNames = booking.participantNames || [];
+        break;
+      case "restaurant":
+        guestNames = booking.guestNames || [];
+        break;
+      default:
+        guestNames = [];
+    }
+
+    // Create voucher record with complete details field
     const now = Date.now();
     const voucherId = await ctx.db.insert("vouchers", {
       voucherNumber,
@@ -148,6 +183,43 @@ export const generateVoucherInternal = internalMutation({
       isActive: true,
       createdAt: now,
       updatedAt: now,
+      // Add details field to match manual voucher format
+      details: {
+        manualCreation: false,
+        createdBy: partnerId,
+        asset: asset ? {
+          name: asset.name || asset.title,
+          description: asset.description,
+          highlights: asset.highlights || asset.features || [],
+          includes: asset.includes || asset.services || [],
+          additionalInfo: asset.additionalInfo || asset.notes || [],
+          cancellationPolicy: asset.cancellationPolicy || asset.cancelationPolicy || (Array.isArray(asset.terms) ? asset.terms : undefined),
+        } : undefined,
+        customer: customer ? {
+          name: customer.name || booking.customerInfo?.name,
+          email: customer.email || booking.customerInfo?.email,
+          phone: customer.phone || booking.customerInfo?.phone,
+        } : {
+          name: booking.customerInfo?.name,
+          email: booking.customerInfo?.email,
+          phone: booking.customerInfo?.phone,
+        },
+        booking: {
+          date: booking.date || booking.checkInDate || booking.startDate,
+          time: booking.time,
+          participants: booking.participants || booking.guestCount || booking.quantity || booking.partySize,
+          guestNames,
+          specialRequests: booking.specialRequests || booking.notes || booking.comments,
+        },
+        supplier,
+        brand: {
+          handledBy: partner?.name,
+          companyPhone: partner?.phone,
+        },
+        confirmation: {
+          confirmedBy: partner?.name || "Sistema",
+        },
+      },
     });
 
     // Log voucher generation
@@ -200,6 +272,63 @@ export const generateVoucher = mutation({
       throw new Error("Voucher já existe para esta reserva");
     }
 
+    // Get booking details to extract all necessary information
+    let booking: any;
+    let asset: any;
+    let supplier: any = undefined;
+    
+    switch (bookingType) {
+      case "activity":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.activityId) {
+          asset = await ctx.db.get(booking.activityId) as any;
+        }
+        break;
+      case "event":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.eventId) {
+          asset = await ctx.db.get(booking.eventId) as any;
+        }
+        break;
+      case "restaurant":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.restaurantId) {
+          asset = await ctx.db.get(booking.restaurantId) as any;
+        }
+        break;
+      case "vehicle":
+        booking = await ctx.db.get(bookingId as any);
+        if (booking && booking.vehicleId) {
+          asset = await ctx.db.get(booking.vehicleId) as any;
+        }
+        break;
+      case "package":
+        booking = await ctx.db.get(bookingId as any);
+        // Package might have different structure
+        break;
+    }
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    // Get customer and partner information
+    const customer = customerId ? await ctx.db.get(customerId as any) : null;
+    const partner = partnerId ? await ctx.db.get(partnerId as any) : null;
+
+    // Get supplier information if available
+    const supplierId = booking.supplierId || asset?.supplierId;
+    if (supplierId) {
+      const supplierDoc = await ctx.db.get(supplierId);
+      if (supplierDoc && (supplierDoc as any).isActive) {
+        supplier = {
+          name: (supplierDoc as any).name,
+          address: (supplierDoc as any).address,
+          emergencyPhone: (supplierDoc as any).emergencyPhone,
+        };
+      }
+    }
+
     // Generate unique voucher number
     let voucherNumber: string;
     let attempts = 0;
@@ -221,14 +350,30 @@ export const generateVoucher = mutation({
     }
 
     // Calculate expiration if not provided
-    const calculatedExpiration = expiresAt || calculateVoucherExpiration(bookingType);
+    const calculatedExpiration = expiresAt || calculateVoucherExpiration(bookingType, booking.date || booking.startDate);
 
     // Generate verification token and QR code
     const verificationToken = generateVerificationToken(voucherNumber, calculatedExpiration);
     const qrCodeData = generateQRCodeData(voucherNumber, verificationToken, calculatedExpiration);
     const qrCodeString = qrCodeDataToString(qrCodeData);
 
-    // Create voucher record
+    // Extract guest names based on booking type
+    let guestNames: string[] = [];
+    switch (bookingType) {
+      case "activity":
+        guestNames = booking.additionalParticipants || [];
+        break;
+      case "event":
+        guestNames = booking.participantNames || [];
+        break;
+      case "restaurant":
+        guestNames = booking.guestNames || [];
+        break;
+      default:
+        guestNames = [];
+    }
+
+    // Create voucher record with complete details field
     const now = Date.now();
     const voucherId = await ctx.db.insert("vouchers", {
       voucherNumber,
@@ -248,6 +393,43 @@ export const generateVoucher = mutation({
       isActive: true,
       createdAt: now,
       updatedAt: now,
+      // Add details field to match manual voucher format
+      details: {
+        manualCreation: false,
+        createdBy: currentUser?._id || partnerId,
+        asset: asset ? {
+          name: asset.name || asset.title,
+          description: asset.description,
+          highlights: asset.highlights || asset.features || [],
+          includes: asset.includes || asset.services || [],
+          additionalInfo: asset.additionalInfo || asset.notes || [],
+          cancellationPolicy: asset.cancellationPolicy || asset.cancelationPolicy || (Array.isArray(asset.terms) ? asset.terms : undefined),
+        } : undefined,
+        customer: customer ? {
+          name: customer.name || booking.customerInfo?.name,
+          email: customer.email || booking.customerInfo?.email,
+          phone: customer.phone || booking.customerInfo?.phone,
+        } : {
+          name: booking.customerInfo?.name,
+          email: booking.customerInfo?.email,
+          phone: booking.customerInfo?.phone,
+        },
+        booking: {
+          date: booking.date || booking.checkInDate || booking.startDate,
+          time: booking.time,
+          participants: booking.participants || booking.guestCount || booking.quantity || booking.partySize,
+          guestNames,
+          specialRequests: booking.specialRequests || booking.notes || booking.comments,
+        },
+        supplier,
+        brand: {
+          handledBy: partner?.name || currentUser?.name,
+          companyPhone: partner?.phone,
+        },
+        confirmation: {
+          confirmedBy: currentUser?.name || partner?.name || "Sistema",
+        },
+      },
     });
 
     // Log voucher generation
