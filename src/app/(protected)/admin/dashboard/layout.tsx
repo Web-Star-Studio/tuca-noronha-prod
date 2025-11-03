@@ -229,6 +229,7 @@ function MasterSidebar() {
   const masterReportLinks = [
     { href: "/admin/dashboard/reservas", icon: Receipt, label: "Todas as Reservas" },
     { href: "/admin/dashboard/solicitacoes-pacotes", icon: Package, label: "Solicitações de Pacotes" },
+    { href: "/admin/dashboard/compras-guia", icon: BookOpen, label: "Compras do Guia" },
   ]
 
   const masterConfigLinks = [
@@ -463,7 +464,6 @@ function AdminSidebar() {
     { href: "/admin/dashboard/cupons", icon: Tag, label: "Cupons" },
     { href: "/admin/dashboard/midias", icon: Image, label: "Mídias" },
     { href: "/admin/dashboard/pagamentos", icon: CreditCard, label: "Pagamentos" },
-    { href: "/admin/dashboard/compras-guia", icon: BookOpen, label: "Compras do Guia" },
   ]
 
   const businessLinks = getBusinessLinks()
