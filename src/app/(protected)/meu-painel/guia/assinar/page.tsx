@@ -8,8 +8,9 @@ import { api } from "../../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, Sparkles, Map, CreditCard, Loader2, Tag, X } from "lucide-react";
+import { CheckCircle2, Sparkles, Map, CreditCard, Loader2, Tag, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function GuideSubscriptionPage() {
   const router = useRouter();
@@ -138,7 +139,7 @@ export default function GuideSubscriptionPage() {
               </div>
               <div className="space-y-4">
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-                  Guia Exclusivo de Fernando de Noronha
+                  Guia Digital Exclusivo de Fernando de Noronha
                 </h1>
                 <p className="text-lg text-gray-600 sm:text-xl">
                   Tudo que você precisa para planejar uma viagem inesquecível: roteiros práticos, contatos confiáveis e os segredos de quem vive a ilha todos os dias.
@@ -263,6 +264,34 @@ export default function GuideSubscriptionPage() {
                   )}
                 </div>
 
+                {/* Aviso sobre produto digital - CRÍTICO para evitar reembolsos */}
+                <div className="w-full rounded-lg border-2 border-amber-200 bg-amber-50 p-4 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-left space-y-2">
+                      <p className="text-sm font-semibold text-amber-900">
+                        ⚠️ Produto Digital - Política de Não Reembolso
+                      </p>
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        Este é um <strong>produto digital intangível</strong> com acesso imediato. Ao finalizar a compra, você concorda que:
+                      </p>
+                      <ul className="text-xs text-amber-800 space-y-1 ml-4">
+                        <li>• O acesso ao guia será liberado <strong>imediatamente</strong> após aprovação do pagamento</li>
+                        <li>• Produtos digitais <strong>não têm direito de arrependimento</strong> após a entrega</li>
+                        <li>• <strong>Não oferecemos reembolsos</strong> para produtos digitais já acessados</li>
+                        <li>• Este produto <strong>não está coberto pela Compra Garantida</strong> do Mercado Pago</li>
+                      </ul>
+                      <Link 
+                        href="/meu-painel/guia/termos" 
+                        target="_blank"
+                        className="inline-block text-xs text-amber-900 underline font-semibold hover:text-amber-700 mt-2"
+                      >
+                        📄 Leia os Termos Completos e Política de Reembolso
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
                 <Button
                   onClick={handleBuyGuide}
                   disabled={isProcessing}
@@ -276,13 +305,13 @@ export default function GuideSubscriptionPage() {
                   ) : (
                     <>
                       <CreditCard className="mr-2 h-5 w-5" />
-                      Comprar agora
+                      Aceito os termos e quero comprar
                     </>
                   )}
                 </Button>
                 <p>Pagamento protegido pelo Mercado Pago.</p>
                 <p className="text-xs text-gray-500">
-                  Em caso de dúvidas basta falar com nosso time.
+                  Em caso de dúvidas basta falar com nosso time antes da compra.
                 </p>
               </CardFooter>
             </Card>

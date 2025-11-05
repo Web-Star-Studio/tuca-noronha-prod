@@ -23,9 +23,9 @@ import { mpFetch } from "../mercadoPago/utils";
 
 // Guide purchase configuration (ONE-TIME PAYMENT)
 const GUIDE_CONFIG = {
-  title: "Guia Exclusivo de Fernando de Noronha",
-  description: "Acesso vitalício ao guia completo com roteiros, dicas e contatos",
-  amount: 99.90, // One-time payment (not recurring)
+  title: "Guia Digital Exclusivo de Fernando de Noronha",
+  description: "Acesso anual ao guia digital completo com roteiros, dicas e contatos",
+  amount: 1.90, // One-time payment (not recurring)
   currencyId: "BRL"
 };
 
@@ -104,7 +104,7 @@ export const createGuidePurchasePreference = action({
           quantity: 1,
           currency_id: GUIDE_CONFIG.currencyId,
           unit_price: finalPrice, // Use discounted price
-          category_id: "travel", // Category for better approval
+          category_id: "digital_content", // CRITICAL: Marca como conteúdo digital
         }],
         back_urls: {
           success: successUrl,
@@ -117,10 +117,25 @@ export const createGuidePurchasePreference = action({
         notification_url: process.env.CONVEX_SITE_URL ? 
           `${process.env.CONVEX_SITE_URL}/mercadopago/guide-webhook` : 
           undefined,
+        // CRITICAL: Shipments configuration for digital products
+        // Setting mode to "not_specified" tells MP this is NOT a physical product
+        // This BLOCKS Compra Garantida coverage and prevents automatic refunds
+        shipments: {
+          mode: "not_specified", // Produto digital - sem envio físico
+          local_pickup: false,
+          dimensions: null,
+          receiver_address: {
+            zip_code: "00000000", // ZIP code obrigatório, mas irrelevante para digital
+          }
+        },
         metadata: {
           user_id: args.userId,        // MP mantém snake_case
           user_email: args.userEmail,  // MP mantém snake_case
           product_type: "guide",       // MP mantém snake_case
+          digital_product: true,       // CRITICAL: Marca explicitamente como produto digital
+          intangible: true,            // CRITICAL: Produto intangível
+          instant_delivery: true,      // CRITICAL: Entrega instantânea
+          no_refunds: true,            // CRITICAL: Sem reembolsos
           coupon_code: args.couponCode || null,
           discount_amount: discountAmount,
           original_price: GUIDE_CONFIG.amount,

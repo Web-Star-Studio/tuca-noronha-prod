@@ -40,7 +40,7 @@ export default function SubscriptionSuccessPage() {
             Assinatura Ativada! 🎉
           </h1>
           <p className="text-lg text-gray-600">
-            Bem-vindo ao Guia Exclusivo de Fernando de Noronha
+            Bem-vindo ao Guia Digital Exclusivo de Fernando de Noronha
           </p>
         </div>
 
