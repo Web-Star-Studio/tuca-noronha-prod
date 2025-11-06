@@ -26,7 +26,7 @@ export default function VehicleList({
   const { activeOrganization } = useOrganization();
   
   // Use our custom hook to fetch vehicles from Convex
-  const { vehicles, isLoading } = useVehicles(search, category, status, 10, activeOrganization?._id);
+  const { vehicles, isLoading } = useVehicles(search, category, status, 100, activeOrganization?._id);
 
   // Handle edit action
   const handleEditVehicle = (vehicleId: string) => {

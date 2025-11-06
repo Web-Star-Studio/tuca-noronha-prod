@@ -84,6 +84,19 @@ export function useVehicles(
   };
 }
 
+export function useFeaturedVehicles(limit = 4, status: string = "available") {
+  const result = useQuery(api.domains.vehicles.queries.listVehicles, {
+    status,
+    paginationOpts: { limit },
+    organizationId: undefined,
+  });
+
+  return {
+    vehicles: result?.vehicles || [],
+    isLoading: result === undefined,
+  };
+}
+
 // Custom hook to get a specific vehicle by ID
 export function useVehicle(id: Id<"vehicles"> | null) {
   const result = useQuery(

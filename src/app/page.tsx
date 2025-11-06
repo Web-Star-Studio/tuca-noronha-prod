@@ -1,7 +1,8 @@
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
 import HeroSection from "@/components/hero/HeroSection";
-import FeatureHighlights from "@/components/highlights/features/FeatureHighlights";
+import HomeSpotlight from "@/components/highlights/HomeSpotlight";
+
 import DestinationHighlights from "@/components/highlights/DestinationHighlights";
 import FeaturedActivities from "@/components/highlights/activities/FeaturedActivities";
 import FeaturedEvents from "@/components/highlights/events/FeaturedEvents";
@@ -15,7 +16,8 @@ export default function Home() {
     <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col">
       <Header />
       <HeroSection />
-      <FeatureHighlights />
+      <HomeSpotlight />
+
       <DestinationHighlights />
       <FeaturedEvents />
       <FeaturedRestaurants />

@@ -26,7 +26,7 @@ A configuração anterior da preference do Mercado Pago **não marcava explicita
 ```typescript
 // ANTES (INCORRETO)
 items: [{
-  category_id: "travel", // Genérico demais
+  category_id: "digital_content", // Genérico demais
 }]
 
 // DEPOIS (CORRETO)

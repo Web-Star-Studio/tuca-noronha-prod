@@ -83,7 +83,7 @@ export const createCheckoutPreference = internalAction({
             quantity: args.quantity,
             currency_id: args.currency || "BRL",
             unit_price: args.unitPrice,
-            category_id: "travel", // Ajuda na categorização similar ao guia
+            category_id: "digital_content", // Ajuda na categorização similar ao guia
           },
         ],
         back_urls: args.backUrls,
