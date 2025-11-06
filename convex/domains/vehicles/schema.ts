@@ -19,6 +19,7 @@ export default defineSchema({
     transmission: v.optional(v.string()), // Manual, Automático, CVT, Semi-automático
     features: v.optional(v.array(v.string())),
     adminRating: v.optional(v.number()), // 1-5 stars rating
+    isFeatured: v.optional(v.boolean()), // Featured vehicle flag
     
     // Business details - Required fields
     estimatedPricePerDay: v.number(),
@@ -34,7 +35,9 @@ export default defineSchema({
     updatedAt: v.number(),
     ownerId: v.optional(v.id("users")), // Reference to user who created/owns this vehicle
     organizationId: v.optional(v.string()), // For multi-tenant applications
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("featured_vehicles", ["isFeatured", "status"]),
   
   vehicleBookings: defineTable({
     vehicleId: v.id("vehicles"),

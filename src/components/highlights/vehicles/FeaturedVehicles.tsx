@@ -10,13 +10,7 @@ import Image from "next/image";
 
 // Define a function to get featured vehicles
 const useFeaturedVehicles = () => {
-  const result = useQuery(api.domains.vehicles.queries.listVehicles, {
-    paginationOpts: { limit: 4 },
-    status: "available", // Only show available vehicles
-    organizationId: undefined // Public view - show all available vehicles
-  });
-
-  const vehicles = result?.vehicles || [];
+  const vehicles = useQuery(api.domains.vehicles.queries.getFeaturedVehicles, {}) || [];
   
   return { vehicles };
 };

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Trash2, AlertCircle, PenSquare } from "lucide-react";
+import { Trash2, AlertCircle, PenSquare, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { getCategoryLabel } from "@/lib/constants/vehicleCategories";
 type VehicleListProps = {
   onEdit?: (vehicleId: string) => void;
   onDelete?: (vehicleId: string) => void;
+  onToggleFeatured?: (vehicleId: string, isFeatured: boolean) => void;
   search?: string;
   category?: string;
   status?: string;
@@ -18,6 +19,7 @@ type VehicleListProps = {
 export default function VehicleList({
   onEdit,
   onDelete,
+  onToggleFeatured,
   search,
   category,
   status,
@@ -43,6 +45,15 @@ export default function VehicleList({
       onDelete(vehicleId);
     } else {
       console.log("Delete vehicle:", vehicleId);
+    }
+  };
+
+  // Handle toggle featured action
+  const handleToggleFeatured = (vehicleId: string, isFeatured: boolean) => {
+    if (onToggleFeatured) {
+      onToggleFeatured(vehicleId, isFeatured);
+    } else {
+      console.log("Toggle featured vehicle:", vehicleId, isFeatured);
     }
   };
 
@@ -116,6 +127,13 @@ export default function VehicleList({
                 Em manutenção
               </div>
             )}
+            {(vehicle as any).isFeatured && (
+              <div className="absolute top-3 right-3">
+                <div className="bg-gradient-to-r from-amber-400 to-yellow-500 shadow-md px-2.5 py-1 rounded-full text-xs font-medium text-black flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-black" /> Destaque
+                </div>
+              </div>
+            )}
           </div>
           <CardContent className="p-5">
             <div className="flex justify-between items-start mb-3">
@@ -152,6 +170,15 @@ export default function VehicleList({
               </div>
 
               <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 px-2"
+                  onClick={() => handleToggleFeatured(vehicle._id, !(vehicle as any).isFeatured)}
+                  title={(vehicle as any).isFeatured ? "Remover destaque" : "Destacar veículo"}
+                >
+                  <Star className={`h-3.5 w-3.5 ${(vehicle as any).isFeatured ? 'fill-amber-500 text-amber-500' : 'text-amber-400'}`} />
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 

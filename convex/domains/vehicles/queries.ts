@@ -29,6 +29,7 @@ export const listVehicles = query({
       estimatedPricePerDay: v.number(),
       netRate: v.optional(v.number()),
       adminRating: v.optional(v.number()),
+      isFeatured: v.optional(v.boolean()),
       description: v.optional(v.string()),
       features: v.array(v.string()),
       imageUrl: v.optional(v.string()),
@@ -169,6 +170,7 @@ export const listVehiclesSimple = query({
     estimatedPricePerDay: v.number(),
     netRate: v.optional(v.number()),
     adminRating: v.optional(v.number()),
+    isFeatured: v.optional(v.boolean()),
     imageUrl: v.optional(v.string()),
     status: v.string(),
     licensePlate: v.string(),
@@ -236,6 +238,7 @@ export const getVehicle = query({
       estimatedPricePerDay: v.number(),
       netRate: v.optional(v.number()),
       adminRating: v.optional(v.number()),
+      isFeatured: v.optional(v.boolean()),
       description: v.optional(v.string()),
       features: v.array(v.string()),
       imageUrl: v.optional(v.string()),
@@ -249,6 +252,47 @@ export const getVehicle = query({
   ),
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
+  },
+});
+
+/**
+ * Get featured vehicles
+ */
+export const getFeaturedVehicles = query({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("vehicles"),
+    _creationTime: v.number(),
+    name: v.string(),
+    brand: v.string(),
+    model: v.string(),
+    category: v.string(),
+    year: v.number(),
+    licensePlate: v.string(),
+    color: v.string(),
+    seats: v.number(),
+    fuelType: v.string(),
+    transmission: v.string(),
+    estimatedPricePerDay: v.number(),
+    netRate: v.optional(v.number()),
+    adminRating: v.optional(v.number()),
+    isFeatured: v.optional(v.boolean()),
+    description: v.optional(v.string()),
+    features: v.array(v.string()),
+    imageUrl: v.optional(v.string()),
+    status: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    ownerId: v.optional(v.id("users")),
+    organizationId: v.optional(v.string()),
+  })),
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("vehicles")
+      .withIndex("featured_vehicles", (q) => 
+        q.eq("isFeatured", true).eq("status", "available")
+      )
+      .collect();
   },
 });
 

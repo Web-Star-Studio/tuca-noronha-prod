@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import VehicleList from "@/components/dashboard/vehicles/VehicleList";
 import VehicleForm from "@/components/dashboard/vehicles/VehicleForm";
-import { useVehicleStats, useDeleteVehicle } from "@/lib/services/vehicleService";
+import { useVehicleStats, useDeleteVehicle, useToggleFeatured } from "@/lib/services/vehicleService";
 import type { Id } from "@/../convex/_generated/dataModel";
 import { DashboardPageHeader } from "../components";
 
@@ -33,6 +33,7 @@ export default function VehiclesPage() {
 
   const { stats, isLoading: isLoadingStats } = useVehicleStats();
   const deleteVehicle = useDeleteVehicle();
+  const toggleFeatured = useToggleFeatured();
 
   const openAddVehicleDialog = () => {
     setEditMode(null);
@@ -77,6 +78,16 @@ export default function VehiclesPage() {
       toast.error(error instanceof Error ? error.message : "Erro ao remover veículo");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleToggleFeatured = async (vehicleId: string, isFeatured: boolean) => {
+    try {
+      await toggleFeatured(vehicleId as Id<"vehicles">, isFeatured);
+      toast.success(isFeatured ? "Veículo destacado com sucesso" : "Destaque removido com sucesso");
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "Erro ao atualizar destaque");
     }
   };
 
@@ -154,7 +165,14 @@ export default function VehiclesPage() {
             </CardContent>
           </Card>
           
-          <VehicleList search={appliedFilters.search} category={appliedFilters.category} status={appliedFilters.status} onEdit={openEditVehicleDialog} onDelete={openDeleteDialog} />
+          <VehicleList 
+            search={appliedFilters.search} 
+            category={appliedFilters.category} 
+            status={appliedFilters.status} 
+            onEdit={openEditVehicleDialog} 
+            onDelete={openDeleteDialog}
+            onToggleFeatured={handleToggleFeatured}
+          />
         </TabsContent>
         
         <TabsContent value="bookings" className="mt-6">

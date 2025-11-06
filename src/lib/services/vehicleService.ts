@@ -263,4 +263,24 @@ export function useUpdateVehicleBooking() {
   );
 
   return updateBooking;
+}
+
+// Custom hook to toggle featured status of a vehicle
+export function useToggleFeatured() {
+  const toggleFeaturedMutation = useMutation(api.domains.vehicles.mutations.toggleFeatured);
+
+  const toggleFeatured = useCallback(
+    async (id: Id<"vehicles">, isFeatured: boolean) => {
+      try {
+        const vehicleId = await toggleFeaturedMutation({ id, isFeatured });
+        return vehicleId;
+      } catch (error) {
+        console.error("Error toggling featured status:", error);
+        throw error;
+      }
+    },
+    [toggleFeaturedMutation]
+  );
+
+  return toggleFeatured;
 } 

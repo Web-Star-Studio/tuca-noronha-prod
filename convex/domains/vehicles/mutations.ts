@@ -457,4 +457,46 @@ export const syncVehiclesWithOrganizations = mutation({
     
     return { synced, errors };
   },
+});
+
+/**
+ * Toggle the featured status of a vehicle
+ */
+export const toggleFeatured = mutation({
+  args: { 
+    id: v.id("vehicles"),
+    isFeatured: v.boolean()
+  },
+  returns: v.id("vehicles"),
+  handler: async (ctx, args) => {
+    const role = await getCurrentUserRole(ctx);
+    const currentUserId = await getCurrentUserConvexId(ctx);
+    
+    if (!currentUserId) {
+      throw new Error("Não autorizado. Faça o login para continuar.");
+    }
+    
+    // Fetch existing vehicle to check authorization
+    const vehicle = await ctx.db.get(args.id);
+    
+    if (!vehicle) {
+      throw new Error("Veículo não encontrado");
+    }
+    
+    // Check ownership - only owners and admins can toggle featured
+    if (role === "partner") {
+      if (!vehicle.ownerId || vehicle.ownerId.toString() !== currentUserId.toString()) {
+        throw new Error("Acesso negado. Você só pode destacar seus próprios veículos.");
+      }
+    } else if (role !== "master") {
+      throw new Error("Acesso negado. Permissões insuficientes.");
+    }
+    
+    await ctx.db.patch(args.id, { 
+      isFeatured: args.isFeatured,
+      updatedAt: Date.now()
+    });
+    
+    return args.id;
+  },
 }); 
