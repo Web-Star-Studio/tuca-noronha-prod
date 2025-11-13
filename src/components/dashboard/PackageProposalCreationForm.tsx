@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { api } from "../../../convex/_generated/api";
@@ -137,7 +137,7 @@ export function PackageProposalCreationForm({
     }));
   }, [components, pricing.discount, pricing.taxes, pricing.fees]);
 
-  const handleAnalyzeRequest = async () => {
+  const handleAnalyzeRequest = useCallback(async () => {
     if (!packageRequest) return;
 
     setIsAnalyzing(true);
@@ -177,9 +177,9 @@ export function PackageProposalCreationForm({
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [packageRequest, packageRequestId, analyzeRequest]);
 
-  const addComponent = () => {
+  const addComponent = useCallback(() => {
     const newComponent: PackageComponent = {
       type: "other",
       name: "",
@@ -190,26 +190,28 @@ export function PackageProposalCreationForm({
       included: true,
       optional: false,
     };
-    setComponents([...components, newComponent]);
-  };
+    setComponents(prev => [...prev, newComponent]);
+  }, []);
 
-  const updateComponent = (index: number, updates: Partial<PackageComponent>) => {
-    const newComponents = [...components];
-    const currentComponent = newComponents[index];
-    
-    const updatedComponent = { ...currentComponent, ...updates };
+  const updateComponent = useCallback((index: number, updates: Partial<PackageComponent>) => {
+    setComponents(prev => {
+      const newComponents = [...prev];
+      const currentComponent = newComponents[index];
+      
+      const updatedComponent = { ...currentComponent, ...updates };
 
-    if (updates.quantity !== undefined || updates.unitPrice !== undefined) {
-        updatedComponent.totalPrice = updatedComponent.quantity * updatedComponent.unitPrice;
-    }
-    
-    newComponents[index] = updatedComponent;
-    setComponents(newComponents);
-  };
+      if (updates.quantity !== undefined || updates.unitPrice !== undefined) {
+          updatedComponent.totalPrice = updatedComponent.quantity * updatedComponent.unitPrice;
+      }
+      
+      newComponents[index] = updatedComponent;
+      return newComponents;
+    });
+  }, []);
 
-  const removeComponent = (index: number) => {
-    setComponents(components.filter((_, i) => i !== index));
-  };
+  const removeComponent = useCallback((index: number) => {
+    setComponents(prev => prev.filter((_, i) => i !== index));
+  }, []);
   
   const handleListAction = (
     list: string[], 
@@ -223,14 +225,14 @@ export function PackageProposalCreationForm({
     }
   };
 
-  const addInclusion = () => handleListAction(formData.inclusions, (l) => setFormData(p => ({...p, inclusions: l})), newInclusion, setNewInclusion);
-  const removeInclusion = (index: number) => setFormData(p => ({...p, inclusions: p.inclusions.filter((_, i) => i !== index)}));
+  const addInclusion = useCallback(() => handleListAction(formData.inclusions, (l) => setFormData(p => ({...p, inclusions: l})), newInclusion, setNewInclusion), [formData.inclusions, newInclusion]);
+  const removeInclusion = useCallback((index: number) => setFormData(p => ({...p, inclusions: p.inclusions.filter((_, i) => i !== index)})), []);
 
-  const addExclusion = () => handleListAction(formData.exclusions, (l) => setFormData(p => ({...p, exclusions: l})), newExclusion, setNewExclusion);
-  const removeExclusion = (index: number) => setFormData(p => ({...p, exclusions: p.exclusions.filter((_, i) => i !== index)}));
+  const addExclusion = useCallback(() => handleListAction(formData.exclusions, (l) => setFormData(p => ({...p, exclusions: l})), newExclusion, setNewExclusion), [formData.exclusions, newExclusion]);
+  const removeExclusion = useCallback((index: number) => setFormData(p => ({...p, exclusions: p.exclusions.filter((_, i) => i !== index)})), []);
 
-  const addTag = () => handleListAction(formData.tags, (l) => setFormData(p => ({...p, tags: l})), newTag, setNewTag);
-  const removeTag = (index:number) => setFormData(p => ({...p, tags: p.tags.filter((_, i) => i !== index)}));
+  const addTag = useCallback(() => handleListAction(formData.tags, (l) => setFormData(p => ({...p, tags: l})), newTag, setNewTag), [formData.tags, newTag]);
+  const removeTag = useCallback((index:number) => setFormData(p => ({...p, tags: p.tags.filter((_, i) => i !== index)})), []);
 
   const validateStep = (stepIndex: number): boolean => {
     switch(stepIndex) {

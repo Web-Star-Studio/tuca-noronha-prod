@@ -1,9 +1,18 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import BookingManagement from "@/components/dashboard/bookings/BookingManagement";
+import dynamic from "next/dynamic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
+
+// Dynamic import for large component to improve initial load time
+const BookingManagement = dynamic(
+  () => import("@/components/dashboard/bookings/BookingManagement"),
+  { 
+    loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>,
+    ssr: false 
+  }
+);
 
 export default function MyBookingsPage() {
   const { user } = useUser();
